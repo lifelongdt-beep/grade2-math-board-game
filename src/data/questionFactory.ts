@@ -8898,6 +8898,23 @@ const addAssessmentLayer = (question: Question, index: number): Question => {
   };
 };
 
+// time 태그에는 시계 차시와 달력 차시가 함께 있습니다.
+// 달력 문제에 '긴바늘' 같은 시계 힌트가 붙지 않도록 문제에 맞는 힌트를 고릅니다.
+const calendarPromptNotes = [
+  '달력에서 같은 줄과 같은 칸을 살펴봐요.',
+  '날짜를 하나씩 짚으며 세어 봐요.',
+  '한 주가 며칠인지 떠올려요.',
+  '문제에서 묻는 것을 다시 읽어요.',
+  '달력의 요일 이름을 먼저 봐요.',
+];
+
+const notesForQuestion = (question: Question) => {
+  if (question.type === 'time' && /달력|요일|며칠|날짜/.test(question.prompt)) {
+    return calendarPromptNotes;
+  }
+  return promptNotes[question.type];
+};
+
 const makePromptsUnique = (questions: Question[]): Question[] => {
   const seenBasePrompts = new Map<string, number>();
   const usedPrompts = new Set<string>();
@@ -8911,7 +8928,7 @@ const makePromptsUnique = (questions: Question[]): Question[] => {
       return question;
     }
 
-    const notes = promptNotes[question.type];
+    const notes = notesForQuestion(question);
     const note = notes[(index + count) % notes.length];
     const angle = duplicatePromptAngles[index % duplicatePromptAngles.length];
     let prompt = `${question.prompt} ${note} ${angle}`;
