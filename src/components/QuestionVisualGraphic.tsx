@@ -1,0 +1,479 @@
+import type { PlaneShapeVisualItem, QuestionVisual } from '../types';
+
+interface QuestionVisualGraphicProps {
+  visual?: QuestionVisual;
+  className?: string;
+}
+
+const shapeColor = (active?: boolean) => ({
+  fill: active ? '#dffafa' : '#ffffff',
+  stroke: active ? '#0f9f9f' : '#8aa0b8',
+  strokeWidth: active ? 5 : 4,
+});
+
+const renderPlaneShape = (item: PlaneShapeVisualItem, index: number, total: number) => {
+  const cellWidth = 320 / total;
+  const cx = 28 + cellWidth * index + cellWidth / 2;
+  const cy = 62;
+  const size = item.kind === 'rectangle' ? 42 : 36;
+  const style = shapeColor(item.active);
+  const transform = item.rotate ? `rotate(${item.rotate} ${cx} ${cy})` : undefined;
+  const label = item.label ? (
+    <text x={cx} y="114" textAnchor="middle" fill={item.active ? '#087f83' : '#526779'} fontSize="18" fontWeight="900">
+      {item.label}
+    </text>
+  ) : null;
+
+  if (item.kind === 'circle') {
+    return (
+      <g key={`${item.kind}-${index}`}>
+        <circle cx={cx} cy={cy} r={34} {...style} />
+        {label}
+      </g>
+    );
+  }
+
+  if (item.kind === 'triangle') {
+    return (
+      <g key={`${item.kind}-${index}`}>
+        <polygon points={`${cx},${cy - 40} ${cx - 40},${cy + 34} ${cx + 40},${cy + 34}`} transform={transform} {...style} />
+        {label}
+      </g>
+    );
+  }
+
+  if (item.kind === 'rectangle') {
+    return (
+      <g key={`${item.kind}-${index}`}>
+        <rect x={cx - 46} y={cy - 28} width={92} height={56} rx={5} transform={transform} {...style} />
+        {label}
+      </g>
+    );
+  }
+
+  if (item.kind === 'parallelogram') {
+    return (
+      <g key={`${item.kind}-${index}`}>
+        <polygon
+          points={`${cx - 46},${cy + 30} ${cx - 20},${cy - 32} ${cx + 48},${cy - 32} ${cx + 22},${cy + 30}`}
+          transform={transform}
+          {...style}
+        />
+        {label}
+      </g>
+    );
+  }
+
+  return (
+    <g key={`${item.kind}-${index}`}>
+      <rect x={cx - size} y={cy - size} width={size * 2} height={size * 2} rx={5} transform={transform} {...style} />
+      {label}
+    </g>
+  );
+};
+
+const renderCube = (cube: { x: number; y: number; z: number }, index: number) => {
+  const sx = 160 + (cube.x - cube.y) * 32;
+  const sy = 34 + (cube.x + cube.y) * 17 - cube.z * 32;
+  const top = `${sx},${sy} ${sx + 28},${sy + 14} ${sx},${sy + 28} ${sx - 28},${sy + 14}`;
+  const left = `${sx - 28},${sy + 14} ${sx},${sy + 28} ${sx},${sy + 60} ${sx - 28},${sy + 46}`;
+  const right = `${sx + 28},${sy + 14} ${sx},${sy + 28} ${sx},${sy + 60} ${sx + 28},${sy + 46}`;
+
+  return (
+    <g key={`${cube.x}-${cube.y}-${cube.z}-${index}`}>
+      <polygon points={left} fill="#c5eef3" stroke="#4f8f9a" strokeWidth="2" />
+      <polygon points={right} fill="#9edce8" stroke="#4f8f9a" strokeWidth="2" />
+      <polygon points={top} fill="#effcff" stroke="#4f8f9a" strokeWidth="2" />
+    </g>
+  );
+};
+
+function PlaneShapesGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'plane-shapes' }> }) {
+  return (
+    <svg viewBox="0 0 376 128" role="img" aria-label={visual.label}>
+      <rect x="4" y="6" width="368" height="116" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.items.map((item, index) => renderPlaneShape(item, index, visual.items.length))}
+    </svg>
+  );
+}
+
+function CubeStackGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'cube-stack' }> }) {
+  return (
+    <svg viewBox="0 0 376 142" role="img" aria-label={visual.label}>
+      <rect x="4" y="6" width="368" height="130" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      <g transform="translate(8 8)">
+        {visual.cubes
+          .slice()
+          .sort((a, b) => a.x + a.y + a.z - (b.x + b.y + b.z))
+          .map(renderCube)}
+      </g>
+    </svg>
+  );
+}
+
+const renderCubeView = (
+  view: Extract<QuestionVisual, { kind: 'cube-views' }>['views'][number],
+  index: number,
+  total: number,
+) => {
+  const labelText = view.label === '보임' ? '보이는 것' : `${view.label}에서`;
+  const panelWidth = total === 1 ? 150 : total === 2 ? 132 : 104;
+  const gap = total === 1 ? 0 : 12;
+  const startX = (376 - (panelWidth * total + gap * (total - 1))) / 2;
+  const panelX = startX + index * (panelWidth + gap);
+  const rows = view.cells.length;
+  const columns = view.cells.reduce((max, row) => Math.max(max, row.length), 1);
+  const cellGap = 4;
+  const maxCellWidth = (panelWidth - 22 - cellGap * (columns - 1)) / columns;
+  const maxCellHeight = (58 - cellGap * (rows - 1)) / rows;
+  const cellSize = Math.max(7, Math.min(22, maxCellWidth, maxCellHeight));
+  const gridWidth = columns * cellSize + (columns - 1) * cellGap;
+  const gridHeight = rows * cellSize + (rows - 1) * cellGap;
+  const gridX = panelX + (panelWidth - gridWidth) / 2;
+  const gridY = 54 + (58 - gridHeight) / 2;
+
+  return (
+    <g key={`${view.label}-${index}`}>
+      <rect x={panelX} y="24" width={panelWidth} height="96" rx="12" fill="#ffffff" stroke="#cfeaf0" />
+      <text x={panelX + panelWidth / 2} y="43" textAnchor="middle" fill="#0f7175" fontSize="16" fontWeight="900">
+        {labelText}
+      </text>
+      {view.cells.map((row, rowIndex) =>
+        row.map((active, columnIndex) => (
+          <rect
+            key={`${view.label}-${rowIndex}-${columnIndex}`}
+            x={gridX + columnIndex * (cellSize + cellGap)}
+            y={gridY + rowIndex * (cellSize + cellGap)}
+            width={cellSize}
+            height={cellSize}
+            rx="3"
+            fill={active ? '#dffafa' : '#f7fbfc'}
+            stroke={active ? '#0f9f9f' : '#cddfe5'}
+            strokeWidth={active ? 3 : 2}
+          />
+        )),
+      )}
+    </g>
+  );
+};
+
+function CubeViewsGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'cube-views' }> }) {
+  return (
+    <svg viewBox="0 0 376 142" role="img" aria-label={visual.label}>
+      <rect x="4" y="6" width="368" height="130" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.views.map((view, index) => renderCubeView(view, index, visual.views.length))}
+    </svg>
+  );
+}
+
+function TangramGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'tangram' }> }) {
+  const pieces = [
+    { label: '1', labelX: 134, labelY: 74, points: '18,18 242,18 130,130', fill: '#8f969d' },
+    { label: '2', labelX: 208, labelY: 132, points: '242,18 242,242 130,130', fill: '#c7ccd1' },
+    { label: '3', labelX: 48, labelY: 84, points: '18,18 18,130 74,74', fill: '#757c83' },
+    { label: '4', labelX: 64, labelY: 132, points: '18,130 74,74 130,130 74,186', fill: '#f7fbff' },
+    { label: '5', labelX: 130, labelY: 160, points: '74,186 130,130 186,186', fill: '#eef1f4' },
+    { label: '6', labelX: 168, labelY: 204, points: '74,186 186,186 242,242 130,242', fill: '#d6dce2' },
+    { label: '7', labelX: 50, labelY: 204, points: '18,130 18,242 130,242', fill: '#626971' },
+  ];
+
+  return (
+    <svg viewBox="0 0 260 260" role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width="252" height="252" rx="22" fill="rgba(255,255,255,0.98)" stroke="#d7edf2" strokeWidth="2" />
+      {pieces.map((piece) => (
+        <g key={piece.label}>
+          <polygon points={piece.points} fill={piece.fill} stroke="#404854" strokeWidth="2.5" strokeLinejoin="round" />
+          <circle cx={piece.labelX} cy={piece.labelY} r="16" fill="rgba(255,255,255,0.82)" stroke="#404854" strokeWidth="2.3" />
+          <text x={piece.labelX} y={piece.labelY + 7} textAnchor="middle" fontSize="22" fontWeight="900" fill="#20384f">
+            {piece.label}
+          </text>
+        </g>
+      ))}
+      <rect x="18" y="18" width="224" height="224" fill="none" stroke="#404854" strokeWidth="2.8" />
+    </svg>
+  );
+}
+
+function NumberLineGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'number-line' }> }) {
+  const range = Math.max(1, visual.end - visual.start);
+  const toX = (value: number) => 32 + ((value - visual.start) / range) * 312;
+  const ticks = [];
+  for (let value = visual.start; value <= visual.end; value += visual.step) {
+    ticks.push(value);
+  }
+
+  return (
+    <svg viewBox="0 0 376 142" role="img" aria-label={visual.label}>
+      <rect x="4" y="6" width="368" height="130" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      <line x1="32" y1="76" x2="344" y2="76" stroke="#506579" strokeWidth="4" strokeLinecap="round" />
+      {ticks.map((value) => (
+        <g key={value}>
+          <line x1={toX(value)} y1="64" x2={toX(value)} y2="88" stroke="#8aa0b8" strokeWidth="3" />
+          <text x={toX(value)} y="112" textAnchor="middle" fill="#24364a" fontSize="16" fontWeight="800">
+            {value}
+          </text>
+        </g>
+      ))}
+      {visual.marks.map((mark, index) => (
+        <g key={`${mark.value}-${index}`}>
+          <circle cx={toX(mark.value)} cy="76" r={mark.active ? 11 : 8} fill={mark.active ? '#18a7a7' : '#fff4bd'} stroke="#0f7175" strokeWidth="3" />
+          {mark.label && (
+            <text x={toX(mark.value)} y="46" textAnchor="middle" fill="#0f7175" fontSize="15" fontWeight="900">
+              {mark.label}
+            </text>
+          )}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function PlaceValueGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'place-value' }> }) {
+  const cellWidth = 320 / visual.columns.length;
+
+  return (
+    <svg viewBox="0 0 376 150" role="img" aria-label={visual.label}>
+      <rect x="4" y="6" width="368" height="138" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.columns.map((column, index) => {
+        const x = 28 + index * cellWidth;
+        const blockCount = Math.min(column.blocks ?? column.value, 12);
+        return (
+          <g key={`${column.label}-${index}`}>
+            <rect x={x} y="24" width={cellWidth - 8} height="96" rx="10" fill="#ffffff" stroke="#cfeaf0" />
+            <text x={x + (cellWidth - 8) / 2} y="45" textAnchor="middle" fill="#0f7175" fontSize="15" fontWeight="900">
+              {column.label}
+            </text>
+            <text x={x + (cellWidth - 8) / 2} y="106" textAnchor="middle" fill="#182433" fontSize="24" fontWeight="900">
+              {column.value}
+            </text>
+            {Array.from({ length: blockCount }).map((_, blockIndex) => (
+              <rect
+                key={blockIndex}
+                x={x + 12 + (blockIndex % 6) * 10}
+                y={56 + Math.floor(blockIndex / 6) * 12}
+                width="7"
+                height="7"
+                rx="2"
+                fill="#dffafa"
+                stroke="#0f9f9f"
+              />
+            ))}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function BarModelGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'bar-model' }> }) {
+  const maxValue = Math.max(...visual.bars.map((bar) => bar.value), 1);
+
+  return (
+    <svg viewBox="0 0 376 150" role="img" aria-label={visual.label}>
+      <rect x="4" y="6" width="368" height="138" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.bars.slice(0, 4).map((bar, index) => {
+        const y = 28 + index * 28;
+        const width = Math.max(24, (bar.value / maxValue) * 220);
+        return (
+          <g key={`${bar.label}-${index}`}>
+            <text x="28" y={y + 18} fill="#24364a" fontSize="14" fontWeight="900">
+              {bar.label}
+            </text>
+            <rect x="104" y={y} width="230" height="22" rx="7" fill="#eef6f8" />
+            <rect x="104" y={y} width={width} height="22" rx="7" fill={index % 2 === 0 ? '#dffafa' : '#fff4bd'} stroke="#0f9f9f" />
+            <text x={Math.min(344, 114 + width)} y={y + 17} fill="#182433" fontSize="14" fontWeight="900">
+              {bar.value}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'ruler' }> }) {
+  const range = Math.max(1, visual.end - visual.start);
+  const toX = (value: number) => 30 + ((value - visual.start) / range) * 316;
+  const ticks = Array.from({ length: range + 1 }, (_, index) => visual.start + index);
+
+  return (
+    <svg viewBox="0 0 376 132" role="img" aria-label={visual.label}>
+      <rect x="4" y="6" width="368" height="120" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      <rect x="26" y="48" width="324" height="46" rx="8" fill="#fff4bd" stroke="#d4a62f" />
+      <rect x={toX(visual.highlightStart)} y="50" width={toX(visual.highlightEnd) - toX(visual.highlightStart)} height="42" rx="6" fill="#dffafa" opacity="0.9" />
+      {ticks.map((value) => (
+        <g key={value}>
+          <line x1={toX(value)} y1="48" x2={toX(value)} y2={value % 5 === 0 ? 78 : 66} stroke="#7b6233" strokeWidth={value % 5 === 0 ? 3 : 2} />
+          {value % 2 === 0 && (
+            <text x={toX(value)} y="113" textAnchor="middle" fill="#24364a" fontSize="13" fontWeight="800">
+              {value}
+            </text>
+          )}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+const handPoint = (center: number, length: number, angle: number) => ({
+  x: center + Math.sin(angle) * length,
+  y: 66 - Math.cos(angle) * length,
+});
+
+function ClockFace({ hour, minute, x, label }: { hour: number; minute: number; x: number; label: string }) {
+  const hourAngle = (((hour % 12) + minute / 60) / 12) * Math.PI * 2;
+  const minuteAngle = (minute / 60) * Math.PI * 2;
+  const hourHand = handPoint(x, 24, hourAngle);
+  const minuteHand = handPoint(x, 36, minuteAngle);
+
+  return (
+    <g>
+      <circle cx={x} cy="66" r="46" fill="#ffffff" stroke="#8aa0b8" strokeWidth="3" />
+      {Array.from({ length: 12 }).map((_, index) => {
+        const angle = ((index + 1) / 12) * Math.PI * 2;
+        const point = handPoint(x, 38, angle);
+        return (
+          <text key={index} x={point.x} y={point.y + 5} textAnchor="middle" fill="#24364a" fontSize="11" fontWeight="800">
+            {index + 1}
+          </text>
+        );
+      })}
+      <line x1={x} y1="66" x2={hourHand.x} y2={hourHand.y} stroke="#182433" strokeWidth="5" strokeLinecap="round" />
+      <line x1={x} y1="66" x2={minuteHand.x} y2={minuteHand.y} stroke="#0f9f9f" strokeWidth="4" strokeLinecap="round" />
+      <circle cx={x} cy="66" r="4" fill="#182433" />
+      <text x={x} y="126" textAnchor="middle" fill="#0f7175" fontSize="14" fontWeight="900">
+        {label}
+      </text>
+    </g>
+  );
+}
+
+function ClockGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'clock' }> }) {
+  const hasEnd = visual.endHour != null && visual.endMinute != null;
+
+  return (
+    <svg viewBox="0 0 376 146" role="img" aria-label={visual.label}>
+      <rect x="4" y="6" width="368" height="134" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      <ClockFace hour={visual.hour} minute={visual.minute} x={hasEnd ? 118 : 188} label="시작" />
+      {hasEnd && <ClockFace hour={visual.endHour ?? visual.hour} minute={visual.endMinute ?? visual.minute} x={258} label="끝" />}
+    </svg>
+  );
+}
+
+function PictographGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'pictograph' }> }) {
+  return (
+    <svg viewBox="0 0 376 150" role="img" aria-label={visual.label}>
+      <rect x="4" y="6" width="368" height="138" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      <text x="188" y="30" textAnchor="middle" fill="#0f7175" fontSize="14" fontWeight="900">
+        한 칸 = {visual.unit}
+      </text>
+      {visual.items.slice(0, 4).map((item, index) => {
+        const y = 46 + index * 24;
+        const units = Math.ceil(item.count / visual.unit);
+        return (
+          <g key={`${item.label}-${index}`}>
+            <text x="28" y={y + 15} fill="#24364a" fontSize="14" fontWeight="900">
+              {item.label}
+            </text>
+            {Array.from({ length: units }).map((_, unitIndex) => (
+              <rect
+                key={unitIndex}
+                x={100 + unitIndex * 22}
+                y={y}
+                width="16"
+                height="16"
+                rx="5"
+                fill={unitIndex * visual.unit + visual.unit <= item.count ? '#dffafa' : '#fff4bd'}
+                stroke="#0f9f9f"
+              />
+            ))}
+            <text x="326" y={y + 15} fill="#182433" fontSize="14" fontWeight="900">
+              {item.count}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function ArrayGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'array' }> }) {
+  const plotWidth = 316;
+  const plotHeight = 100;
+  const baseGap = visual.rows >= 7 || visual.columns >= 7 ? 3 : 10;
+  const gap = Math.min(baseGap, Math.max(2, plotWidth / Math.max(visual.columns * 4, 1)));
+  const maxDotByWidth = (plotWidth - (visual.columns - 1) * gap) / visual.columns;
+  const maxDotByHeight = (plotHeight - (visual.rows - 1) * gap) / visual.rows;
+  const dot = Math.max(6, Math.min(20, maxDotByWidth, maxDotByHeight));
+  const width = visual.columns * dot + (visual.columns - 1) * gap;
+  const height = visual.rows * dot + (visual.rows - 1) * gap;
+  const startX = 188 - width / 2;
+  const startY = 12 + (plotHeight - height) / 2;
+
+  return (
+    <svg viewBox="0 0 376 146" role="img" aria-label={visual.label}>
+      <rect x="4" y="6" width="368" height="134" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      <rect x="30" y="10" width="316" height="110" rx="12" fill="#ffffff" stroke="#d7edf2" opacity="0.68" />
+      {Array.from({ length: visual.rows }).map((_, row) =>
+        Array.from({ length: visual.columns }).map((__, column) => {
+          const faded = visual.fadedRows != null && row >= visual.rows - visual.fadedRows;
+          return (
+            <circle
+              key={`${row}-${column}`}
+              cx={startX + column * (dot + gap) + dot / 2}
+              cy={startY + row * (dot + gap) + dot / 2}
+              r={dot / 2}
+              fill={faded ? '#fff4bd' : '#dffafa'}
+              stroke="#0f9f9f"
+              strokeWidth="2"
+            />
+          );
+        }),
+      )}
+      <rect x="112" y="121" width="152" height="20" rx="10" fill="#e8fbfb" />
+      <text x="188" y="136" textAnchor="middle" fill="#0f7175" fontSize="13" fontWeight="900">
+        {visual.rows}묶음 × {visual.columns}개
+      </text>
+    </svg>
+  );
+}
+
+function PatternGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'pattern' }> }) {
+  return (
+    <svg viewBox="0 0 376 126" role="img" aria-label={visual.label}>
+      <rect x="4" y="6" width="368" height="114" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.items.slice(0, 9).map((item, index) => {
+        const isMissing = visual.missingIndex === index;
+        return (
+          <g key={`${item}-${index}`}>
+            <rect x={30 + index * 36} y="40" width="28" height="28" rx="8" fill={isMissing ? '#fff4bd' : '#dffafa'} stroke="#0f9f9f" strokeWidth="2" />
+            <text x={44 + index * 36} y="60" textAnchor="middle" fill="#182433" fontSize="17" fontWeight="900">
+              {isMissing ? '?' : item}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisualGraphicProps) {
+  if (!visual) return null;
+
+  return (
+    <figure className={`question-visual-figure ${className}`.trim()} aria-label={visual.label}>
+      {visual.kind === 'plane-shapes' && <PlaneShapesGraphic visual={visual} />}
+      {visual.kind === 'cube-stack' && <CubeStackGraphic visual={visual} />}
+      {visual.kind === 'cube-views' && <CubeViewsGraphic visual={visual} />}
+      {visual.kind === 'tangram' && <TangramGraphic visual={visual} />}
+      {visual.kind === 'number-line' && <NumberLineGraphic visual={visual} />}
+      {visual.kind === 'place-value' && <PlaceValueGraphic visual={visual} />}
+      {visual.kind === 'bar-model' && <BarModelGraphic visual={visual} />}
+      {visual.kind === 'ruler' && <RulerGraphic visual={visual} />}
+      {visual.kind === 'clock' && <ClockGraphic visual={visual} />}
+      {visual.kind === 'pictograph' && <PictographGraphic visual={visual} />}
+      {visual.kind === 'array' && <ArrayGraphic visual={visual} />}
+      {visual.kind === 'pattern' && <PatternGraphic visual={visual} />}
+    </figure>
+  );
+}

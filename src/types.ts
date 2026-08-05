@@ -1,0 +1,237 @@
+export type Difficulty = '하' | '중' | '상';
+
+export type SessionDuration = 30 | 60 | 120;
+
+export type ConceptTag =
+  | 'number'
+  | 'placeValue'
+  | 'addition'
+  | 'subtraction'
+  | 'shape'
+  | 'solid'
+  | 'measurement'
+  | 'classification'
+  | 'multiplication'
+  | 'time'
+  | 'data'
+  | 'pattern';
+
+export interface Lesson {
+  id: string;
+  semester: '2-1' | '2-2';
+  unitNo: number;
+  unitTitle: string;
+  lessonNo: number;
+  title: string;
+  objective: string;
+  achievement: string;
+  tags: ConceptTag[];
+  textbookFocus: string;
+  workbookFocus: string;
+}
+
+export interface Unit {
+  semester: '2-1' | '2-2';
+  unitNo: number;
+  title: string;
+  lessons: Lesson[];
+}
+
+export interface Question {
+  id: string;
+  lessonId: string;
+  difficulty: Difficulty;
+  prompt: string;
+  choices: string[];
+  answerIndex: number;
+  answer: string;
+  explanation: string;
+  misconception: string;
+  type: ConceptTag;
+  strategy: string;
+  support: LearningSupport;
+  visual?: QuestionVisual;
+}
+
+export interface LearningSupport {
+  studentConcept: string;
+  studentHint: string;
+  coreConcept: string;
+  readStrategy: string;
+  steps: string[];
+  misconceptionTip: string;
+  textbookConnection: string;
+  selfCheck: string;
+}
+
+export type PlaneShapeKind = 'circle' | 'triangle' | 'square' | 'rectangle' | 'parallelogram';
+
+export interface PlaneShapeVisualItem {
+  kind: PlaneShapeKind;
+  active?: boolean;
+  label?: string;
+  rotate?: number;
+}
+
+export interface PlaneShapesVisual {
+  kind: 'plane-shapes';
+  label: string;
+  items: PlaneShapeVisualItem[];
+}
+
+export interface CubeStackVisual {
+  kind: 'cube-stack';
+  label: string;
+  cubes: Array<{
+    x: number;
+    y: number;
+    z: number;
+  }>;
+}
+
+export interface CubeViewPattern {
+  label: '앞' | '옆' | '위' | '보임';
+  cells: boolean[][];
+}
+
+export interface CubeViewsVisual {
+  kind: 'cube-views';
+  label: string;
+  views: CubeViewPattern[];
+}
+
+export interface TangramVisual {
+  kind: 'tangram';
+  label: string;
+}
+
+export interface NumberLineVisual {
+  kind: 'number-line';
+  label: string;
+  start: number;
+  end: number;
+  step: number;
+  marks: Array<{
+    value: number;
+    label?: string;
+    active?: boolean;
+  }>;
+}
+
+export interface PlaceValueVisual {
+  kind: 'place-value';
+  label: string;
+  columns: Array<{
+    label: string;
+    value: number;
+    blocks?: number;
+  }>;
+}
+
+export interface BarModelVisual {
+  kind: 'bar-model';
+  label: string;
+  bars: Array<{
+    label: string;
+    value: number;
+  }>;
+}
+
+export interface RulerVisual {
+  kind: 'ruler';
+  label: string;
+  start: number;
+  end: number;
+  highlightStart: number;
+  highlightEnd: number;
+}
+
+export interface ClockVisual {
+  kind: 'clock';
+  label: string;
+  hour: number;
+  minute: number;
+  endHour?: number;
+  endMinute?: number;
+}
+
+export interface PictographVisual {
+  kind: 'pictograph';
+  label: string;
+  unit: number;
+  items: Array<{
+    label: string;
+    count: number;
+  }>;
+}
+
+export interface ArrayVisual {
+  kind: 'array';
+  label: string;
+  rows: number;
+  columns: number;
+  fadedRows?: number;
+}
+
+export interface PatternVisual {
+  kind: 'pattern';
+  label: string;
+  items: string[];
+  missingIndex?: number;
+}
+
+export type QuestionVisual =
+  | PlaneShapesVisual
+  | CubeStackVisual
+  | CubeViewsVisual
+  | TangramVisual
+  | NumberLineVisual
+  | PlaceValueVisual
+  | BarModelVisual
+  | RulerVisual
+  | ClockVisual
+  | PictographVisual
+  | ArrayVisual
+  | PatternVisual;
+
+export interface Player {
+  id: number;
+  attendanceNo: number;
+  name: string;
+  color: string;
+  difficulty: Difficulty;
+}
+
+export interface PlayerQuestionState {
+  questionIndex: number;
+  selected: number | null;
+  correct: boolean | null;
+  locked: boolean;
+  responseMs?: number;
+  questionStartedAt: number;
+  feedback: 'idle' | 'correct' | 'explain';
+}
+
+export interface AnswerRecord {
+  id: string;
+  playerId: number;
+  playerName: string;
+  questionId: string;
+  lessonId: string;
+  unitTitle: string;
+  lessonTitle: string;
+  difficulty: Difficulty;
+  prompt: string;
+  choices: string[];
+  answer: string;
+  explanation: string;
+  misconception: string;
+  type: ConceptTag;
+  strategy: string;
+  support: LearningSupport;
+  visual?: QuestionVisual;
+  correct: boolean;
+  attempts: number;
+  responseMs: number;
+  answeredAt: string;
+}

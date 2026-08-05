@@ -1,0 +1,9 @@
+.claude/
+node_modules/
+dist/
+tmp/
+output/
+출판용/
+public/mobile-origin.json
+*.log
+.DS_Store
