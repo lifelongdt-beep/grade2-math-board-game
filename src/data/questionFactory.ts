@@ -297,7 +297,7 @@ const promptNotes: Record<ConceptTag, string[]> = {
     '표의 항목 이름을 먼저 읽어요.',
     '가장 큰 수와 작은 수를 비교해요.',
     '전체 수인지 차이인지 확인해요.',
-    '그래프 한 칸이 무엇을 뜻하는지 봐요.',
+    '빠뜨리거나 두 번 세지 않았는지 봐요.',
     '결과를 근거와 함께 말해요.',
   ],
   pattern: [
@@ -1720,6 +1720,56 @@ const calcUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
       tag, strategy,
     );
   };
+
+  // 단원 도입: 받아올림과 받아내림을 배우기 전이므로 1학년에서 배운
+  // 받아올림 없는 계산과 상황 읽기까지만 다룹니다.
+  if (title.includes('단원 도입')) {
+    const a = 10 * (1 + (seed % 4)) + (seed % 5);
+    const b = 10 * (1 + ((seed + 1) % 3)) + ((seed + 2) % 4);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}는 얼마일까요?`,
+        a + b, [a + b + 10, Math.max(0, a + b - 10), a + b + 1],
+        `일의 자리끼리, 십의 자리끼리 더하면 ${a + b}입니다.`,
+        'addition', '받아올림 없는 덧셈하기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a + b}-${b}는 얼마일까요?`,
+        a, [a + b, b, a + 10],
+        `일의 자리끼리, 십의 자리끼리 빼면 ${a}입니다.`,
+        'subtraction', '받아내림 없는 뺄셈하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '두 수를 모두 합한 수를 구할 때 쓰는 계산은?',
+        '덧셈', ['뺄셈', '비교하기', '세어 보기'],
+        '모두 몇 개인지 구할 때는 덧셈을 씁니다.',
+        'addition', '더하는 상황 알아보기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '남은 수를 구할 때 쓰는 계산은?',
+        '뺄셈', ['덧셈', '묶어 세기', '뛰어 세기'],
+        '전체에서 없어진 만큼을 덜어 낼 때는 뺄셈을 씁니다.',
+        'subtraction', '빼는 상황 알아보기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `딱지 ${a}장에 ${b}장을 더 얻었습니다. 모두 몇 장일까요?`,
+      `${a + b}장`, [`${a}장`, `${Math.abs(a - b)}장`, `${a + b + 1}장`],
+      `더 얻었으므로 더합니다. ${a}+${b}=${a + b}장입니다.`,
+      'addition', '이야기를 보고 계산 고르기',
+    );
+  }
 
   // 덧셈 ⑴ : (두 자리 수) + (한 자리 수), 일의 자리 받아올림
   if (title.includes('덧셈을 해 볼까요 ⑴')) {
@@ -6216,10 +6266,67 @@ const tableAndGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
   );
 };
 
+const dataIntroQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  const variant = variantForDifficulty(difficulty, index, 5, 3);
+  const soccer = 5 + (index % 4);
+  const rope = 2 + ((index + 1) % 3);
+  const tag = 8 + ((index + 2) % 3);
+
+  if (variant === 0) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '우리 반 친구들이 좋아하는 것을 알아보려면 먼저 무엇을 해야 할까요?',
+      '무엇을 조사할지 정한다',
+      ['답을 미리 정한다', '가장 좋아하는 것을 고른다', '수를 먼저 센다'],
+      '무엇을 알아볼지 정해야 자료를 모을 수 있습니다.',
+      'data', '조사할 것을 정하기',
+    );
+  }
+  if (variant === 1) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '친구들이 좋아하는 것을 이름만 죽 적어 놓으면 어떤 점이 불편할까요?',
+      '무엇이 가장 많은지 한눈에 알기 어렵다',
+      ['이름을 쓸 수 없다', '친구가 줄어든다', '자료가 없어진다'],
+      '적어 놓기만 하면 세어 보기 전에는 많고 적음을 알기 어렵습니다.',
+      'data', '자료를 정리해야 하는 까닭 알기',
+    );
+  }
+  if (variant === 2) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `축구 ${soccer}명, 줄넘기 ${rope}명, 술래잡기 ${tag}명을 조사했습니다. 조사한 학생은 모두 몇 명일까요?`,
+      `${soccer + rope + tag}명`,
+      [`${soccer + rope}명`, `${rope + tag}명`, `${soccer + rope + tag + 1}명`],
+      `항목별 수를 모두 더합니다. ${soccer}+${rope}+${tag}=${soccer + rope + tag}명입니다.`,
+      'data', '조사한 자료의 전체 수 구하기',
+    );
+  }
+  if (variant === 3) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '조사한 자료를 알아보기 쉽게 하려면 어떻게 하면 좋을까요?',
+      '같은 것끼리 모아 수를 센다',
+      ['순서를 뒤섞는다', '적은 것은 지운다', '이름만 다시 쓴다'],
+      '같은 것끼리 모아 세면 무엇이 많고 적은지 쉽게 알 수 있습니다.',
+      'data', '자료를 정리하는 방법 생각하기',
+    );
+  }
+  return makeQuestion(
+    lesson, difficulty, index,
+    '자료를 조사할 때 지켜야 할 것으로 알맞은 것은?',
+    '빠뜨리거나 두 번 세지 않는다',
+    ['좋아하는 친구만 조사한다', '많아 보이는 것만 센다', '어림해서 적는다'],
+    '빠짐과 겹침이 없어야 조사 결과가 정확합니다.',
+    'data', '바르게 조사하기',
+  );
+};
+
 const tableGraphLessonQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
   if (lesson.unitTitle !== '표와 그래프') return null;
 
   const title = lesson.title;
+  if (title.includes('단원 도입')) return dataIntroQuestion(lesson, difficulty, index);
   if (title.includes('분류하여 표로')) return classifyToTableQuestion(lesson, difficulty, index);
   if (title.includes('조사하여 표로')) return surveyToTableQuestion(lesson, difficulty, index);
   if (title.includes('그래프로 나타내 볼까요') && title.includes('분류하여')) {
@@ -7064,9 +7171,6 @@ const richTableGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
 };
 
 const richDataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
-  const lessonSpecific = richTableGraphQuestion(lesson, difficulty, index);
-  if (lessonSpecific) return lessonSpecific;
-
   const unit = difficulty === '상' ? 2 : 1;
   const items = [
     { label: '축구', count: 5 + (index % 4) * unit },
@@ -7076,21 +7180,40 @@ const richDataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
   const most = items.reduce((best, item) => (item.count > best.count ? item : best));
   const least = items.reduce((best, item) => (item.count < best.count ? item : best));
   const answer = most.count - least.count;
+  const tag = lesson.tags.includes('classification') ? 'classification' : 'data';
+
+  // 그래프는 4차시에서 배웁니다. 그 앞 차시에서는 표로만 해석합니다.
+  const graphTaught = lesson.unitTitle !== '표와 그래프' || lesson.lessonNo >= 4;
+
+  if (!graphTaught) {
+    const total = items.reduce((sum, item) => sum + item.count, 0);
+    return makeQuestion(
+      lesson, difficulty, index,
+      '표를 보고 가장 많은 항목과 가장 적은 항목의 차를 구하세요.',
+      answer,
+      [most.count, least.count, total],
+      `표에서 가장 많은 것은 ${most.label} ${most.count}명, 가장 적은 것은 ${least.label} ${least.count}명입니다. 차는 ${most.count}-${least.count}=${answer}명입니다.`,
+      tag,
+      '자료 해석 · 표에서 가장 많은 것과 적은 것의 차 읽기',
+      tableVisualFor(
+        items.map((item) => ({ name: item.label, value: item.count })),
+        '좋아하는 활동별 학생 수',
+        { categoryLabel: '활동', valueLabel: '학생 수(명)', totalLabel: '합계', total },
+      ),
+    );
+  }
 
   return makeQuestion(
-    lesson,
-    difficulty,
-    index,
+    lesson, difficulty, index,
     `그림그래프를 보고 가장 많은 항목과 가장 적은 항목의 차를 구하세요. 한 칸은 ${unit}명을 나타냅니다.`,
     answer,
     [most.count, least.count, answer + unit],
     `그래프에서 가장 많은 것은 ${most.label} ${most.count}명, 가장 적은 것은 ${least.label} ${least.count}명입니다. 차는 ${most.count}-${least.count}=${answer}명입니다.`,
-    lesson.tags.includes('classification') ? 'classification' : 'data',
+    tag,
     '자료 해석 · 그림그래프의 단위와 차이 읽기',
     pictographVisualFor(items, unit, '좋아하는 활동 그림그래프'),
   );
 };
-
 const richMultiplicationQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const rows = difficulty === '하' ? 3 + (index % 2) : difficulty === '중' ? 4 + (index % 3) : 6 + (index % 4);
   const columns = difficulty === '하' ? 3 + (index % 3) : difficulty === '중' ? 5 + (index % 3) : 7 + (index % 3);
