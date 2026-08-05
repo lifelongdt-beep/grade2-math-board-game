@@ -1,18 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { curriculum } from './curriculum';
 import { generateQuestions } from './questionFactory';
+import type { Difficulty } from '../types';
 
 // 같은 단원의 두 차시가 거의 같은 문제를 내면 안 됩니다.
 // 차시마다 배우는 내용이 다르므로 문제도 달라야 합니다.
+const levels: Difficulty[] = ['하', '중', '상'];
+
 describe('lesson overlap', () => {
-  it('does not give two 차시 in a unit nearly the same questions', () => {
+  it.each(levels)('does not give two 차시 in a unit nearly the same %s questions', (level) => {
     const issues: string[] = [];
 
     for (const unit of curriculum) {
       const perLesson = unit.lessons.map((lesson) => ({
         title: lesson.title,
         strategies: new Set(
-          generateQuestions(lesson, '중').map(
+          generateQuestions(lesson, level).map(
             // 평가 층(형성/익힘/…) 라벨을 떼고 기본 전략만 비교한다
             (question) => question.strategy.split(' · ').slice(-1)[0],
           ),
@@ -28,7 +31,7 @@ describe('lesson overlap', () => {
 
           if (ratio >= 0.8) {
             issues.push(
-              `${unit.semester} ${unit.title}: "${first.title}" 와 "${second.title}" 가 ${Math.round(ratio * 100)}% 같음`,
+              `${unit.semester} ${unit.title} (${level}): "${first.title}" 와 "${second.title}" 가 ${Math.round(ratio * 100)}% 같음`,
             );
           }
         }

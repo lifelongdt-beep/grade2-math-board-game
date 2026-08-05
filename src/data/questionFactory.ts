@@ -7058,25 +7058,132 @@ const richMultiplicationQuestion = (lesson: Lesson, difficulty: Difficulty, inde
   );
 };
 
+// 심화 문항도 그 차시에서 배운 것만 다뤄야 합니다.
+// 아직 배우지 않은 뒤 차시의 내용(예: 2차시에 걸린 시간)을 내면 안 됩니다.
 const richTimeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  const title = lesson.title;
   const hour = 2 + (index % 7);
-  const minute = difficulty === '하' ? 10 + (index % 3) * 10 : difficulty === '중' ? 25 + (index % 3) * 5 : 40 + (index % 3) * 5;
-  const elapsed = difficulty === '하' ? 20 : difficulty === '중' ? 45 : 75;
-  const totalMinute = hour * 60 + minute + elapsed;
-  const endHour = Math.floor(totalMinute / 60);
-  const endMinute = totalMinute % 60;
 
+  // 8차시 달력: 시계가 아니라 달력 자료를 해석합니다.
+  if (title.includes('달력')) {
+    const day = 3 + (index % 20);
+    const later = day + 7;
+    if (index % 2 === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `달력에서 ${day}일이 수요일입니다. ${later}일은 무슨 요일일까요?`,
+        '수요일',
+        ['목요일', '화요일', '금요일'],
+        `같은 요일은 7일마다 돌아옵니다. ${day}일에서 7일 뒤인 ${later}일도 수요일입니다.`,
+        'time',
+        '자료 해석 · 달력에서 요일의 반복 읽기',
+        calendarVisualFor([{ day, tone: 'start' }], '요일이 반복되는 달력'),
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '달력을 보고 1주일과 1개월의 관계로 알맞은 것은?',
+      '1개월은 4주가 조금 넘는다',
+      ['1개월은 정확히 4주이다', '1개월은 2주이다', '1개월은 7일이다'],
+      `1주일은 7일이고 한 달은 28일에서 31일이므로 4주보다 조금 깁니다.`,
+      'time',
+      '자료 해석 · 달력에서 주와 달의 관계 읽기',
+      calendarVisualFor([], '한 달 달력'),
+    );
+  }
+
+  // 7차시 하루의 시간: 오전과 오후를 조건으로 읽습니다.
+  if (title.includes('하루의 시간')) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `오전 ${hour}시부터 오후 ${hour}시까지는 몇 시간일까요?`,
+      '12시간',
+      ['24시간', `${hour}시간`, '6시간'],
+      `오전 ${hour}시에서 오후 ${hour}시까지는 반나절이므로 12시간입니다.`,
+      'time',
+      '자료 해석 · 오전과 오후로 하루 읽기',
+    );
+  }
+
+  // 6차시 걸린 시간: 여기서부터 두 시계를 비교할 수 있습니다.
+  if (title.includes('걸린 시간')) {
+    const minute = difficulty === '중' ? 25 + (index % 3) * 5 : 40 + (index % 3) * 5;
+    const elapsed = difficulty === '중' ? 45 : 75;
+    const totalMinute = hour * 60 + minute + elapsed;
+    const endHour = Math.floor(totalMinute / 60);
+    const endMinute = totalMinute % 60;
+
+    return makeQuestion(
+      lesson, difficulty, index,
+      '두 시계를 보고 시작 시각부터 끝 시각까지 걸린 시간을 구하세요.',
+      `${elapsed}분`,
+      [`${endMinute}분`, `${elapsed - 15}분`, `${elapsed + 15}분`],
+      `시작은 ${hour}시 ${minute}분, 끝은 ${endHour}시 ${endMinute}분입니다. 1시간을 넘으면 60분을 먼저 세고 남은 분을 더해 ${elapsed}분입니다.`,
+      'time',
+      '자료 해석 · 두 시계 사이의 시간 구하기',
+      clockVisualFor(hour, minute, '시작과 끝 시각', endHour, endMinute),
+    );
+  }
+
+  // 5차시 1시간: 시간과 분을 서로 바꿉니다.
+  if (title.includes('1시간')) {
+    const minutes = 60 + 5 * (1 + (index % 8));
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${minutes}분은 몇 시간 몇 분일까요?`,
+      `1시간 ${minutes - 60}분`,
+      [`${minutes}시간`, `2시간 ${minutes - 60}분`, `1시간 ${minutes}분`],
+      `60분이 1시간입니다. ${minutes}-60=${minutes - 60}이므로 1시간 ${minutes - 60}분입니다.`,
+      'time',
+      '자료 해석 · 시간과 분을 바꾸어 읽기',
+    );
+  }
+
+  // 4차시 몇 분 전: 같은 시각을 두 가지로 읽습니다.
+  if (title.includes('여러 가지 방법')) {
+    const before = 5 * (1 + (index % 3));
+    const minute = 60 - before;
+    const nextHour = hour === 12 ? 1 : hour + 1;
+    return makeQuestion(
+      lesson, difficulty, index,
+      '시계를 보고 몇 시 몇 분 전으로 읽어 보세요.',
+      `${nextHour}시 ${before}분 전`,
+      [`${hour}시 ${before}분 전`, `${nextHour}시 ${minute}분 전`, `${hour}시 ${before}분`],
+      `${hour}시 ${minute}분은 ${nextHour}시가 되기 ${before}분 전입니다.`,
+      'time',
+      '자료 해석 · 시계를 몇 분 전으로 읽기',
+      clockVisualFor(hour, minute, '시각 자료'),
+    );
+  }
+
+  // 3차시 1분 단위 읽기
+  if (title.includes('⑵')) {
+    const base = 5 * (1 + (index % 10));
+    const extra = 1 + (index % 4);
+    const minute = base + extra;
+    return makeQuestion(
+      lesson, difficulty, index,
+      '시계를 보고 몇 시 몇 분인지 읽어 보세요.',
+      `${hour}시 ${minute}분`,
+      [`${hour}시 ${base}분`, `${hour}시 ${minute + 5}분`, `${hour + 1}시 ${minute}분`],
+      `숫자 ${base / 5}까지는 ${base}분이고 작은 눈금 ${extra}칸을 더 가면 ${minute}분입니다.`,
+      'time',
+      '자료 해석 · 작은 눈금까지 시각 읽기',
+      clockVisualFor(hour, minute, '시각 자료'),
+    );
+  }
+
+  // 1~2차시: 5분 단위 읽기까지만 다룹니다.
+  const five = 5 * (1 + (index % 11));
   return makeQuestion(
-    lesson,
-    difficulty,
-    index,
-    `두 시계를 보고 시작 시각부터 끝 시각까지 걸린 시간을 구하세요.`,
-    `${elapsed}분`,
-    [`${endMinute}분`, `${elapsed - 15}분`, `${elapsed + 15}분`],
-    `시작은 ${hour}시 ${minute}분, 끝은 ${endHour}시 ${endMinute}분입니다. 1시간을 넘으면 60분을 먼저 세고 남은 분을 더해 ${elapsed}분입니다.`,
+    lesson, difficulty, index,
+    '시계를 보고 몇 시 몇 분인지 읽어 보세요.',
+    `${hour}시 ${five}분`,
+    [`${hour}시 ${five / 5}분`, `${hour + 1}시 ${five}분`, `${five}시 ${hour}분`],
+    `긴바늘이 숫자 ${five / 5}를 가리키므로 ${five}분이고, 짧은바늘이 지나온 숫자가 ${hour}시입니다.`,
     'time',
-    '자료 해석 · 두 시계 사이의 시간 구하기',
-    clockVisualFor(hour, minute, '시작과 끝 시각', endHour, endMinute),
+    '자료 해석 · 시계를 보고 5분 단위로 읽기',
+    clockVisualFor(hour, five, '시각 자료'),
   );
 };
 
