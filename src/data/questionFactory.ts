@@ -3380,7 +3380,7 @@ const numberLineVisualFor = (values: number[], step = 10, label = '수의 길 �
     start,
     end: Math.max(end, start + step * 4),
     step,
-    marks: values.map((value, index) => ({ value, label: index === 0 ? 'A' : index === 1 ? 'B' : undefined, active: index === values.length - 1 })),
+    marks: values.map((value, index) => ({ value, active: index === values.length - 1 })),
   };
 };
 
