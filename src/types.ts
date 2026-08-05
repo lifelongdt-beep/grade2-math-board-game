@@ -157,6 +157,20 @@ export interface ClockVisual {
   example?: boolean;
 }
 
+export interface TableVisual {
+  kind: 'table';
+  label: string;
+  categoryLabel: string;
+  valueLabel: string;
+  /** value가 null이면 학생이 채워야 할 빈칸으로 표시합니다. */
+  columns: Array<{
+    name: string;
+    value: number | null;
+  }>;
+  totalLabel?: string;
+  total?: number | null;
+}
+
 export interface CalendarVisual {
   kind: 'calendar';
   label: string;
@@ -204,6 +218,7 @@ export type QuestionVisual =
   | BarModelVisual
   | RulerVisual
   | ClockVisual
+  | TableVisual
   | CalendarVisual
   | PictographVisual
   | ArrayVisual

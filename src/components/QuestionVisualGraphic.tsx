@@ -414,6 +414,78 @@ function ClockGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'clo
   );
 }
 
+function TableGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'table' }> }) {
+  const cells = [...visual.columns.map((column) => ({ name: column.name, value: column.value }))];
+  if (visual.totalLabel) cells.push({ name: visual.totalLabel, value: visual.total ?? null });
+
+  const labelWidth = 96;
+  const cellWidth = Math.max(58, Math.min(84, Math.round(320 / Math.max(cells.length, 1))));
+  const width = 24 + labelWidth + cellWidth * cells.length;
+  const rowHeight = 40;
+  const top = 26;
+  const height = top + rowHeight * 2 + 22;
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="3" y="3" width={width - 6} height={height - 6} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {[0, 1].map((row) => (
+        <rect
+          key={row}
+          x="12"
+          y={top + row * rowHeight}
+          width={labelWidth + cellWidth * cells.length}
+          height={rowHeight}
+          fill={row === 0 ? '#e6f7f7' : '#ffffff'}
+          stroke="#7fb9bb"
+          strokeWidth="2"
+        />
+      ))}
+      {[visual.categoryLabel, visual.valueLabel].map((text, row) => (
+        <text
+          key={text}
+          x={12 + labelWidth / 2}
+          y={top + row * rowHeight + rowHeight / 2 + 6}
+          textAnchor="middle"
+          fill="#0f6f70"
+          fontSize="15"
+          fontWeight="900"
+        >
+          {text}
+        </text>
+      ))}
+      {cells.map((cell, index) => {
+        const x = 12 + labelWidth + index * cellWidth;
+        const isTotal = Boolean(visual.totalLabel) && index === cells.length - 1;
+        return (
+          <g key={`${cell.name}-${index}`}>
+            <line x1={x} y1={top} x2={x} y2={top + rowHeight * 2} stroke="#7fb9bb" strokeWidth="2" />
+            <text
+              x={x + cellWidth / 2}
+              y={top + rowHeight / 2 + 6}
+              textAnchor="middle"
+              fill={isTotal ? '#9a6b12' : '#24364a'}
+              fontSize="15"
+              fontWeight="900"
+            >
+              {cell.name}
+            </text>
+            <text
+              x={x + cellWidth / 2}
+              y={top + rowHeight + rowHeight / 2 + 7}
+              textAnchor="middle"
+              fill={cell.value === null ? '#c2454f' : '#182433'}
+              fontSize="17"
+              fontWeight="900"
+            >
+              {cell.value === null ? '?' : cell.value}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 const WEEKDAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
 function CalendarGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'calendar' }> }) {
@@ -589,6 +661,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'ruler' && <RulerGraphic visual={visual} />}
       {visual.kind === 'clock' && <ClockGraphic visual={visual} />}
       {visual.kind === 'calendar' && <CalendarGraphic visual={visual} />}
+      {visual.kind === 'table' && <TableGraphic visual={visual} />}
       {visual.kind === 'pictograph' && <PictographGraphic visual={visual} />}
       {visual.kind === 'array' && <ArrayGraphic visual={visual} />}
       {visual.kind === 'pattern' && <PatternGraphic visual={visual} />}

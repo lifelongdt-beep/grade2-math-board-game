@@ -436,6 +436,17 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     };
   }
 
+  if (visual.kind === 'table') {
+    return {
+      ...visual,
+      label: cleanGrade2Text(visual.label),
+      categoryLabel: cleanGrade2Text(visual.categoryLabel),
+      valueLabel: cleanGrade2Text(visual.valueLabel),
+      columns: visual.columns.map((column) => ({ ...column, name: cleanGrade2Text(column.name) })),
+      ...(visual.totalLabel ? { totalLabel: cleanGrade2Text(visual.totalLabel) } : {}),
+    };
+  }
+
   if (
     visual.kind === 'ruler' ||
     visual.kind === 'clock' ||
