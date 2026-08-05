@@ -5989,7 +5989,7 @@ const surveyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
       lesson, difficulty, index,
       '조사를 시작하기 전에 가장 먼저 정할 것은?',
       '무엇을 조사할지 정한다',
-      ['표의 색깔을 정한다', '합계를 먼저 쓴다', '그래프를 먼저 그린다'],
+      ['표의 색깔을 정한다', '합계를 먼저 쓴다', '답을 미리 정해 둔다'],
       `조사는 무엇을 조사할지 정하는 것부터 시작합니다. 그다음에 누구에게 어떻게 물어볼지 정합니다.`,
       'data',
       '조사 계획 세우기',
