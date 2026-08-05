@@ -1983,6 +1983,162 @@ const calcUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
     );
   }
 
+  // 세 수의 계산을 해 볼까요
+  if (title.includes('세 수의 계산')) {
+    const a = 10 + (seed % 30);
+    const b = 5 + (seed % 20);
+    const c = 3 + ((seed + 4) % 15);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}+${c}는 얼마일까요?`,
+        a + b + c, [a + b, b + c, a + b + c + 10],
+        `앞에서부터 차례로 계산합니다. ${a}+${b}=${a + b}, ${a + b}+${c}=${a + b + c}입니다.`,
+        'addition', '세 수의 덧셈을 차례로 하기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a + b + c}-${b}-${c}는 얼마일까요?`,
+        a, [a + b, a - c, a + c],
+        `앞에서부터 차례로 뺍니다. ${a + b + c}-${b}=${a + c}, ${a + c}-${c}=${a}입니다.`,
+        'subtraction', '세 수의 뺄셈을 차례로 하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}-${c}는 얼마일까요?`,
+        a + b - c, [a + b + c, a - b + c, a + b],
+        `앞에서부터 계산합니다. ${a}+${b}=${a + b}, ${a + b}-${c}=${a + b - c}입니다.`,
+        'addition', '더하고 빼는 세 수의 계산하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '세 수의 계산은 어떤 차례로 할까요?',
+        '앞에서부터 차례로',
+        ['뒤에서부터 거꾸로', '큰 수부터', '작은 수부터'],
+        '세 수의 덧셈과 뺄셈은 앞에서부터 차례로 계산합니다.',
+        'addition', '세 수를 계산하는 차례 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `버스에 ${a}명이 타고 있었습니다. ${b}명이 더 타고 ${c}명이 내렸습니다. 지금 버스에는 몇 명이 있을까요?`,
+      `${a + b - c}명`, [`${a + b + c}명`, `${a - b + c}명`, `${a + b}명`],
+      `타면 더하고 내리면 뺍니다. ${a}+${b}-${c}=${a + b - c}명입니다.`,
+      'addition', '세 수의 계산을 이야기 문제에 쓰기',
+    );
+  }
+
+  // 덧셈과 뺄셈의 관계를 식으로 나타내 볼까요
+  if (title.includes('관계를 식으로')) {
+    const a = 10 + (seed % 40);
+    const b = 5 + (seed % 25);
+    const sum = a + b;
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}=${sum}을 뺄셈식으로 나타내면?`,
+        `${sum}-${b}=${a}`,
+        [`${sum}+${b}=${a}`, `${a}-${b}=${sum}`, `${b}-${a}=${sum}`],
+        `전체 ${sum}에서 ${b}를 빼면 ${a}가 됩니다.`,
+        'subtraction', '덧셈식을 뺄셈식으로 바꾸기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${sum}-${a}=${b}를 덧셈식으로 나타내면?`,
+        `${b}+${a}=${sum}`,
+        [`${sum}+${a}=${b}`, `${b}-${a}=${sum}`, `${a}+${sum}=${b}`],
+        `부분 ${b}와 ${a}를 더하면 전체 ${sum}이 됩니다.`,
+        'addition', '뺄셈식을 덧셈식으로 바꾸기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}=${sum}에서 전체를 나타내는 수는?`,
+        sum, [a, b, a - b],
+        `두 부분을 더한 ${sum}이 전체입니다.`,
+        'addition', '전체와 부분 구별하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '덧셈과 뺄셈은 어떤 관계일까요?',
+        '한 상황을 두 가지 식으로 쓸 수 있다',
+        ['서로 관계가 없다', '덧셈이 더 정확하다', '뺄셈만 쓸 수 있다'],
+        '전체와 부분의 관계를 덧셈식으로도, 뺄셈식으로도 나타낼 수 있습니다.',
+        'addition', '두 계산의 관계 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${sum}-${b}=${a}가 맞는지 덧셈으로 확인하면?`,
+      `${a}+${b}=${sum}`,
+      [`${a}-${b}=${sum}`, `${sum}+${a}=${b}`, `${b}+${sum}=${a}`],
+      `뺀 결과에 뺀 수를 더해 처음 수가 되면 바르게 계산한 것입니다.`,
+      'addition', '덧셈으로 뺄셈 검산하기',
+    );
+  }
+
+  // □의 값을 구해 볼까요
+  if (title.includes('□의 값')) {
+    const a = 10 + (seed % 30);
+    const b = 5 + (seed % 20);
+    const sum = a + b;
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+□=${sum}일 때 □에 알맞은 수는?`,
+        b, [a, sum, sum + a],
+        `전체에서 아는 부분을 빼면 됩니다. ${sum}-${a}=${b}입니다.`,
+        'subtraction', '덧셈식에서 □ 구하기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `□-${b}=${a}일 때 □에 알맞은 수는?`,
+        sum, [a, b, a - b],
+        `빼기 전의 수는 결과에 뺀 수를 더해 구합니다. ${a}+${b}=${sum}입니다.`,
+        'addition', '뺄셈식에서 처음 수 구하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${sum}-□=${a}일 때 □에 알맞은 수는?`,
+        b, [sum, a, sum + a],
+        `빼는 수는 전체에서 결과를 빼면 됩니다. ${sum}-${a}=${b}입니다.`,
+        'subtraction', '뺄셈식에서 빼는 수 구하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '모르는 수를 □로 나타내면 좋은 점은?',
+        '식을 세워 답을 찾을 수 있다',
+        ['계산하지 않아도 된다', '답이 여러 개가 된다', '문제가 쉬워 보인다'],
+        '모르는 수를 □로 두면 식을 세워 차근차근 구할 수 있습니다.',
+        'addition', '□를 쓰는 까닭 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `사탕 ${sum}개 중 몇 개를 먹었더니 ${a}개가 남았습니다. 먹은 사탕은 몇 개일까요?`,
+      `${b}개`, [`${sum}개`, `${a}개`, `${sum + a}개`],
+      `먹은 수를 □로 두면 ${sum}-□=${a}이고, ${sum}-${a}=${b}개입니다.`,
+      'subtraction', '□를 이용해 이야기 문제 풀기',
+    );
+  }
+
   return null;
 };
 
