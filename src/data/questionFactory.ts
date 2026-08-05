@@ -4364,9 +4364,318 @@ const timesTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
   );
 };
 
+// -- 2-1 6단원 곱셈 (동아출판 2-1 지도서 306~329쪽) --
+// 차시: 여러 가지 방법으로 세기 -> 묶어 세기 -> 몇의 몇 배 알기 ->
+//       몇의 몇 배로 나타내기 -> 곱셈 알기 -> 곱셈식으로 나타내기
+const multiplyUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (lesson.unitTitle !== '곱셈') return null;
+
+  const title = lesson.title;
+  const variant = variantForDifficulty(difficulty, index, 5, 3);
+  const each = 2 + (index % 6);
+  const groups = 3 + ((index + 2) % 5);
+  const total = each * groups;
+  const repeated = Array.from({ length: groups }, () => each).join('+');
+
+  if (title.includes('여러 가지 방법으로 세어')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `구슬 ${total}개를 빠르게 세는 방법으로 알맞은 것은?`,
+        '몇 개씩 묶어서 센다',
+        ['하나씩 오래 센다', '눈으로 어림한다', '세지 않고 넘어간다'],
+        '묶어 세면 하나씩 세는 것보다 빠르고 정확하게 셀 수 있습니다.',
+        'multiplication', '빠르게 세는 방법 고르기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}씩 ${groups}번 뛰어 세면 얼마일까요?`,
+        total, [each + groups, total + each, Math.max(1, total - each)],
+        `${each}씩 ${groups}번 뛰어 세면 ${total}입니다.`,
+        'multiplication', '뛰어 세기로 전체 수 구하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '하나씩 세기와 묶어 세기의 결과를 비교하면?',
+        '세는 방법이 달라도 전체 수는 같다',
+        ['묶어 세면 더 많아진다', '하나씩 세면 더 많아진다', '비교할 수 없다'],
+        '어떻게 세든 물건의 수는 변하지 않습니다.',
+        'multiplication', '세는 방법과 전체 수의 관계 알기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${total}개를 ${each}개씩 묶으면 몇 묶음이 될까요?`,
+        `${groups}묶음`, [`${each}묶음`, `${groups + 1}묶음`, `${total}묶음`],
+        `${each}개씩 묶으면 ${groups}묶음이 됩니다.`,
+        'multiplication', '묶음의 수 세어 보기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${each}씩 뛰어 셀 때 두 번째로 세는 수는?`,
+      each * 2, [each, each * 3, each + 2],
+      `${each}씩 뛰어 세면 ${each}, ${each * 2}, ${each * 3}으로 이어집니다.`,
+      'multiplication', '뛰어 세는 순서 알기',
+    );
+  }
+
+  if (title.includes('묶어 세어')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}개씩 ${groups}묶음은 모두 몇 개일까요?`,
+        `${total}개`, [`${each + groups}개`, `${total + each}개`, `${Math.max(1, total - each)}개`],
+        `${each}개씩 ${groups}묶음이므로 모두 ${total}개입니다.`,
+        'multiplication', '몇씩 몇 묶음의 전체 수 구하기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${total}개를 ${groups}묶음으로 똑같이 나누면 한 묶음에 몇 개일까요?`,
+        `${each}개`, [`${groups}개`, `${each + 1}개`, `${total}개`],
+        `${each}개씩 ${groups}묶음이면 ${total}개이므로 한 묶음은 ${each}개입니다.`,
+        'multiplication', '한 묶음의 수 구하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}개씩 ${groups}묶음을 덧셈식으로 쓰면?`,
+        repeated,
+        [`${each}+${groups}`, `${total}+${each}`, `${each}+${each}`],
+        `${each}가 ${groups}묶음이므로 ${each}를 ${groups}번 더합니다.`,
+        'multiplication', '묶어 세기를 덧셈식으로 쓰기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `같은 물건을 ${each}개씩 묶을 때와 ${groups}개씩 묶을 때 묶음 수는?`,
+        '묶는 수가 다르면 묶음 수도 다르다',
+        ['항상 같다', '묶음 수는 변하지 않는다', '전체 수가 달라진다'],
+        '한 묶음에 담는 수가 달라지면 묶음 수도 달라집니다. 전체 수는 그대로입니다.',
+        'multiplication', '묶는 방법에 따른 묶음 수 비교하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${each}개씩 ${groups}묶음에서 한 묶음이 더 늘면 모두 몇 개일까요?`,
+      `${total + each}개`, [`${total}개`, `${total + 1}개`, `${total + groups}개`],
+      `한 묶음이 늘면 ${each}개가 늘어나므로 ${total + each}개입니다.`,
+      'multiplication', '묶음이 늘 때의 변화 알기',
+    );
+  }
+
+  if (title.includes('몇의 몇 배를 알아')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}씩 ${groups}묶음은 ${each}의 몇 배일까요?`,
+        `${groups}배`, [`${each}배`, `${groups + 1}배`, `${total}배`],
+        `똑같은 묶음이 ${groups}개이므로 ${each}의 ${groups}배입니다.`,
+        'multiplication', '묶음 수로 몇 배 말하기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}의 ${groups}배는 얼마일까요?`,
+        total, [each + groups, total + each, Math.max(1, total - each)],
+        `${each}를 ${groups}번 더한 것과 같으므로 ${total}입니다.`,
+        'multiplication', '몇의 몇 배의 값 구하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '몇 배라고 말할 수 있는 때는 언제일까요?',
+        '똑같은 묶음이 여러 개 있을 때',
+        ['묶음의 수가 모두 다를 때', '물건이 많을 때', '수를 셀 수 없을 때'],
+        '배는 똑같은 묶음이 몇 번 있는지를 나타내는 말입니다.',
+        'multiplication', '몇 배의 뜻 알기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}의 1배는 얼마일까요?`,
+        each, [1, each * 2, 0],
+        `1배는 한 묶음이므로 ${each} 그대로입니다.`,
+        'multiplication', '1배의 뜻 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${each}의 ${groups}배와 ${each}씩 ${groups}묶음은 어떤 관계일까요?`,
+      '같은 것을 다르게 말한 것이다',
+      ['서로 다른 수이다', '배가 더 크다', '묶음이 더 크다'],
+      `똑같은 묶음이 ${groups}개인 상황을 ${each}의 ${groups}배라고도 합니다.`,
+      'multiplication', '묶음과 배를 잇기',
+    );
+  }
+
+  if (title.includes('몇의 몇 배로 나타내')) {
+    const small = 2 + (index % 4);
+    const times = 2 + ((index + 1) % 4);
+    const big = small * times;
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `빨간 끈이 ${small}cm, 파란 끈이 ${big}cm입니다. 파란 끈은 빨간 끈의 몇 배일까요?`,
+        `${times}배`, [`${small}배`, `${times + 1}배`, `${big}배`],
+        `${small}이 ${times}번이면 ${big}이므로 ${times}배입니다.`,
+        'multiplication', '두 양을 비교해 몇 배 구하기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${small}의 ${times}배인 수는 얼마일까요?`,
+        big, [small + times, big + small, Math.max(1, big - small)],
+        `${small}을 ${times}번 더하면 ${big}입니다.`,
+        'multiplication', '몇 배인 수 구하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${big}은 ${small}의 몇 배일까요?`,
+        `${times}배`, [`${big}배`, `${times + 1}배`, `${small}배`],
+        `${small}씩 ${times}묶음이면 ${big}이므로 ${times}배입니다.`,
+        'multiplication', '기준이 되는 수로 몇 배 구하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '몇 배를 구할 때 기준이 되는 수는 어느 것일까요?',
+        '비교의 바탕이 되는 작은 쪽',
+        ['항상 큰 쪽', '가운데 수', '아무 수나'],
+        '기준이 되는 수를 몇 번 모으면 비교하는 수가 되는지를 봅니다.',
+        'multiplication', '기준이 되는 수 찾기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${small}의 ${times}배와 ${small}의 ${times + 1}배 중 더 큰 것은?`,
+      `${small}의 ${times + 1}배`,
+      [`${small}의 ${times}배`, '두 값이 같다', '비교할 수 없다'],
+      `배가 클수록 결과도 큽니다. ${small * (times + 1)}이 ${big}보다 큽니다.`,
+      'multiplication', '몇 배의 크기 비교하기',
+    );
+  }
+
+  if (title.includes('곱셈을 알아')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}의 ${groups}배를 곱셈식으로 나타내면?`,
+        `${each}×${groups}`, [`${each}+${groups}`, `${groups}×${groups}`, `${each}×${each}`],
+        `몇의 몇 배는 곱셈식으로 나타냅니다. ${each}의 ${groups}배는 ${each}×${groups}입니다.`,
+        'multiplication', '몇의 몇 배를 곱셈식으로 쓰기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}×${groups}를 읽으면?`,
+        `${each} 곱하기 ${groups}`,
+        [`${each} 더하기 ${groups}`, `${each} 빼기 ${groups}`, `${groups} 곱하기 ${each}`],
+        '×는 곱하기라고 읽습니다.',
+        'multiplication', '곱셈식 읽기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${repeated}을 곱셈식으로 나타내면?`,
+        `${each}×${groups}`, [`${each}+${groups}`, `${groups}×${groups}`, `${each}×${each}`],
+        `같은 수 ${each}를 ${groups}번 더한 것이므로 ${each}×${groups}입니다.`,
+        'multiplication', '덧셈식을 곱셈식으로 바꾸기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}×${groups}의 값은 얼마일까요?`,
+        total, [each + groups, total + each, Math.max(1, total - each)],
+        `${each}를 ${groups}번 더하면 ${total}입니다.`,
+        'multiplication', '곱셈식의 값 구하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '곱셈식으로 나타내면 좋은 점은?',
+      '같은 수를 여러 번 더하는 것을 짧게 쓸 수 있다',
+      ['수가 작아진다', '답이 달라진다', '더하지 않아도 된다'],
+      '같은 수를 여러 번 더하는 상황을 곱셈식으로 간단히 나타낼 수 있습니다.',
+      'multiplication', '곱셈식의 편리한 점 알기',
+    );
+  }
+
+  if (title.includes('곱셈식으로 나타내')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `한 접시에 ${each}개씩 ${groups}접시에 담았습니다. 곱셈식으로 나타내면?`,
+        `${each}×${groups}`, [`${groups}×${groups}`, `${each}+${groups}`, `${each}×${each}`],
+        `한 묶음의 수 ${each}와 묶음 수 ${groups}를 곱합니다.`,
+        'multiplication', '이야기 상황을 곱셈식으로 쓰기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}×${groups}에서 앞의 수 ${each}는 무엇을 나타낼까요?`,
+        '한 묶음의 수', ['묶음의 수', '전체 수', '남은 수'],
+        '곱셈식에서 앞의 수는 한 묶음에 몇 개인지를 나타냅니다.',
+        'multiplication', '곱셈식에서 각 수의 뜻 알기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}×${groups}에서 뒤의 수 ${groups}는 무엇을 나타낼까요?`,
+        '묶음의 수', ['한 묶음의 수', '전체 수', '남은 수'],
+        '곱셈식에서 뒤의 수는 묶음이 몇 개인지를 나타냅니다.',
+        'multiplication', '곱셈식에서 묶음 수 알기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${total}개를 나타내는 곱셈식으로 알맞은 것은?`,
+        `${each}×${groups}`, [`${each}+${groups}`, `${total}×${each}`, `${each}×${each}`],
+        `${each}개씩 ${groups}묶음이면 ${total}개이므로 ${each}×${groups}입니다.`,
+        'multiplication', '전체 수에 맞는 곱셈식 고르기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${each}×${groups}와 ${groups}×${each}의 값을 비교하면?`,
+      '두 값이 같다',
+      [`${each}×${groups}가 더 크다`, `${groups}×${each}가 더 크다`, '비교할 수 없다'],
+      `두 수를 바꾸어 곱해도 결과는 같습니다. 둘 다 ${total}입니다.`,
+      'multiplication', '순서를 바꾼 곱셈식 비교하기',
+    );
+  }
+
+  return null;
+};
+
 const multiplicationQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const timesTable = timesTableQuestion(lesson, difficulty, index);
   if (timesTable) return timesTable;
+
+  const multiplyUnit = multiplyUnitQuestion(lesson, difficulty, index);
+  if (multiplyUnit) return multiplyUnit;
 
   return legacyMultiplicationQuestion(lesson, difficulty, index);
 };
