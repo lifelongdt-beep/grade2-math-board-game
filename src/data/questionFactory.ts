@@ -4849,15 +4849,24 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
   }
 
   if (question.type === 'data' || question.type === 'classification') {
-    return pictographVisualFor(
-      [
-        { label: '가', count: promptNumbers[0] ?? 5 },
-        { label: '나', count: promptNumbers[1] ?? 7 },
-        { label: '다', count: promptNumbers[2] ?? 4 },
-      ],
-      1,
-      '자료 조사 그림그래프',
-    );
+    const labeledCounts = question.prompt
+      .match(/[가-힣]{1,4}\s*\d+(?:명|개)/g)
+      ?.map((chunk) => {
+        const chunkMatch = chunk.match(/^([가-힣]{1,4})\s*(\d+)/);
+        return chunkMatch ? { label: chunkMatch[1], count: Number(chunkMatch[2]) } : null;
+      })
+      .filter((item): item is { label: string; count: number } => item !== null);
+
+    const items =
+      labeledCounts && labeledCounts.length >= 2
+        ? labeledCounts.slice(0, 3)
+        : [
+            { label: '가', count: promptNumbers[0] ?? 5 },
+            { label: '나', count: promptNumbers[1] ?? 7 },
+            { label: '다', count: promptNumbers[2] ?? 4 },
+          ];
+
+    return pictographVisualFor(items, 1, '자료 조사 그림그래프');
   }
 
   if (question.type === 'multiplication') {
