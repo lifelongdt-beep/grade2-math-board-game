@@ -3539,6 +3539,107 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     );
   }
 
+  if (title.includes('어림해 볼까요 ⑴') || title.includes('길이를 어림하고')) {
+    const span = 10 + (seed % 10);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '내 몸을 이용해 길이를 어림할 때 쓸 수 있는 것은?',
+        '뼘, 걸음, 양팔 길이',
+        ['눈의 크기', '목소리', '머리카락 색깔'],
+        '뼘이나 걸음처럼 몸의 부분은 늘 가지고 다닐 수 있어 어림에 쓰기 좋습니다.',
+        'measurement', '몸의 부분으로 어림하기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `한 뼘이 약 ${span}cm인 사람이 두 뼘으로 잰 길이는 약 얼마일까요?`,
+        `약 ${span * 2}cm`, [`약 ${span}cm`, `약 ${span * 3}cm`, `약 ${span + 2}cm`],
+        `한 뼘이 약 ${span}cm이므로 두 뼘은 약 ${span * 2}cm입니다.`,
+        'measurement', '뼘으로 길이 어림하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '어림한 길이를 말할 때 쓰는 말은?',
+        '약', ['정확히', '반드시', '모두'],
+        '어림한 길이는 정확한 값이 아니므로 약 몇 cm라고 말합니다.',
+        'measurement', '어림한 값을 말하는 방법 알기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '어림한 길이와 자로 잰 길이가 다를 때 알맞은 생각은?',
+        '어림은 대강의 값이라 다를 수 있다',
+        ['어림이 틀렸으니 하면 안 된다', '자가 잘못되었다', '길이가 변했다'],
+        '어림은 대강 짐작하는 것이므로 잰 값과 조금 다를 수 있습니다.',
+        'measurement', '어림과 잰 값의 차이 이해하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '어림을 잘하려면 무엇이 필요할까요?',
+      '알고 있는 길이를 기준으로 삼는 것',
+      ['빠르게 말하는 것', '눈을 감는 것', '아무 수나 대는 것'],
+      '1cm나 한 뼘처럼 아는 길이를 기준으로 삼으면 어림이 정확해집니다.',
+      'measurement', '어림의 기준 정하기',
+    );
+  }
+
+  if (title.includes('어림해 볼까요 ⑵')) {
+    const known = 10 * (1 + (seed % 5));
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `길이가 ${known}cm인 색 테이프를 기준으로 물건의 길이를 어림하려고 합니다. 알맞은 방법은?`,
+        `${known}cm가 몇 번쯤 들어가는지 본다`,
+        ['눈을 감고 생각한다', '무게를 재어 본다', '색깔을 비교한다'],
+        `아는 길이가 몇 번 들어가는지 보면 전체 길이를 어림할 수 있습니다.`,
+        'measurement', '아는 길이를 기준으로 어림하기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${known}cm짜리가 3번쯤 들어가는 물건의 길이는 약 얼마일까요?`,
+        `약 ${known * 3}cm`, [`약 ${known}cm`, `약 ${known * 2}cm`, `약 ${known + 3}cm`],
+        `${known}cm가 3번이면 약 ${known * 3}cm입니다.`,
+        'measurement', '기준 길이를 여러 번 써서 어림하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '1m를 어림할 때 기준으로 삼기 좋은 것은?',
+        '양팔을 벌린 길이',
+        ['새끼손가락 길이', '연필 한 자루', '지우개 하나'],
+        '어른이나 아이의 양팔을 벌린 길이는 1m와 비슷해 기준으로 쓰기 좋습니다.',
+        'measurement', '1m를 어림하는 기준 찾기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '어림한 뒤에 자로 재어 보면 좋은 점은?',
+        '어림이 얼마나 가까웠는지 알 수 있다',
+        ['어림을 안 해도 된다', '자가 필요 없어진다', '길이가 정확해진다'],
+        '재어 보면 어림이 얼마나 가까웠는지 알 수 있어 다음 어림이 더 정확해집니다.',
+        'measurement', '어림한 뒤 확인하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '긴 거리를 어림할 때 알맞은 기준은?',
+      '걸음 수',
+      ['손톱 길이', '연필 길이', '지우개 길이'],
+      '긴 거리는 걸음처럼 큰 기준으로 어림해야 편합니다.',
+      'measurement', '길이에 맞는 어림 기준 고르기',
+    );
+  }
+
   if (title.includes('길이의 합')) {
     const a = 1 + (seed % 4);
     const acm = 10 + (seed % 40);
@@ -4998,6 +5099,108 @@ const clockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
   const variant = variantForDifficulty(difficulty, index, 6, 3);
   const hour = 1 + (index % 12);
 
+  // 몇 시 몇 분을 읽어 볼까요 ⑴ : 5분 단위
+  if (title.includes('몇 시 몇 분을 읽어 볼까요 ⑴')) {
+    const five = 5 * (1 + (index % 11));
+    const pointer = five / 5;
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `긴바늘이 숫자 ${pointer}를 가리키면 몇 분일까요?`,
+        `${five}분`, [`${pointer}분`, `${five + 5}분`, `${Math.max(0, five - 5)}분`],
+        `긴바늘이 숫자 한 칸을 지날 때마다 5분입니다. ${pointer}×5=${five}분입니다.`,
+        'time', '긴바늘이 가리키는 숫자로 분 읽기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '긴바늘이 숫자 한 칸을 지나면 몇 분이 지날까요?',
+        '5분', ['1분', '10분', '12분'],
+        '시계의 숫자와 숫자 사이는 5분입니다.',
+        'time', '숫자 한 칸이 5분임을 알기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${five}분일 때 긴바늘은 어느 숫자를 가리킬까요?`,
+        `${pointer}`, [`${five}`, `${pointer + 1}`, '12'],
+        `5씩 뛰어 세면 ${five}분은 숫자 ${pointer}입니다.`,
+        'time', '분을 보고 긴바늘 위치 찾기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '5분 단위로 분을 읽을 때 쓰는 방법은?',
+        '숫자를 5씩 뛰어 센다',
+        ['숫자를 그대로 읽는다', '1씩 센다', '짧은바늘을 본다'],
+        '긴바늘이 가리키는 숫자를 5씩 뛰어 세면 몇 분인지 알 수 있습니다.',
+        'time', '5씩 뛰어 세어 분 읽기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `짧은바늘이 ${hour}과 ${hour === 12 ? 1 : hour + 1} 사이에 있고 긴바늘이 ${pointer}를 가리킵니다. 몇 시 몇 분일까요?`,
+      `${hour}시 ${five}분`,
+      [`${hour === 12 ? 1 : hour + 1}시 ${five}분`, `${hour}시 ${pointer}분`, `${five}시 ${hour}분`],
+      `짧은바늘이 지나온 숫자가 시이고, 긴바늘의 ${pointer}는 ${five}분입니다.`,
+      'time', '5분 단위로 몇 시 몇 분 읽기',
+    );
+  }
+
+  // 몇 시 몇 분을 읽어 볼까요 ⑵ : 1분 단위
+  if (title.includes('몇 시 몇 분을 읽어 볼까요 ⑵')) {
+    const base = 5 * (1 + (index % 10));
+    const extra = 1 + (index % 4);
+    const minute = base + extra;
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '시계의 작은 눈금 한 칸은 몇 분일까요?',
+        '1분', ['5분', '10분', '60분'],
+        '숫자와 숫자 사이를 다섯 칸으로 나눈 작은 눈금 한 칸이 1분입니다.',
+        'time', '작은 눈금 한 칸이 1분임을 알기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `긴바늘이 숫자 ${base / 5}에서 작은 눈금으로 ${extra}칸 더 갔습니다. 몇 분일까요?`,
+        `${minute}분`, [`${base}분`, `${base / 5 + extra}분`, `${minute + 5}분`],
+        `숫자 ${base / 5}는 ${base}분이고 작은 눈금 ${extra}칸은 ${extra}분이므로 ${minute}분입니다.`,
+        'time', '작은 눈금까지 세어 분 읽기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${minute}분은 숫자 ${base / 5}에서 작은 눈금 몇 칸을 더 간 것일까요?`,
+        `${extra}칸`, [`${base}칸`, `${extra + 1}칸`, '5칸'],
+        `${minute}-${base}=${extra}이므로 작은 눈금 ${extra}칸을 더 간 것입니다.`,
+        'time', '분에서 작은 눈금 수 구하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '숫자와 숫자 사이에는 작은 눈금이 몇 칸 있을까요?',
+        '5칸', ['1칸', '10칸', '12칸'],
+        '숫자 사이가 5분이고 한 칸이 1분이므로 작은 눈금은 5칸입니다.',
+        'time', '숫자 사이의 눈금 수 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${hour}시 ${minute}분을 읽을 때 긴바늘을 어떻게 볼까요?`,
+      '숫자를 5씩 세고 작은 눈금을 1씩 더 센다',
+      ['숫자만 읽는다', '작은 눈금만 센다', '짧은바늘로 센다'],
+      `숫자까지는 5씩, 남은 작은 눈금은 1씩 세어 ${minute}분을 읽습니다.`,
+      'time', '1분 단위로 시각 읽는 방법 알기',
+    );
+  }
+
   // 여러 가지 방법으로 시각을 읽어 볼까요 (몇 시 몇 분 전)
   if (title.includes('여러 가지 방법')) {
     const before = 5 * (1 + (index % 3));
@@ -6078,6 +6281,114 @@ const ruleUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
 
   const title = lesson.title;
   const variant = variantForDifficulty(difficulty, index, 5, 3);
+
+  if (title.includes('무늬에서 규칙을 찾아볼까요 ⑴')) {
+    const shapes = ['○', '△', '□'];
+    const colours = ['빨강', '노랑', '파랑'];
+    const startAt = index % 3;
+    if (variant === 0) {
+      const seq = [0, 1, 2, 0, 1].map((i) => shapes[(i + startAt) % 3]);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${seq.join(', ')} 다음에 올 모양은?`,
+        shapes[(2 + startAt) % 3],
+        shapes.filter((sh) => sh !== shapes[(2 + startAt) % 3]).concat('알 수 없다'),
+        `${shapes[startAt]}, ${shapes[(1 + startAt) % 3]}, ${shapes[(2 + startAt) % 3]}이 반복되는 규칙입니다.`,
+        'pattern', '반복되는 모양의 다음 찾기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${colours[startAt]}, ${colours[(1 + startAt) % 3]}, ${colours[startAt]}, ${colours[(1 + startAt) % 3]}으로 이어집니다. 반복되는 묶음은 몇 개짜리일까요?`,
+        '2개', ['1개', '3개', '4개'],
+        `${colours[startAt]}과 ${colours[(1 + startAt) % 3]} 두 개가 반복되는 규칙입니다.`,
+        'pattern', '반복되는 묶음의 크기 찾기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '무늬에서 규칙을 찾을 때 먼저 할 일은?',
+        '반복되는 한 묶음을 찾는다',
+        ['맨 끝을 먼저 본다', '색깔을 센다', '개수를 모두 센다'],
+        '어디까지가 한 묶음인지 찾으면 다음에 올 것을 알 수 있습니다.',
+        'pattern', '규칙을 찾는 방법 알기',
+      );
+    }
+    if (variant === 3) {
+      const seq = [0, 1, 0, 1, 0].map((i) => shapes[(i + startAt) % 3]);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${seq.join(', ')}에서 빈칸에 올 모양은?`,
+        shapes[(1 + startAt) % 3],
+        [shapes[startAt], shapes[(2 + startAt) % 3], '알 수 없다'],
+        `${shapes[startAt]}과 ${shapes[(1 + startAt) % 3]}이 번갈아 나오는 규칙입니다.`,
+        'pattern', '번갈아 나오는 규칙 찾기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '무늬가 반복된다는 것은 무슨 뜻일까요?',
+      '같은 순서가 되풀이된다',
+      ['모양이 점점 커진다', '색깔이 사라진다', '순서가 뒤바뀐다'],
+      '반복되는 무늬는 같은 순서가 계속 되풀이됩니다.',
+      'pattern', '반복의 뜻 알기',
+    );
+  }
+
+  if (title.includes('무늬에서 규칙을 찾아볼까요 ⑵')) {
+    const start = 1 + (index % 3);
+    const step = 1 + (index % 2);
+    if (variant === 0) {
+      const seq = [start, start + step, start + step * 2, start + step * 3];
+      return makeQuestion(
+        lesson, difficulty, index,
+        `모양의 개수가 ${seq.join('개, ')}개로 늘어납니다. 다음은 몇 개일까요?`,
+        `${start + step * 4}개`,
+        [`${start + step * 3}개`, `${start + step * 5}개`, `${start}개`],
+        `${step}개씩 늘어나는 규칙이므로 다음은 ${start + step * 4}개입니다.`,
+        'pattern', '개수가 늘어나는 규칙 찾기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '△이 오른쪽으로 조금씩 돌아가며 놓였습니다. 이것은 어떤 규칙일까요?',
+        '방향이 일정하게 바뀌는 규칙',
+        ['개수가 늘어나는 규칙', '색깔이 바뀌는 규칙', '규칙이 없다'],
+        '모양은 그대로이고 방향만 일정하게 바뀌는 규칙입니다.',
+        'pattern', '방향이 바뀌는 규칙 찾기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `모양이 ${start}개, ${start + step}개, ${start + step * 2}개로 놓였습니다. 몇 개씩 늘어날까요?`,
+        `${step}개씩`, [`${step + 1}개씩`, `${start}개씩`, '늘어나지 않는다'],
+        `앞뒤 수의 차가 ${step}이므로 ${step}개씩 늘어납니다.`,
+        'pattern', '늘어나는 크기 구하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '반복되는 규칙과 늘어나는 규칙의 다른 점은?',
+        '반복은 같은 것이 되풀이되고 늘어나는 규칙은 수가 커진다',
+        ['둘은 같은 것이다', '반복은 수가 커진다', '늘어나는 규칙은 되풀이된다'],
+        '반복 규칙은 같은 묶음이 되풀이되고, 늘어나는 규칙은 개수가 일정하게 커집니다.',
+        'pattern', '두 가지 규칙 구별하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${start}개에서 ${step}개씩 늘어날 때 세 번 뒤에는 몇 개일까요?`,
+      `${start + step * 3}개`,
+      [`${start + step}개`, `${start + step * 2}개`, `${start + step * 4}개`],
+      `${step}씩 세 번 늘어나므로 ${start}+${step * 3}=${start + step * 3}개입니다.`,
+      'pattern', '규칙을 여러 번 적용해 예상하기',
+    );
+  }
 
   if (title.includes('쌓은 모양')) {
     const start = 1 + (index % 3);
