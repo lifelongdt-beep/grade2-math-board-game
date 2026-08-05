@@ -5,78 +5,95 @@ import type { Difficulty } from '../types';
 
 const levels: Difficulty[] = ['하', '중', '상'];
 
-const hasFinalConsonant = (word: string) => {
-  const last = word.trim().slice(-1);
-  const digitJong: Record<string, boolean> = {
-    '0': true, '1': true, '3': true, '6': true, '7': true, '8': true,
-    '2': false, '4': false, '5': false, '9': false,
-  };
-  if (digitJong[last] !== undefined) return digitJong[last];
-  const code = last.charCodeAt(0);
-  if (code < 0xac00 || code > 0xd7a3) return null;
-  return (code - 0xac00) % 28 !== 0;
+const digitJong: Record<string, boolean> = {
+  '0': true, '1': true, '3': true, '6': true, '7': true, '8': true,
+  '2': false, '4': false, '5': false, '9': false,
 };
 
 const report = (title: string, rows: string[]) => {
   if (rows.length === 0) return;
   console.log(`\n===== ${title} (${rows.length}) =====`);
-  rows.slice(0, 40).forEach((row) => console.log(row));
-  if (rows.length > 40) console.log(`... and ${rows.length - 40} more`);
+  rows.slice(0, 30).forEach((row) => console.log(row));
+  if (rows.length > 30) console.log(`... and ${rows.length - 30} more`);
 };
 
 describe('audit', () => {
   it('collects suspicious generated questions', () => {
-    const particleIssues: string[] = [];
-    const duplicateChoices: string[] = [];
-    const arithmeticIssues: string[] = [];
-    const emptyish: string[] = [];
+    const particle: string[] = [];
+    const dupChoices: string[] = [];
+    const arithmetic: string[] = [];
+    const clockRange: string[] = [];
+    const negative: string[] = [];
+    const answerNotInChoices: string[] = [];
+    const visualMismatch: string[] = [];
+    const oddSpacing: string[] = [];
+    const tooLong: string[] = [];
 
     for (const lesson of lessons) {
       for (const level of levels) {
-        for (const question of generateQuestions(lesson, level)) {
-          const id = `${question.id}`;
+        for (const q of generateQuestions(lesson, level)) {
+          const id = q.id;
+          const texts = [q.prompt, q.answer, q.explanation, ...q.choices];
 
-          // particle agreement right after a digit, e.g. "73+26를"
-          const texts = [question.prompt, question.answer, question.explanation, ...question.choices];
           for (const text of texts) {
             for (const m of text.matchAll(/(\d)(을|를|이|가|은|는|와|과)(?=[\s.,?!)]|$)/g)) {
-              const jong = hasFinalConsonant(m[1]);
-              if (jong === null) continue;
-              const particle = m[2];
-              const wrong =
-                (jong && ['를', '가', '는', '와'].includes(particle)) ||
-                (!jong && ['을', '이', '은', '과'].includes(particle));
-              if (wrong) particleIssues.push(`${id}: ...${m[0]}...  | ${text}`);
+              const jong = digitJong[m[1]];
+              const bad =
+                (jong && ['를', '가', '는', '와'].includes(m[2])) ||
+                (!jong && ['을', '이', '은', '과'].includes(m[2]));
+              if (bad) particle.push(`${id}: ...${m[0]}... | ${text}`);
             }
           }
 
-          const uniq = new Set(question.choices);
-          if (uniq.size !== question.choices.length) {
-            duplicateChoices.push(`${id}: ${JSON.stringify(question.choices)} | ${question.prompt}`);
+          if (new Set(q.choices).size !== q.choices.length) {
+            dupChoices.push(`${id}: ${JSON.stringify(q.choices)}`);
           }
 
-          if (question.choices.some((c) => !c || !c.trim())) {
-            emptyish.push(`${id}: empty choice | ${question.prompt}`);
+          if (q.choices[q.answerIndex] !== q.answer) {
+            answerNotInChoices.push(`${id}: answer=${q.answer} idx=${q.answerIndex} choices=${JSON.stringify(q.choices)}`);
           }
 
-          // verify simple "A+B는?" / "A-B는?" answers
-          const calc = question.prompt.match(/(\d+)\s*([+-])\s*(\d+)\s*(?:는|은)\s*(?:얼마|몇)/);
+          for (const c of q.choices) {
+            if (/^-\d/.test(c)) negative.push(`${id}: negative choice ${c} | ${q.prompt}`);
+          }
+
+          const calc = q.prompt.match(/(\d+)\s*([+-])\s*(\d+)\s*(?:는|은)\s*(?:얼마|몇)/);
           if (calc) {
-            const a = Number(calc[1]);
-            const b = Number(calc[3]);
-            const expected = calc[2] === '+' ? a + b : a - b;
-            const got = Number(String(question.answer).match(/-?\d+/)?.[0] ?? NaN);
-            if (got !== expected) {
-              arithmeticIssues.push(`${id}: ${a}${calc[2]}${b} expected ${expected} got ${question.answer} | ${question.prompt}`);
+            const expected = calc[2] === '+' ? Number(calc[1]) + Number(calc[3]) : Number(calc[1]) - Number(calc[3]);
+            const got = Number(String(q.answer).match(/-?\d+/)?.[0] ?? NaN);
+            if (got !== expected) arithmetic.push(`${id}: expected ${expected} got ${q.answer} | ${q.prompt}`);
+          }
+
+          if (q.visual?.kind === 'clock') {
+            const v = q.visual;
+            if (v.hour < 1 || v.hour > 12) clockRange.push(`${id}: hour=${v.hour} | ${q.prompt}`);
+            if (v.minute < 0 || v.minute > 59) clockRange.push(`${id}: minute=${v.minute} | ${q.prompt}`);
+            if (v.endHour != null && (v.endHour < 1 || v.endHour > 12)) clockRange.push(`${id}: endHour=${v.endHour} | ${q.prompt}`);
+            if (v.endMinute != null && (v.endMinute < 0 || v.endMinute > 59)) clockRange.push(`${id}: endMinute=${v.endMinute} | ${q.prompt}`);
+          }
+
+          // pictograph labels should appear in the prompt when the prompt names categories
+          if (q.visual?.kind === 'pictograph') {
+            const missing = q.visual.items.map((i) => i.label).filter((label) => !q.prompt.includes(label));
+            if (missing.length === q.visual.items.length && /\d+(명|개)/.test(q.prompt)) {
+              visualMismatch.push(`${id}: labels=${JSON.stringify(q.visual.items.map((i) => i.label))} | ${q.prompt}`);
             }
           }
+
+          if (/\s{2,}/.test(q.prompt) || /\s$/.test(q.prompt)) oddSpacing.push(`${id}: "${q.prompt}"`);
+          if (q.prompt.length > 130) tooLong.push(`${id}: (${q.prompt.length}) ${q.prompt}`);
         }
       }
     }
 
-    report('PARTICLE', particleIssues);
-    report('DUPLICATE CHOICES', duplicateChoices);
-    report('ARITHMETIC', arithmeticIssues);
-    report('EMPTY CHOICE', emptyish);
+    report('PARTICLE', particle);
+    report('DUPLICATE CHOICES', dupChoices);
+    report('ANSWER NOT AT INDEX', answerNotInChoices);
+    report('NEGATIVE CHOICE', negative);
+    report('ARITHMETIC', arithmetic);
+    report('CLOCK RANGE', clockRange);
+    report('PICTOGRAPH LABEL MISMATCH', visualMismatch);
+    report('ODD SPACING', oddSpacing);
+    report('TOO LONG PROMPT', tooLong);
   });
 });
