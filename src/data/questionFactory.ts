@@ -3617,7 +3617,228 @@ const legacyMeasurementQuestion = (lesson: Lesson, difficulty: Difficulty, index
   );
 };
 
+// ── 2-1 5단원 분류하기 (동아출판 2-1 지도서 280~301쪽) ──────────────────────
+// 차시: 분류는 어떻게 할까요(분명한 기준) → 기준에 따라 분류 → 분류하고 세기 →
+//       분류한 결과 말하기
+const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (lesson.unitTitle !== '분류하기') return null;
+
+  const title = lesson.title;
+  const variant = variantForDifficulty(difficulty, index, 5, 3);
+  const red = 5 + (index % 5);
+  const blue = 2 + ((index + 2) % 4);
+  const green = 1 + ((index + 4) % 3);
+  const total = red + blue + green;
+
+  if (title.includes('분류는 어떻게')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '분류 기준으로 알맞은 것은?',
+        '누가 나누어도 결과가 같은 기준',
+        ['예쁜 것과 예쁘지 않은 것', '내가 좋아하는 것', '멋있어 보이는 것'],
+        `분류 기준은 분명해야 합니다. 사람마다 달라지는 기준은 알맞지 않습니다.`,
+        'classification', '분명한 분류 기준 고르기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '옷을 "예쁜 옷"과 "안 예쁜 옷"으로 나누면 안 되는 까닭은?',
+        '사람마다 생각이 달라 결과가 달라진다',
+        ['옷이 너무 많아서', '색깔이 많아서', '옷은 나눌 수 없어서'],
+        `예쁘다는 기준은 사람마다 다르므로 분류 기준으로 알맞지 않습니다.`,
+        'classification', '분명하지 않은 기준 알아보기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '단추를 분류하는 기준으로 알맞은 것은?',
+        '구멍의 수', ['단추의 값', '좋아하는 정도', '만든 사람'],
+        `구멍의 수는 누가 보아도 같으므로 분명한 분류 기준입니다.`,
+        'classification', '알맞은 기준 찾기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '분류를 하면 좋은 점은?',
+        '필요한 것을 쉽게 찾을 수 있다',
+        ['물건이 많아진다', '물건이 예뻐진다', '수를 몰라도 된다'],
+        `같은 것끼리 모아 두면 찾기 쉽고 정리도 편합니다.`,
+        'classification', '분류하는 까닭 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '분류할 때 한 물건은 몇 곳에 들어가야 할까요?',
+      '한 곳에만', ['두 곳에', '여러 곳에', '어디든 상관없다'],
+      `기준이 분명하면 한 물건은 한 곳에만 들어갑니다. 겹치면 안 됩니다.`,
+      'classification', '겹치지 않게 나누기',
+    );
+  }
+
+  if (title.includes('기준에 따라')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '색깔을 기준으로 분류하면 어떻게 나누어야 할까요?',
+        '같은 색깔끼리 모은다',
+        ['같은 모양끼리 모은다', '큰 것부터 모은다', '아무렇게나 모은다'],
+        `기준이 색깔이면 색깔만 보고 같은 것끼리 모읍니다.`,
+        'classification', '정해진 기준대로 나누기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '같은 물건을 모양으로 분류할 때와 색깔로 분류할 때 결과는?',
+        '기준이 다르면 묶음도 달라진다',
+        ['항상 같다', '기준과 상관없다', '나눌 수 없다'],
+        `기준을 바꾸면 묶는 방법도 달라집니다.`,
+        'classification', '기준을 바꾸면 결과가 달라짐 알기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '분류할 때 빠뜨린 물건이 있으면 어떻게 될까요?',
+        '전체 수가 실제보다 적어진다',
+        ['전체 수가 많아진다', '아무 문제 없다', '기준이 바뀐다'],
+        `빠뜨리면 센 수가 실제보다 적어지므로 빠짐없이 나누어야 합니다.`,
+        'classification', '빠짐없이 분류하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '연필, 지우개, 공책을 한 묶음으로 분류했습니다. 알맞은 기준은?',
+        '쓰임', ['색깔', '맛', '무게'],
+        `연필, 지우개, 공책은 모두 공부할 때 쓰는 물건이므로 쓰임을 기준으로 묶은 것입니다.`,
+        'classification', '묶음을 보고 기준 찾기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '분류를 마친 뒤 확인할 것은?',
+      '빠지거나 겹친 것이 없는지',
+      ['묶음이 예쁜지', '묶음이 많은지', '순서가 맞는지'],
+      `분류가 끝나면 빠진 것과 겹친 것이 없는지 확인합니다.`,
+      'classification', '분류 결과 점검하기',
+    );
+  }
+
+  if (title.includes('분류하고 세어')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `색깔별로 분류한 딱지가 빨강 ${red}개, 파랑 ${blue}개, 초록 ${green}개입니다. 딱지는 모두 몇 개일까요?`,
+        `${total}개`, [`${red + blue}개`, `${blue + green}개`, `${total + 1}개`],
+        `분류한 결과의 전체 수는 항목별 수를 모두 더합니다. ${red}+${blue}+${green}=${total}개입니다.`,
+        'data', '분류한 결과의 전체 수 구하기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '분류하여 셀 때 바르게 세는 방법은?',
+        '센 것에 표시를 하면서 센다',
+        ['눈으로만 보고 센다', '큰 것부터 센다', '두 번씩 센다'],
+        `센 것에 표시를 해야 빠뜨리거나 두 번 세지 않습니다.`,
+        'classification', '표시하며 빠짐없이 세기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `빨강 ${red}개, 파랑 ${blue}개입니다. 빨강은 파랑보다 몇 개 더 많을까요?`,
+        `${red - blue}개`, [`${red + blue}개`, `${blue}개`, `${red}개`],
+        `더 많은 정도는 두 수의 차로 구합니다. ${red}-${blue}=${red - blue}개입니다.`,
+        'data', '분류 결과의 차 구하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '분류하여 센 결과를 적어 두면 좋은 점은?',
+        '어느 것이 많고 적은지 한눈에 알 수 있다',
+        ['물건이 늘어난다', '기준이 바뀐다', '세지 않아도 된다'],
+        `센 결과를 적어 두면 많고 적음을 쉽게 비교할 수 있습니다.`,
+        'classification', '센 결과를 적는 까닭 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `딱지를 세었더니 빨강 ${red}개, 파랑 ${blue}개, 초록 ${green}개였습니다. 가장 많은 색은?`,
+      '빨강',
+      ['파랑', '초록', '모두 같음'],
+      `세 수를 비교하면 ${red}개인 빨강이 가장 많습니다.`,
+      'data', '분류하여 센 뒤 비교하기',
+    );
+  }
+
+  if (title.includes('분류한 결과를 말해')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `빨강 ${red}개, 파랑 ${blue}개, 초록 ${green}개로 분류했습니다. 가장 적은 색은?`,
+        green < blue ? '초록' : '파랑',
+        [green < blue ? '파랑' : '초록', '빨강', '모두 같음'],
+        `세 수를 비교하면 가장 작은 수인 색이 가장 적습니다.`,
+        'data', '분류 결과에서 가장 적은 것 찾기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '분류한 결과를 말할 때 알맞은 것은?',
+        '가장 많은 것과 가장 적은 것을 함께 말한다',
+        ['좋아하는 것만 말한다', '색깔만 말한다', '적은 것은 빼고 말한다'],
+        `분류 결과는 많고 적음, 전체 수처럼 알 수 있는 사실을 말합니다.`,
+        'classification', '분류 결과를 말하는 방법 알기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `분류한 결과가 빨강 ${red}개, 파랑 ${blue}개, 초록 ${green}개입니다. 알 수 있는 것은?`,
+        '색깔별 개수와 많고 적음',
+        ['딱지를 만든 사람', '딱지의 무게', '딱지를 산 날짜'],
+        `분류 결과로는 색깔별 개수와 어느 것이 많고 적은지를 알 수 있습니다.`,
+        'data', '분류 결과로 알 수 있는 것 구별하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '분류 결과를 보고 다음에 무엇을 더 준비하면 좋을지 알 수 있는 까닭은?',
+        '무엇이 적은지 알 수 있기 때문',
+        ['색깔이 예뻐서', '수가 많아서', '기준이 바뀌어서'],
+        `적은 것이 무엇인지 알면 더 준비할 것을 정할 수 있습니다.`,
+        'classification', '분류 결과를 생활에 쓰기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `빨강 ${red}개, 파랑 ${blue}개, 초록 ${green}개입니다. 파랑과 초록을 합하면 몇 개일까요?`,
+      `${blue + green}개`, [`${total}개`, `${red}개`, `${blue}개`],
+      `두 색의 수를 더하면 ${blue}+${green}=${blue + green}개입니다.`,
+      'data', '분류 결과의 일부를 합하기',
+    );
+  }
+
+  return null;
+};
+
 const classificationQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  const unitSpecific = sortingUnitQuestion(lesson, difficulty, index);
+  if (unitSpecific) return unitSpecific;
+
+  return legacyClassificationQuestion(lesson, difficulty, index);
+};
+
+const legacyClassificationQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const variant = variantForDifficulty(difficulty, index, 4, 2);
   const red = 5 + (index % 5);
   const blue = 2 + ((index + 2) % 3);
@@ -5104,6 +5325,10 @@ const tableGraphLessonQuestion = (lesson: Lesson, difficulty: Difficulty, index:
 const dataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const lessonSpecific = tableGraphLessonQuestion(lesson, difficulty, index);
   if (lessonSpecific) return lessonSpecific;
+
+  // 분류하기 단원의 뒤쪽 차시는 data 태그가 있어 이 경로로 들어옵니다.
+  const sorting = sortingUnitQuestion(lesson, difficulty, index);
+  if (sorting) return sorting;
 
   return legacyDataQuestion(lesson, difficulty, index);
 };
