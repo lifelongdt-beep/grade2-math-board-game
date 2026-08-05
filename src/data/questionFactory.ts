@@ -2785,7 +2785,292 @@ const classificationQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
   );
 };
 
+// ── 2-2 2단원 곱셈구구 (동아출판 2-2 지도서 170~203쪽) ──────────────────────
+// 차시마다 다루는 단이 정해져 있습니다. 2단 / 5단 / 3단·6단 / 4단·8단 / 7단 /
+// 9단 / 1단과 0의 곱 / 곱셈표 / 곱셈구구로 문제 해결.
+const dansOfLesson = (title: string): number[] => {
+  const found = [2, 3, 4, 5, 6, 7, 8, 9].filter((dan) => title.includes(`${dan}단`));
+  return found.length ? found : [];
+};
+
+const timesTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (lesson.unitTitle !== '곱셈구구') return null;
+
+  const title = lesson.title;
+  const variant = variantForDifficulty(difficulty, index, 6, 3);
+
+  // 1단 곱셈구구와 0의 곱
+  if (title.includes('1단')) {
+    const k = 2 + (index % 8);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `1×${k}는 얼마일까요?`,
+        k, [1, k + 1, 0],
+        `1단은 1이 ${k}묶음이므로 곱한 결과가 그대로 ${k}입니다.`,
+        'multiplication', '1단 곱셈구구 알기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `0×${k}는 얼마일까요?`,
+        0, [k, 1, k + 1],
+        `0이 ${k}묶음이면 하나도 없으므로 0입니다.`,
+        'multiplication', '0의 곱 알기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${k}×0은 얼마일까요?`,
+        0, [k, 1, k + 1],
+        `${k}가 0묶음이면 하나도 없으므로 0입니다.`,
+        'multiplication', '어떤 수와 0의 곱 알기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '1과 어떤 수를 곱하면 결과가 어떻게 될까요?',
+        '곱하는 수가 그대로 나온다',
+        ['항상 1이 된다', '항상 0이 된다', '두 배가 된다'],
+        `1단은 1이 여러 묶음인 것이므로 곱하는 수가 그대로 나옵니다.`,
+        'multiplication', '1단의 성질 알기',
+      );
+    }
+    if (variant === 4) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '0과 어떤 수를 곱하면 결과가 어떻게 될까요?',
+        '항상 0이 된다',
+        ['곱하는 수가 그대로 나온다', '항상 1이 된다', '두 배가 된다'],
+        `0은 하나도 없다는 뜻이므로 몇 묶음이 있어도 0입니다.`,
+        'multiplication', '0의 곱의 성질 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `1×${k}와 ${k}×1의 결과를 비교하면?`,
+      '두 값이 같다',
+      [`1×${k}가 더 크다`, `${k}×1이 더 크다`, '비교할 수 없다'],
+      `곱하는 두 수의 순서를 바꾸어도 결과는 같습니다. 둘 다 ${k}입니다.`,
+      'multiplication', '순서를 바꾸어 곱하기',
+    );
+  }
+
+  // 곱셈표를 만들어 볼까요
+  if (title.includes('곱셈표')) {
+    const a = 2 + (index % 7);
+    const b = 2 + ((index + 3) % 7);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `곱셈표에서 ${a}와 ${b}가 만나는 칸에 알맞은 수는?`,
+        a * b, [a + b, a * b + a, Math.max(0, a * b - b)],
+        `곱셈표는 가로와 세로의 두 수를 곱한 값을 씁니다. ${a}×${b}=${a * b}입니다.`,
+        'multiplication', '곱셈표의 빈칸 채우기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}×${b}와 ${b}×${a}의 값을 비교하면?`,
+        '두 값이 같다',
+        [`${a}×${b}가 더 크다`, `${b}×${a}가 더 크다`, '비교할 수 없다'],
+        `두 수를 바꾸어 곱해도 결과는 같습니다. 둘 다 ${a * b}입니다.`,
+        'multiplication', '두 수를 바꾸어 곱하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `곱셈표에서 ${a}단은 오른쪽으로 갈수록 몇씩 커질까요?`,
+        `${a}씩`,
+        [`${a + 1}씩`, '1씩', `${a * 2}씩`],
+        `${a}단은 ${a}씩 커집니다. ${a}×1=${a}, ${a}×2=${a * 2}처럼 ${a}씩 늘어납니다.`,
+        'multiplication', '곱셈표에서 커지는 규칙 찾기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `곱셈표에서 ${a}×${b}=${a * b}일 때 ${a}×${b + 1}은 얼마일까요?`,
+        a * (b + 1), [a * b, a * b + 1, a * (b + 2)],
+        `${a}단은 ${a}씩 커지므로 ${a * b}에 ${a}를 더하면 ${a * (b + 1)}입니다.`,
+        'multiplication', '곱셈표에서 다음 수 구하기',
+      );
+    }
+    if (variant === 4) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '곱셈표에서 곱이 가장 작은 칸은 어디일까요?',
+        '작은 수끼리 만나는 칸',
+        ['큰 수끼리 만나는 칸', '가운데 칸', '맨 오른쪽 칸'],
+        `곱셈표는 두 수가 클수록 곱도 커집니다. 그래서 작은 수끼리 만나는 칸의 곱이 가장 작습니다.`,
+        'multiplication', '곱셈표 전체의 규칙 보기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `곱셈표에서 ${a}×${a}처럼 같은 수끼리 곱한 칸은 어떤 줄에 놓일까요?`,
+      '대각선으로 나란히 놓인다',
+      ['맨 윗줄에 모인다', '맨 왼쪽 줄에 모인다', '흩어져 있다'],
+      `같은 수끼리 곱한 칸은 왼쪽 위에서 오른쪽 아래로 대각선을 이룹니다.`,
+      'multiplication', '곱셈표의 대각선 규칙 찾기',
+    );
+  }
+
+  // 곱셈구구를 이용하여 문제를 해결해 볼까요
+  if (title.includes('문제를 해결')) {
+    const each = 2 + (index % 8);
+    const groups = 3 + ((index + 2) % 6);
+    const total = each * groups;
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `한 상자에 사과가 ${each}개씩 들어 있습니다. ${groups}상자에는 사과가 모두 몇 개일까요?`,
+        `${total}개`, [`${each + groups}개`, `${total + each}개`, `${Math.max(1, total - each)}개`],
+        `한 묶음 ${each}개가 ${groups}묶음이므로 ${each}×${groups}=${total}개입니다.`,
+        'multiplication', '곱셈구구로 전체 수 구하기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `연필 ${total}자루를 한 사람에게 ${each}자루씩 주면 몇 사람에게 줄 수 있을까요?`,
+        `${groups}명`, [`${each}명`, `${groups + 1}명`, `${total}명`],
+        `${each}×□=${total}인 □를 찾습니다. ${each}×${groups}=${total}이므로 ${groups}명입니다.`,
+        'multiplication', '곱셈구구로 묶음 수 구하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}×${groups}를 나타내는 상황으로 알맞은 것은?`,
+        `${each}개씩 ${groups}묶음`,
+        [`${each}개와 ${groups}개`, `${each}묶음에서 ${groups}개를 뺀 것`, `${groups}개씩 ${groups}묶음`],
+        `곱셈식 ${each}×${groups}는 ${each}개씩 ${groups}묶음이 있는 상황을 나타냅니다.`,
+        'multiplication', '곱셈식에 맞는 상황 찾기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}×□=${total}일 때 □에 알맞은 수는?`,
+        groups, [each, groups + 1, total],
+        `${each}단에서 곱이 ${total}이 되는 수를 찾습니다. ${each}×${groups}=${total}입니다.`,
+        'multiplication', '곱셈식의 빈칸 구하기',
+      );
+    }
+    if (variant === 4) {
+      const other = 2 + ((index + 4) % 7);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}×${groups}와 ${other}×${groups} 중 더 큰 것은?`,
+        each > other ? `${each}×${groups}` : `${other}×${groups}`,
+        [each > other ? `${other}×${groups}` : `${each}×${groups}`, '두 값이 같다', '비교할 수 없다'],
+        `묶음 수가 같으면 한 묶음의 수가 클수록 곱도 큽니다. ${each * groups}과 ${other * groups}을 비교합니다.`,
+        'multiplication', '곱의 크기 비교하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${each}명씩 앉는 의자가 ${groups}개 있습니다. 모두 몇 명이 앉을 수 있을까요?`,
+      `${total}명`, [`${each + groups}명`, `${total + groups}명`, `${Math.max(1, total - groups)}명`],
+      `한 의자에 ${each}명씩 ${groups}개이므로 ${each}×${groups}=${total}명입니다.`,
+      'multiplication', '곱셈구구를 생활 문제에 쓰기',
+    );
+  }
+
+  const dans = dansOfLesson(title);
+  if (dans.length === 0) return null;
+
+  const dan = dans[index % dans.length];
+  const k = 2 + (index % 8);
+  const product = dan * k;
+
+  if (variant === 0) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${dan}×${k}는 얼마일까요?`,
+      product, [product + dan, Math.max(0, product - dan), dan + k],
+      `${dan}단은 ${dan}씩 커집니다. ${dan}이 ${k}묶음이므로 ${dan}×${k}=${product}입니다.`,
+      'multiplication', `${dan}단 곱셈구구 외우기`,
+    );
+  }
+
+  if (variant === 1) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${dan}단 곱셈구구는 몇씩 커질까요?`,
+      `${dan}씩`,
+      [`${dan + 1}씩`, '1씩', `${dan * 2}씩`],
+      `${dan}단은 ${dan}이 한 묶음씩 늘어나므로 ${dan}씩 커집니다.`,
+      'multiplication', `${dan}단이 커지는 규칙 알기`,
+    );
+  }
+
+  if (variant === 2) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${dan}×□=${product}일 때 □에 알맞은 수는?`,
+      k, [k + 1, Math.max(1, k - 1), product],
+      `${dan}단에서 곱이 ${product}이 되는 수를 찾습니다. ${dan}×${k}=${product}입니다.`,
+      'multiplication', `${dan}단에서 빈칸 채우기`,
+    );
+  }
+
+  if (variant === 3) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${dan}×${k}보다 ${dan}×${k + 1}은 얼마나 더 클까요?`,
+      dan, [1, k, dan * 2],
+      `묶음이 하나 늘면 ${dan}만큼 커집니다. ${dan * (k + 1)}-${product}=${dan}입니다.`,
+      'multiplication', `${dan}단에서 한 묶음 늘어날 때의 변화 알기`,
+    );
+  }
+
+  // 3단·6단, 4단·8단 차시는 두 단의 관계를 다룹니다.
+  if (variant === 4 && dans.length === 2) {
+    const [small, big] = dans[0] < dans[1] ? [dans[0], dans[1]] : [dans[1], dans[0]];
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${small}×${k}=${small * k}일 때 ${big}×${k}는 얼마일까요?`,
+      big * k, [small * k, big * k + big, Math.max(0, big * k - k)],
+      `${big}단은 ${small}단의 두 배입니다. ${small * k}의 두 배인 ${big * k}입니다.`,
+      'multiplication', `${small}단과 ${big}단의 관계 알기`,
+    );
+  }
+
+  if (variant === 4) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${dan}개씩 ${k}묶음은 모두 몇 개일까요?`,
+      `${product}개`,
+      [`${dan + k}개`, `${product + dan}개`, `${Math.max(1, product - dan)}개`],
+      `${dan}개씩 ${k}묶음이므로 ${dan}×${k}=${product}개입니다.`,
+      'multiplication', `${dan}단을 묶음 상황에 쓰기`,
+    );
+  }
+
+  return makeQuestion(
+    lesson, difficulty, index,
+    `${dan}씩 ${k}번 뛰어 세면 얼마일까요?`,
+    product, [dan + k, product + dan, Math.max(0, product - dan)],
+    `${dan}씩 ${k}번 뛰어 세는 것은 ${dan}×${k}와 같습니다. 답은 ${product}입니다.`,
+    'multiplication', `${dan}단을 뛰어 세기와 잇기`,
+  );
+};
+
 const multiplicationQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  const timesTable = timesTableQuestion(lesson, difficulty, index);
+  if (timesTable) return timesTable;
+
+  return legacyMultiplicationQuestion(lesson, difficulty, index);
+};
+
+const legacyMultiplicationQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const text = `${lesson.unitTitle} ${lesson.title}`;
   const seed = n(lesson, index);
   const variant = variantForDifficulty(difficulty, index, 6, 3);
