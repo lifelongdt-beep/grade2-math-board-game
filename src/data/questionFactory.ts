@@ -3433,7 +3433,208 @@ const legacyMultiplicationQuestion = (lesson: Lesson, difficulty: Difficulty, in
   );
 };
 
+// ── 2-2 4단원 시각과 시간 (동아출판 2-2 지도서 239~265쪽) ──────────────────
+// 차시: 5분 단위 읽기 → 1분 단위 읽기 → 몇 분 전으로 읽기 → 1시간(60분) →
+// 걸린 시간 → 하루의 시간(24시간, 오전·오후) → 달력(1주일·1개월·1년).
+const clockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (lesson.unitTitle !== '시각과 시간') return null;
+
+  const title = lesson.title;
+  const variant = variantForDifficulty(difficulty, index, 6, 3);
+  const hour = 1 + (index % 12);
+
+  // 여러 가지 방법으로 시각을 읽어 볼까요 (몇 시 몇 분 전)
+  if (title.includes('여러 가지 방법')) {
+    const before = 5 * (1 + (index % 3));
+    const minute = 60 - before;
+    const nextHour = hour === 12 ? 1 : hour + 1;
+
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${hour}시 ${minute}분을 다른 방법으로 읽으면?`,
+        `${nextHour}시 ${before}분 전`,
+        [`${hour}시 ${before}분 전`, `${nextHour}시 ${minute}분 전`, `${hour}시 ${before}분`],
+        `${minute}분은 ${nextHour}시가 되기 ${before}분 전입니다. 그래서 ${nextHour}시 ${before}분 전이라고도 읽습니다.`,
+        'time', '몇 시 몇 분 전으로 읽기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${nextHour}시 ${before}분 전은 몇 시 몇 분일까요?`,
+        `${hour}시 ${minute}분`,
+        [`${nextHour}시 ${before}분`, `${hour}시 ${before}분`, `${nextHour}시 ${minute}분`],
+        `${nextHour}시에서 ${before}분을 되돌리면 ${hour}시 ${minute}분입니다.`,
+        'time', '몇 분 전을 몇 시 몇 분으로 바꾸기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '몇 시 몇 분 전이라고 읽는 때는 언제일까요?',
+        '다음 시각이 되기 조금 전일 때',
+        ['시가 막 바뀐 뒤일 때', '정각일 때', '분을 모를 때'],
+        `긴바늘이 12에 가까워졌을 때는 다음 시각을 기준으로 몇 분 전이라고 읽으면 편합니다.`,
+        'time', '두 가지 읽기를 구별하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${hour}시 50분은 ${nextHour}시가 되려면 몇 분 남았을까요?`,
+        '10분', ['50분', '5분', '20분'],
+        `한 시간은 60분입니다. 60-50=10분 남았습니다.`,
+        'time', '다음 시각까지 남은 시간 구하기',
+      );
+    }
+    if (variant === 4) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${hour}시 55분과 ${nextHour}시 5분 전은 같은 시각일까요?`,
+        '같은 시각이다',
+        ['다른 시각이다', `${nextHour}시 5분 전이 더 빠르다`, `${hour}시 55분이 더 늦다`],
+        `${nextHour}시가 되기 5분 전이 바로 ${hour}시 55분입니다. 같은 시각을 두 가지로 읽은 것입니다.`,
+        'time', '같은 시각의 두 가지 읽기 확인하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${hour}시 45분을 몇 분 전으로 읽으면?`,
+      `${nextHour}시 15분 전`,
+      [`${hour}시 15분 전`, `${nextHour}시 45분 전`, `${hour}시 45분 전`],
+      `60-45=15이므로 ${nextHour}시 15분 전입니다.`,
+      'time', '분을 보고 몇 분 전 구하기',
+    );
+  }
+
+  // 1시간을 알아볼까요
+  if (title.includes('1시간')) {
+    const minutes = 60 + 10 * (1 + (index % 4));
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '1시간은 몇 분일까요?',
+        '60분', ['50분', '100분', '30분'],
+        `긴바늘이 시계를 한 바퀴 도는 데 걸리는 시간이 1시간이고, 이는 60분입니다.`,
+        'time', '1시간과 60분의 관계 알기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${minutes}분은 몇 시간 몇 분일까요?`,
+        `1시간 ${minutes - 60}분`,
+        [`${minutes}시간`, `2시간 ${minutes - 60}분`, `1시간 ${minutes}분`],
+        `60분이 1시간입니다. ${minutes}-60=${minutes - 60}이므로 1시간 ${minutes - 60}분입니다.`,
+        'time', '분을 시간과 분으로 바꾸기',
+      );
+    }
+    if (variant === 2) {
+      const m = 10 * (1 + (index % 5));
+      return makeQuestion(
+        lesson, difficulty, index,
+        `1시간 ${m}분은 몇 분일까요?`,
+        `${60 + m}분`, [`${m}분`, '60분', `${120 + m}분`],
+        `1시간은 60분이므로 60+${m}=${60 + m}분입니다.`,
+        'time', '시간과 분을 분으로 바꾸기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '시계의 긴바늘이 한 바퀴 돌면 얼마만큼의 시간이 지날까요?',
+        '1시간', ['1분', '30분', '하루'],
+        `긴바늘이 한 바퀴를 도는 동안 60분, 곧 1시간이 지납니다.`,
+        'time', '긴바늘 한 바퀴의 뜻 알기',
+      );
+    }
+    if (variant === 4) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '짧은바늘이 숫자 한 칸을 지나가면 얼마만큼의 시간이 지날까요?',
+        '1시간', ['1분', '5분', '10분'],
+        `짧은바늘이 숫자 한 칸을 지나는 동안 1시간이 지납니다.`,
+        'time', '짧은바늘의 한 칸이 뜻하는 시간 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '2시간은 몇 분일까요?',
+      '120분', ['60분', '100분', '200분'],
+      `1시간이 60분이므로 2시간은 60+60=120분입니다.`,
+      'time', '몇 시간을 분으로 바꾸기',
+    );
+  }
+
+  // 하루의 시간을 알아볼까요
+  if (title.includes('하루의 시간')) {
+    const h = 1 + (index % 11);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '하루는 몇 시간일까요?',
+        '24시간', ['12시간', '30시간', '60시간'],
+        `오전 12시간과 오후 12시간을 합하면 하루는 24시간입니다.`,
+        'time', '하루가 24시간임을 알기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '밤 12시부터 낮 12시까지를 무엇이라고 할까요?',
+        '오전', ['오후', '하루', '한 주'],
+        `밤 12시부터 낮 12시까지가 오전이고, 낮 12시부터 밤 12시까지가 오후입니다.`,
+        'time', '오전과 오후 구별하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '학교에서 점심을 먹는 낮 1시는 언제일까요?',
+        '오후 1시', ['오전 1시', '밤 1시', '새벽 1시'],
+        `낮 12시가 지나면 오후입니다. 그래서 낮 1시는 오후 1시입니다.`,
+        'time', '생활 시각을 오전·오후로 말하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '오전은 몇 시간일까요?',
+        '12시간', ['24시간', '10시간', '6시간'],
+        `오전은 밤 12시부터 낮 12시까지로 12시간입니다.`,
+        'time', '오전의 길이 알기',
+      );
+    }
+    if (variant === 4) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `오전 ${h}시에서 12시간이 지나면 언제일까요?`,
+        `오후 ${h}시`, [`오전 ${h}시`, `오후 ${h + 1}시`, '다음 날'],
+        `12시간이 지나면 오전이 오후로 바뀌고 시각의 숫자는 같습니다.`,
+        'time', '12시간 뒤의 시각 구하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '하루에 시계의 짧은바늘은 몇 바퀴 돌까요?',
+      '2바퀴', ['1바퀴', '12바퀴', '24바퀴'],
+      `짧은바늘은 12시간에 한 바퀴 돌고, 하루는 24시간이므로 2바퀴 돕니다.`,
+      'time', '하루 동안 바늘의 움직임 알기',
+    );
+  }
+
+  return null;
+};
+
 const timeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  const unitSpecific = clockUnitQuestion(lesson, difficulty, index);
+  if (unitSpecific) return unitSpecific;
+
+  return legacyTimeQuestion(lesson, difficulty, index);
+};
+
+const legacyTimeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const text = `${lesson.unitTitle} ${lesson.title}`;
   const hour = 1 + (index % 10);
   const minute = (index * 5 + difficultyIndex[difficulty] * 10) % 60;
