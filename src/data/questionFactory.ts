@@ -3148,7 +3148,569 @@ const timeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Qu
   );
 };
 
+// ── 5단원 표와 그래프 (동아출판 2-2 교사용 지도서 268~291쪽 기준) ──────────────
+// 차시별 학습 목표와 주요 활동에 맞춘 문항입니다.
+//  2차시 자료를 분류하여 표로 나타내기: 분류 -> 세기 -> 표, 합계는 항목별 수의 합
+//  3차시 자료를 조사하여 표로 나타내기: 조사 방법 고르기, 조사 결과를 표로
+//  4차시 자료를 분류하여 그래프로 나타내기: 아래에서부터 한 칸에 하나씩 ◯
+//  5차시 표와 그래프를 보고 알 수 있는 내용 찾기: 최다/최소/차이/합계/편리한 점
+//  6차시 표와 그래프로 나타내기: 조사 -> 표 -> 그래프 순서와 해석
+
+type SurveySet = {
+  subject: string;
+  categoryLabel: string;
+  items: Array<{ name: string; count: number }>;
+};
+
+const surveySets: SurveySet[] = [
+  {
+    subject: '2학년 때 즐거웠던 활동',
+    categoryLabel: '활동',
+    items: [
+      { name: '현장체험학습', count: 7 },
+      { name: '안전 체험', count: 3 },
+      { name: '놀이 한마당', count: 5 },
+    ],
+  },
+  {
+    subject: '태어난 계절',
+    categoryLabel: '계절',
+    items: [
+      { name: '봄', count: 7 },
+      { name: '여름', count: 4 },
+      { name: '가을', count: 6 },
+    ],
+  },
+  {
+    subject: '좋아하는 동물',
+    categoryLabel: '동물',
+    items: [
+      { name: '개', count: 6 },
+      { name: '고양이', count: 5 },
+      { name: '토끼', count: 3 },
+    ],
+  },
+  {
+    subject: '좋아하는 전통 놀이',
+    categoryLabel: '전통 놀이',
+    items: [
+      { name: '공기놀이', count: 9 },
+      { name: '투호 놀이', count: 8 },
+      { name: '제기차기', count: 2 },
+    ],
+  },
+  {
+    subject: '원하는 교실 놀이',
+    categoryLabel: '교실 놀이',
+    items: [
+      { name: '보드게임', count: 6 },
+      { name: '공기놀이', count: 5 },
+      { name: '땅따먹기', count: 4 },
+    ],
+  },
+];
+
+// 같은 차시 안에서 20문항이 서로 다른 수를 갖도록 지문마다 조금씩 바꿉니다.
+const surveyFor = (index: number): SurveySet => {
+  const base = surveySets[index % surveySets.length];
+  const shift = Math.floor(index / surveySets.length);
+  return {
+    ...base,
+    items: base.items.map((item, itemIndex) => ({
+      ...item,
+      count: Math.max(1, item.count + ((shift + itemIndex) % 3) - 1),
+    })),
+  };
+};
+
+const totalOf = (items: Array<{ count: number }>) => items.reduce((sum, item) => sum + item.count, 0);
+
+const mostOf = (items: Array<{ name: string; count: number }>) =>
+  items.reduce((best, item) => (item.count > best.count ? item : best));
+
+const leastOf = (items: Array<{ name: string; count: number }>) =>
+  items.reduce((best, item) => (item.count < best.count ? item : best));
+
+const tableVisualFor = (
+  columns: Array<{ name: string; value: number | null }>,
+  label: string,
+  options: { categoryLabel?: string; valueLabel?: string; totalLabel?: string; total?: number | null } = {},
+): QuestionVisual => ({
+  kind: 'table',
+  label,
+  categoryLabel: options.categoryLabel ?? '항목',
+  valueLabel: options.valueLabel ?? '학생 수(명)',
+  columns,
+  ...(options.totalLabel ? { totalLabel: options.totalLabel } : {}),
+  ...(options.total !== undefined ? { total: options.total } : {}),
+});
+
+const surveyTable = (survey: SurveySet, options: { blankIndex?: number; showTotal?: boolean; blankTotal?: boolean } = {}) => {
+  const columns = survey.items.map((item, itemIndex) => ({
+    name: item.name,
+    value: options.blankIndex === itemIndex ? null : item.count,
+  }));
+  return tableVisualFor(columns, `${survey.subject}별 학생 수`, {
+    categoryLabel: survey.categoryLabel,
+    valueLabel: '학생 수(명)',
+    ...(options.showTotal
+      ? { totalLabel: '합계', total: options.blankTotal ? null : totalOf(survey.items) }
+      : {}),
+  });
+};
+
+const surveyGraph = (survey: SurveySet) =>
+  pictographVisualFor(
+    survey.items.map((item) => ({ label: item.name, count: item.count })),
+    1,
+    `${survey.subject}별 학생 수 그래프`,
+  );
+
+// 2차시: 자료를 분류하여 표로 나타내기
+const classifyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  const survey = surveyFor(index);
+  const total = totalOf(survey.items);
+  const target = survey.items[index % survey.items.length];
+  const variant = variantForDifficulty(difficulty, index, 6, 3);
+
+  if (variant === 0) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${survey.subject}을 조사한 자료를 분류했더니 ${survey.items.map((item) => `${item.name} ${item.count}명`).join(', ')}이었습니다. 표의 ${target.name} 칸에 알맞은 수는?`,
+      target.count,
+      [total, target.count + 1, Math.max(1, target.count - 1)],
+      `분류한 ${target.name}의 학생 수를 세어 표의 같은 칸에 그대로 씁니다. ${target.name}는 ${target.count}명입니다.`,
+      'data',
+      '분류한 수를 표에 옮겨 쓰기',
+      surveyTable(survey, { blankIndex: index % survey.items.length }),
+    );
+  }
+
+  if (variant === 1) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `표에서 ${survey.items.map((item) => `${item.name} ${item.count}명`).join(', ')}일 때 합계는 몇 명일까요?`,
+      `${total}명`,
+      [`${total + 1}명`, `${Math.max(1, total - 2)}명`, `${mostOf(survey.items).count}명`],
+      `합계는 항목별 학생 수를 모두 더한 것입니다. ${survey.items.map((item) => item.count).join('+')}=${total}명입니다.`,
+      'data',
+      '표의 합계 구하기',
+      surveyTable(survey, { showTotal: true, blankTotal: true }),
+    );
+  }
+
+  if (variant === 2) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${survey.subject}을 표로 나타낼 때 분류 기준으로 알맞은 것은?`,
+      survey.categoryLabel,
+      ['이름의 첫 글자', '앉은 자리', '키의 순서'],
+      `표로 나타내려면 조사한 내용에 맞는 기준이 필요합니다. ${survey.subject}은 ${survey.categoryLabel}을 기준으로 분류합니다.`,
+      'data',
+      '분류 기준 정하기',
+      surveyTable(survey),
+    );
+  }
+
+  if (variant === 3) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '자료를 분류하여 셀 때 바르게 세는 방법은?',
+      '센 것에 표시하며 빠뜨리거나 두 번 세지 않는다',
+      ['눈으로만 보고 어림한다', '많아 보이는 것부터 센다', '이름이 긴 것만 센다'],
+      `분류하여 셀 때는 센 자료에 표시를 하면서 세어야 빠뜨리거나 두 번 세지 않습니다.`,
+      'data',
+      '빠짐과 겹침 없이 세기',
+      surveyTable(survey),
+    );
+  }
+
+  if (variant === 4) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '자료를 표로 나타내면 편리한 점은?',
+      '항목별 학생 수를 한눈에 알기 쉽다',
+      ['학생의 이름을 알 수 있다', '자리를 알 수 있다', '조사한 날짜를 알 수 있다'],
+      `표는 항목별 수를 한눈에 알아보기 쉽습니다. 누가 골랐는지는 표만 보고 알 수 없습니다.`,
+      'data',
+      '표의 편리한 점 알기',
+      surveyTable(survey, { showTotal: true }),
+    );
+  }
+
+  const most = mostOf(survey.items);
+  return makeQuestion(
+    lesson, difficulty, index,
+    `표에서 ${survey.items.map((item) => `${item.name} ${item.count}명`).join(', ')}일 때 가장 많은 항목은?`,
+    most.name,
+    survey.items.filter((item) => item.name !== most.name).map((item) => item.name).concat('모두 같음'),
+    `표의 학생 수를 비교하면 ${most.count}명인 ${most.name}이 가장 많습니다.`,
+    'data',
+    '표에서 가장 많은 항목 찾기',
+    surveyTable(survey),
+  );
+};
+
+// 3차시: 자료를 조사하여 표로 나타내기
+const surveyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  const survey = surveyFor(index);
+  const total = totalOf(survey.items);
+  const variant = variantForDifficulty(difficulty, index, 6, 3);
+
+  if (variant === 0) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `우리 반 친구들의 ${survey.subject}을 조사하는 방법으로 알맞은 것은?`,
+      '손을 들어 세어 본다',
+      ['내 생각대로 정한다', '선생님께만 여쭤본다', '책에서 찾아본다'],
+      `조사는 친구들에게 직접 물어봐야 합니다. 손을 들어 세거나, 한 사람씩 말하거나, 붙임쪽지에 적는 방법이 있습니다.`,
+      'data',
+      '조사하는 방법 정하기',
+    );
+  }
+
+  if (variant === 1) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '자료를 조사할 때 한 친구가 두 번 대답하면 어떻게 될까요?',
+      '실제보다 수가 많아진다',
+      ['수가 그대로이다', '실제보다 수가 적어진다', '합계만 작아진다'],
+      `한 사람은 한 번만 대답해야 합니다. 두 번 세면 실제보다 수가 많아져 표가 정확하지 않습니다.`,
+      'data',
+      '겹치지 않게 조사하기',
+    );
+  }
+
+  if (variant === 2) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${survey.subject}을 조사해 ${survey.items.map((item) => `${item.name} ${item.count}명`).join(', ')}이 나왔습니다. 조사한 학생은 모두 몇 명일까요?`,
+      `${total}명`,
+      [`${total + 2}명`, `${Math.max(1, total - 1)}명`, `${mostOf(survey.items).count}명`],
+      `조사한 학생 수는 항목별 수를 모두 더한 합계입니다. ${survey.items.map((item) => item.count).join('+')}=${total}명입니다.`,
+      'data',
+      '조사 결과의 합계 구하기',
+      surveyTable(survey, { showTotal: true, blankTotal: true }),
+    );
+  }
+
+  if (variant === 3) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '조사한 자료를 표로 나타낼 때 표에 꼭 써야 하는 것은?',
+      '무엇을 조사했는지 알려 주는 제목',
+      ['조사한 사람의 나이', '교실 자리 번호', '조사한 날의 날씨'],
+      `표에는 제목을 씁니다. 제목을 보면 무엇을 조사한 표인지 알 수 있습니다.`,
+      'data',
+      '표의 제목 쓰기',
+      surveyTable(survey, { showTotal: true }),
+    );
+  }
+
+  if (variant === 4) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '조사를 시작하기 전에 가장 먼저 정할 것은?',
+      '무엇을 조사할지 정한다',
+      ['표의 색깔을 정한다', '합계를 먼저 쓴다', '그래프를 먼저 그린다'],
+      `조사는 무엇을 조사할지 정하는 것부터 시작합니다. 그다음에 누구에게 어떻게 물어볼지 정합니다.`,
+      'data',
+      '조사 계획 세우기',
+    );
+  }
+
+  const target = survey.items[(index + 1) % survey.items.length];
+  return makeQuestion(
+    lesson, difficulty, index,
+    `${survey.subject} 조사에서 ${target.name}을 고른 친구가 ${target.count}명입니다. 표의 ${target.name} 칸에 쓸 수는?`,
+    target.count,
+    [total, target.count + 2, Math.max(1, target.count - 1)],
+    `조사에서 센 수를 표의 같은 칸에 그대로 씁니다. ${target.name}은 ${target.count}명입니다.`,
+    'data',
+    '조사 결과를 표에 옮기기',
+    surveyTable(survey, { blankIndex: (index + 1) % survey.items.length }),
+  );
+};
+
+// 4차시: 자료를 분류하여 그래프로 나타내기
+const classifyToGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  const survey = surveyFor(index);
+  const target = survey.items[index % survey.items.length];
+  const most = mostOf(survey.items);
+  const variant = variantForDifficulty(difficulty, index, 6, 3);
+
+  if (variant === 0) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `표에서 ${target.name}이 ${target.count}명입니다. 그래프에 ◯를 몇 개 그려야 할까요?`,
+      `${target.count}개`,
+      [`${target.count + 1}개`, `${Math.max(1, target.count - 1)}개`, '1개'],
+      `그래프는 학생 수만큼 ◯를 그립니다. ${target.count}명이므로 ◯를 ${target.count}개 그립니다.`,
+      'data',
+      '표의 수만큼 그래프에 나타내기',
+      surveyTable(survey),
+    );
+  }
+
+  if (variant === 1) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '그래프에 ◯를 그릴 때 어디부터 그려야 할까요?',
+      '맨 아래 칸부터 위로 하나씩',
+      ['맨 위 칸부터 아래로', '가운데부터 양쪽으로', '아무 칸에나 자유롭게'],
+      `그래프는 맨 아래 칸부터 위로 빠짐없이 한 칸에 하나씩 그립니다.`,
+      'data',
+      '그래프 그리는 방향 알기',
+      surveyGraph(survey),
+    );
+  }
+
+  if (variant === 2) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '그래프에서 한 칸에는 ◯를 몇 개 그릴까요?',
+      '1개',
+      ['2개', '3개', '자리에 맞게 여러 개'],
+      `한 칸에는 ◯를 하나만 그립니다. 그래야 칸 수를 세어 학생 수를 알 수 있습니다.`,
+      'data',
+      '한 칸에 하나씩 나타내기',
+      surveyGraph(survey),
+    );
+  }
+
+  if (variant === 3) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `가장 많은 항목이 ${most.count}명일 때 그래프의 칸은 적어도 몇 칸 필요할까요?`,
+      `${most.count}칸`,
+      [`${Math.max(1, most.count - 1)}칸`, '1칸', `${most.count + 2}칸`],
+      `가장 많은 수만큼 칸이 있어야 모두 나타낼 수 있습니다. 가장 많은 것이 ${most.count}명이므로 ${most.count}칸이 필요합니다.`,
+      'data',
+      '그래프에 필요한 칸 수 구하기',
+      surveyGraph(survey),
+    );
+  }
+
+  if (variant === 4) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '그래프를 그릴 때 바르지 않은 것은?',
+      '◯와 ×를 섞어서 그린다',
+      ['◯를 한 칸에 하나씩 그린다', '아래 칸부터 채워 그린다', '그래프에 제목을 쓴다'],
+      `그래프는 ◯, ×, / 중 한 가지만 골라 나타냅니다. 여러 기호를 섞어 쓰면 헷갈립니다.`,
+      'data',
+      '그래프 그리는 약속 알기',
+      surveyGraph(survey),
+    );
+  }
+
+  return makeQuestion(
+    lesson, difficulty, index,
+    '자료를 그래프로 나타내면 편리한 점은?',
+    '많고 적음을 한눈에 비교하기 쉽다',
+    ['조사한 사람의 이름을 알 수 있다', '조사한 날짜를 알 수 있다', '합계를 쓰지 않아도 된다'],
+    `그래프는 ◯의 높이로 많고 적음을 한눈에 비교할 수 있습니다.`,
+    'data',
+    '그래프의 편리한 점 알기',
+    surveyGraph(survey),
+  );
+};
+
+// 5차시: 표와 그래프를 보고 알 수 있는 내용 찾기
+const readTableGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  const survey = surveyFor(index);
+  const total = totalOf(survey.items);
+  const most = mostOf(survey.items);
+  const least = leastOf(survey.items);
+  const gap = most.count - least.count;
+  const variant = variantForDifficulty(difficulty, index, 6, 3);
+  const listed = survey.items.map((item) => `${item.name} ${item.count}명`).join(', ');
+
+  if (variant === 0) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${survey.subject}별 학생 수가 ${listed}입니다. 가장 많은 학생이 고른 것은?`,
+      most.name,
+      survey.items.filter((item) => item.name !== most.name).map((item) => item.name).concat('모두 같음'),
+      `학생 수를 비교하면 ${most.count}명인 ${most.name}이 가장 많습니다.`,
+      'data',
+      '가장 많은 항목 찾기',
+      surveyGraph(survey),
+    );
+  }
+
+  if (variant === 1) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${survey.subject}별 학생 수가 ${listed}입니다. 가장 적은 학생이 고른 것은?`,
+      least.name,
+      survey.items.filter((item) => item.name !== least.name).map((item) => item.name).concat('모두 같음'),
+      `학생 수를 비교하면 ${least.count}명인 ${least.name}이 가장 적습니다.`,
+      'data',
+      '가장 적은 항목 찾기',
+      surveyGraph(survey),
+    );
+  }
+
+  if (variant === 2) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${survey.subject}별 학생 수가 ${listed}입니다. ${most.name}은 ${least.name}보다 몇 명 더 많을까요?`,
+      `${gap}명`,
+      [`${most.count}명`, `${least.count}명`, `${gap + 1}명`],
+      `두 항목의 차를 구합니다. ${most.count}-${least.count}=${gap}명입니다.`,
+      'data',
+      '두 항목의 차 구하기',
+      surveyTable(survey),
+    );
+  }
+
+  if (variant === 3) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${survey.subject}별 학생 수가 ${listed}입니다. 조사한 학생은 모두 몇 명일까요?`,
+      `${total}명`,
+      [`${total + 1}명`, `${most.count}명`, `${Math.max(1, total - 2)}명`],
+      `합계는 항목별 수를 모두 더합니다. ${survey.items.map((item) => item.count).join('+')}=${total}명입니다.`,
+      'data',
+      '자료의 합계 읽기',
+      surveyTable(survey, { showTotal: true, blankTotal: true }),
+    );
+  }
+
+  if (variant === 4) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '항목별 학생 수를 정확한 수로 알아보기에 더 좋은 것은?',
+      '표',
+      ['그래프', '조사한 자료 그대로', '제목만 보기'],
+      `표는 항목별 수가 수로 적혀 있어 정확한 수를 알기 좋습니다. 그래프는 많고 적음을 한눈에 비교하기 좋습니다.`,
+      'data',
+      '표와 그래프의 좋은 점 비교',
+      surveyTable(survey, { showTotal: true }),
+    );
+  }
+
+  const threshold = least.count;
+  const above = survey.items.filter((item) => item.count > threshold);
+  return makeQuestion(
+    lesson, difficulty, index,
+    `${survey.subject}별 학생 수가 ${listed}입니다. ${threshold}명보다 많은 항목은 모두 몇 개일까요?`,
+    `${above.length}개`,
+    [`${above.length + 1}개`, `${survey.items.length}개`, `${Math.max(0, above.length - 1)}개`],
+    `${threshold}명보다 많다는 것은 ${threshold}명은 넣지 않는다는 뜻입니다. ${above.map((item) => item.name).join(', ')}으로 ${above.length}개입니다.`,
+    'data',
+    '기준보다 많은 항목 찾기',
+    surveyGraph(survey),
+  );
+};
+
+// 6차시: 조사한 자료를 표와 그래프로 나타내기
+const tableAndGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  const survey = surveyFor(index);
+  const total = totalOf(survey.items);
+  const most = mostOf(survey.items);
+  const target = survey.items[index % survey.items.length];
+  const variant = variantForDifficulty(difficulty, index, 6, 3);
+
+  if (variant === 0) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '조사한 자료를 정리하는 차례로 알맞은 것은?',
+      '조사하기 → 표로 나타내기 → 그래프로 나타내기',
+      ['그래프로 나타내기 → 조사하기 → 표로 나타내기', '표로 나타내기 → 조사하기 → 그래프로 나타내기', '그래프로 나타내기 → 표로 나타내기 → 조사하기'],
+      `먼저 조사하고, 조사한 것을 표로 정리한 다음, 표를 보고 그래프로 나타냅니다.`,
+      'data',
+      '자료 정리하는 차례 알기',
+    );
+  }
+
+  if (variant === 1) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `표에서 ${target.name}이 ${target.count}명입니다. 그래프의 ${target.name} 칸에 ◯를 몇 개 그릴까요?`,
+      `${target.count}개`,
+      [`${target.count + 1}개`, `${Math.max(1, target.count - 1)}개`, `${total}개`],
+      `표의 수만큼 ◯를 그립니다. ${target.name}은 ${target.count}명이므로 ◯를 ${target.count}개 그립니다.`,
+      'data',
+      '표를 보고 그래프 완성하기',
+      surveyTable(survey),
+    );
+  }
+
+  if (variant === 2) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `그래프에서 ${target.name} 칸에 ◯가 ${target.count}개 있습니다. 표의 ${target.name} 칸에 쓸 수는?`,
+      target.count,
+      [target.count + 1, Math.max(1, target.count - 1), total],
+      `◯ 한 개는 학생 1명입니다. ◯가 ${target.count}개이므로 표에는 ${target.count}을 씁니다.`,
+      'data',
+      '그래프를 보고 표 완성하기',
+      surveyGraph(survey),
+    );
+  }
+
+  if (variant === 3) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '같은 자료로 만든 표와 그래프에서 합계는 어떨까요?',
+      '표와 그래프의 합계는 서로 같다',
+      ['표가 더 크다', '그래프가 더 크다', '서로 다를 때가 많다'],
+      `표와 그래프는 같은 자료를 다르게 나타낸 것이므로 합계는 서로 같습니다.`,
+      'data',
+      '표와 그래프의 관계 알기',
+      surveyTable(survey, { showTotal: true }),
+    );
+  }
+
+  if (variant === 4) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${survey.subject}을 조사한 결과를 보고 반 친구들에게 알릴 내용으로 알맞은 것은?`,
+      `가장 많은 학생이 고른 것은 ${most.name}입니다`,
+      ['조사는 하지 않아도 됩니다', '내가 좋아하는 것으로 정하면 됩니다', '수는 말하지 않는 것이 좋습니다'],
+      `조사 결과를 알릴 때는 표와 그래프에서 알 수 있는 사실을 말합니다. 가장 많은 것은 ${most.name}입니다.`,
+      'data',
+      '조사 결과로 의견 말하기',
+      surveyGraph(survey),
+    );
+  }
+
+  return makeQuestion(
+    lesson, difficulty, index,
+    `조사한 자료를 표로 정리했더니 ${survey.items.map((item) => `${item.name} ${item.count}명`).join(', ')}이었습니다. 합계는?`,
+    `${total}명`,
+    [`${total + 1}명`, `${most.count}명`, `${Math.max(1, total - 3)}명`],
+    `합계는 항목별 수를 모두 더합니다. ${survey.items.map((item) => item.count).join('+')}=${total}명입니다.`,
+    'data',
+    '표의 합계로 전체 알기',
+    surveyTable(survey, { showTotal: true, blankTotal: true }),
+  );
+};
+
+const tableGraphLessonQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (lesson.unitTitle !== '표와 그래프') return null;
+
+  const title = lesson.title;
+  if (title.includes('분류하여 표로')) return classifyToTableQuestion(lesson, difficulty, index);
+  if (title.includes('조사하여 표로')) return surveyToTableQuestion(lesson, difficulty, index);
+  if (title.includes('그래프로 나타내 볼까요') && title.includes('분류하여')) {
+    return classifyToGraphQuestion(lesson, difficulty, index);
+  }
+  if (title.includes('무엇을 알 수 있')) return readTableGraphQuestion(lesson, difficulty, index);
+  if (title.includes('표와 그래프로 나타내')) return tableAndGraphQuestion(lesson, difficulty, index);
+  return null;
+};
+
 const dataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  const lessonSpecific = tableGraphLessonQuestion(lesson, difficulty, index);
+  if (lessonSpecific) return lessonSpecific;
+
+  return legacyDataQuestion(lesson, difficulty, index);
+};
+
+const legacyDataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const dataSets = [
     { soccer: 7, jump: 5, tag: 3 },
     { soccer: 4, jump: 8, tag: 5 },
@@ -3572,7 +4134,87 @@ const richMeasurementQuestion = (lesson: Lesson, difficulty: Difficulty, index: 
   );
 };
 
+// 표와 그래프 단원에서는 차시 내용에 맞춘 자료 해석 문항을 냅니다.
+const richTableGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (lesson.unitTitle !== '표와 그래프') return null;
+
+  const survey = surveyFor(index + 2);
+  const total = totalOf(survey.items);
+  const most = mostOf(survey.items);
+  const least = leastOf(survey.items);
+  const listed = survey.items.map((item) => `${item.name} ${item.count}명`).join(', ');
+  const title = lesson.title;
+
+  if (title.includes('분류하여 표로') || title.includes('조사하여 표로')) {
+    const hidden = survey.items[index % survey.items.length];
+    const rest = total - hidden.count;
+    return makeQuestion(
+      lesson, difficulty, index,
+      `표의 합계는 ${total}명입니다. ${survey.items
+        .filter((item) => item.name !== hidden.name)
+        .map((item) => `${item.name} ${item.count}명`)
+        .join(', ')}일 때 ${hidden.name}은 몇 명일까요?`,
+      `${hidden.count}명`,
+      [`${total}명`, `${rest}명`, `${hidden.count + 1}명`],
+      `합계에서 다른 항목의 수를 빼면 됩니다. ${total}-${rest}=${hidden.count}명입니다.`,
+      'data',
+      '자료 해석 · 합계에서 빠진 항목 수 구하기',
+      surveyTable(survey, { blankIndex: index % survey.items.length, showTotal: true }),
+    );
+  }
+
+  if (title.includes('그래프로 나타내 볼까요') && title.includes('분류하여')) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `그래프에 ${survey.items.map((item) => `${item.name} ◯ ${item.count}개`).join(', ')}를 그렸습니다. ◯를 모두 몇 개 그렸을까요?`,
+      `${total}개`,
+      [`${most.count}개`, `${total + 1}개`, `${Math.max(1, total - 2)}개`],
+      `◯ 한 개는 학생 1명입니다. 항목별 ◯를 모두 더하면 ${survey.items.map((item) => item.count).join('+')}=${total}개입니다.`,
+      'data',
+      '자료 해석 · 그래프의 ◯ 개수 모두 세기',
+      surveyGraph(survey),
+    );
+  }
+
+  if (title.includes('무엇을 알 수 있')) {
+    const gap = most.count - least.count;
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${survey.subject}별 학생 수가 ${listed}입니다. 가장 많은 것과 가장 적은 것의 차는 몇 명일까요?`,
+      `${gap}명`,
+      [`${most.count}명`, `${least.count}명`, `${gap + 1}명`],
+      `가장 많은 것은 ${most.name} ${most.count}명, 가장 적은 것은 ${least.name} ${least.count}명입니다. ${most.count}-${least.count}=${gap}명입니다.`,
+      'data',
+      '자료 해석 · 가장 많은 것과 적은 것의 차 구하기',
+      surveyGraph(survey),
+    );
+  }
+
+  if (title.includes('표와 그래프로 나타내')) {
+    const hidden = survey.items[(index + 1) % survey.items.length];
+    const rest = total - hidden.count;
+    return makeQuestion(
+      lesson, difficulty, index,
+      `조사한 학생이 모두 ${total}명입니다. ${survey.items
+        .filter((item) => item.name !== hidden.name)
+        .map((item) => `${item.name} ${item.count}명`)
+        .join(', ')}일 때 그래프의 ${hidden.name} 칸에 ◯를 몇 개 그릴까요?`,
+      `${hidden.count}개`,
+      [`${rest}개`, `${total}개`, `${hidden.count + 1}개`],
+      `전체에서 다른 항목을 빼면 ${total}-${rest}=${hidden.count}명입니다. 그래서 ◯를 ${hidden.count}개 그립니다.`,
+      'data',
+      '자료 해석 · 합계를 이용해 그래프 완성하기',
+      surveyTable(survey, { blankIndex: (index + 1) % survey.items.length, showTotal: true }),
+    );
+  }
+
+  return null;
+};
+
 const richDataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  const lessonSpecific = richTableGraphQuestion(lesson, difficulty, index);
+  if (lessonSpecific) return lessonSpecific;
+
   const unit = difficulty === '상' ? 2 : 1;
   const items = [
     { label: '축구', count: 5 + (index % 4) * unit },
