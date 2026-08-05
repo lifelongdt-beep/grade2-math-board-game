@@ -878,8 +878,8 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
   const unitName = four ? '천' : '백';
   const seed = n(lesson, index);
 
-  // 백을 알아볼까요 / 천을 알아볼까요
-  if (title.includes('백을 알아') || title.includes('천을 알아')) {
+  // 백을 알아볼까요 / 천을 알아볼까요 ('몇백'은 아래에서 따로 다루므로 제외)
+  if ((title.includes('백을 알아') || title.includes('천을 알아')) && !title.includes('몇')) {
     const below = unitBase - (four ? 100 : 10);
     if (variant === 0) {
       return makeQuestion(
@@ -997,6 +997,178 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       count, [0, count + 1, value],
       `${value}에서 ${unitName}의 자리 숫자는 ${count}입니다.`,
       'placeValue', `몇${unitName}의 자리 숫자 알기`,
+    );
+  }
+
+  // 각 자리의 숫자는 얼마를 나타낼까요
+  if (title.includes('각 자리')) {
+    const digits = four
+      ? [1 + (seed % 8), (seed + 1) % 10, (seed + 4) % 10, (seed + 7) % 10]
+      : [1 + (seed % 8), (seed + 1) % 10, (seed + 4) % 10];
+    const value = digits.reduce((acc, d) => acc * 10 + d, 0);
+    const names = four ? ['천', '백', '십', '일'] : ['백', '십', '일'];
+    const place = index % names.length;
+    const digit = digits[place];
+    const worth = digit * Math.pow(10, names.length - 1 - place);
+
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}에서 ${names[place]}의 자리 숫자는 무엇일까요?`,
+        digit, [digits[(place + 1) % names.length], worth, value % 10],
+        `${value}에서 ${names[place]}의 자리 숫자는 ${digit}입니다.`,
+        'placeValue', '자리의 숫자 찾기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}에서 ${names[place]}의 자리 숫자 ${digit}은 얼마를 나타낼까요?`,
+        worth, [digit, worth * 10, value],
+        `${names[place]}의 자리에 있는 ${digit}은 ${worth}을 나타냅니다.`,
+        'placeValue', '자리 숫자가 나타내는 값 알기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}에서 숫자 ${digits[0]}은 얼마를 나타낼까요?`,
+        digits[0] * Math.pow(10, names.length - 1),
+        [digits[0], value, digits[0] * 10],
+        `${digits[0]}은 ${names[0]}의 자리에 있으므로 ${digits[0] * Math.pow(10, names.length - 1)}을 나타냅니다.`,
+        'placeValue', '같은 숫자라도 자리에 따라 값이 다름 알기',
+      );
+    }
+    if (variant === 3) {
+      const parts = names
+        .map((name, i) => `${name}의 자리 ${digits[i]}`)
+        .join(', ');
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${parts}인 수는 얼마일까요?`,
+        value, [value + 1, value - 1, value + 10],
+        `각 자리의 숫자를 자리에 맞게 놓으면 ${value}입니다.`,
+        'placeValue', '자리 숫자를 모아 수 만들기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${value}에서 가장 큰 값을 나타내는 자리는 어디일까요?`,
+      `${names[0]}의 자리`,
+      names.slice(1).map((name) => `${name}의 자리`).concat('모두 같다'),
+      `왼쪽으로 갈수록 나타내는 값이 큽니다. 그래서 ${names[0]}의 자리가 가장 큽니다.`,
+      'placeValue', '자리의 크기 순서 알기',
+    );
+  }
+
+  // 뛰어 세어 볼까요
+  if (title.includes('뛰어 세')) {
+    const step = four
+      ? [1, 10, 100, 1000][index % 4]
+      : [1, 10, 100][index % 3];
+    const start = four ? 1000 + (seed % 6000) : 100 + (seed % 700);
+    const third = start + step * 2;
+
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${start}, ${start + step}, ${third}, □ 에서 □에 알맞은 수는?`,
+        third + step, [third, third + step * 2, start],
+        `${step}씩 뛰어 세고 있으므로 다음 수는 ${third + step}입니다.`,
+        'number', '뛰어 세어 다음 수 찾기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${start}에서 ${start + step}으로 뛰어 셌습니다. 몇씩 뛰어 센 것일까요?`,
+        `${step}씩`, [`${step * 10}씩`, '1씩', `${step + 1}씩`],
+        `두 수의 차가 ${step}이므로 ${step}씩 뛰어 센 것입니다.`,
+        'number', '뛰어 센 크기 알아내기',
+      );
+    }
+    if (variant === 2) {
+      const changed = step === 1 ? '일' : step === 10 ? '십' : step === 100 ? '백' : '천';
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${step}씩 뛰어 세면 어느 자리 숫자가 변할까요?`,
+        `${changed}의 자리`,
+        ['일의 자리', '십의 자리', '백의 자리'].filter((name) => name !== `${changed}의 자리`).slice(0, 3),
+        `${step}씩 뛰어 세면 ${changed}의 자리 숫자가 1씩 커집니다.`,
+        'number', '뛰어 셀 때 변하는 자리 알기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${third}에서 ${step}만큼 거꾸로 뛰어 센 수는?`,
+        third - step, [third + step, third, start],
+        `거꾸로 뛰어 세면 ${step}만큼 작아지므로 ${third - step}입니다.`,
+        'number', '거꾸로 뛰어 세기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${start}에서 ${step}씩 3번 뛰어 세면 얼마일까요?`,
+      start + step * 3, [start + step, start + step * 2, start + step * 4],
+      `${step}씩 3번이면 ${step * 3}만큼 커지므로 ${start + step * 3}입니다.`,
+      'number', '여러 번 뛰어 센 결과 구하기',
+    );
+  }
+
+  // 수의 크기를 비교해 볼까요
+  if (title.includes('크기를 비교')) {
+    const a = four ? 1000 + (seed % 8000) : 100 + (seed % 800);
+    const b = a + (four ? 100 + (seed % 900) : 10 + (seed % 90));
+
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}과 ${b} 중 더 큰 수는?`,
+        b, [a, a + b, Math.abs(b - a)],
+        `가장 높은 자리부터 차례로 비교하면 ${b}이 더 큽니다.`,
+        'number', '두 수의 크기 비교하기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '수의 크기를 비교할 때 어느 자리부터 볼까요?',
+        '가장 높은 자리부터',
+        ['일의 자리부터', '가운데 자리부터', '아무 자리부터'],
+        `가장 높은 자리부터 비교하고, 같으면 그다음 자리를 비교합니다.`,
+        'placeValue', '크기를 비교하는 차례 알기',
+      );
+    }
+    if (variant === 2) {
+      const c = a + (four ? 2000 : 200);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}, ${b}, ${c}을 작은 수부터 차례로 놓으면 가장 앞에 오는 수는?`,
+        Math.min(a, b, c), [Math.max(a, b, c), b, a + b],
+        `세 수를 비교하면 ${Math.min(a, b, c)}이 가장 작습니다.`,
+        'number', '세 수를 작은 수부터 놓기',
+      );
+    }
+    if (variant === 3) {
+      const same = four ? 1000 : 100;
+      const x = same * 3 + 40 + (seed % 9);
+      const y = same * 3 + 50 + (seed % 9);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${x}과 ${y}처럼 높은 자리 숫자가 같으면 어떻게 비교할까요?`,
+        '그다음 자리 숫자를 비교한다',
+        ['더 이상 비교할 수 없다', '두 수는 항상 같다', '작은 자리부터 다시 센다'],
+        `높은 자리가 같으면 그다음 자리를 비교합니다. ${y}이 더 큽니다.`,
+        'placeValue', '높은 자리가 같을 때 비교하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${b}보다 작은 수는 어느 것일까요?`,
+      a, [b + 1, b + (four ? 1000 : 100), b],
+      `${a}은 ${b}보다 작습니다.`,
+      'number', '기준보다 작은 수 찾기',
     );
   }
 
