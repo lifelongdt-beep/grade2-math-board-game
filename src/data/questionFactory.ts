@@ -871,7 +871,7 @@ const numberQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): 
   const base = fourDigit ? 1000 + (n(lesson, index) % 8000) : 100 + (n(lesson, index) % 800);
   const variant = variantForDifficulty(difficulty, index, 6, 3);
 
-  if (text.includes('90보다') || text.includes('1000을')) {
+  if (text.includes('백을 알아') || text.includes('천을 알아')) {
     const start = fourDigit ? 900 : 90;
     const target = fourDigit ? 1000 : 100;
     const step = fourDigit ? 100 : 10;
@@ -1158,7 +1158,7 @@ const numberQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): 
     );
   }
 
-  if ((text.includes('90보다') || text.includes('1000을')) && variant === 0) {
+  if ((text.includes('백을 알아') || text.includes('천을 알아')) && variant === 0) {
     const start = fourDigit ? 900 : 90;
     const step = fourDigit ? 100 : 10;
     return makeQuestion(
@@ -1190,7 +1190,7 @@ const numberQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): 
     );
   }
 
-  if ((text.includes('뛰어서') && variant === 0) || variant === 0) {
+  if ((text.includes('뛰어 세') && variant === 0) || variant === 0) {
     const step = difficulty === '하' ? (fourDigit ? 100 : 10) : difficulty === '중' ? (fourDigit ? 200 : 20) : (fourDigit ? 500 : 50);
     const start = fourDigit ? 1000 + (index % 8) * 100 : 100 + (index % 7) * 10;
     const answer = start + step * 3;
@@ -1207,7 +1207,7 @@ const numberQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): 
     );
   }
 
-  if ((text.includes('어느 수') && variant <= 1) || variant === 1) {
+  if ((text.includes('크기를 비교') && variant <= 1) || variant === 1) {
     const a = base;
     const b = base + (fourDigit ? 103 : 13) + (index % 4) * (fourDigit ? 100 : 10);
     const answer = Math.max(a, b);
@@ -2502,7 +2502,7 @@ const measurementQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     );
   }
 
-  if (text.includes('1m를') && variant === 0) {
+  if (text.includes('더 큰 단위') && variant === 0) {
     return makeQuestion(
       lesson,
       difficulty,
@@ -2544,7 +2544,7 @@ const measurementQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     );
   }
 
-  if ((text.includes('m와 cm') || (text.includes('1m') && !text.includes('1m를'))) && variant <= 2) {
+  if ((text.includes('m와 cm') || text.includes('더 큰 단위') || text.includes('자로 길이를 재어')) && variant <= 2) {
     const meters = 1 + (index % 4);
     const cm = (seed * 7) % 90;
     const answer = meters * 100 + cm;
@@ -2621,7 +2621,7 @@ const measurementQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     );
   }
 
-  if (text.includes('합과 차') && variant === 0) {
+  if (text.includes('길이의 합') && variant === 0) {
     const a = 35 + (seed % 40);
     const b = 12 + (seed % 25);
     const answer = a + b;
@@ -2638,7 +2638,7 @@ const measurementQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     );
   }
 
-  if ((text.includes('합과 차') && variant === 1) || variant === 1) {
+  if ((text.includes('길이의 차') && variant <= 1) || variant === 1) {
     const a = 30 + (seed % 45);
     const b = 12 + (seed % 24);
     const answer = difficulty === '상' ? a + b : a - Math.min(b, a - 1);
@@ -2661,7 +2661,7 @@ const measurementQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     );
   }
 
-  if (text.includes('합과 차') && variant === 2) {
+  if (text.includes('길이의 합') && variant === 2) {
     const long = 50 + (seed % 30);
     const short = 20 + (seed % 20);
     return makeQuestion(
