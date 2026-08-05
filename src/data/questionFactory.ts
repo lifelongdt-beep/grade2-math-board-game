@@ -3223,15 +3223,21 @@ const surveySets: SurveySet[] = [
 ];
 
 // 같은 차시 안에서 20문항이 서로 다른 수를 갖도록 지문마다 조금씩 바꿉니다.
+// 항목별 수는 서로 달라야 합니다. 같은 수가 나오면 "가장 많은 항목"의 답이
+// 하나로 정해지지 않고 보기의 '모두 같음'이 정답이 되어 버립니다.
 const surveyFor = (index: number): SurveySet => {
   const base = surveySets[index % surveySets.length];
   const shift = Math.floor(index / surveySets.length);
+  const used = new Set<number>();
+
   return {
     ...base,
-    items: base.items.map((item, itemIndex) => ({
-      ...item,
-      count: Math.max(1, item.count + ((shift + itemIndex) % 3) - 1),
-    })),
+    items: base.items.map((item, itemIndex) => {
+      let count = Math.max(1, item.count + ((shift + itemIndex) % 3) - 1);
+      while (used.has(count)) count += 1;
+      used.add(count);
+      return { ...item, count };
+    }),
   };
 };
 

@@ -34,6 +34,34 @@ describe('generated question text', () => {
     expect(issues).toEqual([]);
   });
 
+  // "가장 많은/적은 것"을 물으면서 항목별 수가 같으면 답이 하나로 정해지지 않고
+  // 보기의 '모두 같음'이 오히려 정답이 되어 버립니다.
+  it('never asks for the largest or smallest item when the counts tie', () => {
+    const issues: string[] = [];
+
+    for (const lesson of lessons) {
+      for (const level of levels) {
+        for (const question of generateQuestions(lesson, level)) {
+          if (!/가장 많은|가장 적은|가장 많은 것과 가장 적은 것의 차/.test(question.prompt)) continue;
+
+          const counts = [...question.prompt.matchAll(/[가-힣]\s*(\d+)명/g)].map((match) => Number(match[1]));
+          if (counts.length < 2) continue;
+
+          const highest = Math.max(...counts);
+          const lowest = Math.min(...counts);
+          const tiedHigh = counts.filter((count) => count === highest).length > 1;
+          const tiedLow = counts.filter((count) => count === lowest).length > 1;
+
+          if (tiedHigh || tiedLow) {
+            issues.push(`${question.id}: counts ${counts.join(',')} | ${question.prompt}`);
+          }
+        }
+      }
+    }
+
+    expect(issues).toEqual([]);
+  });
+
   // 자리값 표는 문제에 나온 수보다 작은 수를 그리면 안 됩니다.
   // (예: "274에서 일의 자리 숫자가 나타내는 값은?"의 정답 4를 그리면
   //  백 0 / 십 0 / 일 4가 되어 학생이 분해할 274가 화면에서 사라집니다.)
