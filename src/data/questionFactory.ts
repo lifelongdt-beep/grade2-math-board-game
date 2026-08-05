@@ -8137,9 +8137,9 @@ const solidQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Q
 };
 
 const shouldUseSolidQuestion = (lesson: Lesson, index: number) => {
-  if (lesson.unitNo === 2) {
-    if (lesson.lessonNo >= 6 && lesson.lessonNo <= 8) return true;
-    if (lesson.lessonNo === 1 || lesson.lessonNo === 9) return index % 3 === 0;
+  if (lesson.unitNo === 2 && lesson.semester === '2-1') {
+    // 6~7차시가 쌓기나무 차시입니다. 단원 도입은 도형 찾기로 다룹니다.
+    if (lesson.lessonNo >= 6) return true;
   }
   return lesson.tags.includes('solid') && !lesson.tags.includes('shape');
 };
@@ -8153,6 +8153,55 @@ const blockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
   const title = lesson.title;
   const variant = variantForDifficulty(difficulty, index, 5, 3);
   const cubes = 3 + (index % 3);
+
+  // 단원 도입: 생활 주변에서 여러 가지 도형 찾기
+  if (title.includes('단원 도입')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '동전이나 시계처럼 어느 쪽에서 보아도 둥근 모양은?',
+        '원', ['삼각형', '사각형', '쌓기나무'],
+        '어느 쪽에서 보아도 둥근 모양을 원이라고 합니다.',
+        'shape', '생활 물건에서 원 찾기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '창문이나 책처럼 곧은 변 4개로 둘러싸인 모양은?',
+        '사각형', ['원', '삼각형', '쌓기나무'],
+        '곧은 변 4개로 둘러싸인 모양을 사각형이라고 합니다.',
+        'shape', '생활 물건에서 사각형 찾기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '교통 표지판처럼 곧은 변 3개로 둘러싸인 모양은?',
+        '삼각형', ['원', '사각형', '쌓기나무'],
+        '곧은 변 3개로 둘러싸인 모양을 삼각형이라고 합니다.',
+        'shape', '생활 물건에서 삼각형 찾기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '도형의 이름을 정할 때 무엇을 보아야 할까요?',
+        '변과 꼭짓점의 수, 굽은 선인지 곧은 선인지',
+        ['색깔과 크기', '만든 재료', '놓인 자리'],
+        '도형은 크기나 색깔이 아니라 변과 꼭짓점 같은 성질로 구별합니다.',
+        'shape', '도형을 구별하는 기준 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '주변에서 도형을 찾아볼 때 알맞은 말은?',
+      '물건의 모양을 도형으로 바꾸어 본다',
+      ['물건의 무게를 잰다', '물건의 값을 알아본다', '물건을 세어 본다'],
+      '물건의 겉모양을 원, 삼각형, 사각형처럼 도형으로 바라볼 수 있습니다.',
+      'shape', '생활 속 도형 찾아보기',
+    );
+  }
 
   if (title.includes('쌓은 모양을 알아')) {
     if (variant === 0) {
