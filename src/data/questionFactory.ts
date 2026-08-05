@@ -8144,7 +8144,121 @@ const shouldUseSolidQuestion = (lesson: Lesson, index: number) => {
   return lesson.tags.includes('solid') && !lesson.tags.includes('shape');
 };
 
+// -- 2-1 2단원 여러 가지 도형: 쌓기나무 차시 (지도서 195~197쪽) --
+// 6차시 쌓은 모양을 알아볼까요: 쌓인 모양을 위·앞·옆과 층으로 설명하기
+// 7차시 여러 가지 모양으로 쌓아 볼까요: 같은 개수로 여러 모양 만들기
+const blockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (lesson.unitTitle !== '여러 가지 도형') return null;
+
+  const title = lesson.title;
+  const variant = variantForDifficulty(difficulty, index, 5, 3);
+  const cubes = 3 + (index % 3);
+
+  if (title.includes('쌓은 모양을 알아')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '쌓은 모양을 친구에게 설명할 때 쓰면 좋은 말은?',
+        '앞, 옆, 위와 몇 층',
+        ['예쁘다, 멋있다', '크다, 작다', '많다, 적다'],
+        '쌓은 모양은 방향과 층을 써야 정확히 설명할 수 있습니다.',
+        'solid', '쌓은 모양을 설명하는 말 알기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `쌓기나무 ${cubes}개를 옆으로 나란히 놓았습니다. 몇 층일까요?`,
+        '1층', ['2층', `${cubes}층`, '3층'],
+        '옆으로만 놓으면 위로 쌓이지 않으므로 1층입니다.',
+        'solid', '층수 세어 보기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '쌓기나무를 셀 때 뒤에 가려진 것은 어떻게 해야 할까요?',
+        '가려진 것도 빠뜨리지 않고 센다',
+        ['보이는 것만 센다', '가려진 것은 빼고 센다', '두 번 센다'],
+        '보이지 않아도 쌓기나무가 있을 수 있으므로 함께 세어야 합니다.',
+        'solid', '가려진 쌓기나무까지 세기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '쌓기나무 2개를 위로 포개어 놓으면 몇 층일까요?',
+        '2층', ['1층', '3층', '4층'],
+        '위로 하나씩 포개면 층이 하나씩 늘어나므로 2층입니다.',
+        'solid', '위로 쌓을 때의 층 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '친구가 설명한 대로 똑같이 쌓으려면 무엇을 알아야 할까요?',
+      '쌓기나무의 개수와 놓인 위치',
+      ['쌓기나무의 색깔', '쌓은 사람의 이름', '쌓은 시간'],
+      '개수와 위치를 알아야 같은 모양으로 쌓을 수 있습니다.',
+      'solid', '똑같이 쌓기 위해 필요한 정보 알기',
+    );
+  }
+
+  if (title.includes('여러 가지 모양으로 쌓아')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `쌓기나무 ${cubes}개로 서로 다른 모양을 만들 수 있을까요?`,
+        '개수가 같아도 여러 모양을 만들 수 있다',
+        ['한 가지 모양만 된다', '만들 수 없다', '개수가 달라진다'],
+        '같은 개수라도 놓는 위치를 바꾸면 여러 모양이 됩니다.',
+        'solid', '같은 개수로 여러 모양 만들기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `쌓기나무 ${cubes}개로 만든 두 모양이 다릅니다. 쌓기나무의 개수는?`,
+        '두 모양 모두 같다',
+        ['앞의 모양이 더 많다', '뒤의 모양이 더 많다', '알 수 없다'],
+        `모양이 달라도 사용한 쌓기나무는 ${cubes}개로 같습니다.`,
+        'solid', '모양이 달라도 개수는 같음 알기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `쌓기나무 ${cubes}개로 만든 모양에 1개를 더 놓으면 몇 개일까요?`,
+        `${cubes + 1}개`, [`${cubes}개`, `${cubes + 2}개`, `${cubes - 1}개`],
+        `${cubes}개에 1개를 더하면 ${cubes + 1}개입니다.`,
+        'solid', '쌓기나무를 더할 때의 개수 구하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '똑같은 모양으로 쌓았는지 확인하는 방법은?',
+        '개수와 놓인 자리를 하나씩 맞추어 본다',
+        ['색깔을 비교한다', '높이만 본다', '멀리서 본다'],
+        '개수와 놓인 자리가 모두 같아야 똑같은 모양입니다.',
+        'solid', '같은 모양인지 확인하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '쌓기나무로 모양을 만들 때 아래층을 먼저 놓는 까닭은?',
+      '아래가 받쳐 주어야 위에 쌓을 수 있어서',
+      ['색깔을 맞추려고', '개수를 세려고', '높이를 낮추려고'],
+      '아래층이 없으면 위에 쌓을 수 없으므로 아래부터 놓습니다.',
+      'solid', '쌓는 차례 생각하기',
+    );
+  }
+
+  return null;
+};
+
 const shapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  const blockUnit = blockUnitQuestion(lesson, difficulty, index);
+  if (blockUnit) return blockUnit;
   if (shouldUseSolidQuestion(lesson, index)) return solidQuestion(lesson, difficulty, index);
   return planeShapeQuestion(lesson, difficulty, index);
 };
