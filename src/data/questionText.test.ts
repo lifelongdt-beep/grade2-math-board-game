@@ -33,4 +33,28 @@ describe('generated question text', () => {
 
     expect(issues).toEqual([]);
   });
+
+  it('shows the number from the question in the place value table', () => {
+    const issues: string[] = [];
+
+    for (const lesson of lessons) {
+      for (const level of levels) {
+        for (const question of generateQuestions(lesson, level)) {
+          if (question.visual?.kind !== 'place-value') continue;
+
+          const shown = Number(
+            question.visual.columns.map((column) => String(column.value)).join(''),
+          );
+          const promptNumbers = question.prompt.match(/\d+/g)?.map(Number) ?? [];
+          if (promptNumbers.length === 0) continue;
+
+          if (!promptNumbers.includes(shown)) {
+            issues.push(`${question.id}: table shows ${shown}, prompt has ${promptNumbers.join(',')} | ${question.prompt}`);
+          }
+        }
+      }
+    }
+
+    expect(issues).toEqual([]);
+  });
 });

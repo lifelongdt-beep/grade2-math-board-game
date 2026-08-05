@@ -4851,7 +4851,11 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
   const promptNumbers = question.prompt.match(/\d+/g)?.map(Number) ?? [];
 
   if (question.type === 'placeValue') {
-    return placeValueVisualFor(Number.isNaN(answerNumber) ? promptNumbers[0] ?? 100 : answerNumber, '자리값 시각자료');
+    // 자리값 문제의 정답은 보통 한 자리 값(예: 274의 일의 자리 → 4)이라
+    // 정답을 그리면 표가 000이 됩니다. 문제에 나온 수 중 가장 큰 수를 그려야
+    // 학생이 실제로 분해할 수를 볼 수 있습니다.
+    const candidates = [...promptNumbers, ...(Number.isNaN(answerNumber) ? [] : [answerNumber])];
+    return placeValueVisualFor(candidates.length ? Math.max(...candidates) : 100, '자리값 시각자료');
   }
 
   if (question.type === 'number') {
