@@ -3625,10 +3625,23 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
 
   const title = lesson.title;
   const variant = variantForDifficulty(difficulty, index, 5, 3);
-  const red = 5 + (index % 5);
-  const blue = 2 + ((index + 2) % 4);
-  const green = 1 + ((index + 4) % 3);
+  // 세 수는 서로 달라야 '가장 많은/적은 것'과 '몇 개 더 많은지'의 답이 하나로 정해집니다.
+  const steps = [1 + (index % 3), 4 + (index % 3), 7 + (index % 2)];
+  const rotate3 = index % 3;
+  const red = steps[rotate3];
+  const blue = steps[(rotate3 + 1) % 3];
+  const green = steps[(rotate3 + 2) % 3];
   const total = red + blue + green;
+  const colours = [
+    { name: '빨강', count: red },
+    { name: '파랑', count: blue },
+    { name: '초록', count: green },
+  ];
+  const mostColour = mostOf(colours);
+  const leastColour = leastOf(colours);
+  const [moreColour, lessColour] = red >= blue
+    ? [{ name: '빨강', count: red }, { name: '파랑', count: blue }]
+    : [{ name: '파랑', count: blue }, { name: '빨강', count: red }];
 
   if (title.includes('분류는 어떻게')) {
     if (variant === 0) {
@@ -3752,9 +3765,10 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     if (variant === 2) {
       return makeQuestion(
         lesson, difficulty, index,
-        `빨강 ${red}개, 파랑 ${blue}개입니다. 빨강은 파랑보다 몇 개 더 많을까요?`,
-        `${red - blue}개`, [`${red + blue}개`, `${blue}개`, `${red}개`],
-        `더 많은 정도는 두 수의 차로 구합니다. ${red}-${blue}=${red - blue}개입니다.`,
+        `빨강 ${red}개, 파랑 ${blue}개입니다. ${josa(moreColour.name, '은', '는')} ${lessColour.name}보다 몇 개 더 많을까요?`,
+        `${moreColour.count - lessColour.count}개`,
+        [`${red + blue}개`, `${lessColour.count}개`, `${moreColour.count}개`],
+        `더 많은 정도는 두 수의 차로 구합니다. ${moreColour.count}-${lessColour.count}=${moreColour.count - lessColour.count}개입니다.`,
         'data', '분류 결과의 차 구하기',
       );
     }
@@ -3771,9 +3785,9 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     return makeQuestion(
       lesson, difficulty, index,
       `딱지를 세었더니 빨강 ${red}개, 파랑 ${blue}개, 초록 ${green}개였습니다. 가장 많은 색은?`,
-      '빨강',
-      ['파랑', '초록', '모두 같음'],
-      `세 수를 비교하면 ${red}개인 빨강이 가장 많습니다.`,
+      mostColour.name,
+      colours.filter((item) => item.name !== mostColour.name).map((item) => item.name).concat('모두 같음'),
+      `세 수를 비교하면 ${mostColour.count}개인 ${josa(mostColour.name, '이', '가')} 가장 많습니다.`,
       'data', '분류하여 센 뒤 비교하기',
     );
   }
@@ -3783,9 +3797,9 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
       return makeQuestion(
         lesson, difficulty, index,
         `빨강 ${red}개, 파랑 ${blue}개, 초록 ${green}개로 분류했습니다. 가장 적은 색은?`,
-        green < blue ? '초록' : '파랑',
-        [green < blue ? '파랑' : '초록', '빨강', '모두 같음'],
-        `세 수를 비교하면 가장 작은 수인 색이 가장 적습니다.`,
+        leastColour.name,
+        colours.filter((item) => item.name !== leastColour.name).map((item) => item.name).concat('모두 같음'),
+        `세 수를 비교하면 ${leastColour.count}개인 ${josa(leastColour.name, '이', '가')} 가장 적습니다.`,
         'data', '분류 결과에서 가장 적은 것 찾기',
       );
     }
