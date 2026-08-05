@@ -325,11 +325,27 @@ const handPoint = (center: number, length: number, angle: number) => ({
   y: CLOCK_CENTER_Y - Math.cos(angle) * length,
 });
 
-function ClockFace({ hour, minute, x, label }: { hour: number; minute: number; x: number; label: string }) {
+function ClockFace({
+  hour,
+  minute,
+  x,
+  label,
+  example = false,
+}: {
+  hour: number;
+  minute: number;
+  x: number;
+  label: string;
+  example?: boolean;
+}) {
   const hourAngle = (((hour % 12) + minute / 60) / 12) * Math.PI * 2;
   const minuteAngle = (minute / 60) * Math.PI * 2;
   const hourHand = handPoint(x, 36, hourAngle);
   const minuteHand = handPoint(x, 54, minuteAngle);
+  // 예시 시계는 바늘이 정답이 아니므로 점선으로 흐리게 그려 문제 글을 읽게 합니다.
+  const handStyle = example
+    ? { strokeDasharray: '7 6', opacity: 0.55 }
+    : {};
 
   return (
     <g>
@@ -343,10 +359,35 @@ function ClockFace({ hour, minute, x, label }: { hour: number; minute: number; x
           </text>
         );
       })}
-      <line x1={x} y1={CLOCK_CENTER_Y} x2={hourHand.x} y2={hourHand.y} stroke="#182433" strokeWidth="6" strokeLinecap="round" />
-      <line x1={x} y1={CLOCK_CENTER_Y} x2={minuteHand.x} y2={minuteHand.y} stroke="#0f9f9f" strokeWidth="5" strokeLinecap="round" />
-      <circle cx={x} cy={CLOCK_CENTER_Y} r="5" fill="#182433" />
-      <text x={x} y="160" textAnchor="middle" fill="#0f7175" fontSize="16" fontWeight="900">
+      <line
+        x1={x}
+        y1={CLOCK_CENTER_Y}
+        x2={hourHand.x}
+        y2={hourHand.y}
+        stroke="#182433"
+        strokeWidth="6"
+        strokeLinecap="round"
+        {...handStyle}
+      />
+      <line
+        x1={x}
+        y1={CLOCK_CENTER_Y}
+        x2={minuteHand.x}
+        y2={minuteHand.y}
+        stroke="#0f9f9f"
+        strokeWidth="5"
+        strokeLinecap="round"
+        {...handStyle}
+      />
+      <circle cx={x} cy={CLOCK_CENTER_Y} r="5" fill="#182433" opacity={example ? 0.55 : 1} />
+      <text
+        x={x}
+        y="160"
+        textAnchor="middle"
+        fill={example ? '#9a6b12' : '#0f7175'}
+        fontSize={example ? 14 : 16}
+        fontWeight="900"
+      >
         {label}
       </text>
     </g>
@@ -355,12 +396,19 @@ function ClockFace({ hour, minute, x, label }: { hour: number; minute: number; x
 
 function ClockGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'clock' }> }) {
   const hasEnd = visual.endHour != null && visual.endMinute != null;
-  const frameWidth = hasEnd ? 310 : 150;
+  const example = visual.example === true;
+  const frameWidth = hasEnd ? 310 : example ? 240 : 150;
 
   return (
     <svg viewBox={`0 0 ${frameWidth} ${CLOCK_FRAME_HEIGHT}`} role="img" aria-label={visual.label}>
       <rect x="3" y="3" width={frameWidth - 6} height={CLOCK_FRAME_HEIGHT - 6} rx="14" fill="#f6fcff" stroke="#d7edf2" />
-      <ClockFace hour={visual.hour} minute={visual.minute} x={hasEnd ? 80 : 75} label="시작" />
+      <ClockFace
+        hour={visual.hour}
+        minute={visual.minute}
+        x={hasEnd ? 80 : frameWidth / 2}
+        label={example ? '바늘 위치는 바뀔 수 있어요' : '시작'}
+        example={example}
+      />
       {hasEnd && <ClockFace hour={visual.endHour ?? visual.hour} minute={visual.endMinute ?? visual.minute} x={230} label="끝" />}
     </svg>
   );

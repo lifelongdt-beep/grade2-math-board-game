@@ -3414,13 +3414,21 @@ const arrayVisualFor = (rows: number, columns: number, label = '배열 자료', 
   ...(fadedRows ? { fadedRows } : {}),
 });
 
-const clockVisualFor = (hour: number, minute: number, label = '시계 자료', endHour?: number, endMinute?: number): QuestionVisual => ({
+const clockVisualFor = (
+  hour: number,
+  minute: number,
+  label = '시계 자료',
+  endHour?: number,
+  endMinute?: number,
+  example = false,
+): QuestionVisual => ({
   kind: 'clock',
   label,
   hour,
   minute,
   ...(endHour != null ? { endHour } : {}),
   ...(endMinute != null ? { endMinute } : {}),
+  ...(example ? { example: true } : {}),
 });
 
 const patternVisualFor = (items: string[], label = '무늬 규칙 자료', missingIndex?: number): QuestionVisual => ({
@@ -4904,9 +4912,19 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
   }
 
   if (question.type === 'time') {
+    // 문제에 적힌 숫자를 그대로 시·분으로 읽은 값이라 실제 답과 다릅니다.
+    // (예: "긴바늘이 9를 가리키고 짧은바늘이 2와 3 사이" -> 답은 2시 45분인데 9시 2분이 됩니다.)
+    // 그래서 시계 모양을 보여 주는 예시로만 표시하고 바늘은 점선으로 그립니다.
     const hour = promptNumbers[0] ?? 3;
     const minute = promptNumbers[1] ?? 0;
-    return clockVisualFor(Math.max(1, Math.min(hour, 12)), Math.max(0, Math.min(minute, 55)), '시각 자료');
+    return clockVisualFor(
+      Math.max(1, Math.min(hour, 12)),
+      Math.max(0, Math.min(minute, 55)),
+      '시계 모양 예시',
+      undefined,
+      undefined,
+      true,
+    );
   }
 
   if (question.type === 'pattern') {

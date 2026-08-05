@@ -153,6 +153,8 @@ export interface ClockVisual {
   minute: number;
   endHour?: number;
   endMinute?: number;
+  /** 바늘이 실제 정답 시각이 아니라 시계 모양을 보여 주는 예시일 때 true */
+  example?: boolean;
 }
 
 export interface PictographVisual {
