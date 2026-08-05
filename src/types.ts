@@ -157,6 +157,18 @@ export interface ClockVisual {
   example?: boolean;
 }
 
+export interface CalendarVisual {
+  kind: 'calendar';
+  label: string;
+  /** 1일이 놓이는 요일 (0=일 ... 6=토) */
+  startWeekday: number;
+  days: number;
+  marks: Array<{
+    day: number;
+    tone: 'start' | 'end';
+  }>;
+}
+
 export interface PictographVisual {
   kind: 'pictograph';
   label: string;
@@ -192,6 +204,7 @@ export type QuestionVisual =
   | BarModelVisual
   | RulerVisual
   | ClockVisual
+  | CalendarVisual
   | PictographVisual
   | ArrayVisual
   | PatternVisual;

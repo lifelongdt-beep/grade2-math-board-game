@@ -436,7 +436,13 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     };
   }
 
-  if (visual.kind === 'ruler' || visual.kind === 'clock' || visual.kind === 'pictograph' || visual.kind === 'array') {
+  if (
+    visual.kind === 'ruler' ||
+    visual.kind === 'clock' ||
+    visual.kind === 'calendar' ||
+    visual.kind === 'pictograph' ||
+    visual.kind === 'array'
+  ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };
   }
 
@@ -3431,6 +3437,18 @@ const clockVisualFor = (
   ...(example ? { example: true } : {}),
 });
 
+// 1일을 일요일에 두면 같은 세로줄이 곧 같은 요일이 되어 "7일마다 반복"이 눈에 보입니다.
+const calendarVisualFor = (
+  marks: Array<{ day: number; tone: 'start' | 'end' }> = [],
+  label = '달력 자료',
+): QuestionVisual => ({
+  kind: 'calendar',
+  label,
+  startWeekday: 0,
+  days: 30,
+  marks,
+});
+
 const patternVisualFor = (items: string[], label = '무늬 규칙 자료', missingIndex?: number): QuestionVisual => ({
   kind: 'pattern',
   label,
@@ -4912,6 +4930,28 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
   }
 
   if (question.type === 'time') {
+    // 달력 문제에는 시계가 아니라 달력을 보여 줍니다.
+    if (/달력|요일|며칠|날짜/.test(question.prompt)) {
+      // 답이 되는 날짜는 표시하지 않습니다. 학생이 달력에서 직접 세어야 합니다.
+      const eventMatch = question.prompt.match(/오늘은 (\d+)일이고 행사는 (\d+)일/);
+      if (eventMatch) {
+        return calendarVisualFor(
+          [
+            { day: Number(eventMatch[1]), tone: 'start' },
+            { day: Number(eventMatch[2]), tone: 'end' },
+          ],
+          '오늘과 행사 날짜 달력',
+        );
+      }
+
+      const moveMatch = question.prompt.match(/^(\d+)일에서 \d+일 뒤/);
+      if (moveMatch) {
+        return calendarVisualFor([{ day: Number(moveMatch[1]), tone: 'start' }], '날짜를 세는 달력');
+      }
+
+      return calendarVisualFor([], '요일이 반복되는 달력');
+    }
+
     // 문제에 적힌 숫자를 그대로 시·분으로 읽은 값이라 실제 답과 다릅니다.
     // (예: "긴바늘이 9를 가리키고 짧은바늘이 2와 3 사이" -> 답은 2시 45분인데 9시 2분이 됩니다.)
     // 그래서 시계 모양을 보여 주는 예시로만 표시하고 바늘은 점선으로 그립니다.

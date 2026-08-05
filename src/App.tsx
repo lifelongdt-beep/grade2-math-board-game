@@ -1080,6 +1080,22 @@ function App() {
         </div>
       </section>
 
+      <footer className={`command-bar ${mode === 'finished' ? 'finished-actions' : ''}`}>
+        <button className="secondary-button" type="button" onClick={goSetup}>
+          <Home size={18} />
+          {mode === 'finished' ? '처음' : '설정으로'}
+        </button>
+        <div className="command-status">
+          <span>풀이 기록 {records.length}개</span>
+          <span>{sessionDuration}초 수업</span>
+          <span>{mode === 'finished' ? '시간 종료' : '진행 중'}</span>
+        </div>
+        <button className="primary-button" type="button" onClick={resetSession}>
+          <RefreshCcw size={18} />
+          {mode === 'finished' ? '다시 풀기' : '다시 시작'}
+        </button>
+      </footer>
+
       <section className={`game-layout individual players-${playerCount}`}>
         <section className="playfield" style={{ backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,.94), rgba(255,255,255,.82)), url(/assets/math-adventure-bg.png)' }}>
           <div className="round-status">
@@ -1188,21 +1204,6 @@ function App() {
         </section>
       </section>
 
-      <footer className={`command-bar ${mode === 'finished' ? 'finished-actions' : ''}`}>
-        <button className="secondary-button" type="button" onClick={goSetup}>
-          <Home size={18} />
-          {mode === 'finished' ? '처음' : '설정으로'}
-        </button>
-        <div className="command-status">
-          <span>풀이 기록 {records.length}개</span>
-          <span>{sessionDuration}초 수업</span>
-          <span>{mode === 'finished' ? '시간 종료' : '진행 중'}</span>
-        </div>
-        <button className="primary-button" type="button" onClick={resetSession}>
-          <RefreshCcw size={18} />
-          {mode === 'finished' ? '다시 풀기' : '다시 시작'}
-        </button>
-      </footer>
     </>
   );
 

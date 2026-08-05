@@ -414,6 +414,64 @@ function ClockGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'clo
   );
 }
 
+const WEEKDAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
+function CalendarGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'calendar' }> }) {
+  const cellWidth = 38;
+  const cellHeight = 31;
+  const left = 12;
+  const firstRowBaseline = 56;
+  const rows = Math.ceil((visual.startWeekday + visual.days) / 7);
+  const width = left * 2 + cellWidth * 7;
+  const height = firstRowBaseline + rows * cellHeight - 4;
+  const fill = { start: '#dffafa', end: '#fff4bd' };
+  const stroke = { start: '#0f9f9f', end: '#d4a62f' };
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="3" y="3" width={width - 6} height={height - 6} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {WEEKDAY_NAMES.map((name, index) => (
+        <text
+          key={name}
+          x={left + index * cellWidth + cellWidth / 2}
+          y="28"
+          textAnchor="middle"
+          fill={index === 0 ? '#c2454f' : index === 6 ? '#2f6fb5' : '#0f7175'}
+          fontSize="15"
+          fontWeight="900"
+        >
+          {name}
+        </text>
+      ))}
+      {Array.from({ length: visual.days }).map((_, index) => {
+        const day = index + 1;
+        const slot = visual.startWeekday + index;
+        const cx = left + (slot % 7) * cellWidth + cellWidth / 2;
+        const baseline = firstRowBaseline + Math.floor(slot / 7) * cellHeight;
+        const mark = visual.marks.find((item) => item.day === day);
+
+        return (
+          <g key={day}>
+            {mark && (
+              <circle cx={cx} cy={baseline - 5} r="14" fill={fill[mark.tone]} stroke={stroke[mark.tone]} strokeWidth="3" />
+            )}
+            <text
+              x={cx}
+              y={baseline}
+              textAnchor="middle"
+              fill={slot % 7 === 0 ? '#c2454f' : '#24364a'}
+              fontSize="15"
+              fontWeight={mark ? 900 : 700}
+            >
+              {day}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function PictographGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'pictograph' }> }) {
   return (
     <svg viewBox="0 0 376 150" role="img" aria-label={visual.label}>
@@ -530,6 +588,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'bar-model' && <BarModelGraphic visual={visual} />}
       {visual.kind === 'ruler' && <RulerGraphic visual={visual} />}
       {visual.kind === 'clock' && <ClockGraphic visual={visual} />}
+      {visual.kind === 'calendar' && <CalendarGraphic visual={visual} />}
       {visual.kind === 'pictograph' && <PictographGraphic visual={visual} />}
       {visual.kind === 'array' && <ArrayGraphic visual={visual} />}
       {visual.kind === 'pattern' && <PatternGraphic visual={visual} />}
