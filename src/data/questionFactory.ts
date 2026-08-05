@@ -239,14 +239,14 @@ const promptNotes: Record<ConceptTag, string[]> = {
   ],
   addition: [
     '일의 자리부터 차례대로 계산해요.',
-    '받아올림이 있는지 확인해요.',
+    '어느 자리부터 더하는지 확인해요.',
     '수 모형으로 더해 보세요.',
     '식과 이야기 상황을 연결해요.',
     '잘못된 계산을 고쳐 보세요.',
   ],
   subtraction: [
     '무엇에서 무엇을 빼는지 먼저 읽어요.',
-    '받아내림이 필요한지 확인해요.',
+    '어느 자리부터 빼는지 확인해요.',
     '남은 양을 묻는지 차이를 묻는지 살펴요.',
     '덧셈으로 다시 확인해요.',
     '식과 이야기 상황을 연결해요.',
@@ -1732,7 +1732,7 @@ const calcUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
         `${a}+${b}는 얼마일까요?`,
         a + b, [a + b + 10, Math.max(0, a + b - 10), a + b + 1],
         `일의 자리끼리, 십의 자리끼리 더하면 ${a + b}입니다.`,
-        'addition', '받아올림 없는 덧셈하기',
+        'addition', '자리끼리 더하기',
       );
     }
     if (variant === 1) {
@@ -1741,7 +1741,7 @@ const calcUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
         `${a + b}-${b}는 얼마일까요?`,
         a, [a + b, b, a + 10],
         `일의 자리끼리, 십의 자리끼리 빼면 ${a}입니다.`,
-        'subtraction', '받아내림 없는 뺄셈하기',
+        'subtraction', '자리끼리 빼기',
       );
     }
     if (variant === 2) {
@@ -5157,7 +5157,7 @@ const clockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       return makeQuestion(
         lesson, difficulty, index,
         `긴바늘이 숫자 ${pointer}를 가리키면 몇 분일까요?`,
-        `${five}분`, [`${pointer}분`, `${Math.max(5, five - 5)}분`, `${pointer * 10}분`],
+        `${five}분`, [`${pointer}분`, `${Math.max(5, five - 5)}분`, `${five < 55 ? five + 5 : 15}분`],
         `긴바늘이 숫자 한 칸을 지날 때마다 5분입니다. ${pointer}×5=${five}분입니다.`,
         'time', '긴바늘이 가리키는 숫자로 분 읽기',
       );
