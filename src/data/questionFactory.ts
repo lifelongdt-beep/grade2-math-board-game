@@ -288,9 +288,9 @@ const promptNotes: Record<ConceptTag, string[]> = {
   ],
   time: [
     '긴바늘과 짧은바늘의 역할을 나누어 봐요.',
-    '60분이 1시간임을 떠올려요.',
-    '시작 시각과 끝 시각을 구별해요.',
-    '시각인지 시간인지 먼저 구분해요.',
+    '짧은바늘이 지나온 숫자를 먼저 봐요.',
+    '긴바늘이 어디를 가리키는지 봐요.',
+    '문제에서 묻는 것을 다시 읽어요.',
     '숫자와 눈금을 다시 한 번 확인해요.',
   ],
   data: [
@@ -5198,6 +5198,60 @@ const clockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       ['숫자만 읽는다', '작은 눈금만 센다', '짧은바늘로 센다'],
       `숫자까지는 5씩, 남은 작은 눈금은 1씩 세어 ${minute}분을 읽습니다.`,
       'time', '1분 단위로 시각 읽는 방법 알기',
+    );
+  }
+
+  // 1차시 단원 도입: 1학년에서 배운 몇 시, 몇 시 30분까지만 다룹니다.
+  // 뒤에서 배울 1시간, 걸린 시간, 오전·오후, 달력은 여기서 내지 않습니다.
+  if (title.includes('단원 도입')) {
+    const half = index % 2 === 0;
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `긴바늘이 12를 가리키고 짧은바늘이 ${hour}를 가리킵니다. 몇 시일까요?`,
+        `${hour}시`, [`${hour === 12 ? 1 : hour + 1}시`, `12시`, `${hour}시 30분`],
+        `긴바늘이 12를 가리키면 몇 시 정각입니다. 짧은바늘이 ${hour}이므로 ${hour}시입니다.`,
+        'time', '몇 시 읽기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `긴바늘이 6을 가리키고 짧은바늘이 ${hour}와 ${hour === 12 ? 1 : hour + 1} 사이에 있습니다. 몇 시 몇 분일까요?`,
+        `${hour}시 30분`,
+        [`${hour === 12 ? 1 : hour + 1}시 30분`, `${hour}시`, `6시 ${hour}분`],
+        `긴바늘이 6을 가리키면 30분입니다. 짧은바늘이 지나온 숫자가 ${hour}이므로 ${hour}시 30분입니다.`,
+        'time', '몇 시 30분 읽기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '시계에서 짧은바늘은 무엇을 나타낼까요?',
+        '시', ['분', '초', '날짜'],
+        '짧은바늘은 몇 시인지를, 긴바늘은 몇 분인지를 나타냅니다.',
+        'time', '두 바늘의 역할 알기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '시각을 알아야 하는 때로 알맞은 것은?',
+        '약속 시각을 지켜야 할 때',
+        ['물건의 무게를 알 때', '물건의 길이를 잴 때', '물건의 수를 셀 때'],
+        '몇 시에 무엇을 하는지 정하려면 시각을 알아야 합니다.',
+        'time', '시각이 필요한 상황 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      half ? '시계에서 긴바늘은 무엇을 나타낼까요?' : '시계의 큰 숫자는 모두 몇 개일까요?',
+      half ? '분' : '12개',
+      half ? ['시', '날짜', '요일'] : ['10개', '24개', '6개'],
+      half
+        ? '긴바늘은 몇 분인지를 나타냅니다.'
+        : '시계에는 1부터 12까지 큰 숫자가 12개 있습니다.',
+      'time', half ? '긴바늘의 역할 알기' : '시계판 살펴보기',
     );
   }
 
