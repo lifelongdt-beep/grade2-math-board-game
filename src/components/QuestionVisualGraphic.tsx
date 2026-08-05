@@ -315,33 +315,38 @@ function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'rul
   );
 }
 
+// 시계 그림은 프레임을 시계에 딱 맞춰야 화면에서 크게 보입니다.
+const CLOCK_CENTER_Y = 76;
+const CLOCK_RADIUS = 68;
+const CLOCK_FRAME_HEIGHT = 170;
+
 const handPoint = (center: number, length: number, angle: number) => ({
   x: center + Math.sin(angle) * length,
-  y: 66 - Math.cos(angle) * length,
+  y: CLOCK_CENTER_Y - Math.cos(angle) * length,
 });
 
 function ClockFace({ hour, minute, x, label }: { hour: number; minute: number; x: number; label: string }) {
   const hourAngle = (((hour % 12) + minute / 60) / 12) * Math.PI * 2;
   const minuteAngle = (minute / 60) * Math.PI * 2;
-  const hourHand = handPoint(x, 24, hourAngle);
-  const minuteHand = handPoint(x, 36, minuteAngle);
+  const hourHand = handPoint(x, 36, hourAngle);
+  const minuteHand = handPoint(x, 54, minuteAngle);
 
   return (
     <g>
-      <circle cx={x} cy="66" r="46" fill="#ffffff" stroke="#8aa0b8" strokeWidth="3" />
+      <circle cx={x} cy={CLOCK_CENTER_Y} r={CLOCK_RADIUS} fill="#ffffff" stroke="#8aa0b8" strokeWidth="3" />
       {Array.from({ length: 12 }).map((_, index) => {
         const angle = ((index + 1) / 12) * Math.PI * 2;
-        const point = handPoint(x, 38, angle);
+        const point = handPoint(x, 56, angle);
         return (
-          <text key={index} x={point.x} y={point.y + 5} textAnchor="middle" fill="#24364a" fontSize="11" fontWeight="800">
+          <text key={index} x={point.x} y={point.y + 6} textAnchor="middle" fill="#24364a" fontSize="16" fontWeight="800">
             {index + 1}
           </text>
         );
       })}
-      <line x1={x} y1="66" x2={hourHand.x} y2={hourHand.y} stroke="#182433" strokeWidth="5" strokeLinecap="round" />
-      <line x1={x} y1="66" x2={minuteHand.x} y2={minuteHand.y} stroke="#0f9f9f" strokeWidth="4" strokeLinecap="round" />
-      <circle cx={x} cy="66" r="4" fill="#182433" />
-      <text x={x} y="126" textAnchor="middle" fill="#0f7175" fontSize="14" fontWeight="900">
+      <line x1={x} y1={CLOCK_CENTER_Y} x2={hourHand.x} y2={hourHand.y} stroke="#182433" strokeWidth="6" strokeLinecap="round" />
+      <line x1={x} y1={CLOCK_CENTER_Y} x2={minuteHand.x} y2={minuteHand.y} stroke="#0f9f9f" strokeWidth="5" strokeLinecap="round" />
+      <circle cx={x} cy={CLOCK_CENTER_Y} r="5" fill="#182433" />
+      <text x={x} y="160" textAnchor="middle" fill="#0f7175" fontSize="16" fontWeight="900">
         {label}
       </text>
     </g>
@@ -350,12 +355,13 @@ function ClockFace({ hour, minute, x, label }: { hour: number; minute: number; x
 
 function ClockGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'clock' }> }) {
   const hasEnd = visual.endHour != null && visual.endMinute != null;
+  const frameWidth = hasEnd ? 310 : 150;
 
   return (
-    <svg viewBox="0 0 376 146" role="img" aria-label={visual.label}>
-      <rect x="4" y="6" width="368" height="134" rx="14" fill="#f6fcff" stroke="#d7edf2" />
-      <ClockFace hour={visual.hour} minute={visual.minute} x={hasEnd ? 118 : 188} label="시작" />
-      {hasEnd && <ClockFace hour={visual.endHour ?? visual.hour} minute={visual.endMinute ?? visual.minute} x={258} label="끝" />}
+    <svg viewBox={`0 0 ${frameWidth} ${CLOCK_FRAME_HEIGHT}`} role="img" aria-label={visual.label}>
+      <rect x="3" y="3" width={frameWidth - 6} height={CLOCK_FRAME_HEIGHT - 6} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      <ClockFace hour={visual.hour} minute={visual.minute} x={hasEnd ? 80 : 75} label="시작" />
+      {hasEnd && <ClockFace hour={visual.endHour ?? visual.hour} minute={visual.endMinute ?? visual.minute} x={230} label="끝" />}
     </svg>
   );
 }
@@ -461,7 +467,12 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
   if (!visual) return null;
 
   return (
-    <figure className={`question-visual-figure ${className}`.trim()} aria-label={visual.label}>
+    <figure
+      className={['question-visual-figure', visual.kind === 'clock' ? 'is-clock' : '', className]
+        .filter(Boolean)
+        .join(' ')}
+      aria-label={visual.label}
+    >
       {visual.kind === 'plane-shapes' && <PlaneShapesGraphic visual={visual} />}
       {visual.kind === 'cube-stack' && <CubeStackGraphic visual={visual} />}
       {visual.kind === 'cube-views' && <CubeViewsGraphic visual={visual} />}

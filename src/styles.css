@@ -1295,7 +1295,14 @@ button:disabled {
   margin: 0;
   justify-self: center;
   width: min(100%, 360px);
-  height: clamp(90px, 12vh, 150px);
+  --visual-height: clamp(90px, 12vh, 150px);
+  height: var(--visual-height);
+}
+
+/* 시계는 프레임이 시계에 딱 맞는 정사각형에 가까워 세로 길이가 곧 시계 크기입니다.
+   교실 화면에서 잘 보이도록 다른 그림보다 더 높은 자리를 줍니다. */
+.question-visual-figure.is-clock {
+  height: calc(var(--visual-height) * 1.81);
 }
 
 .question-visual-figure svg {
@@ -1306,7 +1313,7 @@ button:disabled {
 
 .player-lanes.individual .question-visual-figure {
   width: min(100%, 320px);
-  height: clamp(82px, 10vh, 130px);
+  --visual-height: clamp(82px, 10vh, 130px);
 }
 
 .student-question-body p {
@@ -1539,36 +1546,36 @@ button:disabled {
 .players-4 .question-visual-figure,
 .players-5 .question-visual-figure {
   width: min(100%, 240px);
-  height: clamp(72px, 8.8vh, 110px);
+  --visual-height: clamp(72px, 8.8vh, 110px);
 }
 
 .game-layout.players-1 .question-visual-figure {
   width: min(100%, 380px);
-  height: clamp(110px, 15vh, 180px);
+  --visual-height: clamp(110px, 15vh, 180px);
 }
 
 .game-layout.players-2 .question-visual-figure {
   width: min(100%, 320px);
-  height: clamp(94px, 12vh, 150px);
+  --visual-height: clamp(94px, 12vh, 150px);
 }
 
 .game-layout.players-3 .question-visual-figure {
   width: min(100%, 260px);
-  height: clamp(82px, 10vh, 120px);
+  --visual-height: clamp(82px, 10vh, 120px);
 }
 
 .game-layout.players-4 .question-visual-figure,
 .game-layout.players-5 .question-visual-figure {
   width: min(100%, 210px);
-  height: clamp(66px, 8vh, 96px);
+  --visual-height: clamp(66px, 8vh, 96px);
 }
 
 .game-layout .student-question-body.long-question .question-visual-figure {
-  height: clamp(68px, 8.2vh, 104px);
+  --visual-height: clamp(68px, 8.2vh, 104px);
 }
 
 .game-layout .student-question-body.very-long-question .question-visual-figure {
-  height: clamp(56px, 7vh, 84px);
+  --visual-height: clamp(56px, 7vh, 84px);
 }
 
 .players-3 .student-question-meta span,
@@ -2623,7 +2630,12 @@ button:disabled {
 
 .app-shell.mobile-entry .question-visual-figure {
   width: min(100%, 360px);
-  height: clamp(120px, 24svh, 220px);
+  --visual-height: clamp(120px, 24svh, 220px);
+}
+
+/* 휴대폰에서는 시계를 키우되 아래 보기 버튼이 화면 밖으로 밀리지 않도록 제한합니다. */
+.app-shell.mobile-entry .question-visual-figure.is-clock {
+  height: min(calc(var(--visual-height) * 1.81), 32svh);
 }
 
 .app-shell.mobile-entry .player-lanes.individual .student-question-body p {
