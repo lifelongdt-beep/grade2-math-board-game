@@ -1262,7 +1262,10 @@ button:disabled {
   background: #fbfeff;
   padding: 8px 10px;
   min-height: 0;
-  overflow: hidden;
+  /* 오답 도움말이 열리면 자리가 줄어듭니다. 잘라내지 말고 스크롤해서
+     학생이 문제 전체를 다시 읽을 수 있어야 합니다. */
+  overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 .student-question-meta {
