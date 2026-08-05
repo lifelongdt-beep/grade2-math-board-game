@@ -2953,7 +2953,387 @@ const legacyShapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
   );
 */
 
+// ── 길이 재기 (2-1 4단원 지도서 244~275쪽 / 2-2 3단원 지도서 208~233쪽) ────
+// 2-1 차시: 길이 비교 방법 → 여러 가지 단위 → 1cm → 자로 재는 방법 →
+//           자로 재기(약 몇 cm) → 어림하기
+// 2-2 차시: cm보다 큰 단위(1m=100cm) → 줄자로 재기 → 합 → 차 → 어림⑴⑵
+const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (lesson.unitTitle !== '길이 재기') return null;
+
+  const title = lesson.title;
+  const variant = variantForDifficulty(difficulty, index, 5, 3);
+  const seed = n(lesson, index);
+
+  if (title.includes('길이를 비교하는 방법')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '옮길 수 없는 두 물건의 길이를 비교하는 방법으로 알맞은 것은?',
+        '끈으로 길이를 옮겨 와서 비교한다',
+        ['눈으로만 보고 정한다', '무게를 재어 비교한다', '색깔로 비교한다'],
+        `직접 맞댈 수 없을 때는 끈이나 종이띠에 길이를 옮겨서 비교합니다.`,
+        'measurement', '옮겨서 길이 비교하기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '두 물건을 직접 맞대어 길이를 비교할 때 지켜야 할 것은?',
+        '한쪽 끝을 나란히 맞춘다',
+        ['가운데를 맞춘다', '아무렇게나 놓는다', '서로 겹쳐 놓는다'],
+        `한쪽 끝을 맞추어야 어느 것이 더 긴지 바르게 알 수 있습니다.`,
+        'measurement', '맞대어 비교할 때의 약속 알기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '끈으로 옮겨 비교하면 무엇을 알 수 있을까요?',
+        '어느 것이 더 긴지 알 수 있다',
+        ['정확히 몇 cm인지 알 수 있다', '무게를 알 수 있다', '개수를 알 수 있다'],
+        `끈으로 옮기면 길고 짧음은 알 수 있지만 정확한 길이는 자로 재야 합니다.`,
+        'measurement', '비교로 알 수 있는 것 구별하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '교실 문의 높이와 창문의 높이를 비교하려면 어떻게 할까요?',
+        '끈에 옮겨 표시한 뒤 견주어 본다',
+        ['문을 떼어 옮긴다', '창문을 떼어 옮긴다', '비교할 수 없다'],
+        `옮길 수 없는 것은 끈에 길이를 옮겨 표시한 다음 비교합니다.`,
+        'measurement', '생활 속 길이 비교하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '길이를 비교할 때 쓰는 말로 알맞은 것은?',
+      '더 길다, 더 짧다',
+      ['더 무겁다, 더 가볍다', '더 많다, 더 적다', '더 넓다, 더 좁다'],
+      `길이를 비교할 때는 더 길다, 더 짧다로 말합니다.`,
+      'measurement', '길이를 비교하는 말 알기',
+    );
+  }
+
+  if (title.includes('여러 가지 단위')) {
+    const clips = 4 + (seed % 6);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `연필의 길이가 클립으로 ${clips}번이었습니다. 이때 클립은 무엇일까요?`,
+        '길이를 재는 단위',
+        ['재는 물건의 이름', '길이의 정확한 값', '무게를 재는 것'],
+        `클립처럼 반복해서 재는 데 쓰는 것을 단위라고 합니다.`,
+        'measurement', '단위의 뜻 알기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '같은 물건을 뼘으로 재면 사람마다 잰 수가 다른 까닭은?',
+        '사람마다 뼘의 길이가 다르기 때문',
+        ['물건이 늘어나기 때문', '잘못 세었기 때문', '뼘은 단위가 아니기 때문'],
+        `뼘은 사람마다 길이가 달라서 잰 횟수도 달라집니다.`,
+        'measurement', '단위가 다르면 결과가 달라짐 알기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '같은 길이를 짧은 단위로 재면 잰 횟수는 어떻게 될까요?',
+        '더 많아진다', ['더 적어진다', '변하지 않는다', '알 수 없다'],
+        `단위가 짧을수록 여러 번 재야 하므로 잰 횟수가 많아집니다.`,
+        'measurement', '단위 길이와 잰 횟수의 관계 알기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `책상의 길이를 뼘으로 ${clips}번 쟀습니다. 이 길이를 친구에게 정확히 알려 주려면?`,
+        '누구나 같은 단위로 재어 알려 준다',
+        ['뼘의 수만 말해 준다', '눈으로 본 대로 말한다', '알려 줄 수 없다'],
+        `사람마다 다른 단위로는 정확히 알려 줄 수 없어 공통 단위가 필요합니다.`,
+        'measurement', '공통 단위가 필요한 까닭 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '길이를 잴 때 단위로 쓰기에 알맞지 않은 것은?',
+      '길이가 자꾸 변하는 것',
+      ['클립', '지우개', '연필'],
+      `단위는 길이가 늘 같아야 합니다. 길이가 변하면 잴 때마다 결과가 달라집니다.`,
+      'measurement', '단위로 알맞은 것 고르기',
+    );
+  }
+
+  if (title.includes('자로 길이를 재는 방법')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '자로 길이를 잴 때 물건의 한끝을 어디에 맞추어야 할까요?',
+        '자의 0', ['자의 1', '자의 아무 곳', '자의 끝'],
+        `물건의 한끝을 자의 0에 맞추어야 눈금을 그대로 읽을 수 있습니다.`,
+        'measurement', '자의 0에 맞추어 재기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '물건의 한끝을 자의 2에 맞추어 재고 끝이 9였습니다. 이 물건의 길이는?',
+        '7cm', ['9cm', '2cm', '11cm'],
+        `시작 눈금을 빼야 합니다. 9-2=7cm입니다.`,
+        'measurement', '시작 눈금이 0이 아닐 때 길이 구하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '자로 길이를 잴 때 자를 어떻게 놓아야 할까요?',
+        '물건과 자를 나란히 붙여 놓는다',
+        ['비스듬히 놓는다', '물건에서 떨어뜨려 놓는다', '자를 세워 놓는다'],
+        `자를 물건과 나란히 붙여 놓아야 바르게 잴 수 있습니다.`,
+        'measurement', '자를 바르게 놓기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '자의 큰 눈금 한 칸은 얼마를 나타낼까요?',
+        '1cm', ['1m', '10cm', '1번'],
+        `자의 큰 눈금 한 칸이 1cm입니다.`,
+        'measurement', '자의 눈금이 뜻하는 길이 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '자로 잰 길이를 읽을 때 보는 것은?',
+      '물건의 끝이 닿은 눈금',
+      ['물건의 가운데 눈금', '자의 맨 끝 숫자', '자의 색깔'],
+      `물건의 끝이 닿은 눈금을 읽으면 길이를 알 수 있습니다.`,
+      'measurement', '자의 눈금 읽기',
+    );
+  }
+
+  if (title.includes('자로 길이를 재어') && lesson.semester === '2-1') {
+    const cm = 4 + (seed % 12);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `물건의 끝이 자의 ${cm}과 ${cm + 1} 사이에 있고 ${cm}에 더 가깝습니다. 길이는?`,
+        `약 ${cm}cm`, [`약 ${cm + 1}cm`, `${cm + 1}cm`, `약 ${cm - 1}cm`],
+        `눈금 사이에 있을 때는 더 가까운 눈금을 읽고 약 몇 cm라고 합니다.`,
+        'measurement', '약 몇 cm로 읽기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '길이를 잴 때 약 몇 cm라고 말하는 때는?',
+        '물건의 끝이 눈금 사이에 있을 때',
+        ['눈금에 정확히 맞을 때', '자가 짧을 때', '물건이 클 때'],
+        `끝이 눈금과 정확히 맞지 않을 때 가까운 눈금으로 약 몇 cm라고 읽습니다.`,
+        'measurement', '약 몇 cm를 쓰는 때 알기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `길이가 ${cm}cm인 물건은 1cm가 몇 번 들어간 길이일까요?`,
+        `${cm}번`, [`${cm + 1}번`, '1번', `${cm - 1}번`],
+        `${cm}cm는 1cm가 ${cm}번 반복된 길이입니다.`,
+        'measurement', 'cm의 뜻과 잰 값 잇기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${cm}cm를 바르게 읽은 것은?`,
+        `${cm}센티미터`, [`${cm}미터`, `${cm}밀리미터`, `${cm}번`],
+        `cm는 센티미터라고 읽습니다.`,
+        'measurement', 'cm 읽기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `자로 잰 길이가 ${cm}cm입니다. 이보다 1cm 더 긴 물건의 길이는?`,
+      `${cm + 1}cm`, [`${cm - 1}cm`, `${cm}cm`, `${cm + 2}cm`],
+      `1cm 더 길므로 ${cm}+1=${cm + 1}cm입니다.`,
+      'measurement', '잰 길이를 비교하기',
+    );
+  }
+
+  if (title.includes('줄자') || (title.includes('자로 길이를 재어') && lesson.semester === '2-2')) {
+    const m = 1 + (seed % 4);
+    const cm = 10 + (seed % 80);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '교실의 긴 벽처럼 긴 길이를 잴 때 알맞은 도구는?',
+        '줄자', ['30cm 자', '연필', '지우개'],
+        `줄자는 길게 늘어나므로 긴 길이를 한 번에 잴 수 있습니다.`,
+        'measurement', '긴 길이를 재는 도구 고르기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `줄자로 잰 길이가 ${m * 100 + cm}cm였습니다. 몇 m 몇 cm일까요?`,
+        `${m}m ${cm}cm`, [`${m}m`, `${m + 1}m ${cm}cm`, `${cm}m ${m}cm`],
+        `100cm가 1m이므로 ${m * 100 + cm}cm는 ${m}m ${cm}cm입니다.`,
+        'measurement', '잰 길이를 m와 cm로 나타내기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '줄자로 길이를 잴 때 시작점을 어디에 맞출까요?',
+        '줄자의 0', ['줄자의 1', '줄자의 가운데', '아무 곳'],
+        `줄자도 자와 같이 0에 맞추어 재야 합니다.`,
+        'measurement', '줄자를 바르게 사용하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${m}m ${cm}cm는 몇 cm일까요?`,
+        `${m * 100 + cm}cm`, [`${m + cm}cm`, `${m * 10 + cm}cm`, `${cm}cm`],
+        `1m는 100cm이므로 ${m}m는 ${m * 100}cm이고, 여기에 ${cm}cm를 더하면 ${m * 100 + cm}cm입니다.`,
+        'measurement', 'm와 cm를 cm로 바꾸기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '줄자와 30cm 자의 다른 점은?',
+      '줄자는 더 긴 길이를 잴 수 있다',
+      ['줄자는 더 짧다', '눈금이 없다', '길이를 잴 수 없다'],
+      `줄자는 길고 휘어져서 긴 물건이나 둥근 물건도 잴 수 있습니다.`,
+      'measurement', '재는 도구를 상황에 맞게 고르기',
+    );
+  }
+
+  if (title.includes('길이의 합')) {
+    const a = 1 + (seed % 4);
+    const acm = 10 + (seed % 40);
+    const b = 1 + ((seed + 1) % 3);
+    const bcm = 10 + ((seed + 5) % 40);
+    const sumCm = acm + bcm;
+    const carry = sumCm >= 100 ? 1 : 0;
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}m ${acm}cm와 ${b}m ${bcm}cm를 이으면 길이는 얼마일까요?`,
+        `${a + b + carry}m ${sumCm - carry * 100}cm`,
+        [`${a + b}m ${sumCm}cm`, `${a + b}m`, `${a + b + 1}m ${sumCm}cm`],
+        `m는 m끼리, cm는 cm끼리 더합니다. cm가 100이 넘으면 1m로 바꾸어 올립니다.`,
+        'measurement', 'm와 cm를 각각 더하기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '길이의 합을 구할 때 어떻게 더할까요?',
+        'm는 m끼리, cm는 cm끼리 더한다',
+        ['모두 섞어서 더한다', 'm만 더한다', 'cm만 더한다'],
+        `단위가 같은 것끼리 더해야 바른 답이 나옵니다.`,
+        'measurement', '길이를 더하는 방법 알기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${acm}cm와 ${bcm}cm를 더하면 얼마일까요?`,
+        `${sumCm}cm`, [`${acm}cm`, `${sumCm + 10}cm`, `${Math.abs(acm - bcm)}cm`],
+        `같은 단위끼리 더하면 ${acm}+${bcm}=${sumCm}cm입니다.`,
+        'measurement', 'cm끼리 더하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '길이를 더했더니 cm가 100보다 컸습니다. 어떻게 해야 할까요?',
+        '100cm를 1m로 바꾸어 m에 더한다',
+        ['그대로 둔다', 'cm를 지운다', 'm에서 1을 뺀다'],
+        `100cm가 1m이므로 넘는 만큼 m로 바꾸어 올려 줍니다.`,
+        'measurement', 'cm가 넘칠 때 m로 바꾸기',
+      );
+    }
+    const joinedCm = acm + bcm;
+    const joinedCarry = joinedCm >= 100 ? 1 : 0;
+    return makeQuestion(
+      lesson, difficulty, index,
+      `끈 ${a}m ${acm}cm에 ${bcm}cm를 더 이었습니다. 전체 길이는?`,
+      `${a + joinedCarry}m ${joinedCm - joinedCarry * 100}cm`,
+      [`${a}m ${acm}cm`, `${a}m ${joinedCm}cm`, `${a + 1}m ${joinedCm}cm`],
+      `cm끼리 더하면 ${acm}+${bcm}=${joinedCm}cm입니다. 100cm가 넘으면 1m로 바꾸어 올립니다.`,
+      'measurement', '길이를 이어 붙인 전체 구하기',
+    );
+  }
+
+  if (title.includes('길이의 차')) {
+    const a = 3 + (seed % 4);
+    const acm = 40 + (seed % 50);
+    const b = 1 + ((seed + 1) % 2);
+    const bcm = 10 + ((seed + 5) % 30);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}m ${acm}cm와 ${b}m ${bcm}cm의 차는 얼마일까요?`,
+        `${a - b}m ${acm - bcm}cm`,
+        [`${a + b}m ${acm + bcm}cm`, `${a - b}m`, `${a - b + 1}m ${acm - bcm}cm`],
+        `m는 m끼리, cm는 cm끼리 뺍니다. ${a - b}m ${acm - bcm}cm입니다.`,
+        'measurement', 'm와 cm를 각각 빼기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '길이의 차를 구할 때 어떻게 뺄까요?',
+        'm는 m끼리, cm는 cm끼리 뺀다',
+        ['모두 섞어서 뺀다', 'm만 뺀다', 'cm만 뺀다'],
+        `단위가 같은 것끼리 빼야 바른 답이 나옵니다.`,
+        'measurement', '길이를 빼는 방법 알기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${acm}cm에서 ${bcm}cm를 빼면 얼마일까요?`,
+        `${acm - bcm}cm`, [`${acm + bcm}cm`, `${acm}cm`, `${bcm}cm`],
+        `같은 단위끼리 빼면 ${acm}-${bcm}=${acm - bcm}cm입니다.`,
+        'measurement', 'cm끼리 빼기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}m ${acm}cm인 줄과 ${b}m ${bcm}cm인 줄 중 어느 것이 더 길까요?`,
+        `${a}m ${acm}cm인 줄`,
+        [`${b}m ${bcm}cm인 줄`, '두 줄의 길이가 같다', '비교할 수 없다'],
+        `m를 먼저 비교합니다. ${a}m가 ${b}m보다 크므로 더 깁니다.`,
+        'measurement', 'm를 먼저 보고 길이 비교하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${a}m ${acm}cm인 끈에서 ${bcm}cm를 잘라 냈습니다. 남은 길이는?`,
+      `${a}m ${acm - bcm}cm`,
+      [`${a}m ${acm}cm`, `${a - 1}m ${acm - bcm}cm`, `${a}m ${acm + bcm}cm`],
+      `cm끼리 빼면 ${acm}-${bcm}=${acm - bcm}cm이므로 ${a}m ${acm - bcm}cm입니다.`,
+      'measurement', '잘라 낸 뒤 남은 길이 구하기',
+    );
+  }
+
+  return null;
+};
+
 const measurementQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  const unitSpecific = lengthUnitQuestion(lesson, difficulty, index);
+  if (unitSpecific) return unitSpecific;
+
+  return legacyMeasurementQuestion(lesson, difficulty, index);
+};
+
+const legacyMeasurementQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const text = `${lesson.unitTitle} ${lesson.title}`;
   const seed = n(lesson, index);
   const variant = variantForDifficulty(difficulty, index, 5, 2);
