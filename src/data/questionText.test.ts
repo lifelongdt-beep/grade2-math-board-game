@@ -34,7 +34,10 @@ describe('generated question text', () => {
     expect(issues).toEqual([]);
   });
 
-  it('shows the number from the question in the place value table', () => {
+  // 문제에 여러 자리 수가 나오면 자리값 표는 그 수를 보여 줘야 합니다.
+  // (예: "274에서 일의 자리 숫자가 나타내는 값은?" -> 표에 274가 보여야 하고,
+  //  정답 4를 그리면 백 0 / 십 0 / 일 4가 되어 문제의 수가 사라집니다.)
+  it('shows the multi-digit number from the question in the place value table', () => {
     const issues: string[] = [];
 
     for (const lesson of lessons) {
@@ -42,14 +45,13 @@ describe('generated question text', () => {
         for (const question of generateQuestions(lesson, level)) {
           if (question.visual?.kind !== 'place-value') continue;
 
-          const shown = Number(
-            question.visual.columns.map((column) => String(column.value)).join(''),
-          );
-          const promptNumbers = question.prompt.match(/\d+/g)?.map(Number) ?? [];
-          if (promptNumbers.length === 0) continue;
+          const multiDigitInPrompt = (question.prompt.match(/\d+/g)?.map(Number) ?? []).filter((value) => value >= 10);
+          if (multiDigitInPrompt.length === 0) continue;
 
-          if (!promptNumbers.includes(shown)) {
-            issues.push(`${question.id}: table shows ${shown}, prompt has ${promptNumbers.join(',')} | ${question.prompt}`);
+          const shown = Number(question.visual.columns.map((column) => String(column.value)).join(''));
+
+          if (!multiDigitInPrompt.includes(shown)) {
+            issues.push(`${question.id}: table shows ${shown}, prompt has ${multiDigitInPrompt.join(',')} | ${question.prompt}`);
           }
         }
       }
