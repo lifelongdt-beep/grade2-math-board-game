@@ -865,7 +865,218 @@ const makeQuestion = (
 
 const n = (lesson: Lesson, index: number, add = 0) => lesson.unitNo * 97 + lesson.lessonNo * 31 + index * 23 + add;
 
+// ── 세 자리 수(2-1 1단원) / 네 자리 수(2-2 1단원) ─────────────────────────
+// 지도서 차시: 백(천) 알기 → 몇백(몇천) → 세(네) 자리 수 → 각 자리의 숫자 →
+// 뛰어 세기 → 크기 비교. 차시마다 다루는 내용이 분명하므로 나누어 냅니다.
+const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  const four = lesson.unitTitle === '네 자리 수';
+  if (!four && lesson.unitTitle !== '세 자리 수') return null;
+
+  const title = lesson.title;
+  const variant = variantForDifficulty(difficulty, index, 6, 3);
+  const unitBase = four ? 1000 : 100;
+  const unitName = four ? '천' : '백';
+  const seed = n(lesson, index);
+
+  // 백을 알아볼까요 / 천을 알아볼까요
+  if (title.includes('백을 알아') || title.includes('천을 알아')) {
+    const below = unitBase - (four ? 100 : 10);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${below}보다 ${four ? 100 : 10}만큼 더 큰 수는 얼마일까요?`,
+        unitBase, [below, unitBase + (four ? 100 : 10), four ? 100 : 10],
+        `${below}에서 ${four ? 100 : 10}만큼 더 크면 ${unitBase}입니다.`,
+        'number', `${unitName}이 되는 과정 알기`,
+      );
+    }
+    if (variant === 1) {
+      const piece = four ? 100 : 10;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${piece}이 10개이면 얼마일까요?`,
+        unitBase, [piece, unitBase * 10, piece * 5],
+        `${piece}씩 10묶음을 모으면 ${unitBase}이 됩니다.`,
+        'placeValue', `${unitName}의 구성 알기`,
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${unitBase}을 읽는 방법으로 알맞은 것은?`,
+        unitName,
+        four ? ['백', '만', '십'] : ['십', '천', '만'],
+        `${unitBase}은 ${unitName}이라고 읽습니다.`,
+        'number', `${unitName} 읽고 쓰기`,
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${unitBase - 1}보다 1만큼 더 큰 수는 얼마일까요?`,
+        unitBase, [unitBase - 2, unitBase + 1, unitBase - 10],
+        `${unitBase - 1} 다음 수는 ${unitBase}입니다.`,
+        'number', `${unitName} 바로 앞의 수 알기`,
+      );
+    }
+    if (variant === 4) {
+      const zeros = four ? 3 : 2;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${unitBase}을 숫자로 쓸 때 0은 몇 개일까요?`,
+        `${zeros}개`, [`${zeros + 1}개`, `${zeros - 1}개`, '1개'],
+        `${unitBase}은 1 다음에 0을 ${zeros}개 써서 나타냅니다.`,
+        'placeValue', `${unitName}을 숫자로 쓰기`,
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${unitBase}은 ${four ? 100 : 10}이 몇 개인 수일까요?`,
+      '10개', ['1개', '100개', '5개'],
+      `${four ? 100 : 10}이 10개 모이면 ${unitBase}입니다.`,
+      'placeValue', `${unitName}을 묶음으로 보기`,
+    );
+  }
+
+  // 몇백 / 몇천
+  if (title.includes('몇백') || title.includes('몇천')) {
+    const count = 2 + (index % 8);
+    const value = unitBase * count;
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${unitBase}이 ${count}개인 수는 얼마일까요?`,
+        value, [unitBase * (count + 1), count, unitBase + count],
+        `${unitBase}이 ${count}개이므로 ${value}입니다.`,
+        'number', `몇${unitName} 만들기`,
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}은 ${unitBase}이 몇 개인 수일까요?`,
+        `${count}개`, [`${count + 1}개`, `${value}개`, '10개'],
+        `${value}은 ${unitBase}이 ${count}개인 수입니다.`,
+        'placeValue', `몇${unitName}을 묶음으로 보기`,
+      );
+    }
+    if (variant === 2) {
+      const other = unitBase * (count === 9 ? count - 1 : count + 1);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}과 ${other} 중 더 큰 수는?`,
+        Math.max(value, other), [Math.min(value, other), unitBase, value + other],
+        `${unitBase}의 개수가 많을수록 큰 수입니다.`,
+        'number', `몇${unitName}의 크기 비교하기`,
+      );
+    }
+    if (variant === 3) {
+      const words = ['이', '삼', '사', '오', '육', '칠', '팔', '구'];
+      const word = `${words[count - 2]}${unitName}`;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}을 읽으면 무엇일까요?`,
+        word,
+        [`${words[(count - 1) % 8]}${unitName}`, `${unitName}${words[count - 2]}`, `${count}${unitName}`],
+        `${value}은 ${word}이라고 읽습니다.`,
+        'number', `몇${unitName} 읽기`,
+      );
+    }
+    if (variant === 4) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}에서 ${unitBase}만큼 더 큰 수는?`,
+        value + unitBase, [value - unitBase, value + 1, unitBase],
+        `${unitBase}이 하나 늘어나므로 ${value + unitBase}입니다.`,
+        'number', `몇${unitName}에서 뛰어 세기`,
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${value}을 숫자로 쓸 때 ${unitName}의 자리 숫자는?`,
+      count, [0, count + 1, value],
+      `${value}에서 ${unitName}의 자리 숫자는 ${count}입니다.`,
+      'placeValue', `몇${unitName}의 자리 숫자 알기`,
+    );
+  }
+
+  // 세 자리 수 / 네 자리 수를 알아볼까요
+  if (title.includes('자리 수를 알아')) {
+    const h = 1 + (seed % 8);
+    const t = seed % 10;
+    const o = (seed + 3) % 10;
+    const th = four ? 1 + ((seed + 5) % 8) : 0;
+    const value = four ? th * 1000 + h * 100 + t * 10 + o : h * 100 + t * 10 + o;
+    const parts = four
+      ? `1000이 ${th}개, 100이 ${h}개, 10이 ${t}개, 1이 ${o}개`
+      : `100이 ${h}개, 10이 ${t}개, 1이 ${o}개`;
+
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${parts}인 수는 얼마일까요?`,
+        value, [value + 10, value + 100, value - 1],
+        `${parts}이면 ${value}입니다.`,
+        'placeValue', '모형을 보고 수로 나타내기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}은 100이 몇 개인 수일까요?`,
+        `${four ? th * 10 + h : h}개`,
+        [`${h + 1}개`, `${t}개`, `${o}개`],
+        `${value}에서 100의 자리까지 보면 100이 ${four ? th * 10 + h : h}개입니다.`,
+        'placeValue', '수를 자리별 묶음으로 나누기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}에서 십의 자리 숫자는 무엇일까요?`,
+        t, [o, h, value % 100],
+        `${value}에서 십의 자리 숫자는 ${t}입니다.`,
+        'placeValue', '자리별 숫자 찾기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}에서 일의 자리 숫자는 무엇일까요?`,
+        o, [t, h, value % 100],
+        `${value}에서 일의 자리 숫자는 ${o}입니다.`,
+        'placeValue', '일의 자리 숫자 찾기',
+      );
+    }
+    if (variant === 4) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}보다 1만큼 더 큰 수는?`,
+        value + 1, [value - 1, value + 10, value + 100],
+        `${value} 다음 수는 ${value + 1}입니다.`,
+        'number', '바로 뒤의 수 찾기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${value}보다 1만큼 더 작은 수는?`,
+      value - 1, [value + 1, value - 10, value - 100],
+      `${value} 앞의 수는 ${value - 1}입니다.`,
+      'number', '바로 앞의 수 찾기',
+    );
+  }
+
+  return null;
+};
+
 const numberQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  const unitSpecific = placeValueUnitQuestion(lesson, difficulty, index);
+  if (unitSpecific) return unitSpecific;
+
+  return legacyNumberQuestion(lesson, difficulty, index);
+};
+
+const legacyNumberQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const text = `${lesson.unitTitle} ${lesson.title}`;
   const fourDigit = text.includes('네 자리');
   const base = fourDigit ? 1000 + (n(lesson, index) % 8000) : 100 + (n(lesson, index) % 800);
