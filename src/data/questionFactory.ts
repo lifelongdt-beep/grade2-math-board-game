@@ -4815,7 +4815,220 @@ const legacyDataQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
   );
 };
 
+// ── 2-2 6단원 규칙 찾기 (동아출판 2-2 지도서 299~323쪽) ────────────────────
+// 차시: 무늬⑴ → 무늬⑵ → 쌓은 모양 → 덧셈표 → 곱셈표 → 생활 속 규칙
+const ruleUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (lesson.unitTitle !== '규칙 찾기') return null;
+
+  const title = lesson.title;
+  const variant = variantForDifficulty(difficulty, index, 5, 3);
+
+  if (title.includes('쌓은 모양')) {
+    const start = 1 + (index % 3);
+    const step = 1 + (index % 3);
+    const third = start + step * 2;
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `쌓기나무를 ${start}개, ${start + step}개, ${third}개로 늘어놓았습니다. 몇 개씩 늘어나는 규칙일까요?`,
+        `${step}개씩`, [`${step + 1}개씩`, '1개씩', `${start}개씩`],
+        `앞의 수와 뒤의 수의 차를 보면 ${step}개씩 늘어나는 규칙입니다.`,
+        'pattern', '쌓은 모양이 늘어나는 규칙 찾기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `쌓기나무가 ${start}개, ${start + step}개, ${third}개로 놓였습니다. 다음에 놓을 쌓기나무는 몇 개일까요?`,
+        `${third + step}개`, [`${third}개`, `${third + step + 1}개`, `${start}개`],
+        `${step}개씩 늘어나므로 ${third}에 ${step}을 더한 ${third + step}개입니다.`,
+        'pattern', '다음에 놓을 쌓기나무 수 구하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '쌓은 모양에서 규칙을 찾을 때 무엇을 살펴봐야 할까요?',
+        '쌓기나무가 몇 개씩 늘거나 줄어드는지',
+        ['쌓기나무의 색깔', '쌓기나무를 만든 사람', '쌓은 곳의 위치'],
+        `쌓은 모양의 규칙은 개수가 얼마씩 변하는지를 보고 찾습니다.`,
+        'pattern', '쌓은 모양에서 볼 곳 알기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `쌓기나무를 ${start}개, ${start + step}개, □개, ${third + step}개로 놓았습니다. □는 몇 개일까요?`,
+        `${third}개`, [`${third + step}개`, `${start}개`, `${third + 1}개`],
+        `${step}개씩 늘어나는 규칙이므로 □는 ${third}개입니다.`,
+        'pattern', '쌓은 모양의 빈칸 채우기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `쌓기나무가 ${step}개씩 늘어날 때 두 번 더 놓으면 몇 개가 늘어날까요?`,
+      `${step * 2}개`, [`${step}개`, `${step * 3}개`, '1개'],
+      `한 번에 ${step}개씩 늘어나므로 두 번이면 ${step}+${step}=${step * 2}개입니다.`,
+      'pattern', '규칙을 여러 번 적용하기',
+    );
+  }
+
+  if (title.includes('덧셈표')) {
+    const a = 1 + (index % 8);
+    const b = 1 + ((index + 3) % 8);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `덧셈표에서 ${a}와 ${b}가 만나는 칸에 알맞은 수는?`,
+        a + b, [a * b, a + b + 1, Math.abs(a - b)],
+        `덧셈표는 가로와 세로의 두 수를 더한 값을 씁니다. ${a}+${b}=${a + b}입니다.`,
+        'pattern', '덧셈표의 빈칸 채우기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '덧셈표에서 오른쪽으로 한 칸 갈 때마다 수는 어떻게 될까요?',
+        '1씩 커진다', ['1씩 작아진다', '2씩 커진다', '변하지 않는다'],
+        `오른쪽으로 가면 더하는 수가 1씩 커지므로 합도 1씩 커집니다.`,
+        'pattern', '덧셈표에서 가로 규칙 찾기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '덧셈표에서 아래쪽으로 한 칸 갈 때마다 수는 어떻게 될까요?',
+        '1씩 커진다', ['1씩 작아진다', '2씩 커진다', '변하지 않는다'],
+        `아래로 가면 더해지는 수가 1씩 커지므로 합도 1씩 커집니다.`,
+        'pattern', '덧셈표에서 세로 규칙 찾기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `덧셈표에서 ${a}+${b}와 ${b}+${a}의 값을 비교하면?`,
+        '두 값이 같다', [`${a}+${b}가 더 크다`, `${b}+${a}가 더 크다`, '비교할 수 없다'],
+        `두 수를 바꾸어 더해도 합은 같습니다. 둘 다 ${a + b}입니다.`,
+        'pattern', '덧셈표에서 순서를 바꾼 규칙 찾기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `덧셈표에서 ${a}+${b}=${a + b}일 때 ${a}+${b + 1}은 얼마일까요?`,
+      a + b + 1, [a + b, a + b + 2, a + b - 1],
+      `더하는 수가 1 커졌으므로 합도 1 커져 ${a + b + 1}입니다.`,
+      'pattern', '덧셈표에서 다음 칸 구하기',
+    );
+  }
+
+  if (title.includes('곱셈표')) {
+    const a = 2 + (index % 7);
+    const b = 2 + ((index + 3) % 7);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `곱셈표에서 ${a}와 ${b}가 만나는 칸에 알맞은 수는?`,
+        a * b, [a + b, a * b + a, Math.max(0, a * b - b)],
+        `곱셈표는 가로와 세로의 두 수를 곱한 값을 씁니다. ${a}×${b}=${a * b}입니다.`,
+        'pattern', '곱셈표의 빈칸 채우기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `곱셈표에서 ${a}단은 오른쪽으로 갈수록 몇씩 커질까요?`,
+        `${a}씩`, [`${a + 1}씩`, '1씩', `${a * 2}씩`],
+        `${a}단은 묶음이 하나씩 늘어나므로 ${a}씩 커집니다.`,
+        'pattern', '곱셈표에서 커지는 규칙 찾기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `곱셈표에서 ${a}×${b}와 ${b}×${a}의 값을 비교하면?`,
+        '두 값이 같다', [`${a}×${b}가 더 크다`, `${b}×${a}가 더 크다`, '비교할 수 없다'],
+        `두 수를 바꾸어 곱해도 곱은 같습니다. 둘 다 ${a * b}입니다.`,
+        'pattern', '곱셈표에서 순서를 바꾼 규칙 찾기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '곱셈표에서 같은 수끼리 곱한 칸은 어떻게 놓일까요?',
+        '대각선으로 나란히 놓인다',
+        ['맨 윗줄에 모인다', '맨 왼쪽 줄에 모인다', '흩어져 있다'],
+        `같은 수끼리 곱한 칸은 왼쪽 위에서 오른쪽 아래로 대각선을 이룹니다.`,
+        'pattern', '곱셈표의 대각선 규칙 찾기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `곱셈표에서 ${a}×${b}=${a * b}일 때 ${a}×${b + 1}은 얼마일까요?`,
+      a * (b + 1), [a * b, a * b + 1, a * (b + 2)],
+      `묶음이 하나 늘었으므로 ${a}만큼 커져 ${a * (b + 1)}입니다.`,
+      'pattern', '곱셈표에서 다음 칸 구하기',
+    );
+  }
+
+  if (title.includes('생활에서')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '달력에서 같은 요일은 며칠마다 반복될까요?',
+        '7일마다', ['5일마다', '10일마다', '30일마다'],
+        `한 주는 7일이므로 같은 요일은 7일마다 다시 나옵니다.`,
+        'pattern', '달력에서 규칙 찾기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '신호등이 초록, 노랑, 빨강 순서로 계속 바뀝니다. 빨강 다음에 오는 색은?',
+        '초록', ['노랑', '빨강', '알 수 없다'],
+        `초록, 노랑, 빨강이 반복되는 규칙이므로 빨강 다음은 다시 초록입니다.`,
+        'pattern', '반복되는 순서에서 다음 찾기',
+      );
+    }
+    if (variant === 2) {
+      const start = 1 + (index % 5);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `사물함 번호가 ${start}, ${start + 2}, ${start + 4}로 이어집니다. 다음 번호는?`,
+        start + 6, [start + 5, start + 8, start + 4],
+        `2씩 커지는 규칙이므로 다음은 ${start + 6}입니다.`,
+        'pattern', '생활 속 수 배열에서 규칙 찾기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '생활에서 규칙을 찾으면 좋은 점은?',
+        '다음에 올 것을 예상할 수 있다',
+        ['수를 세지 않아도 된다', '규칙을 바꿀 수 있다', '아무 도움이 안 된다'],
+        `규칙을 알면 다음에 무엇이 올지 미리 알 수 있습니다.`,
+        'pattern', '규칙을 찾는 까닭 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '계단을 한 칸씩 오를 때마다 높이가 같게 올라갑니다. 이것은 무엇일까요?',
+      '반복되는 규칙', ['우연한 일', '규칙이 없는 것', '수의 크기'],
+      `같은 크기로 되풀이되는 것은 규칙입니다.`,
+      'pattern', '생활 속 규칙 알아보기',
+    );
+  }
+
+  return null;
+};
+
 const patternQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  const unitSpecific = ruleUnitQuestion(lesson, difficulty, index);
+  if (unitSpecific) return unitSpecific;
+
+  return legacyPatternQuestion(lesson, difficulty, index);
+};
+
+const legacyPatternQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const text = `${lesson.unitTitle} ${lesson.title}`;
   const variant = variantForDifficulty(difficulty, index, 5, 2);
   const start = 2 + (index % 8);
