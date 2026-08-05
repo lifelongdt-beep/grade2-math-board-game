@@ -356,8 +356,32 @@ const grade2LanguageReplacements: Array<[RegExp, string]> = [
   [/자연수/g, '수'],
 ];
 
+// 숫자를 우리말로 읽었을 때 받침이 있는지 (0 영, 1 일, 3 삼, 6 육, 7 칠, 8 팔).
+// 10, 100처럼 0으로 끝나는 수는 십·백·천으로 읽어도 모두 받침이 있어 같은 결과가 됩니다.
+const digitHasFinalConsonant: Record<string, boolean> = {
+  '0': true, '1': true, '2': false, '3': true, '4': false,
+  '5': false, '6': true, '7': true, '8': true, '9': false,
+};
+
+const josaPairs: Array<[withFinal: string, withoutFinal: string]> = [
+  ['을', '를'],
+  ['이', '가'],
+  ['은', '는'],
+  ['과', '와'],
+];
+
+const fixJosaAfterNumbers = (text: string): string =>
+  text.replace(/(\d)(을|를|이|가|은|는|과|와)(?=[\s.,?!)]|$)/g, (match, digit: string, josa: string) => {
+    const hasFinal = digitHasFinalConsonant[digit];
+    const pair = josaPairs.find(([withFinal, withoutFinal]) => josa === withFinal || josa === withoutFinal);
+    if (!pair) return match;
+    return `${digit}${hasFinal ? pair[0] : pair[1]}`;
+  });
+
 const cleanGrade2Text = (text: string): string =>
-  grade2LanguageReplacements.reduce((current, [pattern, replacement]) => current.replace(pattern, replacement), text);
+  fixJosaAfterNumbers(
+    grade2LanguageReplacements.reduce((current, [pattern, replacement]) => current.replace(pattern, replacement), text),
+  );
 
 const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual | undefined => {
   if (!visual) return undefined;

@@ -36,15 +36,18 @@ describe('audit', () => {
         for (const question of generateQuestions(lesson, level)) {
           const id = `${question.id}`;
 
-          // particle agreement after a token, e.g. "73+26를"
-          for (const m of question.prompt.matchAll(/([0-9]+|[가-힣])(을|를|이|가|은|는|와|과)(?=[\s.,?!]|$)/g)) {
-            const jong = hasFinalConsonant(m[1]);
-            if (jong === null) continue;
-            const particle = m[2];
-            const wrong =
-              (jong && ['를', '가', '는', '와'].includes(particle)) ||
-              (!jong && ['을', '이', '은', '과'].includes(particle));
-            if (wrong) particleIssues.push(`${id}: ...${m[0]}...  | ${question.prompt}`);
+          // particle agreement right after a digit, e.g. "73+26를"
+          const texts = [question.prompt, question.answer, question.explanation, ...question.choices];
+          for (const text of texts) {
+            for (const m of text.matchAll(/(\d)(을|를|이|가|은|는|와|과)(?=[\s.,?!)]|$)/g)) {
+              const jong = hasFinalConsonant(m[1]);
+              if (jong === null) continue;
+              const particle = m[2];
+              const wrong =
+                (jong && ['를', '가', '는', '와'].includes(particle)) ||
+                (!jong && ['을', '이', '은', '과'].includes(particle));
+              if (wrong) particleIssues.push(`${id}: ...${m[0]}...  | ${text}`);
+            }
           }
 
           const uniq = new Set(question.choices);
