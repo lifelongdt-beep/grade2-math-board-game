@@ -5107,7 +5107,7 @@ const clockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       return makeQuestion(
         lesson, difficulty, index,
         `긴바늘이 숫자 ${pointer}를 가리키면 몇 분일까요?`,
-        `${five}분`, [`${pointer}분`, `${five + 5}분`, `${Math.max(0, five - 5)}분`],
+        `${five}분`, [`${pointer}분`, `${Math.max(5, five - 5)}분`, `${pointer * 10}분`],
         `긴바늘이 숫자 한 칸을 지날 때마다 5분입니다. ${pointer}×5=${five}분입니다.`,
         'time', '긴바늘이 가리키는 숫자로 분 읽기',
       );
@@ -5159,7 +5159,7 @@ const clockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       return makeQuestion(
         lesson, difficulty, index,
         '시계의 작은 눈금 한 칸은 몇 분일까요?',
-        '1분', ['5분', '10분', '60분'],
+        '1분', ['5분', '10분', '2분'],
         '숫자와 숫자 사이를 다섯 칸으로 나눈 작은 눈금 한 칸이 1분입니다.',
         'time', '작은 눈금 한 칸이 1분임을 알기',
       );
@@ -5247,7 +5247,7 @@ const clockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       lesson, difficulty, index,
       half ? '시계에서 긴바늘은 무엇을 나타낼까요?' : '시계의 큰 숫자는 모두 몇 개일까요?',
       half ? '분' : '12개',
-      half ? ['시', '날짜', '요일'] : ['10개', '24개', '6개'],
+      half ? ['시', '날짜', '무게'] : ['10개', '20개', '6개'],
       half
         ? '긴바늘은 몇 분인지를 나타냅니다.'
         : '시계에는 1부터 12까지 큰 숫자가 12개 있습니다.',
@@ -5356,7 +5356,7 @@ const clockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       return makeQuestion(
         lesson, difficulty, index,
         '시계의 긴바늘이 한 바퀴 돌면 얼마만큼의 시간이 지날까요?',
-        '1시간', ['1분', '30분', '하루'],
+        '1시간', ['1분', '30분', '10분'],
         `긴바늘이 한 바퀴를 도는 동안 60분, 곧 1시간이 지납니다.`,
         'time', '긴바늘 한 바퀴의 뜻 알기',
       );
