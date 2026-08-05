@@ -3372,7 +3372,7 @@ const surveyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
   if (variant === 0) {
     return makeQuestion(
       lesson, difficulty, index,
-      `우리 반 친구들의 ${josa(survey.subject, '을', '를')} 조사하는 방법으로 알맞은 것은?`,
+      `우리 반 친구들이 ${josa(survey.subject, '을', '를')} 어떻게 조사하면 좋을까요?`,
       '손을 들어 세어 본다',
       ['내 생각대로 정한다', '선생님께만 여쭤본다', '책에서 찾아본다'],
       `조사는 친구들에게 직접 물어봐야 합니다. 손을 들어 세거나, 한 사람씩 말하거나, 붙임쪽지에 적는 방법이 있습니다.`,
