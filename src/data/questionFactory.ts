@@ -1518,7 +1518,310 @@ const legacyNumberQuestion = (lesson: Lesson, difficulty: Difficulty, index: num
   );
 };
 
+// ── 2-1 3단원 덧셈과 뺄셈 (동아출판 2-1 지도서 206~239쪽) ──────────────────
+// 차시마다 다루는 계산 유형이 다릅니다.
+//  덧셈⑴ 일의 자리 받아올림 (두 자리)+(한 자리)
+//  덧셈⑵ 일의 자리 받아올림 (두 자리)+(두 자리)
+//  여러 가지 방법으로 덧셈 십의 자리 받아올림
+//  뺄셈⑴ 받아내림 (두 자리)-(한 자리)
+//  뺄셈⑵ 받아내림 (몇십)-(몇십몇)
+//  여러 가지 방법으로 뺄셈 받아내림 (두 자리)-(두 자리)
+const calcUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (lesson.unitTitle !== '덧셈과 뺄셈') return null;
+
+  const title = lesson.title;
+  const variant = variantForDifficulty(difficulty, index, 5, 3);
+  const seed = n(lesson, index);
+
+  const carryAsk = (a: number, b: number, tag: 'addition' | 'subtraction', strategy: string) => {
+    const answer = tag === 'addition' ? a + b : a - b;
+    const sign = tag === 'addition' ? '+' : '-';
+    const near = tag === 'addition' ? answer - 10 : answer + 10;
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${a}${sign}${b}는 얼마일까요?`,
+      answer,
+      [Math.max(0, near), Math.max(0, answer + 1), Math.max(0, answer - 1)],
+      tag === 'addition'
+        ? `일의 자리부터 더합니다. 일의 자리 합이 10이 넘으면 십의 자리로 1을 받아올림합니다. 답은 ${answer}입니다.`
+        : `일의 자리가 부족하면 십의 자리에서 10을 받아내립니다. 답은 ${answer}입니다.`,
+      tag, strategy,
+    );
+  };
+
+  // 덧셈 ⑴ : (두 자리 수) + (한 자리 수), 일의 자리 받아올림
+  if (title.includes('덧셈을 해 볼까요 ⑴')) {
+    const a = 10 * (1 + (seed % 8)) + (5 + (seed % 4));
+    const b = 10 - (a % 10) + (1 + (index % 4));
+    if (variant === 0) return carryAsk(a, b, 'addition', '일의 자리 받아올림이 있는 덧셈하기');
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}를 계산할 때 일의 자리 합은 얼마일까요?`,
+        (a % 10) + b, [a % 10, b, (a % 10) + b + 10],
+        `일의 자리끼리 더하면 ${a % 10}+${b}=${(a % 10) + b}입니다. 10이 넘으므로 받아올림합니다.`,
+        'addition', '일의 자리 합 먼저 구하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '일의 자리 합이 10이 넘으면 어떻게 해야 할까요?',
+        '십의 자리로 1을 받아올림한다',
+        ['일의 자리에 그대로 쓴다', '십의 자리에서 1을 빼낸다', '계산을 다시 시작한다'],
+        `일의 자리에 10이 모이면 십 한 묶음이 되므로 십의 자리로 1을 올려 줍니다.`,
+        'addition', '받아올림의 뜻 알기',
+      );
+    }
+    if (variant === 3) {
+      const wrong = a + b - 10;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}를 ${wrong}이라고 계산했습니다. 무엇을 빠뜨렸을까요?`,
+        '받아올림한 1을 더하지 않았다',
+        ['일의 자리를 잘못 더했다', '십의 자리를 두 번 더했다', '두 수를 바꾸어 더했다'],
+        `받아올림한 1을 십의 자리에 더해야 합니다. 바른 답은 ${a + b}입니다.`,
+        'addition', '받아올림 빠뜨린 계산 고치기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `색종이 ${a}장에 ${b}장을 더 샀습니다. 색종이는 모두 몇 장일까요?`,
+      `${a + b}장`, [`${a}장`, `${a + b - 10}장`, `${a + b + 1}장`],
+      `모두 몇 장인지 구하므로 더합니다. ${a}+${b}=${a + b}장입니다.`,
+      'addition', '받아올림 덧셈을 이야기 문제에 쓰기',
+    );
+  }
+
+  // 덧셈 ⑵ : (두 자리 수) + (두 자리 수), 일의 자리 받아올림
+  if (title.includes('덧셈을 해 볼까요 ⑵')) {
+    const a = 10 * (1 + (seed % 5)) + (6 + (seed % 3));
+    const b = 10 * (1 + ((seed + 2) % 3)) + (10 - (a % 10) + (index % 3));
+    if (variant === 0) return carryAsk(a, b, 'addition', '두 자리 수끼리 받아올림 덧셈하기');
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}에서 십의 자리끼리의 합은 얼마일까요?`,
+        Math.floor(a / 10) + Math.floor(b / 10),
+        [Math.floor(a / 10), Math.floor(b / 10), Math.floor(a / 10) + Math.floor(b / 10) + 1],
+        `십의 자리 숫자끼리 더하면 ${Math.floor(a / 10)}+${Math.floor(b / 10)}=${Math.floor(a / 10) + Math.floor(b / 10)}입니다. 여기에 받아올림한 1을 더합니다.`,
+        'addition', '십의 자리끼리 더하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '두 자리 수끼리 더할 때 어느 자리부터 계산할까요?',
+        '일의 자리부터',
+        ['십의 자리부터', '큰 수부터', '아무 자리부터'],
+        `일의 자리부터 계산해야 받아올림을 바르게 처리할 수 있습니다.`,
+        'addition', '계산하는 차례 알기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}의 답은 몇십몇일까요?`,
+        a + b, [a + b - 10, a + b + 10, a + b - 1],
+        `일의 자리부터 더하고 받아올림한 1을 십의 자리에 더하면 ${a + b}입니다.`,
+        'addition', '받아올림하여 답 구하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `사탕이 ${a}개, 젤리가 ${b}개 있습니다. 모두 몇 개일까요?`,
+      `${a + b}개`, [`${a}개`, `${a + b - 10}개`, `${Math.abs(a - b)}개`],
+      `모두 몇 개인지 구하므로 더합니다. ${a}+${b}=${a + b}개입니다.`,
+      'addition', '두 자리 수 덧셈을 이야기 문제에 쓰기',
+    );
+  }
+
+  // 여러 가지 방법으로 덧셈 : 십의 자리 받아올림
+  if (title.includes('여러 가지 방법으로 덧셈')) {
+    const a = 10 * (5 + (seed % 4)) + (seed % 5);
+    const b = 10 * (4 + ((seed + 1) % 4)) + ((seed + 2) % 5);
+    if (variant === 0) return carryAsk(a, b, 'addition', '십의 자리 받아올림이 있는 덧셈하기');
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}를 계산할 때 십의 자리 합이 10이 넘으면 어떻게 할까요?`,
+        '백의 자리로 1을 받아올림한다',
+        ['십의 자리에 그대로 쓴다', '일의 자리로 내린다', '더하지 않는다'],
+        `십의 자리에 10이 모이면 백 한 묶음이 되므로 백의 자리로 올려 줍니다.`,
+        'addition', '십의 자리 받아올림 알기',
+      );
+    }
+    if (variant === 2) {
+      const round = Math.round(b / 10) * 10;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}를 쉽게 계산하려고 ${b}를 ${round}과 ${b - round}로 나누었습니다. 다음에 할 일은?`,
+        `${a}에 ${round}을 먼저 더한다`,
+        [`${a}에서 ${round}을 뺀다`, `${round}과 ${b - round}을 곱한다`, '두 수를 바꾸어 쓴다'],
+        `큰 자리부터 더하면 쉽습니다. ${a}+${round}을 먼저 구하고 남은 ${b - round}을 더합니다.`,
+        'addition', '수를 갈라서 더하는 방법 쓰기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}의 답은 얼마일까요?`,
+        a + b, [a + b - 100, a + b + 10, a + b - 10],
+        `일의 자리, 십의 자리 차례로 더하고 받아올림을 반영하면 ${a + b}입니다.`,
+        'addition', '여러 자리 받아올림 덧셈 마무리하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '덧셈을 여러 가지 방법으로 계산하면 좋은 점은?',
+      '자기에게 편한 방법을 골라 빠르게 계산할 수 있다',
+      ['답이 달라진다', '계산하지 않아도 된다', '항상 더 오래 걸린다'],
+      `방법은 달라도 답은 같습니다. 자신에게 편한 방법을 고르면 계산이 쉬워집니다.`,
+      'addition', '여러 가지 계산 방법 비교하기',
+    );
+  }
+
+  // 뺄셈 ⑴ : (두 자리 수) - (한 자리 수), 받아내림
+  if (title.includes('뺄셈을 해 볼까요 ⑴')) {
+    const a = 10 * (2 + (seed % 8)) + (seed % 4);
+    const b = (a % 10) + 1 + (index % 4);
+    if (variant === 0) return carryAsk(a, b, 'subtraction', '받아내림이 있는 뺄셈하기');
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}-${b}를 계산할 때 일의 자리에서 바로 뺄 수 있을까요?`,
+        '뺄 수 없어서 십의 자리에서 받아내린다',
+        ['바로 뺄 수 있다', '십의 자리를 먼저 뺀다', '두 수를 바꾸어 뺀다'],
+        `일의 자리 ${a % 10}에서 ${b}를 뺄 수 없으므로 십의 자리에서 10을 받아내립니다.`,
+        'subtraction', '받아내림이 필요한지 판단하기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '십의 자리에서 10을 받아내리면 십의 자리 숫자는 어떻게 될까요?',
+        '1만큼 작아진다',
+        ['1만큼 커진다', '그대로이다', '0이 된다'],
+        `십 한 묶음을 풀어 일의 자리로 보냈으므로 십의 자리는 1 줄어듭니다.`,
+        'subtraction', '받아내림 뒤 십의 자리 변화 알기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}-${b}의 답은 얼마일까요?`,
+        a - b, [a - b + 10, a - b - 1, a - b + 1],
+        `십의 자리에서 10을 받아내려 계산하면 ${a - b}입니다.`,
+        'subtraction', '받아내림 뺄셈의 답 구하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `구슬 ${a}개 중에서 ${b}개를 잃어버렸습니다. 남은 구슬은 몇 개일까요?`,
+      `${a - b}개`, [`${a}개`, `${a - b + 10}개`, `${a + b}개`],
+      `남은 수를 구하므로 뺍니다. ${a}-${b}=${a - b}개입니다.`,
+      'subtraction', '받아내림 뺄셈을 이야기 문제에 쓰기',
+    );
+  }
+
+  // 뺄셈 ⑵ : (몇십) - (몇십몇)
+  if (title.includes('뺄셈을 해 볼까요 ⑵')) {
+    const a = 10 * (4 + (seed % 6));
+    const b = 10 * (1 + (seed % 3)) + (1 + (index % 8));
+    if (variant === 0) return carryAsk(a, b, 'subtraction', '몇십에서 몇십몇을 빼기');
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}에서 ${b}를 뺄 때 일의 자리는 어떻게 계산할까요?`,
+        '십의 자리에서 10을 받아내려 뺀다',
+        ['0에서 그냥 뺀다', '빼지 않고 넘어간다', '일의 자리를 더한다'],
+        `${a}의 일의 자리는 0이므로 십의 자리에서 10을 받아내려야 뺄 수 있습니다.`,
+        'subtraction', '몇십에서 받아내리기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}-${b}의 답은 얼마일까요?`,
+        a - b, [a - b + 10, a - b - 10, a - b + 1],
+        `십의 자리에서 10을 받아내려 계산하면 ${a - b}입니다.`,
+        'subtraction', '몇십에서 빼는 계산 마무리하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}는 십이 몇 개인 수일까요?`,
+        `${a / 10}개`, [`${a}개`, `${a / 10 + 1}개`, '10개'],
+        `${a}은 십이 ${a / 10}개인 수입니다. 그중 한 묶음을 풀어 받아내립니다.`,
+        'subtraction', '몇십의 구성 보고 받아내림 준비하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `색연필 ${a}자루 중 ${b}자루를 나누어 주었습니다. 남은 것은 몇 자루일까요?`,
+      `${a - b}자루`, [`${a}자루`, `${a - b + 10}자루`, `${a + b}자루`],
+      `남은 수를 구하므로 뺍니다. ${a}-${b}=${a - b}자루입니다.`,
+      'subtraction', '몇십에서 빼는 이야기 문제 풀기',
+    );
+  }
+
+  // 여러 가지 방법으로 뺄셈 : (두 자리) - (두 자리)
+  if (title.includes('여러 가지 방법으로 뺄셈')) {
+    const a = 10 * (4 + (seed % 6)) + (seed % 4);
+    const b = 10 * (1 + (seed % 3)) + ((a % 10) + 1 + (index % 4));
+    if (variant === 0) return carryAsk(a, b, 'subtraction', '두 자리 수끼리 받아내림 뺄셈하기');
+    if (variant === 1) {
+      const round = Math.round(b / 10) * 10;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}-${b}를 쉽게 계산하려고 ${b}를 ${round}과 ${b - round}로 나누었습니다. 다음에 할 일은?`,
+        `${a}에서 ${round}을 먼저 뺀다`,
+        [`${a}에 ${round}을 더한다`, `${round}과 ${b - round}을 곱한다`, '두 수를 바꾸어 쓴다'],
+        `큰 자리부터 빼면 쉽습니다. ${a}-${round}을 먼저 구하고 남은 ${b - round}을 더 뺍니다.`,
+        'subtraction', '수를 갈라서 빼는 방법 쓰기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}-${b}의 답은 얼마일까요?`,
+        a - b, [a - b + 10, a - b - 10, b - a + 10],
+        `일의 자리에서 받아내림한 뒤 십의 자리를 계산하면 ${a - b}입니다.`,
+        'subtraction', '두 자리 수 뺄셈의 답 구하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}-${b}=${a - b}이 맞는지 어떻게 확인할까요?`,
+        `${a - b}에 ${b}를 더해 ${a}가 되는지 본다`,
+        [`${a}에 ${b}를 더해 본다`, `${a}에서 ${a - b}를 곱해 본다`, '확인할 수 없다'],
+        `뺄셈은 덧셈으로 확인합니다. ${a - b}+${b}=${a}이면 바르게 계산한 것입니다.`,
+        'subtraction', '덧셈으로 뺄셈 확인하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '뺄셈을 여러 가지 방법으로 계산하면 좋은 점은?',
+      '자기에게 편한 방법을 골라 빠르게 계산할 수 있다',
+      ['답이 달라진다', '계산하지 않아도 된다', '항상 더 오래 걸린다'],
+      `방법은 달라도 답은 같습니다. 자신에게 편한 방법을 고르면 계산이 쉬워집니다.`,
+      'subtraction', '여러 가지 뺄셈 방법 비교하기',
+    );
+  }
+
+  return null;
+};
+
 const operationQuestion = (lesson: Lesson, difficulty: Difficulty, index: number, mode: 'addition' | 'subtraction'): Question => {
+  const unitSpecific = calcUnitQuestion(lesson, difficulty, index);
+  if (unitSpecific) return unitSpecific;
+
+  return legacyOperationQuestion(lesson, difficulty, index, mode);
+};
+
+const legacyOperationQuestion = (lesson: Lesson, difficulty: Difficulty, index: number, mode: 'addition' | 'subtraction'): Question => {
   const seed = n(lesson, index, mode === 'addition' ? 5 : 11);
   const variant = variantForDifficulty(difficulty, index, 6, 2);
   const a = difficulty === '하' ? 24 + (seed % 36) : difficulty === '중' ? 48 + (seed % 28) : 58 + (seed % 22);
