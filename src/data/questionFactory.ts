@@ -378,6 +378,18 @@ const fixJosaAfterNumbers = (text: string): string =>
     return `${digit}${hasFinal ? pair[0] : pair[1]}`;
   });
 
+const hasBatchim = (word: string): boolean => {
+  const last = word.trim().slice(-1);
+  if (last >= '0' && last <= '9') return digitHasFinalConsonant[last];
+  const code = last.charCodeAt(0);
+  if (code < 0xac00 || code > 0xd7a3) return false;
+  return (code - 0xac00) % 28 !== 0;
+};
+
+/** 항목 이름이 문제마다 달라지므로 조사를 받침에 맞춰 붙입니다. (예: 놀이를 / 공기놀이는) */
+const josa = (word: string, withFinal: string, withoutFinal: string) =>
+  `${word}${hasBatchim(word) ? withFinal : withoutFinal}`;
+
 const cleanGrade2Text = (text: string): string =>
   fixJosaAfterNumbers(
     grade2LanguageReplacements.reduce((current, [pattern, replacement]) => current.replace(pattern, replacement), text),
@@ -3276,10 +3288,10 @@ const classifyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: 
   if (variant === 0) {
     return makeQuestion(
       lesson, difficulty, index,
-      `${survey.subject}을 조사한 자료를 분류했더니 ${survey.items.map((item) => `${item.name} ${item.count}명`).join(', ')}이었습니다. 표의 ${target.name} 칸에 알맞은 수는?`,
+      `${josa(survey.subject, '을', '를')} 조사한 자료를 분류했더니 ${survey.items.map((item) => `${item.name} ${item.count}명`).join(', ')}이었습니다. 표의 ${target.name} 칸에 알맞은 수는?`,
       target.count,
       [total, target.count + 1, Math.max(1, target.count - 1)],
-      `분류한 ${target.name}의 학생 수를 세어 표의 같은 칸에 그대로 씁니다. ${target.name}는 ${target.count}명입니다.`,
+      `분류한 ${target.name}의 학생 수를 세어 표의 같은 칸에 그대로 씁니다. ${josa(target.name, '은', '는')} ${target.count}명입니다.`,
       'data',
       '분류한 수를 표에 옮겨 쓰기',
       surveyTable(survey, { blankIndex: index % survey.items.length }),
@@ -3302,10 +3314,10 @@ const classifyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: 
   if (variant === 2) {
     return makeQuestion(
       lesson, difficulty, index,
-      `${survey.subject}을 표로 나타낼 때 분류 기준으로 알맞은 것은?`,
+      `${josa(survey.subject, '을', '를')} 표로 나타낼 때 분류 기준으로 알맞은 것은?`,
       survey.categoryLabel,
       ['이름의 첫 글자', '앉은 자리', '키의 순서'],
-      `표로 나타내려면 조사한 내용에 맞는 기준이 필요합니다. ${survey.subject}은 ${survey.categoryLabel}을 기준으로 분류합니다.`,
+      `표로 나타내려면 조사한 내용에 맞는 기준이 필요합니다. ${josa(survey.subject, '은', '는')} ${josa(survey.categoryLabel, '을', '를')} 기준으로 분류합니다.`,
       'data',
       '분류 기준 정하기',
       surveyTable(survey),
@@ -3344,7 +3356,7 @@ const classifyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: 
     `표에서 ${survey.items.map((item) => `${item.name} ${item.count}명`).join(', ')}일 때 가장 많은 항목은?`,
     most.name,
     survey.items.filter((item) => item.name !== most.name).map((item) => item.name).concat('모두 같음'),
-    `표의 학생 수를 비교하면 ${most.count}명인 ${most.name}이 가장 많습니다.`,
+    `표의 학생 수를 비교하면 ${most.count}명인 ${josa(most.name, '이', '가')} 가장 많습니다.`,
     'data',
     '표에서 가장 많은 항목 찾기',
     surveyTable(survey),
@@ -3360,7 +3372,7 @@ const surveyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
   if (variant === 0) {
     return makeQuestion(
       lesson, difficulty, index,
-      `우리 반 친구들의 ${survey.subject}을 조사하는 방법으로 알맞은 것은?`,
+      `우리 반 친구들의 ${josa(survey.subject, '을', '를')} 조사하는 방법으로 알맞은 것은?`,
       '손을 들어 세어 본다',
       ['내 생각대로 정한다', '선생님께만 여쭤본다', '책에서 찾아본다'],
       `조사는 친구들에게 직접 물어봐야 합니다. 손을 들어 세거나, 한 사람씩 말하거나, 붙임쪽지에 적는 방법이 있습니다.`,
@@ -3384,7 +3396,7 @@ const surveyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
   if (variant === 2) {
     return makeQuestion(
       lesson, difficulty, index,
-      `${survey.subject}을 조사해 ${survey.items.map((item) => `${item.name} ${item.count}명`).join(', ')}이 나왔습니다. 조사한 학생은 모두 몇 명일까요?`,
+      `${josa(survey.subject, '을', '를')} 조사해 ${survey.items.map((item) => `${item.name} ${item.count}명`).join(', ')}이 나왔습니다. 조사한 학생은 모두 몇 명일까요?`,
       `${total}명`,
       [`${total + 2}명`, `${Math.max(1, total - 1)}명`, `${mostOf(survey.items).count}명`],
       `조사한 학생 수는 항목별 수를 모두 더한 합계입니다. ${survey.items.map((item) => item.count).join('+')}=${total}명입니다.`,
@@ -3422,10 +3434,10 @@ const surveyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
   const target = survey.items[(index + 1) % survey.items.length];
   return makeQuestion(
     lesson, difficulty, index,
-    `${survey.subject} 조사에서 ${target.name}을 고른 친구가 ${target.count}명입니다. 표의 ${target.name} 칸에 쓸 수는?`,
+    `${survey.subject} 조사에서 ${josa(target.name, '을', '를')} 고른 친구가 ${target.count}명입니다. 표의 ${target.name} 칸에 쓸 수는?`,
     target.count,
     [total, target.count + 2, Math.max(1, target.count - 1)],
-    `조사에서 센 수를 표의 같은 칸에 그대로 씁니다. ${target.name}은 ${target.count}명입니다.`,
+    `조사에서 센 수를 표의 같은 칸에 그대로 씁니다. ${josa(target.name, '은', '는')} ${target.count}명입니다.`,
     'data',
     '조사 결과를 표에 옮기기',
     surveyTable(survey, { blankIndex: (index + 1) % survey.items.length }),
@@ -3442,7 +3454,7 @@ const classifyToGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: 
   if (variant === 0) {
     return makeQuestion(
       lesson, difficulty, index,
-      `표에서 ${target.name}이 ${target.count}명입니다. 그래프에 ◯를 몇 개 그려야 할까요?`,
+      `표에서 ${josa(target.name, '이', '가')} ${target.count}명입니다. 그래프에 ◯를 몇 개 그려야 할까요?`,
       `${target.count}개`,
       [`${target.count + 1}개`, `${Math.max(1, target.count - 1)}개`, '1개'],
       `그래프는 학생 수만큼 ◯를 그립니다. ${target.count}명이므로 ◯를 ${target.count}개 그립니다.`,
@@ -3532,7 +3544,7 @@ const readTableGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       `${survey.subject}별 학생 수가 ${listed}입니다. 가장 많은 학생이 고른 것은?`,
       most.name,
       survey.items.filter((item) => item.name !== most.name).map((item) => item.name).concat('모두 같음'),
-      `학생 수를 비교하면 ${most.count}명인 ${most.name}이 가장 많습니다.`,
+      `학생 수를 비교하면 ${most.count}명인 ${josa(most.name, '이', '가')} 가장 많습니다.`,
       'data',
       '가장 많은 항목 찾기',
       surveyGraph(survey),
@@ -3545,7 +3557,7 @@ const readTableGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       `${survey.subject}별 학생 수가 ${listed}입니다. 가장 적은 학생이 고른 것은?`,
       least.name,
       survey.items.filter((item) => item.name !== least.name).map((item) => item.name).concat('모두 같음'),
-      `학생 수를 비교하면 ${least.count}명인 ${least.name}이 가장 적습니다.`,
+      `학생 수를 비교하면 ${least.count}명인 ${josa(least.name, '이', '가')} 가장 적습니다.`,
       'data',
       '가장 적은 항목 찾기',
       surveyGraph(survey),
@@ -3555,7 +3567,7 @@ const readTableGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
   if (variant === 2) {
     return makeQuestion(
       lesson, difficulty, index,
-      `${survey.subject}별 학생 수가 ${listed}입니다. ${most.name}은 ${least.name}보다 몇 명 더 많을까요?`,
+      `${survey.subject}별 학생 수가 ${listed}입니다. ${josa(most.name, '은', '는')} ${least.name}보다 몇 명 더 많을까요?`,
       `${gap}명`,
       [`${most.count}명`, `${least.count}명`, `${gap + 1}명`],
       `두 항목의 차를 구합니다. ${most.count}-${least.count}=${gap}명입니다.`,
@@ -3628,10 +3640,10 @@ const tableAndGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
   if (variant === 1) {
     return makeQuestion(
       lesson, difficulty, index,
-      `표에서 ${target.name}이 ${target.count}명입니다. 그래프의 ${target.name} 칸에 ◯를 몇 개 그릴까요?`,
+      `표에서 ${josa(target.name, '이', '가')} ${target.count}명입니다. 그래프의 ${target.name} 칸에 ◯를 몇 개 그릴까요?`,
       `${target.count}개`,
       [`${target.count + 1}개`, `${Math.max(1, target.count - 1)}개`, `${total}개`],
-      `표의 수만큼 ◯를 그립니다. ${target.name}은 ${target.count}명이므로 ◯를 ${target.count}개 그립니다.`,
+      `표의 수만큼 ◯를 그립니다. ${josa(target.name, '은', '는')} ${target.count}명이므로 ◯를 ${target.count}개 그립니다.`,
       'data',
       '표를 보고 그래프 완성하기',
       surveyTable(survey),
@@ -3667,7 +3679,7 @@ const tableAndGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
   if (variant === 4) {
     return makeQuestion(
       lesson, difficulty, index,
-      `${survey.subject}을 조사한 결과를 보고 반 친구들에게 알릴 내용으로 알맞은 것은?`,
+      `${josa(survey.subject, '을', '를')} 조사한 결과를 보고 반 친구들에게 알릴 내용으로 알맞은 것은?`,
       `가장 많은 학생이 고른 것은 ${most.name}입니다`,
       ['조사는 하지 않아도 됩니다', '내가 좋아하는 것으로 정하면 됩니다', '수는 말하지 않는 것이 좋습니다'],
       `조사 결과를 알릴 때는 표와 그래프에서 알 수 있는 사실을 말합니다. 가장 많은 것은 ${most.name}입니다.`,
@@ -4153,7 +4165,7 @@ const richTableGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       `표의 합계는 ${total}명입니다. ${survey.items
         .filter((item) => item.name !== hidden.name)
         .map((item) => `${item.name} ${item.count}명`)
-        .join(', ')}일 때 ${hidden.name}은 몇 명일까요?`,
+        .join(', ')}일 때 ${josa(hidden.name, '은', '는')} 몇 명일까요?`,
       `${hidden.count}명`,
       [`${total}명`, `${rest}명`, `${hidden.count + 1}명`],
       `합계에서 다른 항목의 수를 빼면 됩니다. ${total}-${rest}=${hidden.count}명입니다.`,
