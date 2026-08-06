@@ -10874,13 +10874,15 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
           'measurement', '조건 함께 보기 · 기준 길이에 가까운 것 찾기',
         );
       }
+      // 키는 1m 몇십 cm 정도가 자연스럽습니다.
       const taller = 5 + (seed % 6);
+      const heightCm = 20 + (seed % 5) * 5;
       return makeQuestion(
         lesson, difficulty, index,
-        `민수의 키는 ${am}m ${acm}cm이고 지호는 민수보다 ${taller}cm 더 큽니다. 지호의 키는?`,
-        `${am}m ${acm + taller}cm`,
-        [`${am}m ${acm}cm`, `${am}m ${acm - taller}cm`, `${am + 1}m ${acm}cm`],
-        `${acm}+${taller}=${acm + taller}이므로 ${am}m ${acm + taller}cm입니다.`,
+        `민수의 키는 1m ${heightCm}cm이고 지호는 민수보다 ${taller}cm 더 큽니다. 지호의 키는?`,
+        `1m ${heightCm + taller}cm`,
+        [`1m ${heightCm}cm`, `1m ${heightCm - taller}cm`, `2m ${heightCm}cm`],
+        `${heightCm}+${taller}=${heightCm + taller}이므로 1m ${heightCm + taller}cm입니다.`,
         'measurement', '조건 함께 보기 · 더 큰 키를 이어서 구하기',
       );
     }
