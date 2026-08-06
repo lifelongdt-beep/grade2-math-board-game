@@ -9470,6 +9470,112 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     }
   }
 
+  // 단원 도입 차시: 새로 배울 것을 꺼내기 전이므로 앞 학년에서 배운 것과
+  // 생활 상황을 차례로 따라가는 과정만 다룹니다.
+  if (title.includes('단원 도입')) {
+    if (unit === '세 자리 수' || unit === '네 자리 수') {
+      const value = 10 + (seed % 80);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `물건 ${value}개를 세는 과정입니다. ⊙에 알맞은 수는? ① 10개씩 묶어 셉니다. ② 묶음이 ${Math.floor(value / 10)}개 생기고 ⊙개가 남습니다.`,
+        value % 10, [Math.floor(value / 10), value, 10],
+        `${value}는 10개씩 ${Math.floor(value / 10)}묶음과 ${value % 10}개입니다.`,
+        'placeValue', '10씩 묶어 세는 과정',
+      );
+    }
+
+    if (unit === '여러 가지 도형') {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '생활 물건에서 도형을 찾는 과정입니다. ⊙에 들어갈 말은? ① 물건의 겉모양을 봅니다. ② ⊙ ③ 알맞은 도형의 이름을 붙입니다.',
+        '곧은 선인지 굽은 선인지 살펴봅니다',
+        ['물건의 색을 봅니다', '물건의 무게를 잽니다', '물건의 값을 봅니다'],
+        '겉모양이 곧은 선인지 굽은 선인지 보면 어떤 도형인지 알 수 있습니다.',
+        'shape', '생활 물건을 도형으로 보는 차례',
+      );
+    }
+
+    if (unit === '덧셈과 뺄셈') {
+      const a = 10 * (1 + (seed % 4)) + (seed % 5);
+      const b = 10 * (1 + ((seed + 1) % 3)) + ((seed + 2) % 4);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리끼리 더하면 ${a % 10}+${b % 10}=${(a % 10) + (b % 10)} ② 십의 자리끼리 더하면 ${Math.floor(a / 10)}+${Math.floor(b / 10)}=⊙`,
+        Math.floor(a / 10) + Math.floor(b / 10),
+        [(a % 10) + (b % 10), Math.floor(a / 10), Math.floor(a / 10) + Math.floor(b / 10) + 1],
+        `십의 자리끼리 더하면 ${Math.floor(a / 10) + Math.floor(b / 10)}입니다.`,
+        'addition', '자리끼리 더하는 차례',
+      );
+    }
+
+    if (unit === '길이 재기') {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '두 물건의 길이를 견주는 과정입니다. ⊙에 들어갈 말은? ① 두 물건을 나란히 놓습니다. ② ⊙ ③ 어느 것이 더 긴지 말합니다.',
+        '한쪽 끝을 맞춥니다',
+        ['가운데를 맞춥니다', '겹쳐 놓습니다', '멀리 떨어뜨립니다'],
+        '한쪽 끝을 맞추어야 어느 것이 더 긴지 바르게 알 수 있습니다.',
+        'measurement', '길이를 견주는 차례',
+      );
+    }
+
+    if (unit === '곱셈') {
+      const each = 2 + (seed % 5);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `물건을 빠르게 세는 과정입니다. ⊙에 알맞은 수는? ① 하나씩 세면 오래 걸립니다. ② ${each}씩 뛰어 셉니다. ③ ${each}, ${each * 2}, ⊙`,
+        each * 3, [each * 2, each * 4, each + 3],
+        `${each}씩 뛰어 세면 ${each * 2} 다음은 ${each * 3}입니다.`,
+        'multiplication', '뛰어 세어 빠르게 세는 차례',
+      );
+    }
+
+    if (unit === '곱셈구구') {
+      const each = 2 + (seed % 5);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}개씩 3묶음의 수를 구하는 과정입니다. ⊙에 알맞은 수는? ① 같은 수 ${each}가 3번 있습니다. ② ${each}+${each}+${each}=⊙`,
+        each * 3, [each * 2, each + 3, each * 4],
+        `${each}를 세 번 더하면 ${each * 3}입니다.`,
+        'multiplication', '같은 수를 여러 번 더하는 차례',
+      );
+    }
+
+    if (unit === '시각과 시간') {
+      const hour = 1 + (seed % 11);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `시계를 읽는 과정입니다. ⊙에 알맞은 수는? ① 짧은바늘이 ${hour}을 가리킵니다. ② 긴바늘이 12를 가리킵니다. ③ ⊙시입니다.`,
+        hour, [12, hour + 1, hour * 2],
+        `긴바늘이 12를 가리키면 몇 시 정각이고, 짧은바늘이 ${hour}이므로 ${hour}시입니다.`,
+        'time', '두 바늘을 차례로 보는 과정',
+      );
+    }
+
+    if (unit === '표와 그래프') {
+      const a = 4 + (seed % 4);
+      const b = 2 + ((seed + 1) % 3);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `조사한 것을 알아보기 쉽게 하는 과정입니다. ⊙에 알맞은 수는? ① 같은 것끼리 모읍니다. ② 축구 ${a}명, 줄넘기 ${b}명 ③ 조사한 사람은 모두 ⊙명`,
+        `${a + b}명`, [`${a}명`, `${b}명`, `${a + b + 1}명`],
+        `항목별 수를 더하면 ${a}+${b}=${a + b}명입니다.`,
+        'data', '모아서 세는 차례',
+      );
+    }
+
+    if (unit === '규칙 찾기') {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '생활에서 규칙을 찾는 과정입니다. ⊙에 들어갈 말은? ① 되풀이되는 것을 찾습니다. ② ⊙ ③ 다음에 올 것을 말합니다.',
+        '어디까지가 한 묶음인지 정합니다',
+        ['맨 끝만 봅니다', '개수를 모두 셉니다', '색을 칠합니다'],
+        '되풀이되는 한 묶음을 찾아야 다음에 올 것을 알 수 있습니다.',
+        'pattern', '규칙을 찾는 차례',
+      );
+    }
+  }
+
   // 세 자리 수 / 네 자리 수: 수를 자리별로 모으고 세는 과정
   if (unit === '세 자리 수' || unit === '네 자리 수') {
     const four = unit === '네 자리 수';
