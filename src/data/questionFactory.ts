@@ -9251,9 +9251,9 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
     // 여러 가지 방법으로 덧셈 : 수를 갈라 큰 자리부터 더하는 방법
     if (title.includes('여러 가지 방법으로 덧셈')) {
-      const a = 10 * (2 + (seed % 5)) + (3 + (seed % 6));
-      const bTens = 10 * (1 + (seed % 4));
-      const bOnes = 2 + (index % 6);
+      const a = 10 * (2 + (seed % 3)) + (3 + (seed % 5));
+      const bTens = 10 * (1 + (seed % 3));
+      const bOnes = 2 + (index % 5);
       return makeQuestion(
         lesson, difficulty, index,
         `${a}+${bTens + bOnes}를 갈라서 계산하는 과정입니다. ⊙에 알맞은 수는? ① ${bTens + bOnes}을 ${bTens}과 ${bOnes}으로 가릅니다. ② ${a}+${bTens}=${a + bTens} ③ ${a + bTens}+${bOnes}=⊙`,
@@ -9636,50 +9636,24 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         'measurement', '눈금을 빼서 길이를 구하는 과정',
       );
     }
-    if (title.includes('어림')) {
-      const span = 10 + (index % 8);
+    if (title.includes('어림해 볼까요 ⑴')) {
+      const span = 10 + (seed % 6);
       return makeQuestion(
         lesson, difficulty, index,
-        `한 뼘이 약 ${span}cm일 때 두 뼘을 어림하는 과정입니다. ⊙에 알맞은 수는? ① 한 뼘은 약 ${span}cm ② 두 뼘은 약 ${span}+${span}=⊙`,
-        `약 ${span * 2}cm`, [`약 ${span}cm`, `약 ${span * 3}cm`, `약 ${span + 2}cm`],
-        `한 뼘이 약 ${span}cm이므로 두 뼘은 약 ${span * 2}cm입니다.`,
-        'measurement', '뼘을 더해 어림하는 과정',
+        `뼘으로 길이를 어림하는 과정입니다. ⊙에 알맞은 수는? ① 한 뼘은 약 ${span}cm입니다. ② 세 뼘이면 약 ${span}+${span}+${span}=⊙cm입니다.`,
+        span * 3, [span, span * 2, span * 4],
+        `한 뼘이 약 ${span}cm이므로 세 뼘은 약 ${span * 3}cm입니다.`,
+        'measurement', '몸의 부분을 여러 번 써서 어림하는 과정',
       );
     }
-  }
-
-  // 길이 재기(2-2): m와 cm로 바꾸는 과정
-  if (unit === '길이 재기' && lesson.semester === '2-2') {
-    if (title.includes('더 큰 단위')) {
-      const m = 2 + (seed % 4);
-      const cm = 10 + (seed % 8) * 5;
+    if (title.includes('어림해 볼까요 ⑵')) {
+      const known = 10 * (2 + (seed % 4));
       return makeQuestion(
         lesson, difficulty, index,
-        `${m * 100 + cm}cm를 m와 cm로 나타내는 과정입니다. ⊙에 알맞은 수는? ① 100cm는 1m ② ${m * 100}cm는 ${m}m ③ 남은 것은 ⊙cm`,
-        cm, [m, m * 100, cm + 100],
-        `${m * 100 + cm}cm에서 ${m * 100}cm를 빼면 ${cm}cm가 남습니다.`,
-        'measurement', 'cm를 m와 cm로 나누는 과정',
-      );
-    }
-    if (title.includes('자로 길이를 재어')) {
-      const m = 1 + (seed % 3);
-      const cm = 20 + (seed % 7) * 10;
-      return makeQuestion(
-        lesson, difficulty, index,
-        `줄자로 잰 길이를 쓰는 과정입니다. ⊙에 알맞은 수는? ① 줄자의 0에 한끝을 맞춥니다. ② 끝 눈금이 ${m * 100 + cm}cm였습니다. ③ ${m}m ⊙cm라고 씁니다.`,
-        cm, [m, m * 100 + cm, cm + 100],
-        `${m * 100 + cm}cm는 ${m}m ${cm}cm입니다.`,
-        'measurement', '줄자로 잰 값을 m와 cm로 쓰는 과정',
-      );
-    }
-    if (title.includes('어림')) {
-      const known = 10 * (2 + (index % 4));
-      return makeQuestion(
-        lesson, difficulty, index,
-        `${known}cm짜리 색 테이프로 길이를 어림하는 과정입니다. ⊙에 알맞은 수는? ① 색 테이프는 ${known}cm ② 3번쯤 들어가면 약 ⊙cm`,
+        `아는 길이를 기준으로 어림하는 과정입니다. ⊙에 알맞은 수는? ① 색 테이프는 ${known}cm입니다. ② 물건에 3번쯤 들어갑니다. ③ 물건은 약 ⊙cm입니다.`,
         known * 3, [known, known * 2, known + 3],
         `${known}cm가 3번이면 약 ${known * 3}cm입니다.`,
-        'measurement', '기준 길이를 여러 번 세어 어림하는 과정',
+        'measurement', '기준 길이를 세어 어림하는 과정',
       );
     }
   }
@@ -9709,7 +9683,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         'multiplication', '묶음의 수를 세는 과정',
       );
     }
-    if (title.includes('몇의 몇 배')) {
+    if (title.includes('몇의 몇 배를 알아')) {
       return makeQuestion(
         lesson, difficulty, index,
         `${each}의 ${groups}배를 구하는 과정입니다. ⊙에 알맞은 수는? ① ${each}씩 ${groups}묶음입니다. ② ${Array.from({ length: groups }, () => each).join('+')}=⊙`,
@@ -9718,13 +9692,33 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         'multiplication', '더하여 몇 배를 구하는 과정',
       );
     }
-    if (title.includes('곱셈')) {
+    if (title.includes('몇의 몇 배로 나타내')) {
+      const small = 2 + (seed % 4);
+      const times = 2 + (index % 4);
       return makeQuestion(
         lesson, difficulty, index,
-        `${each}씩 ${groups}묶음을 곱셈식으로 나타내는 과정입니다. ⊙에 알맞은 수는? ① 한 묶음은 ${each} ② 묶음 수는 ⊙ ③ 곱셈식은 ${each}×${groups}`,
+        `${small * times}이 ${small}의 몇 배인지 구하는 과정입니다. ⊙에 알맞은 수는? ① 기준이 되는 수는 ${small}입니다. ② ${small}씩 몇 묶음인지 세면 ⊙묶음입니다. ③ 그래서 ${times}배입니다.`,
+        times, [small, small * times, times + 1],
+        `${small}씩 ${times}묶음이면 ${small * times}이므로 ${times}배입니다.`,
+        'multiplication', '기준이 되는 수로 몇 배인지 구하는 과정',
+      );
+    }
+    if (title.includes('곱셈을 알아')) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}의 ${groups}배를 곱셈식으로 바꾸는 과정입니다. ⊙에 알맞은 수는? ① ${each}씩 ${groups}묶음입니다. ② 곱셈식으로 쓰면 ${each}×⊙입니다.`,
         groups, [each, total, each + groups],
-        `묶음 수가 ${groups}이므로 곱셈식은 ${each}×${groups}입니다.`,
-        'multiplication', '곱셈식을 세우는 과정',
+        `묶음 수가 ${groups}이므로 ${each}×${groups}로 씁니다.`,
+        'multiplication', '몇 배를 곱셈식으로 바꾸는 과정',
+      );
+    }
+    if (title.includes('곱셈식으로 나타내')) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `한 접시에 ${each}개씩 ${groups}접시를 곱셈식으로 나타내는 과정입니다. ⊙에 알맞은 수는? ① 한 묶음의 수는 ${each} ② 묶음 수는 ${groups} ③ ${each}×${groups}=⊙`,
+        total, [each + groups, total - each, total + each],
+        `${each}×${groups}=${total}이므로 모두 ${total}개입니다.`,
+        'multiplication', '상황을 곱셈식으로 세워 계산하는 과정',
       );
     }
   }
@@ -9753,13 +9747,23 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         'data', '조사 결과의 합계를 구하는 과정',
       );
     }
-    if (title.includes('그래프로 나타내')) {
+    if (title.includes('분류하여 그래프로')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `그래프를 그리는 과정입니다. ⊙에 알맞은 수는? ① 표에서 축구는 ${a}명 ② 한 칸에 하나씩 아래에서부터 ◯를 ⊙개 그립니다.`,
-        `${a}개`, [`${a + 1}개`, `1개`, `${a - 1}개`],
+        `그래프를 그리는 과정입니다. ⊙에 알맞은 수는? ① 표에서 축구는 ${a}명입니다. ② 아래에서부터 한 칸에 하나씩 ◯를 ⊙개 그립니다.`,
+        `${a}개`, [`${a + 1}개`, '1개', `${a - 1}개`],
         `${a}명이므로 ◯를 ${a}개 그립니다.`,
         'data', '그래프에 표시하는 과정',
+      );
+    }
+    if (title.includes('표와 그래프로 나타내')) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `조사한 자료를 나타내는 차례입니다. ⊙에 들어갈 말은? ① 자료를 조사합니다. ② ⊙ ③ 표를 보고 그래프로 나타냅니다.`,
+        '표로 나타냅니다',
+        ['그래프를 먼저 그립니다', '자료를 버립니다', '수를 바꿉니다'],
+        `조사한 자료는 먼저 표로 정리한 뒤 그래프로 나타냅니다.`,
+        'data', '조사에서 표, 그래프로 이어지는 차례',
       );
     }
     if (title.includes('무엇을 알 수 있')) {
