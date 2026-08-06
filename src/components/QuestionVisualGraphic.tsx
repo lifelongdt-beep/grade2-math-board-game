@@ -194,26 +194,41 @@ function TangramGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 't
   );
 }
 
+const NUMBER_LINE_TRACK_WIDTH = 312;
+
 function NumberLineGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'number-line' }> }) {
   const range = Math.max(1, visual.end - visual.start);
-  const toX = (value: number) => 32 + ((value - visual.start) / range) * 312;
+  const toX = (value: number) => 32 + ((value - visual.start) / range) * NUMBER_LINE_TRACK_WIDTH;
   const ticks = [];
   for (let value = visual.start; value <= visual.end; value += visual.step) {
     ticks.push(value);
   }
 
+  // 눈금마다 숫자를 쓰면 4000처럼 자리가 긴 수에서 서로 겹칩니다.
+  // 가장 긴 숫자가 들어갈 만큼 자리가 날 때만 숫자를 씁니다.
+  const longestLabel = ticks.reduce((longest, value) => Math.max(longest, String(value).length), 1);
+  const neededWidth = longestLabel * 10 + 6;
+  const tickGap = NUMBER_LINE_TRACK_WIDTH / Math.max(1, ticks.length - 1);
+  const labelEvery = Math.max(1, Math.ceil(neededWidth / Math.max(tickGap, 1)));
+
   return (
     <svg viewBox="0 0 376 142" role="img" aria-label={visual.label}>
       <rect x="4" y="6" width="368" height="130" rx="14" fill="#f6fcff" stroke="#d7edf2" />
       <line x1="32" y1="76" x2="344" y2="76" stroke="#506579" strokeWidth="4" strokeLinecap="round" />
-      {ticks.map((value) => (
-        <g key={value}>
-          <line x1={toX(value)} y1="64" x2={toX(value)} y2="88" stroke="#8aa0b8" strokeWidth="3" />
-          <text x={toX(value)} y="112" textAnchor="middle" fill="#24364a" fontSize="16" fontWeight="800">
-            {value}
-          </text>
-        </g>
-      ))}
+      {ticks.map((value, index) => {
+        // 첫 눈금과 마지막 눈금은 항상 보여 주어 어디서 시작하고 끝나는지 알 수 있게 합니다.
+        const labelled = index % labelEvery === 0 || index === ticks.length - 1;
+        return (
+          <g key={value}>
+            <line x1={toX(value)} y1="64" x2={toX(value)} y2={labelled ? 88 : 84} stroke="#8aa0b8" strokeWidth="3" />
+            {labelled && (
+              <text x={toX(value)} y="112" textAnchor="middle" fill="#24364a" fontSize="16" fontWeight="800">
+                {value}
+              </text>
+            )}
+          </g>
+        );
+      })}
       {visual.marks.map((mark, index) => (
         <g key={`${mark.value}-${index}`}>
           <circle cx={toX(mark.value)} cy="76" r={mark.active ? 11 : 8} fill={mark.active ? '#18a7a7' : '#fff4bd'} stroke="#0f7175" strokeWidth="3" />

@@ -8988,7 +8988,19 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
   }
 
   if (question.type === 'number') {
-    const values = promptNumbers.length >= 2 ? promptNumbers.slice(0, 3) : [Math.max(0, answerNumber - 20), answerNumber, answerNumber + 20];
+    // 답이 '이천'처럼 수가 아니면 수직선을 만들 수 없습니다.
+    // 예전에는 NaN으로 그려져 점 하나와 선만 남은 그림이 나왔습니다.
+    const values = promptNumbers.length >= 2
+      ? promptNumbers.slice(0, 3)
+      : Number.isFinite(answerNumber)
+        ? [Math.max(0, answerNumber - 20), answerNumber, answerNumber + 20]
+        : [];
+
+    if (values.length === 0) {
+      const shown = promptNumbers.find((value) => Number.isFinite(value));
+      return shown === undefined ? undefined : placeValueVisualFor(shown, '자리값 시각자료');
+    }
+
     const step = Math.max(1, values.length >= 2 ? Math.abs(values[1] - values[0]) || 10 : 10);
     return numberLineVisualFor(values, step > 100 ? 100 : step > 10 ? 10 : step, '수의 위치 자료');
   }
