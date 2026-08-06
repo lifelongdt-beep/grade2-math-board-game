@@ -20,7 +20,7 @@ const notBefore: Array<{
     rules: [
       { pattern: /몇백/, from: 3, note: '몇백은 3차시' },
       { pattern: /뛰어 세/, from: 6, note: '뛰어 세기는 6차시' },
-      { pattern: /크기를 비교|더 큰 수|더 작은 수/, from: 7, note: '크기 비교는 7차시' },
+      { pattern: /크기를 비교|중 더 큰 수|중 더 작은 수|가장 큰 수|가장 작은 수/, from: 7, note: '크기 비교는 7차시' },
     ],
   },
   {
@@ -71,7 +71,7 @@ const notBefore: Array<{
     rules: [
       { pattern: /몇천/, from: 3, note: '몇천은 3차시' },
       { pattern: /뛰어 세/, from: 6, note: '뛰어 세기는 6차시' },
-      { pattern: /크기를 비교|더 큰 수|더 작은 수/, from: 7, note: '크기 비교는 7차시' },
+      { pattern: /크기를 비교|중 더 큰 수|중 더 작은 수|가장 큰 수|가장 작은 수/, from: 7, note: '크기 비교는 7차시' },
     ],
   },
   {

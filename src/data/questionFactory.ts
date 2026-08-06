@@ -3479,7 +3479,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
         lesson, difficulty, index,
         '끈으로 옮겨 비교하면 무엇을 알 수 있을까요?',
         '어느 것이 더 긴지 알 수 있다',
-        ['정확히 몇 cm인지 알 수 있다', '무게를 알 수 있다', '개수를 알 수 있다'],
+        ['얼마나 긴지 수로 알 수 있다', '무게를 알 수 있다', '개수를 알 수 있다'],
         `끈으로 옮기면 길고 짧음은 알 수 있지만 정확한 길이는 자로 재야 합니다.`,
         'measurement', '비교로 알 수 있는 것 구별하기',
       );
@@ -3552,6 +3552,55 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
       ['클립', '지우개', '연필'],
       `단위는 길이가 늘 같아야 합니다. 길이가 변하면 잴 때마다 결과가 달라집니다.`,
       'measurement', '단위로 알맞은 것 고르기',
+    );
+  }
+
+  if (title.includes('1cm를 알아')) {
+    const times = 3 + (seed % 8);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '사람마다 뼘의 길이가 달라 불편했습니다. 이를 해결하는 방법은?',
+        '누구나 똑같은 단위를 정해서 쓴다',
+        ['가장 큰 뼘으로 잰다', '뼘을 쓰지 않는다', '길이를 재지 않는다'],
+        '누구나 같은 단위를 쓰면 잰 길이를 서로 정확히 알려 줄 수 있습니다.',
+        'measurement', '공통 단위가 필요한 까닭 알기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `1cm가 ${times}번 이어진 길이는 얼마일까요?`,
+        `${times}cm`, [`1cm`, `${times + 1}cm`, `${times}번`],
+        `1cm가 ${times}번이면 ${times}cm입니다.`,
+        'measurement', '1cm를 이어 길이 나타내기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '1cm를 바르게 읽은 것은?',
+        '1센티미터', ['1미터', '1번', '일센치'],
+        'cm는 센티미터라고 읽습니다.',
+        'measurement', 'cm 읽고 쓰기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${times}cm는 1cm가 몇 번 이어진 길이일까요?`,
+        `${times}번`, [`1번`, `${times + 1}번`, `${times}cm`],
+        `${times}cm는 1cm가 ${times}번 이어진 길이입니다.`,
+        'measurement', 'cm로 나타낸 길이의 뜻 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '길이를 cm로 나타내면 좋은 점은?',
+      '누구에게나 같은 길이를 알려 줄 수 있다',
+      ['길이가 짧아진다', '재지 않아도 된다', '물건이 커진다'],
+      'cm는 누구나 같은 길이이므로 잰 결과를 정확히 전할 수 있습니다.',
+      'measurement', 'cm를 쓰면 좋은 점 알기',
     );
   }
 
@@ -7313,8 +7362,21 @@ const richDataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
   const answer = most.count - least.count;
   const tag = lesson.tags.includes('classification') ? 'classification' : 'data';
 
-  // 그래프는 4차시에서 배웁니다. 그 앞 차시에서는 표로만 해석합니다.
-  const graphTaught = lesson.unitTitle !== '표와 그래프' || lesson.lessonNo >= 4;
+  // 그래프는 표와 그래프 4차시에서 배웁니다. 그 앞 차시와 분류하기 단원에서는
+  // 그래프를 쓰지 않습니다. 분류하기는 4차시부터 수를 셉니다.
+  const graphTaught = lesson.unitTitle === '표와 그래프' && lesson.lessonNo >= 4;
+
+  if (lesson.unitTitle === '분류하기' && lesson.lessonNo < 4) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      '연필, 지우개, 색종이, 풀을 나눌 때 알맞은 분류 기준은?',
+      '쓰임',
+      ['좋아하는 정도', '값이 비싼 순서', '새것인지 아닌지'],
+      '연필과 지우개는 쓰고 지울 때, 색종이와 풀은 만들 때 쓰므로 쓰임으로 나눌 수 있습니다.',
+      'classification',
+      '조건 함께 보기 · 여러 물건에 맞는 기준 고르기',
+    );
+  }
 
   if (!graphTaught) {
     const total = items.reduce((sum, item) => sum + item.count, 0);
@@ -7927,10 +7989,10 @@ const planeShapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
       `${target}을 찾을 때 꼭 확인해야 할 성질은 무엇일까요?`,
       fact.shortFeature,
       target === '원'
-        ? ['변 3개, 꼭짓점 3개', '변 4개, 꼭짓점 4개', '높이가 2층']
+        ? ['변 3개, 꼭짓점 3개', '변 4개, 꼭짓점 4개', '변 5개, 꼭짓점 5개']
         : target === '삼각형'
-          ? ['굽은 선, 꼭짓점 0개', '변 4개, 꼭짓점 4개', '쌓기나무 3개']
-          : ['굽은 선, 꼭짓점 0개', '변 3개, 꼭짓점 3개', '쌓기나무 4개'],
+          ? ['굽은 선, 꼭짓점 0개', '변 4개, 꼭짓점 4개', '변 5개, 꼭짓점 5개']
+          : ['굽은 선, 꼭짓점 0개', '변 3개, 꼭짓점 3개', '변 5개, 꼭짓점 5개'],
       `${target}은 이름보다 성질을 먼저 보아야 합니다. ${fact.feature}`,
       'shape',
       `${target} 성질 확인`,
@@ -8077,10 +8139,10 @@ const planeShapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
       `${target}을 설명하는 말로 알맞은 것은 무엇일까요?`,
       fact.feature,
       target === '원'
-        ? ['곧은 변 3개가 있습니다.', '곧은 변 4개가 있습니다.', '쌓기나무로만 만들 수 있습니다.']
+        ? ['곧은 변 3개가 있습니다.', '곧은 변 4개가 있습니다.', '곧은 변 5개가 있습니다.']
         : target === '삼각형'
-          ? ['굽은 선으로만 둘러싸여 있습니다.', '변과 꼭짓점이 4개씩 있습니다.', '입체도형입니다.']
-          : ['굽은 선으로만 둘러싸여 있습니다.', '변과 꼭짓점이 3개씩 있습니다.', '쌓기나무입니다.'],
+          ? ['굽은 선으로만 둘러싸여 있습니다.', '변과 꼭짓점이 4개씩 있습니다.', '곧은 변이 없습니다.']
+          : ['굽은 선으로만 둘러싸여 있습니다.', '변과 꼭짓점이 3개씩 있습니다.', '곧은 변이 없습니다.'],
       `${target}을 설명할 때는 변과 꼭짓점의 수를 정확히 말해야 합니다.`,
       'shape',
       `${target} 설명 문장 고르기`,
