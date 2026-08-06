@@ -9930,7 +9930,18 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     const blue = 2 + (seed % 3);
     const green = 1 + ((seed + 1) % 3);
 
-    if (title.includes('분류는 어떻게') || title.includes('단원 도입')) {
+    // 단원 도입: 아직 기준이라는 말을 배우기 전이므로 정리 상황까지만 다룹니다.
+    if (title.includes('단원 도입')) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '어질러진 학용품을 정리하는 과정입니다. ⊙에 들어갈 말은? ① 흩어진 물건을 모읍니다. ② ⊙ ③ 자리에 넣어 둡니다.',
+        '비슷한 것끼리 모아 놓습니다',
+        ['큰 것만 골라 둡니다', '아무 곳에나 넣습니다', '색을 칠해 둡니다'],
+        '비슷한 것끼리 모아 두면 정리도 쉽고 찾기도 쉽습니다.',
+        'classification', '정리하는 차례 생각하기',
+      );
+    }
+    if (title.includes('분류는 어떻게')) {
       return makeQuestion(
         lesson, difficulty, index,
         '물건을 나누는 과정입니다. ⊙에 들어갈 말은? ① 무엇으로 나눌지 정합니다. ② ⊙ ③ 같은 것끼리 모읍니다.',
