@@ -9,16 +9,28 @@ const levels: Difficulty[] = ['하', '중', '상'];
 // 다루면 학생이 아직 배우지 않은 것을 풀게 됩니다.
 // 차시 순서는 동아출판 2-1 / 2-2 교사용 지도서의 단원 전개 계획을 따릅니다.
 // 규칙: "이 낱말이 나오면 그 차시는 최소 from차시여야 한다"
+type Rule =
+  | { pattern: RegExp; from: number; note: string }
+  // 낱말로는 잡히지 않는 것: 문항에 실제로 나온 수를 확인합니다.
+  | { numbers: (values: number[]) => boolean; from: number; note: string };
+
 const notBefore: Array<{
   semester: '2-1' | '2-2';
   unit: string;
-  rules: Array<{ pattern: RegExp; from: number; note: string }>;
+  rules: Rule[];
 }> = [
   {
     semester: '2-1',
     unit: '세 자리 수',
     rules: [
       { pattern: /몇백/, from: 3, note: '몇백은 3차시' },
+      // 254처럼 몇백몇십몇인 수는 4차시에서 처음 배웁니다.
+      {
+        numbers: (values) => values.some((value) => value > 100 && value <= 999 && value % 100 !== 0),
+        from: 4,
+        note: '몇백몇십몇은 4차시',
+      },
+      { pattern: /각 자리|자리 숫자|의 자리|나타내는 값/, from: 5, note: '자리 숫자가 나타내는 값은 5차시' },
       { pattern: /뛰어 세/, from: 6, note: '뛰어 세기는 6차시' },
       { pattern: /크기를 비교|중 더 큰 수|중 더 작은 수|가장 큰 수|가장 작은 수/, from: 7, note: '크기 비교는 7차시' },
     ],
@@ -70,6 +82,12 @@ const notBefore: Array<{
     unit: '네 자리 수',
     rules: [
       { pattern: /몇천/, from: 3, note: '몇천은 3차시' },
+      {
+        numbers: (values) => values.some((value) => value > 1000 && value <= 9999 && value % 1000 !== 0),
+        from: 4,
+        note: '몇천몇백몇십몇은 4차시',
+      },
+      { pattern: /각 자리|자리 숫자|의 자리|나타내는 값/, from: 5, note: '자리 숫자가 나타내는 값은 5차시' },
       { pattern: /뛰어 세/, from: 6, note: '뛰어 세기는 6차시' },
       { pattern: /크기를 비교|중 더 큰 수|중 더 작은 수|가장 큰 수|가장 작은 수/, from: 7, note: '크기 비교는 7차시' },
     ],
@@ -144,9 +162,12 @@ describe('lesson sequence', () => {
           for (const question of generateQuestions(lesson, level)) {
             const text = `${question.prompt} ${question.choices.join(' ')} ${question.strategy}`;
 
+            const numbers = (text.match(/\d+/g) ?? []).map(Number);
+
             for (const rule of group.rules) {
               if (lesson.lessonNo >= rule.from) continue;
-              if (!rule.pattern.test(text)) continue;
+              const hit = 'pattern' in rule ? rule.pattern.test(text) : rule.numbers(numbers);
+              if (!hit) continue;
 
               problems.push(
                 `${group.unit} ${lesson.lessonNo}차시 "${lesson.title}" (${level}) 가 ${rule.note}인데 먼저 다룸: ${question.prompt.slice(0, 36)}`,
