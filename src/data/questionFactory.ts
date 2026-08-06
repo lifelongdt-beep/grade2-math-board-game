@@ -9220,50 +9220,87 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
   // 덧셈과 뺄셈: 받아올림·받아내림 과정의 한 단계를 비웁니다.
   if (unit === '덧셈과 뺄셈') {
-    if (title.includes('덧셈을 해 볼까요') || title.includes('여러 가지 방법으로 덧셈')) {
-      const a = 10 * (1 + (seed % 6)) + (6 + (seed % 3));
-      const b = 10 * (1 + ((seed + 1) % 3)) + (10 - (a % 10) + (index % 3));
-      const onesSum = (a % 10) + (b % 10);
-      const tensSum = Math.floor(a / 10) + Math.floor(b / 10);
-
-      if (pick === 0) {
-        return makeQuestion(
-          lesson, difficulty, index,
-          `${a}+${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리: ${a % 10}+${b % 10}=⊙ ② 10이 넘으므로 십의 자리로 1을 올립니다.`,
-          onesSum, [onesSum % 10, onesSum + 10, Math.max(0, onesSum - 10)],
-          `일의 자리끼리 더하면 ${a % 10}+${b % 10}=${onesSum}입니다. 10이 넘으므로 십의 자리로 1을 올립니다.`,
-          'addition', '덧셈 과정의 빈칸 채우기',
-        );
-      }
+    // 덧셈 ⑴ : (두 자리)+(한 자리). 일의 자리에서 무슨 일이 일어나는지 봅니다.
+    if (title.includes('덧셈을 해 볼까요 ⑴')) {
+      const a = 10 * (1 + (seed % 8)) + (5 + (seed % 4));
+      const b = 10 - (a % 10) + (1 + (index % 4));
+      const onesSum = (a % 10) + b;
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}+${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리: ${a % 10}+${b % 10}=${onesSum}, ${onesSum % 10}을 쓰고 1을 올립니다. ② 십의 자리: ${Math.floor(a / 10)}+${Math.floor(b / 10)}+⊙`,
-        1, [0, onesSum, 10],
-        `일의 자리에서 올린 수는 1입니다. 십의 자리는 ${Math.floor(a / 10)}+${Math.floor(b / 10)}+1=${tensSum + 1}이 됩니다.`,
-        'addition', '받아올림한 수 찾기',
+        `${a}+${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리끼리 더하면 ${a % 10}+${b}=⊙ ② 10이 넘으므로 십의 자리로 1을 올립니다.`,
+        onesSum, [onesSum % 10, onesSum + 10, Math.max(0, onesSum - 10)],
+        `일의 자리끼리 더하면 ${a % 10}+${b}=${onesSum}입니다.`,
+        'addition', '일의 자리 합을 구하는 과정',
       );
     }
 
-    if (title.includes('뺄셈을 해 볼까요') || title.includes('여러 가지 방법으로 뺄셈')) {
+    // 덧셈 ⑵ : (두 자리)+(두 자리). 올린 1을 십의 자리에 더하는 곳을 봅니다.
+    if (title.includes('덧셈을 해 볼까요 ⑵')) {
+      const a = 10 * (1 + (seed % 6)) + (6 + (seed % 3));
+      const b = 10 * (1 + ((seed + 1) % 3)) + (10 - (a % 10) + (index % 3));
+      const onesSum = (a % 10) + (b % 10);
+      const tens = Math.floor(a / 10) + Math.floor(b / 10) + 1;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리: ${a % 10}+${b % 10}=${onesSum}, ${onesSum % 10}을 쓰고 1을 올립니다. ② 십의 자리: ${Math.floor(a / 10)}+${Math.floor(b / 10)}+1=⊙`,
+        tens, [tens - 1, tens + 1, onesSum],
+        `올린 1까지 더하면 십의 자리는 ${tens}이 됩니다.`,
+        'addition', '올린 수까지 더해 십의 자리를 구하는 과정',
+      );
+    }
+
+    // 여러 가지 방법으로 덧셈 : 수를 갈라 큰 자리부터 더하는 방법
+    if (title.includes('여러 가지 방법으로 덧셈')) {
+      const a = 10 * (2 + (seed % 5)) + (3 + (seed % 6));
+      const bTens = 10 * (1 + (seed % 4));
+      const bOnes = 2 + (index % 6);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${bTens + bOnes}를 갈라서 계산하는 과정입니다. ⊙에 알맞은 수는? ① ${bTens + bOnes}을 ${bTens}과 ${bOnes}으로 가릅니다. ② ${a}+${bTens}=${a + bTens} ③ ${a + bTens}+${bOnes}=⊙`,
+        a + bTens + bOnes, [a + bTens, a + bOnes, a + bTens + bOnes + 10],
+        `갈라서 차례로 더하면 ${a + bTens}+${bOnes}=${a + bTens + bOnes}입니다.`,
+        'addition', '수를 갈라 차례로 더하는 과정',
+      );
+    }
+
+    // 뺄셈 ⑴ : (두 자리)-(한 자리). 십의 자리에서 10을 가져오는 곳을 봅니다.
+    if (title.includes('뺄셈을 해 볼까요 ⑴')) {
       const a = 10 * (3 + (seed % 6)) + (seed % 4);
       const b = (a % 10) + 2 + (index % 5);
       const borrowed = (a % 10) + 10;
-
-      if (pick === 0) {
-        return makeQuestion(
-          lesson, difficulty, index,
-          `${a}-${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리 ${a % 10}에서 ${b}를 뺄 수 없습니다. ② 십의 자리에서 10을 가져오면 ⊙-${b}가 됩니다.`,
-          borrowed, [a % 10, borrowed - b, a % 10 + b],
-          `십의 자리에서 10을 가져오면 일의 자리는 ${a % 10}+10=${borrowed}이 됩니다.`,
-          'subtraction', '받아내린 뒤의 수 찾기',
-        );
-      }
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}-${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 십의 자리에서 10을 가져와 ${borrowed}-${b}=${borrowed - b} ② 십의 자리는 ${Math.floor(a / 10)}에서 1이 줄어 ⊙`,
-        Math.floor(a / 10) - 1, [Math.floor(a / 10), Math.floor(a / 10) + 1, borrowed - b],
-        `10을 가져왔으므로 십의 자리는 1이 줄어 ${Math.floor(a / 10) - 1}이 됩니다.`,
-        'subtraction', '받아내린 뒤 십의 자리 찾기',
+        `${a}-${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리 ${a % 10}에서 ${b}를 뺄 수 없습니다. ② 십의 자리에서 10을 가져오면 일의 자리는 ⊙이 됩니다.`,
+        borrowed, [a % 10, borrowed - b, 10],
+        `${a % 10}에 10을 더하면 ${borrowed}이 됩니다.`,
+        'subtraction', '10을 가져온 뒤 일의 자리를 구하는 과정',
+      );
+    }
+
+    // 뺄셈 ⑵ : (몇십)-(몇십몇). 일의 자리가 0인 몇십에서 가져오는 곳을 봅니다.
+    if (title.includes('뺄셈을 해 볼까요 ⑵')) {
+      const a = 10 * (4 + (seed % 6));
+      const b = 10 * (1 + (seed % 3)) + (1 + (index % 8));
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}-${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① ${a}의 일의 자리는 0이라 뺄 수 없습니다. ② 십의 자리에서 10을 가져와 10-${b % 10}=⊙`,
+        10 - (b % 10), [b % 10, 10, 10 + (b % 10)],
+        `10에서 ${b % 10}을 빼면 ${10 - (b % 10)}입니다.`,
+        'subtraction', '몇십에서 10을 가져와 빼는 과정',
+      );
+    }
+
+    // 여러 가지 방법으로 뺄셈 : 수를 갈라 큰 자리부터 빼는 방법
+    if (title.includes('여러 가지 방법으로 뺄셈')) {
+      const a = 10 * (5 + (seed % 4)) + (2 + (seed % 5));
+      const bTens = 10 * (1 + (seed % 3));
+      const bOnes = 1 + (index % 5);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}-${bTens + bOnes}을 갈라서 계산하는 과정입니다. ⊙에 알맞은 수는? ① ${bTens + bOnes}을 ${bTens}과 ${bOnes}으로 가릅니다. ② ${a}-${bTens}=${a - bTens} ③ ${a - bTens}-${bOnes}=⊙`,
+        a - bTens - bOnes, [a - bTens, a - bOnes, a - bTens - bOnes + 10],
+        `갈라서 차례로 빼면 ${a - bTens}-${bOnes}=${a - bTens - bOnes}입니다.`,
+        'subtraction', '수를 갈라 차례로 빼는 과정',
       );
     }
   }
@@ -9281,7 +9318,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
           `${dan}×${k}를 구하는 과정입니다. ⊙에 알맞은 수는? ① ${dan}×${k - 1}=${dan * (k - 1)} ② ${dan}×${k}는 여기에 ⊙를 더합니다.`,
           dan, [k, dan * (k - 1), dan + k],
           `묶음이 하나 늘면 ${dan}만큼 커집니다. ${dan * (k - 1)}+${dan}=${dan * k}입니다.`,
-          'multiplication', '앞의 곱에서 다음 곱 구하기',
+          'multiplication', `${dan}단에서 앞의 곱으로 다음 곱 구하기`,
         );
       }
       return makeQuestion(
@@ -9289,7 +9326,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         `${dan}×${k}를 구하는 과정입니다. ⊙에 알맞은 수는? ① ${dan}씩 ${k}묶음입니다. ② ${Array.from({ length: k }, () => dan).join('+')}=⊙`,
         dan * k, [dan + k, dan * (k - 1), dan * (k + 1)],
         `${dan}을 ${k}번 더하면 ${dan * k}입니다.`,
-        'multiplication', '더하기로 곱 확인하기',
+        'multiplication', `${dan}단을 더하기로 확인하는 과정`,
       );
     }
   }
@@ -9489,6 +9526,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         a, [b, high, a + b],
         `${place}의 자리 숫자를 비교하면 ${a}이 더 큽니다.`,
         'placeValue', '크기를 비교하는 차례 따라가기',
+        barModelVisualFor([{ label: '첫째 수', value: a }, { label: '둘째 수', value: b }], '두 수의 크기'),
       );
     }
   }
@@ -9531,15 +9569,26 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         'shape', '칠교 조각을 붙이는 과정',
       );
     }
-    if (title.includes('쌓은 모양') || title.includes('여러 가지 모양으로 쌓아')) {
-      const first = 2 + (index % 3);
-      const second = 1 + (index % 2);
+    if (title.includes('쌓은 모양')) {
+      const first = 2 + (seed % 3);
+      const second = 1 + (seed % 2);
       return makeQuestion(
         lesson, difficulty, index,
-        `쌓기나무의 수를 세는 과정입니다. ⊙에 알맞은 수는? ① 1층에 ${first}개 ② 2층에 ${second}개 ③ 모두 ⊙개`,
+        `쌓은 모양의 쌓기나무 수를 세는 과정입니다. ⊙에 알맞은 수는? ① 1층에 ${first}개 ② 2층에 ${second}개 ③ 모두 ⊙개`,
         first + second, [first, second, first + second + 1],
         `층별로 세어 더하면 ${first}+${second}=${first + second}개입니다.`,
         'solid', '층별로 세어 모으는 과정',
+      );
+    }
+    if (title.includes('여러 가지 모양으로 쌓아')) {
+      const total = 4 + (seed % 3);
+      const used = 1 + (seed % 3);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `쌓기나무 ${total}개로 모양을 바꾸는 과정입니다. ⊙에 알맞은 수는? ① 1층에서 ${used}개를 빼 위로 옮깁니다. ② 모양은 달라졌지만 쌓기나무는 ⊙개 그대로입니다.`,
+        total, [total - used, total + used, used],
+        `자리를 옮겨도 쌓기나무의 수는 ${total}개로 변하지 않습니다.`,
+        'solid', '모양을 바꿔도 개수가 같음을 확인하는 과정',
       );
     }
   }
@@ -9566,14 +9615,24 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         'measurement', '1cm를 이어 세는 과정',
       );
     }
-    if (title.includes('자로 길이를 재는 방법') || title.includes('자로 길이를 재어')) {
-      const start = 2 + (index % 4);
-      const end = start + 3 + (index % 5);
+    if (title.includes('자로 길이를 재는 방법')) {
+      const end = 4 + (seed % 9);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `자로 길이를 재는 과정입니다. ⊙에 알맞은 수는? ① 물건의 한끝을 자의 ⊙에 맞춥니다. ② 다른 끝이 닿은 눈금 ${end}을 읽습니다.`,
+        0, [1, end, end + 1],
+        `한끝을 0에 맞추어야 끝 눈금을 그대로 읽을 수 있습니다.`,
+        'measurement', '자를 0에 맞추는 과정',
+      );
+    }
+    if (title.includes('자로 길이를 재어')) {
+      const start = 2 + (seed % 4);
+      const end = start + 3 + (seed % 5);
       return makeQuestion(
         lesson, difficulty, index,
         `자로 잰 길이를 구하는 과정입니다. ⊙에 알맞은 수는? ① 시작 눈금은 ${start} ② 끝 눈금은 ${end} ③ 길이는 ${end}-${start}=⊙`,
         `${end - start}cm`, [`${end}cm`, `${start}cm`, `${end + start}cm`],
-        `끝 눈금에서 시작 눈금을 빼면 ${end}-${start}=${end - start}cm입니다.`,
+        `끝 눈금에서 시작 눈금을 빼면 ${end - start}cm입니다.`,
         'measurement', '눈금을 빼서 길이를 구하는 과정',
       );
     }
@@ -9591,15 +9650,26 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
   // 길이 재기(2-2): m와 cm로 바꾸는 과정
   if (unit === '길이 재기' && lesson.semester === '2-2') {
-    if (title.includes('더 큰 단위') || title.includes('자로 길이를 재어')) {
-      const m = 2 + (index % 4);
-      const cm = 10 + (index % 8) * 5;
+    if (title.includes('더 큰 단위')) {
+      const m = 2 + (seed % 4);
+      const cm = 10 + (seed % 8) * 5;
       return makeQuestion(
         lesson, difficulty, index,
-        `${m * 100 + cm}cm를 m와 cm로 나타내는 과정입니다. ⊙에 알맞은 수는? ① 100cm는 1m ② ${m * 100}cm는 ${m}m ③ 남은 ⊙cm`,
+        `${m * 100 + cm}cm를 m와 cm로 나타내는 과정입니다. ⊙에 알맞은 수는? ① 100cm는 1m ② ${m * 100}cm는 ${m}m ③ 남은 것은 ⊙cm`,
         cm, [m, m * 100, cm + 100],
         `${m * 100 + cm}cm에서 ${m * 100}cm를 빼면 ${cm}cm가 남습니다.`,
         'measurement', 'cm를 m와 cm로 나누는 과정',
+      );
+    }
+    if (title.includes('자로 길이를 재어')) {
+      const m = 1 + (seed % 3);
+      const cm = 20 + (seed % 7) * 10;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `줄자로 잰 길이를 쓰는 과정입니다. ⊙에 알맞은 수는? ① 줄자의 0에 한끝을 맞춥니다. ② 끝 눈금이 ${m * 100 + cm}cm였습니다. ③ ${m}m ⊙cm라고 씁니다.`,
+        cm, [m, m * 100 + cm, cm + 100],
+        `${m * 100 + cm}cm는 ${m}m ${cm}cm입니다.`,
+        'measurement', '줄자로 잰 값을 m와 cm로 쓰는 과정',
       );
     }
     if (title.includes('어림')) {
@@ -9620,14 +9690,23 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     const groups = 3 + ((index + 1) % 4);
     const total = each * groups;
 
-    if (title.includes('여러 가지 방법으로 세어') || title.includes('묶어 세어')) {
+    if (title.includes('여러 가지 방법으로 세어')) {
       const steps = Array.from({ length: groups - 1 }, (_, i) => each * (i + 1)).join(', ');
       return makeQuestion(
         lesson, difficulty, index,
-        `${each}개씩 ${groups}묶음을 세는 과정입니다. ⊙에 알맞은 수는? ① ${each}씩 뛰어 셉니다. ② ${steps}, ⊙`,
+        `${total}개를 세는 과정입니다. ⊙에 알맞은 수는? ① 하나씩 세지 않고 ${each}씩 뛰어 셉니다. ② ${steps}, ⊙`,
         total, [total - each, total + each, each + groups],
         `${each}씩 뛰어 세면 마지막은 ${total}입니다.`,
         'multiplication', '뛰어 세어 전체를 구하는 과정',
+      );
+    }
+    if (title.includes('묶어 세어')) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${total}개를 ${each}개씩 묶어 세는 과정입니다. ⊙에 알맞은 수는? ① ${each}개씩 묶습니다. ② 묶음이 ⊙개 생깁니다. ③ ${each}개씩 ${groups}묶음입니다.`,
+        groups, [each, total, groups + 1],
+        `${each}개씩 묶으면 ${groups}묶음이 됩니다.`,
+        'multiplication', '묶음의 수를 세는 과정',
       );
     }
     if (title.includes('몇의 몇 배')) {
@@ -9656,13 +9735,22 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     const b = 3 + ((index + 1) % 3);
     const c = 2 + ((index + 2) % 3);
 
-    if (title.includes('분류하여 표로') || title.includes('조사하여 표로')) {
+    if (title.includes('분류하여 표로')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `표의 합계를 구하는 과정입니다. ⊙에 알맞은 수는? ① 축구 ${a}명 ② 줄넘기 ${b}명 ③ 술래잡기 ${c}명 ④ 합계는 ${a}+${b}+${c}=⊙`,
+        `자료를 분류해 표를 채우는 과정입니다. ⊙에 알맞은 수는? ① 축구를 고른 사람을 셉니다. ② 센 것에 표시하며 빠뜨리지 않습니다. ③ 축구 칸에 ⊙을 씁니다.`,
+        `${a}`, [`${a + 1}`, `${b}`, `${a + b}`],
+        `축구를 고른 사람이 ${a}명이므로 표의 축구 칸에는 ${a}을 씁니다.`,
+        'data', '세어서 표의 칸을 채우는 과정',
+      );
+    }
+    if (title.includes('조사하여 표로')) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `조사한 자료를 표로 옮기는 과정입니다. ⊙에 알맞은 수는? ① 축구 ${a}명 ② 줄넘기 ${b}명 ③ 술래잡기 ${c}명 ④ 합계는 ${a}+${b}+${c}=⊙`,
         `${a + b + c}명`, [`${a + b}명`, `${b + c}명`, `${a + b + c + 1}명`],
-        `항목별 수를 모두 더하면 ${a}+${b}+${c}=${a + b + c}명입니다.`,
-        'data', '표의 합계를 구하는 과정',
+        `항목별 수를 모두 더하면 ${a + b + c}명입니다.`,
+        'data', '조사 결과의 합계를 구하는 과정',
       );
     }
     if (title.includes('그래프로 나타내')) {
