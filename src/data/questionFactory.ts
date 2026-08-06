@@ -8989,9 +8989,20 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
 
   if (question.type === 'placeValue') {
     // '6000은 1000이 몇 개인 수일까요?' 같은 문제는 자리값 표에 답이 그대로
-    // 보입니다. 이런 문제에는 그림을 붙이지 않습니다.
-    if (/\d+이 몇 개인 수|몇 개인 수일까요|자리 숫자는 무엇/.test(question.prompt)) {
-      return undefined;
+    // 보입니다. 묻는 자리를 빈칸으로 두어 생각할 거리는 남기고 답은 가립니다.
+    if (/몇 개인 수|자리 숫자는 무엇/.test(question.prompt)) {
+      const shown = promptNumbers.find((value) => Number.isFinite(value) && value >= 100);
+      if (shown === undefined) return undefined;
+
+      const digits = String(shown).split('').map(Number);
+      const names = digits.length >= 4 ? ['천', '백', '십', '일'] : ['백', '십', '일'];
+      if (digits.length !== names.length) return undefined;
+
+      return tableVisualFor(
+        names.map((name, position) => ({ name, value: position === 0 ? null : digits[position] })),
+        '자리값 표',
+        { categoryLabel: '자리', valueLabel: '숫자' },
+      );
     }
 
     // 자리값 문제의 정답은 보통 한 자리 값(예: 274의 일의 자리 → 4)이라
