@@ -10621,12 +10621,14 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
   // ── 표와 그래프 ────────────────────────────────────────────────────────
   if (unit === '표와 그래프' && no >= 5) {
-    const items = [
-      { name: '축구', count: 3 + (seed % 4) },
-      { name: '줄넘기', count: 7 + (seed % 3) },
-      { name: '책읽기', count: 2 + (seed % 3) },
-      { name: '그림그리기', count: 5 + (seed % 3) },
-    ];
+    // 네 수는 서로 달라야 '가장 많은/적은 것'의 답이 하나로 정해집니다.
+    const counts = [2 + (seed % 2), 5 + (seed % 2), 7 + (seed % 2), 9 + (seed % 2)];
+    const names = ['축구', '줄넘기', '책읽기', '그림그리기'];
+    const shift = seed % 4;
+    const items = names.map((name, position) => ({
+      name,
+      count: counts[(position + shift) % 4],
+    }));
     const line = items.map((item) => `${item.name} ${item.count}명`).join(', ');
     const threshold = 4;
     const over = items.filter((item) => item.count > threshold);
