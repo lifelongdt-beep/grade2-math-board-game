@@ -7298,7 +7298,7 @@ const richMeasurementQuestion = (lesson: Lesson, difficulty: Difficulty, index: 
     `시작 눈금이 0이 아니므로 끝 눈금에서 시작 눈금을 뺍니다. ${end}-${start}=${span}cm입니다.`,
     'measurement',
     '조건 함께 보기 · 시작 눈금을 빼고 길이 읽기',
-    rulerVisualFor(0, end + 2, '자로 잰 길이', start, end),
+    rulerVisualFor(start, end, '자로 잰 길이'),
   );
 };
 const richDataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
