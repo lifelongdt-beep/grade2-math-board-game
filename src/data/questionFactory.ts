@@ -10231,6 +10231,442 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
   return null;
 };
 
+const KOREAN_ONES = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+
+// 세 자리 수를 우리말로 읽습니다. (305 -> 삼백오)
+const readKoreanNumber = (value: number) => {
+  const hundreds = Math.floor(value / 100);
+  const tens = Math.floor((value % 100) / 10);
+  const ones = value % 10;
+  const parts = [
+    hundreds > 0 ? `${hundreds > 1 ? KOREAN_ONES[hundreds] : ''}백` : '',
+    tens > 0 ? `${tens > 1 ? KOREAN_ONES[tens] : ''}십` : '',
+    ones > 0 ? KOREAN_ONES[ones] : '',
+  ];
+  return parts.join('') || '영';
+};
+
+// ── 응용 문항 ─────────────────────────────────────────────────────────────
+// 교과서·수학익힘·시도교육청 평가지에서 쓰는 형태를 따랐습니다.
+// 동전으로 금액 구하기, 수를 우리말로 읽기, 조건에 맞는 수 찾기,
+// 잘못 계산한 것 고치기, 수 카드로 수 만들기, 설명을 읽고 답 구하기 등
+// 한 단계 더 생각해야 하는 문항입니다.
+// 각 분기는 그 차시까지 배운 것만 씁니다.
+const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (difficulty === '하') return null;
+
+  const unit = lesson.unitTitle;
+  const title = lesson.title;
+  const no = lesson.lessonNo;
+  const seed = n(lesson, index);
+  const pick = seed % 3;
+
+  // ── 세 자리 수 / 네 자리 수 ────────────────────────────────────────────
+  if (unit === '세 자리 수' || unit === '네 자리 수') {
+    const four = unit === '네 자리 수';
+
+    // 4차시부터: 자리별 묶음을 수로 나타낼 수 있습니다.
+    if (no >= 4 && no < 5) {
+      const h = 2 + (seed % 7);
+      const t = 1 + ((seed + 2) % 8);
+      const o = 1 + ((seed + 5) % 8);
+      const value = h * 100 + t * 10 + o;
+
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `100원짜리 ${h}개, 10원짜리 ${t}개, 1원짜리 ${o}개가 있습니다. 모두 얼마일까요?`,
+          `${value}원`,
+          [`${h + t + o}원`, `${h * 100 + t + o}원`, `${value + 100}원`],
+          `100원이 ${h}개면 ${h * 100}원, 10원이 ${t}개면 ${t * 10}원, 1원이 ${o}개면 ${o}원입니다. 모두 ${value}원입니다.`,
+          'placeValue', '조건 함께 보기 · 동전을 모아 금액 구하기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${value}를 우리말로 바르게 읽은 것은?`,
+          readKoreanNumber(value),
+          [readKoreanNumber(value + 100), readKoreanNumber(value - o + (o % 9) + 1), `${h}${t}${o}`],
+          `${value}는 ${readKoreanNumber(value)}이라고 읽습니다.`,
+          'number', '조건 함께 보기 · 수를 우리말로 읽기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `100이 ${h}개, 1이 ${o}개인 수는 얼마일까요?`,
+        h * 100 + o,
+        [h * 100 + o * 10, h + o, h * 100 + o + 10],
+        `10이 없으므로 십의 자리는 0입니다. ${h * 100 + o}입니다.`,
+        'placeValue', '조건 함께 보기 · 빠진 자리가 있는 수 만들기',
+      );
+    }
+
+    // 5차시부터: 같은 숫자라도 자리에 따라 값이 다릅니다.
+    if (no === 5) {
+      const digit = 2 + (seed % 7);
+      const value = digit * 100 + digit * 10 + (1 + (seed % 8));
+
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${value}에서 백의 자리 숫자가 나타내는 값은 십의 자리 숫자가 나타내는 값의 몇 배일까요?`,
+          '10배', ['2배', '5배', '100배'],
+          `백의 자리 ${digit}은 ${digit * 100}을, 십의 자리 ${digit}은 ${digit * 10}을 나타냅니다. ${digit * 100}은 ${digit * 10}의 10배입니다.`,
+          'placeValue', '조건 함께 보기 · 같은 숫자가 나타내는 값 견주기',
+        );
+      }
+      if (pick === 1) {
+        const other = (1 + (seed % 8)) * 100 + digit * 10 + digit;
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${value}와 ${other}에서 숫자 ${digit}이 나타내는 값이 가장 큰 것은?`,
+          `${value}의 백의 자리`,
+          [`${value}의 십의 자리`, `${other}의 십의 자리`, `${other}의 일의 자리`],
+          `${value}의 백의 자리 ${digit}은 ${digit * 100}을 나타내어 가장 큽니다.`,
+          'placeValue', '조건 함께 보기 · 여러 수에서 자리값 견주기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}는 100이 ${digit}개, 10이 ${digit}개, 1이 ⊙개인 수입니다. ⊙는?`,
+        value % 10, [digit, value % 100, 0],
+        `${value}에서 일의 자리 숫자가 ${value % 10}이므로 1이 ${value % 10}개입니다.`,
+        'placeValue', '조건 함께 보기 · 수를 자리별로 되돌려 보기',
+      );
+    }
+
+    // 6차시부터: 뛰어 세기
+    if (no === 6) {
+      const step = four ? 100 : 10;
+      const start = (four ? 1000 : 100) * (2 + (seed % 6));
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${start}, ${start + step}, ${start + step * 2}로 이어집니다. 이 규칙으로 5번째 수는?`,
+          start + step * 4,
+          [start + step * 3, start + step * 5, start + step * 2],
+          `${step}씩 커지므로 5번째는 ${start}에서 ${step}씩 4번 뛴 ${start + step * 4}입니다.`,
+          'number', '조건 함께 보기 · 규칙대로 여러 번 뛰어 세기',
+        );
+      }
+      if (pick === 1) {
+        const jump = four ? 1000 : 100;
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${start}에서 ${jump}씩 뛰어 세면 어느 자리 숫자만 바뀔까요?`,
+          four ? '천의 자리' : '백의 자리',
+          four ? ['백의 자리', '십의 자리', '일의 자리'] : ['십의 자리', '일의 자리', '모든 자리'],
+          `${jump}씩 뛰어 세면 ${four ? '천' : '백'}의 자리 숫자만 1씩 커집니다.`,
+          'number', '조건 함께 보기 · 뛰어 셀 때 바뀌는 자리 찾기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${start}에서 몇씩 뛰어 세었더니 ${start + step * 3}이 되었습니다. 3번 뛰었다면 몇씩 뛴 것일까요?`,
+        `${step}씩`, [`${step * 3}씩`, `${step + 1}씩`, '1씩'],
+        `${start + step * 3}-${start}=${step * 3}이고 3번 뛰었으므로 한 번에 ${step}씩 뛴 것입니다.`,
+        'number', '조건 함께 보기 · 뛴 크기를 거꾸로 찾기',
+      );
+    }
+
+    // 7차시: 크기 비교와 수 만들기
+    if (no >= 7) {
+      const a = 1 + (seed % 8);
+      const b = 1 + ((seed + 3) % 8);
+      const c = 1 + ((seed + 6) % 8);
+      const digits = [a, b, c].sort((x, y) => y - x);
+      const biggest = digits[0] * 100 + digits[1] * 10 + digits[2];
+      const smallest = digits[2] * 100 + digits[1] * 10 + digits[0];
+
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `수 카드 ${a}, ${b}, ${c}를 한 번씩 써서 만들 수 있는 가장 큰 세 자리 수는?`,
+          biggest, [smallest, digits[1] * 100 + digits[0] * 10 + digits[2], biggest - 1],
+          `큰 숫자를 높은 자리에 놓아야 합니다. ${biggest}입니다.`,
+          'number', '조건 함께 보기 · 수 카드로 가장 큰 수 만들기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `수 카드 ${a}, ${b}, ${c}를 한 번씩 써서 만들 수 있는 가장 작은 세 자리 수는?`,
+          smallest, [biggest, digits[2] * 100 + digits[0] * 10 + digits[1], smallest + 1],
+          `작은 숫자를 높은 자리에 놓아야 합니다. ${smallest}입니다.`,
+          'number', '조건 함께 보기 · 수 카드로 가장 작은 수 만들기',
+        );
+      }
+      const base = digits[0] * 100 + digits[1] * 10;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${base + 4}보다 크고 ${base + 8}보다 작은 수는 모두 몇 개일까요?`,
+        '3개', ['2개', '4개', '5개'],
+        `${base + 5}, ${base + 6}, ${base + 7}로 모두 3개입니다.`,
+        'number', '조건 함께 보기 · 두 수 사이의 수 세기',
+      );
+    }
+  }
+
+  // ── 덧셈과 뺄셈 ────────────────────────────────────────────────────────
+  if (unit === '덧셈과 뺄셈' && no >= 2) {
+    const a = 10 * (2 + (seed % 5)) + (5 + (seed % 4));
+    const b = 10 * (1 + (seed % 3)) + (6 + (seed % 3));
+
+    if (no >= 2 && no <= 4) {
+      const wrong = a + b - 10;
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${a}+${b}를 ${wrong}이라고 계산했습니다. 바르게 고치면?`,
+          a + b, [wrong, a + b + 10, a + b - 1],
+          `일의 자리에서 올린 1을 십의 자리에 더해야 합니다. 바른 답은 ${a + b}입니다.`,
+          'addition', '조건 함께 보기 · 잘못 계산한 것 고치기',
+        );
+      }
+      if (pick === 1) {
+        const c = 10 * (1 + ((seed + 1) % 3)) + (2 + (seed % 5));
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${a}+${b}와 ${a}+${c} 중 더 큰 것은?`,
+          b > c ? `${a}+${b}` : `${a}+${c}`,
+          [b > c ? `${a}+${c}` : `${a}+${b}`, '두 값이 같다', '비교할 수 없다'],
+          `더하는 수가 클수록 합도 큽니다. ${b}와 ${c}를 비교하면 됩니다.`,
+          'addition', '조건 함께 보기 · 더하지 않고 합 견주기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `구슬을 ${a}개 가지고 있었는데 ${b}개를 더 얻고 ${5 + (seed % 5)}개를 잃었습니다. 지금 몇 개일까요?`,
+        `${a + b - (5 + (seed % 5))}개`,
+        [`${a + b}개`, `${a - b}개`, `${a + b + (5 + (seed % 5))}개`],
+        `얻으면 더하고 잃으면 뺍니다. ${a}+${b}-${5 + (seed % 5)}=${a + b - (5 + (seed % 5))}개입니다.`,
+        'addition', '조건 함께 보기 · 두 번 바뀌는 상황 계산하기',
+      );
+    }
+
+    if (no >= 5) {
+      const big = 10 * (5 + (seed % 4)) + (2 + (seed % 5));
+      const small = 10 * (1 + (seed % 3)) + (6 + (seed % 3));
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${big}-${small}을 계산한 뒤 답이 맞는지 확인하는 방법으로 알맞은 것은?`,
+          `답에 ${small}을 더해 ${big}이 되는지 본다`,
+          [`답에서 ${small}을 뺀다`, `${big}에 ${small}을 더한다`, '확인할 수 없다'],
+          `뺄셈은 덧셈으로 확인합니다. ${big - small}+${small}=${big}이면 맞습니다.`,
+          'subtraction', '조건 함께 보기 · 덧셈으로 검산하기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `색종이 ${big}장 중 ${small}장을 쓰고 ${4 + (seed % 5)}장을 더 받았습니다. 지금 몇 장일까요?`,
+          `${big - small + (4 + (seed % 5))}장`,
+          [`${big - small}장`, `${big + small}장`, `${big - small - (4 + (seed % 5))}장`],
+          `쓰면 빼고 받으면 더합니다. ${big}-${small}+${4 + (seed % 5)}=${big - small + (4 + (seed % 5))}장입니다.`,
+          'subtraction', '조건 함께 보기 · 두 번 바뀌는 상황 계산하기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${big}-${small}과 ${big}-${small + 10} 중 더 큰 것은?`,
+        `${big}-${small}`,
+        [`${big}-${small + 10}`, '두 값이 같다', '비교할 수 없다'],
+        `빼는 수가 작을수록 남는 수가 큽니다. ${small}이 ${small + 10}보다 작으므로 ${big}-${small}이 더 큽니다.`,
+        'subtraction', '조건 함께 보기 · 빼지 않고 차 견주기',
+      );
+    }
+  }
+
+  // ── 곱셈구구 ───────────────────────────────────────────────────────────
+  if (unit === '곱셈구구' && no >= 2) {
+    const dans = dansOfLesson(title);
+    const dan = dans.length ? dans[seed % dans.length] : 2;
+    const k = 3 + (seed % 6);
+
+    if (dans.length > 0) {
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${dan}×${k}와 ${dan}×${k + 1} 중 더 큰 것은?`,
+          `${dan}×${k + 1}`,
+          [`${dan}×${k}`, '두 값이 같다', '비교할 수 없다'],
+          `묶음이 하나 더 많으므로 ${dan}×${k + 1}이 ${dan}만큼 더 큽니다.`,
+          'multiplication', `조건 함께 보기 · ${dan}단에서 곱 견주기`,
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `한 봉지에 사탕이 ${dan}개씩 들어 있습니다. ${k}봉지를 사고 ${dan}개를 더 받으면 모두 몇 개일까요?`,
+          `${dan * k + dan}개`,
+          [`${dan * k}개`, `${dan * (k + 2)}개`, `${dan + k}개`],
+          `${dan}×${k}=${dan * k}개에 ${dan}개를 더하면 ${dan * k + dan}개입니다.`,
+          'multiplication', `조건 함께 보기 · ${dan}단을 두 단계 문제에 쓰기`,
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${dan}×□=${dan * k}입니다. □에 알맞은 수는?`,
+        k, [dan, k + 1, dan * k],
+        `${dan}단에서 곱이 ${dan * k}이 되는 수를 찾으면 ${k}입니다.`,
+        'multiplication', `조건 함께 보기 · ${dan}단에서 빈칸 구하기`,
+      );
+    }
+
+    if (title.includes('곱셈표') || title.includes('문제를 해결')) {
+      const a = 2 + (seed % 7);
+      const b = 2 + ((seed + 3) % 7);
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `㉠ ${a}×${b}, ㉡ ${b}×${a}, ㉢ ${a}×${b + 1} 중 곱이 가장 큰 것은?`,
+          '㉢', ['㉠', '㉡', '모두 같다'],
+          `㉠과 ㉡은 ${a * b}으로 같고 ㉢은 ${a * (b + 1)}이므로 ㉢이 가장 큽니다.`,
+          'multiplication', '조건 함께 보기 · 여러 곱을 견주어 순서 정하기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${a}×□가 ${a * 5}보다 작습니다. □에 들어갈 수 있는 수 중 가장 큰 수는?`,
+          4, [5, 3, a],
+          `${a}×5=${a * 5}이므로 □는 5보다 작아야 합니다. 가장 큰 수는 4입니다.`,
+          'multiplication', '조건 함께 보기 · 조건에 맞는 수 찾기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `연필 ${a}자루씩 든 묶음이 ${b}개 있습니다. 한 묶음을 친구에게 주면 남은 연필은 몇 자루일까요?`,
+        `${a * (b - 1)}자루`,
+        [`${a * b}자루`, `${a * b - 1}자루`, `${a}자루`],
+        `묶음이 ${b - 1}개 남으므로 ${a}×${b - 1}=${a * (b - 1)}자루입니다.`,
+        'multiplication', '조건 함께 보기 · 묶음이 줄어드는 상황 풀기',
+      );
+    }
+  }
+
+  // ── 시각과 시간 ────────────────────────────────────────────────────────
+  if (unit === '시각과 시간' && no >= 2) {
+    const hour = 1 + (seed % 11);
+    const next = hour === 12 ? 1 : hour + 1;
+
+    if (no >= 2 && no <= 3) {
+      const pointer = 1 + (seed % 11);
+      const minute = pointer * 5;
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `지호가 말했습니다. "짧은바늘은 ${hour}과 ${next} 사이에 있고, 긴바늘은 ${pointer}을 가리켜." 지호가 본 시각은?`,
+          `${hour}시 ${minute}분`,
+          [`${next}시 ${minute}분`, `${hour}시 ${pointer}분`, `${pointer}시 ${hour}분`],
+          `짧은바늘이 지나온 숫자가 ${hour}이므로 ${hour}시이고, 긴바늘 ${pointer}은 ${minute}분입니다.`,
+          'time', '조건 함께 보기 · 설명을 읽고 시각 알아내기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${hour}시 ${minute}분을 "${pointer}시 ${hour}분"이라고 읽었습니다. 무엇을 잘못했을까요?`,
+          '짧은바늘과 긴바늘을 바꾸어 읽었다',
+          ['분을 5씩 세지 않았다', '숫자를 잘못 보았다', '잘못한 것이 없다'],
+          `짧은바늘이 시, 긴바늘이 분을 나타냅니다. 두 바늘의 역할을 바꾸어 읽으면 안 됩니다.`,
+          'time', '조건 함께 보기 · 잘못 읽은 까닭 찾기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `긴바늘이 ${pointer}을 가리킬 때와 ${pointer === 11 ? 1 : pointer + 1}을 가리킬 때는 몇 분 차이일까요?`,
+        '5분', ['1분', '10분', `${pointer}분`],
+        `숫자 한 칸은 5분이므로 5분 차이입니다.`,
+        'time', '조건 함께 보기 · 숫자 한 칸의 차이 알기',
+      );
+    }
+
+    if (no >= 6) {
+      const startMinute = 10 + (seed % 5) * 5;
+      const spent = 20 + (seed % 4) * 10;
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${hour}시 ${startMinute}분에 시작해 ${spent}분 동안 책을 읽고 바로 ${10 + (seed % 3) * 5}분 동안 정리했습니다. 모두 몇 분이 걸렸을까요?`,
+          `${spent + 10 + (seed % 3) * 5}분`,
+          [`${spent}분`, `${10 + (seed % 3) * 5}분`, `${spent + 60}분`],
+          `두 활동에 걸린 시간을 더합니다. ${spent}+${10 + (seed % 3) * 5}=${spent + 10 + (seed % 3) * 5}분입니다.`,
+          'time', '조건 함께 보기 · 이어진 두 활동의 시간 더하기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${hour}시에 시작해 ${hour}시 ${startMinute}분에 끝냈습니다. 걸린 시간이 더 긴 것은? ㉠ 이 활동 ㉡ ${startMinute + 10}분 걸린 활동`,
+          '㉡', ['㉠', '두 활동이 같다', '알 수 없다'],
+          `㉠은 ${startMinute}분이고 ㉡은 ${startMinute + 10}분이므로 ㉡이 더 깁니다.`,
+          'time', '조건 함께 보기 · 걸린 시간 견주기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${hour}시 ${startMinute}분부터 ${spent}분이 지나면 몇 시 몇 분일까요?`,
+        startMinute + spent >= 60
+          ? `${next}시 ${startMinute + spent - 60}분`
+          : `${hour}시 ${startMinute + spent}분`,
+        [`${hour}시 ${spent}분`, `${next}시 ${startMinute}분`, `${hour}시 ${startMinute}분`],
+        `${startMinute}분에 ${spent}분을 더합니다. 60분이 넘으면 1시간으로 바꿉니다.`,
+        'time', '조건 함께 보기 · 지난 뒤의 시각 구하기',
+      );
+    }
+  }
+
+  // ── 표와 그래프 ────────────────────────────────────────────────────────
+  if (unit === '표와 그래프' && no >= 5) {
+    const items = [
+      { name: '축구', count: 3 + (seed % 4) },
+      { name: '줄넘기', count: 7 + (seed % 3) },
+      { name: '책읽기', count: 2 + (seed % 3) },
+      { name: '그림그리기', count: 5 + (seed % 3) },
+    ];
+    const line = items.map((item) => `${item.name} ${item.count}명`).join(', ');
+    const threshold = 4;
+    const over = items.filter((item) => item.count > threshold);
+
+    if (pick === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${line}입니다. ${threshold}명보다 많은 활동은 모두 몇 가지일까요?`,
+        `${over.length}가지`,
+        [`${over.length + 1}가지`, `${Math.max(0, over.length - 1)}가지`, '4가지'],
+        `${threshold}명보다 많다는 것은 ${threshold}명은 넣지 않습니다. ${over.map((item) => item.name).join(', ')}로 ${over.length}가지입니다.`,
+        'data', '조건 함께 보기 · 기준보다 많은 항목 찾기',
+      );
+    }
+    if (pick === 1) {
+      const most = items.reduce((best, item) => (item.count > best.count ? item : best));
+      const least = items.reduce((best, item) => (item.count < best.count ? item : best));
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${line}입니다. 가장 많은 활동과 가장 적은 활동의 학생 수 차는?`,
+        `${most.count - least.count}명`,
+        [`${most.count}명`, `${least.count}명`, `${most.count + least.count}명`],
+        `가장 많은 ${most.name} ${most.count}명에서 가장 적은 ${least.name} ${least.count}명을 뺍니다.`,
+        'data', '조건 함께 보기 · 최다와 최소의 차 구하기',
+      );
+    }
+    const total = items.reduce((sum, item) => sum + item.count, 0);
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${line}입니다. 조사한 학생이 모두 ${total}명일 때 알 수 있는 것으로 알맞은 것은?`,
+      '한 사람이 한 가지씩 골랐다',
+      ['한 사람이 두 가지씩 골랐다', '고르지 않은 학생이 있다', '알 수 없다'],
+      `항목별 수를 모두 더한 값이 조사한 학생 수와 같으므로 한 사람이 한 가지씩 고른 것입니다.`,
+      'data', '조건 함께 보기 · 합계로 조사 방법 따져 보기',
+    );
+  }
+
+  return null;
+};
+
 const generateRawQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] =>
   Array.from({ length: 30 }, (_, index) => {
     const tag = primaryTag(lesson);
@@ -10252,7 +10688,10 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
       .map((question, index) =>
         // 3의 배수 자리는 기존 유형(심화 포함), 나머지는 풀이 과정 문항입니다.
         index % 3 === 0
-          ? richQuestionFor(lesson, difficulty, index) ?? question
+          // 응용 문항을 먼저 쓰고, 없으면 기존 심화 문항을 씁니다.
+          ? challengeQuestion(lesson, difficulty, index)
+            ?? richQuestionFor(lesson, difficulty, index)
+            ?? question
           : stepBlankQuestion(lesson, difficulty, index) ?? question)
       .map(withRichVisual)
       .map(addAssessmentLayer),
