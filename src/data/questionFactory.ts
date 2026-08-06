@@ -10666,6 +10666,404 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     );
   }
 
+  // ── 여러 가지 도형 ─────────────────────────────────────────────────────
+  if (unit === '여러 가지 도형' && no >= 2) {
+    const triangles = 2 + (seed % 4);
+    const squares = 1 + ((seed + 2) % 4);
+
+    if (no >= 2 && no <= 4) {
+      if (pick === 0) {
+        const shape = no === 2 ? '삼각형' : no === 3 ? '사각형' : '원';
+        const sides = no === 2 ? 3 : no === 3 ? 4 : 0;
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${shape}을 찾을 때 크기와 방향이 달라도 되는 까닭은?`,
+          no === 4 ? '어느 쪽에서 보아도 둥근 모양이면 되기 때문' : `곧은 변이 ${sides}개이면 되기 때문`,
+          no === 4
+            ? ['크기가 같아야 하기 때문', '색이 같아야 하기 때문', '방향이 같아야 하기 때문']
+            : ['크기가 같아야 하기 때문', '색이 같아야 하기 때문', '방향이 같아야 하기 때문'],
+          `${shape}은 크기나 방향이 아니라 모양의 성질로 정합니다.`,
+          'shape', `조건 함께 보기 · ${shape}을 성질로 판단하기`,
+        );
+      }
+      if (pick === 1 && no <= 3) {
+        const sides = no === 2 ? 3 : 4;
+        const count = 2 + (seed % 4);
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${no === 2 ? '삼각형' : '사각형'} ${count}개의 변은 모두 몇 개일까요?`,
+          sides * count, [count, sides, sides * count + sides],
+          `한 개에 변이 ${sides}개이므로 ${count}개이면 ${sides * count}개입니다.`,
+          'shape', '조건 함께 보기 · 여러 도형의 변 수 모으기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        '변이 3개인 도형과 변이 4개인 도형의 꼭짓점 수를 더하면 몇 개일까요?',
+        7, [3, 4, 8],
+        `변이 3개인 도형은 꼭짓점이 3개, 변이 4개인 도형은 꼭짓점이 4개이므로 3+4=7개입니다.`,
+        'shape', '조건 함께 보기 · 두 도형의 꼭짓점 모으기',
+      );
+    }
+
+    if (no === 5) {
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `칠교 조각 중 삼각형이 ${triangles}개, 사각형이 ${squares}개 쓰였습니다. 쓴 조각은 모두 몇 개일까요?`,
+          `${triangles + squares}개`,
+          [`${triangles}개`, `${squares}개`, `${triangles + squares + 1}개`],
+          `${triangles}+${squares}=${triangles + squares}개입니다.`,
+          'shape', '조건 함께 보기 · 쓴 칠교 조각 세기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `칠교판은 조각이 모두 7개입니다. ${triangles + squares}개를 쓰면 남는 조각은 몇 개일까요?`,
+          `${7 - triangles - squares}개`,
+          [`${triangles + squares}개`, '7개', `${7 - triangles}개`],
+          `7-${triangles + squares}=${7 - triangles - squares}개가 남습니다.`,
+          'shape', '조건 함께 보기 · 남은 칠교 조각 구하기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        '칠교 조각을 붙여 새로운 모양을 만들 때 지켜야 할 것은?',
+        '변끼리 겹치지 않게 맞대어 붙인다',
+        ['조각을 겹쳐 붙인다', '조각을 잘라서 붙인다', '아무렇게나 놓는다'],
+        `조각을 겹치거나 자르지 않고 변끼리 맞대어야 새로운 모양이 됩니다.`,
+        'shape', '조건 함께 보기 · 칠교 조각을 맞대는 규칙 알기',
+      );
+    }
+
+    if (no >= 6) {
+      const first = 3 + (seed % 3);
+      const second = 1 + (seed % 3);
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `1층에 ${first}개, 2층에 ${second}개를 쌓았습니다. 여기에 2층으로 ${1 + (seed % 2)}개를 더 올리면 모두 몇 개일까요?`,
+          `${first + second + 1 + (seed % 2)}개`,
+          [`${first + second}개`, `${first + 1 + (seed % 2)}개`, `${first + second + 2}개`],
+          `${first}+${second}+${1 + (seed % 2)}=${first + second + 1 + (seed % 2)}개입니다.`,
+          'solid', '조건 함께 보기 · 더 쌓은 뒤의 개수 구하기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `쌓기나무 ${first + second}개로 만든 모양에서 위층 ${second}개를 옆으로 옮겼습니다. 쌓기나무는 몇 개일까요?`,
+          `${first + second}개`,
+          [`${first}개`, `${second}개`, `${first + second - second}개`],
+          `자리를 옮겨도 개수는 변하지 않아 ${first + second}개 그대로입니다.`,
+          'solid', '조건 함께 보기 · 옮겨도 개수가 같음 확인하기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `쌓기나무 ${first + second}개를 모두 1층에만 놓으면 몇 층이 될까요?`,
+        '1층', ['2층', `${first}층`, `${first + second}층`],
+        `위로 쌓지 않고 옆으로만 놓으면 1층입니다.`,
+        'solid', '조건 함께 보기 · 놓는 방법과 층수 관계 알기',
+      );
+    }
+  }
+
+  // ── 길이 재기 ─────────────────────────────────────────────────────────
+  if (unit === '길이 재기') {
+    const second = lesson.semester === '2-2';
+
+    if (!second && no >= 3 && no <= 4) {
+      const clips = 4 + (seed % 5);
+      const erasers = clips + 2 + (seed % 3);
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `같은 끈을 클립으로 재면 ${clips}번, 지우개로 재면 ${erasers}번입니다. 더 짧은 것은?`,
+          '지우개', ['클립', '두 단위가 같다', '알 수 없다'],
+          `잰 횟수가 많을수록 단위가 짧습니다. ${erasers}번인 지우개가 더 짧습니다.`,
+          'measurement', '조건 함께 보기 · 잰 횟수로 단위 견주기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `연필은 클립으로 ${clips}번, 색연필은 클립으로 ${clips + 2}번입니다. 더 긴 것은?`,
+          '색연필', ['연필', '두 물건이 같다', '알 수 없다'],
+          `같은 단위로 잴 때 잰 횟수가 많을수록 깁니다.`,
+          'measurement', '조건 함께 보기 · 같은 단위로 길이 견주기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `한 뼘으로 ${clips}번인 책상과 ${clips}번인 창문의 길이는 어떨까요?`,
+        '같은 사람이 재었다면 길이가 비슷하다',
+        ['책상이 더 길다', '창문이 더 길다', '비교할 수 없다'],
+        `같은 단위로 잰 횟수가 같으면 길이도 비슷합니다.`,
+        'measurement', '조건 함께 보기 · 같은 횟수의 뜻 따져 보기',
+      );
+    }
+
+    if (!second && no >= 5) {
+      const start = 2 + (seed % 5);
+      const end = start + 4 + (seed % 6);
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `자의 ${start}에서 시작해 ${end}에서 끝난 색 테이프와, 0에서 시작해 ${end - start + 1}에서 끝난 색 테이프 중 더 긴 것은?`,
+          `0에서 ${end - start + 1}까지인 것`,
+          [`${start}에서 ${end}까지인 것`, '두 테이프가 같다', '알 수 없다'],
+          `앞의 것은 ${end}-${start}=${end - start}cm이고 뒤의 것은 ${end - start + 1}cm이므로 뒤가 더 깁니다.`,
+          'measurement', '조건 함께 보기 · 시작 눈금이 다른 두 길이 견주기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `길이가 ${end - start}cm인 막대 2개를 이어 붙이면 몇 cm일까요?`,
+          `${(end - start) * 2}cm`,
+          [`${end - start}cm`, `${(end - start) * 3}cm`, `${end - start + 2}cm`],
+          `${end - start}+${end - start}=${(end - start) * 2}cm입니다.`,
+          'measurement', '조건 함께 보기 · 이어 붙인 길이 구하기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${end}cm인 끈에서 ${start}cm를 잘라 냈습니다. 남은 끈의 길이는?`,
+        `${end - start}cm`,
+        [`${end}cm`, `${start}cm`, `${end + start}cm`],
+        `${end}-${start}=${end - start}cm가 남습니다.`,
+        'measurement', '조건 함께 보기 · 잘라 낸 뒤 남은 길이 구하기',
+      );
+    }
+
+    if (second && no >= 4) {
+      const am = 1 + (seed % 3);
+      const acm = 20 + (seed % 5) * 10;
+      const bcm = 100 + (seed % 4) * 50;
+
+      if (pick === 0) {
+        const totalCm = am * 100 + acm + bcm;
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${am}m ${acm}cm인 끈과 ${bcm}cm인 끈을 이으면 몇 m 몇 cm일까요?`,
+          `${Math.floor(totalCm / 100)}m ${totalCm % 100}cm`,
+          [`${am}m ${acm + bcm}cm`, `${am + 1}m ${acm}cm`, `${totalCm}cm`],
+          `${bcm}cm는 ${Math.floor(bcm / 100)}m ${bcm % 100}cm입니다. 모두 더하면 ${Math.floor(totalCm / 100)}m ${totalCm % 100}cm입니다.`,
+          'measurement', '조건 함께 보기 · 단위가 다른 두 길이 더하기',
+        );
+      }
+      if (pick === 1) {
+        const heights = [
+          { name: '가연', cm: 100 + 40 + (seed % 9) },
+          { name: '나연', cm: 100 + 60 + (seed % 9) },
+          { name: '다연', cm: 100 + 20 + (seed % 9) },
+        ];
+        const closest = heights.reduce((best, item) =>
+          Math.abs(item.cm - 200) < Math.abs(best.cm - 200) ? item : best);
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${heights.map((item) => `${item.name} ${Math.floor(item.cm / 100)}m ${item.cm % 100}cm`).join(', ')}입니다. 2m에 가장 가까운 사람은?`,
+          closest.name,
+          heights.filter((item) => item.name !== closest.name).map((item) => item.name).concat('모두 같다'),
+          `2m는 200cm입니다. ${closest.name}의 키 ${closest.cm}cm가 200cm에 가장 가깝습니다.`,
+          'measurement', '조건 함께 보기 · 기준 길이에 가까운 것 찾기',
+        );
+      }
+      const taller = 5 + (seed % 6);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `민수의 키는 ${am}m ${acm}cm이고 지호는 민수보다 ${taller}cm 더 큽니다. 지호의 키는?`,
+        `${am}m ${acm + taller}cm`,
+        [`${am}m ${acm}cm`, `${am}m ${acm - taller}cm`, `${am + 1}m ${acm}cm`],
+        `${acm}+${taller}=${acm + taller}이므로 ${am}m ${acm + taller}cm입니다.`,
+        'measurement', '조건 함께 보기 · 더 큰 키를 이어서 구하기',
+      );
+    }
+  }
+
+  // ── 분류하기 ──────────────────────────────────────────────────────────
+  if (unit === '분류하기' && no >= 4) {
+    const red = 4 + (seed % 3);
+    const blue = 7 + (seed % 3);
+    const green = 2 + (seed % 2);
+    const total = red + blue + green;
+
+    if (pick === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `빨강 ${red}개, 파랑 ${blue}개, 초록 ${green}개입니다. ${red}개보다 많은 색은 모두 몇 가지일까요?`,
+        '1가지', ['2가지', '3가지', '0가지'],
+        `${red}개보다 많은 것은 파랑 ${blue}개뿐이므로 1가지입니다. ${red}개인 빨강은 넣지 않습니다.`,
+        'data', '조건 함께 보기 · 기준보다 많은 것 세기',
+      );
+    }
+    if (pick === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `딱지가 모두 ${total}개인데 빨강이 ${red}개, 초록이 ${green}개입니다. 파랑은 몇 개일까요?`,
+        `${blue}개`, [`${red}개`, `${green}개`, `${total - red}개`],
+        `전체에서 아는 것을 빼면 ${total}-${red}-${green}=${blue}개입니다.`,
+        'data', '조건 함께 보기 · 전체에서 빠진 항목 구하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      `같은 물건을 색깔로 나누면 3묶음, 모양으로 나누면 2묶음이 되었습니다. 알 수 있는 것은?`,
+      '기준이 다르면 묶음 수도 다르다',
+      ['물건 수가 달라진다', '색깔이 더 정확하다', '모양이 더 정확하다'],
+      `기준을 바꾸면 나누어지는 묶음 수가 달라지지만 물건의 수는 그대로입니다.`,
+      'classification', '조건 함께 보기 · 두 기준의 결과 견주기',
+    );
+  }
+
+  // ── 곱셈(2-1) ─────────────────────────────────────────────────────────
+  if (unit === '곱셈' && no >= 3) {
+    const each = 2 + (seed % 5);
+    const groups = 3 + ((seed + 1) % 4);
+    const total = each * groups;
+
+    if (no >= 3 && no <= 5) {
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `구슬 ${total}개를 ${each}개씩 묶으면 ${groups}묶음입니다. ${groups}개씩 묶으면 몇 묶음일까요?`,
+          `${each}묶음`, [`${groups}묶음`, `${total}묶음`, `${each + 1}묶음`],
+          `${total}개를 ${groups}개씩 묶으면 ${each}묶음이 됩니다. 전체 수는 그대로입니다.`,
+          'multiplication', '조건 함께 보기 · 묶는 수를 바꾸어 세기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${each}씩 뛰어 세어 ${total}이 되었습니다. 몇 번 뛰어 세었을까요?`,
+          `${groups}번`, [`${each}번`, `${total}번`, `${groups + 1}번`],
+          `${each}씩 ${groups}번 뛰어 세면 ${total}이 됩니다.`,
+          'multiplication', '조건 함께 보기 · 뛴 횟수를 거꾸로 찾기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}개씩 ${groups}묶음에서 ${each}개를 더 놓으면 몇 묶음이 될까요?`,
+        `${groups + 1}묶음`, [`${groups}묶음`, `${each}묶음`, `${groups + each}묶음`],
+        `${each}개가 한 묶음이므로 묶음이 하나 늘어 ${groups + 1}묶음이 됩니다.`,
+        'multiplication', '조건 함께 보기 · 묶음이 늘어나는 상황 따지기',
+      );
+    }
+
+    if (no >= 6) {
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${Array.from({ length: groups }, () => each).join('+')}을 곱셈식으로 바르게 나타낸 것은?`,
+          `${each}×${groups}`,
+          [`${groups}×${groups}`, `${each}×${each}`, `${each}+${groups}`],
+          `같은 수 ${each}를 ${groups}번 더했으므로 ${each}×${groups}입니다.`,
+          'multiplication', '조건 함께 보기 · 덧셈식을 곱셈식으로 바꾸기',
+        );
+      }
+      if (pick === 1) {
+        const other = 2 + ((seed + 2) % 5);
+        return makeQuestion(
+          lesson, difficulty, index,
+          `㉠ ${each}×${groups}, ㉡ ${other}×${groups} 중 더 큰 것은?`,
+          each > other ? '㉠' : '㉡',
+          [each > other ? '㉡' : '㉠', '두 값이 같다', '비교할 수 없다'],
+          `묶음 수가 같으면 한 묶음의 수가 클수록 큽니다. ${each}과 ${other}을 비교합니다.`,
+          'multiplication', '조건 함께 보기 · 두 곱셈식 견주기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `한 상자에 ${each}개씩 ${groups}상자가 있고 낱개로 ${1 + (seed % 3)}개가 더 있습니다. 모두 몇 개일까요?`,
+        `${total + 1 + (seed % 3)}개`,
+        [`${total}개`, `${each + groups}개`, `${total + each}개`],
+        `${each}×${groups}=${total}개에 낱개 ${1 + (seed % 3)}개를 더하면 ${total + 1 + (seed % 3)}개입니다.`,
+        'multiplication', '조건 함께 보기 · 묶음과 낱개를 함께 세기',
+      );
+    }
+  }
+
+  // ── 규칙 찾기 ─────────────────────────────────────────────────────────
+  if (unit === '규칙 찾기' && no >= 2) {
+    const start = 1 + (seed % 5);
+    const step = 2 + (seed % 3);
+
+    if (no >= 2 && no <= 3) {
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${start}, ${start + step}, ${start + step * 2}, ${start + step * 3}으로 이어집니다. 6번째 수는?`,
+          start + step * 5,
+          [start + step * 4, start + step * 6, start + step * 3],
+          `${step}씩 커지므로 6번째는 ${start}에서 ${step}씩 5번 뛴 ${start + step * 5}입니다.`,
+          'pattern', '조건 함께 보기 · 규칙으로 먼 자리 수 구하기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `○△△가 되풀이됩니다. 9번째에 오는 모양은?`,
+          '△', ['○', '□', '알 수 없다'],
+          `○△△ 세 개가 한 묶음입니다. 9번째는 세 번째 묶음의 마지막이므로 △입니다.`,
+          'pattern', '조건 함께 보기 · 반복 묶음으로 먼 자리 찾기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${start}, ⊙, ${start + step * 2}로 이어집니다. ⊙에 알맞은 수는?`,
+        start + step, [start, start + step * 2, start + step * 3],
+        `양쪽 수의 차가 ${step * 2}이므로 가운데는 ${step}만큼 큰 ${start + step}입니다.`,
+        'pattern', '조건 함께 보기 · 가운데 빠진 수 찾기',
+      );
+    }
+
+    if (no >= 5) {
+      const a = 2 + (seed % 5);
+      const b = 3 + (seed % 4);
+      const table = title.includes('곱셈표');
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          table
+            ? `곱셈표에서 ${a}×${b}=${a * b}입니다. ${a}×${b + 2}는 얼마일까요?`
+            : `덧셈표에서 ${a}+${b}=${a + b}입니다. ${a}+${b + 2}는 얼마일까요?`,
+          table ? a * (b + 2) : a + b + 2,
+          table ? [a * b, a * (b + 1), a * (b + 3)] : [a + b, a + b + 1, a + b + 3],
+          table
+            ? `${a}단은 ${a}씩 커지므로 두 칸 오른쪽은 ${a * 2}만큼 큰 ${a * (b + 2)}입니다.`
+            : `오른쪽으로 한 칸에 1씩 커지므로 두 칸이면 2 커져 ${a + b + 2}입니다.`,
+          'pattern', '조건 함께 보기 · 표에서 두 칸 건너뛰기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          table
+            ? '곱셈표에서 세로줄과 가로줄을 바꾸어 보면 어떤 점을 알 수 있을까요?'
+            : '덧셈표에서 세로줄과 가로줄을 바꾸어 보면 어떤 점을 알 수 있을까요?',
+          '두 수를 바꾸어도 결과가 같다',
+          ['결과가 커진다', '결과가 작아진다', '규칙이 사라진다'],
+          `두 수의 순서를 바꾸어도 ${table ? '곱' : '합'}은 같습니다.`,
+          'pattern', '조건 함께 보기 · 표의 대칭 규칙 찾기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        table
+          ? `곱셈표에서 ${a}단을 아래로 읽으면 몇씩 커질까요?`
+          : `덧셈표에서 아래로 한 칸 갈 때마다 몇씩 커질까요?`,
+        table ? `${a}씩` : '1씩',
+        table ? [`1씩`, `${a + 1}씩`, `${a * 2}씩`] : ['2씩', `${a}씩`, '변하지 않는다'],
+        table
+          ? `${a}단은 묶음이 하나씩 늘어 ${a}씩 커집니다.`
+          : `아래로 갈수록 더해지는 수가 1씩 커집니다.`,
+        'pattern', '조건 함께 보기 · 표에서 세로 규칙 찾기',
+      );
+    }
+  }
+
   return null;
 };
 
