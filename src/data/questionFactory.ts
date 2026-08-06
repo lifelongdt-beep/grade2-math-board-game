@@ -7274,7 +7274,15 @@ const richNumberQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
       `${unitBase}이 ${count}개면 ${value}이고, 10이 ${count}개면 ${count * 10}입니다. 합하면 ${value + count * 10}입니다.`,
       'placeValue',
       '조건 함께 보기 · 자리별 묶음을 수로 나타내기',
-      placeValueVisualFor(value + count * 10, '자리값 시각자료'),
+      // 정답을 그대로 그리면 표만 읽고 답을 쓸 수 있으므로 묻는 자리는 비워 둡니다.
+      tableVisualFor(
+        (four ? ['천', '백', '십', '일'] : ['백', '십', '일']).map((name, position, all) => ({
+          name,
+          value: position === all.length - 1 ? 0 : null,
+        })),
+        '자리값 표',
+        { categoryLabel: '자리', valueLabel: '숫자' },
+      ),
     );
   }
 
