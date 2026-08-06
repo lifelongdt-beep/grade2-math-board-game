@@ -922,11 +922,11 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
     }
     return makeQuestion(
       lesson, difficulty, index,
-      '수를 쓸 때 지켜야 할 것으로 알맞은 것은?',
-      '자리에 맞게 숫자를 쓴다',
-      ['크게 쓰면 된다', '순서를 바꾸어 쓴다', '색을 다르게 쓴다'],
-      `숫자는 놓인 자리에 따라 나타내는 값이 달라지므로 자리에 맞게 써야 합니다.`,
-      'placeValue', '자리에 맞게 수 쓰기',
+      '수가 많을 때 세기 쉬운 방법으로 알맞은 것은?',
+      '10개씩 묶어 세고 남은 것을 센다',
+      ['보이는 대로 어림한다', '큰 것부터 센다', '세지 않고 넘어간다'],
+      `10개씩 묶어 세면 많은 물건도 빠짐없이 셀 수 있습니다.`,
+      'number', '묶어 세는 방법 고르기',
     );
   }
 
@@ -7261,9 +7261,26 @@ const richNumberQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
   const count = 2 + (index % 7);
   const value = unitBase * count;
 
+  const numberUnit = lesson.unitTitle === '세 자리 수' || four;
+
+  // 몇백몇십몇(몇천몇백몇십몇)을 만드는 것은 4차시에서 배웁니다.
+  // 1~3차시에서는 몇백(몇천)까지만 다룹니다.
+  if (numberUnit && lesson.lessonNo < 4) {
+    const piece = four ? 100 : 10;
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${piece}이 ${count * 10}개이면 얼마일까요?`,
+      value,
+      [piece * count, value + piece, count * 10],
+      `${piece}이 10개이면 ${unitBase}입니다. ${piece}이 ${count * 10}개이면 ${unitBase}이 ${count}개이므로 ${value}입니다.`,
+      'placeValue',
+      '조건 함께 보기 · 작은 묶음을 큰 묶음으로 바꾸어 세기',
+    );
+  }
+
   // 뛰어 세기는 6차시, 크기 비교는 7차시입니다. 그 앞 차시에서는
   // 자리별 묶음까지만 다룹니다.
-  const jumpTaught = (lesson.unitTitle !== '세 자리 수' && !four) || lesson.lessonNo >= 6;
+  const jumpTaught = !numberUnit || lesson.lessonNo >= 6;
 
   if (!jumpTaught) {
     return makeQuestion(

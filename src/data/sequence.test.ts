@@ -162,7 +162,9 @@ describe('lesson sequence', () => {
           for (const question of generateQuestions(lesson, level)) {
             const text = `${question.prompt} ${question.choices.join(' ')} ${question.strategy}`;
 
-            const numbers = (text.match(/\d+/g) ?? []).map(Number);
+            // 수 규칙은 문제 본문만 봅니다. 오답 보기의 근삿값(1100 같은 수)까지
+            // 막으면 고를 만한 보기를 만들 수 없습니다.
+            const numbers = (question.prompt.match(/\d+/g) ?? []).map(Number);
 
             for (const rule of group.rules) {
               if (lesson.lessonNo >= rule.from) continue;
