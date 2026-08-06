@@ -88,6 +88,37 @@ describe('question visuals', () => {
     expect(tooTight).toEqual([]);
   });
 
+  it('never hands the answer to the student in the picture', () => {
+    const gives: string[] = [];
+
+    for (const lesson of lessons) {
+      for (const level of levels) {
+        for (const question of generateQuestions(lesson, level)) {
+          const visual = question.visual;
+          if (!visual) continue;
+
+          const answer = Number(String(question.answer).match(/-?\d+/)?.[0]);
+          if (!Number.isFinite(answer)) continue;
+
+          // 수직선에서 굵게 표시된 점이 곧 정답이면 세어 보지 않아도 답이 보입니다.
+          if (visual.kind === 'number-line') {
+            const active = visual.marks.filter((mark) => mark.active).map((mark) => mark.value);
+            if (active.includes(answer)) {
+              gives.push(`${question.id} (수직선): ${question.prompt.slice(0, 34)}`);
+            }
+          }
+
+          // 자리값 표는 '1000이 몇 개'처럼 자리 수를 묻는 문제의 답을 그대로 보여 줍니다.
+          if (visual.kind === 'place-value' && /몇 개인 수/.test(question.prompt)) {
+            gives.push(`${question.id} (자리값 표): ${question.prompt.slice(0, 34)}`);
+          }
+        }
+      }
+    }
+
+    expect(gives).toEqual([]);
+  });
+
   it('never draws a number line whose marks all sit on one spot', () => {
     const flat: string[] = [];
 

@@ -7281,7 +7281,8 @@ const richNumberQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     `${step}씩 3번이면 ${step * 3}만큼 커지므로 ${start + step * 3}입니다.`,
     'number',
     '조건 함께 보기 · 여러 번 뛰어 센 수 구하기',
-    numberLineVisualFor([start, start + step, start + step * 2, start + step * 3], step, '수의 위치 자료'),
+    // 마지막 점을 찍으면 그림이 답이 되므로 세 번째까지만 보여 줍니다.
+    numberLineVisualFor([start, start + step, start + step * 2], step, '수의 위치 자료'),
   );
 };
 const richOperationQuestion = (lesson: Lesson, difficulty: Difficulty, index: number, mode: 'addition' | 'subtraction'): Question => {
@@ -8980,6 +8981,12 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
   const promptNumbers = question.prompt.match(/\d+/g)?.map(Number) ?? [];
 
   if (question.type === 'placeValue') {
+    // '6000은 1000이 몇 개인 수일까요?' 같은 문제는 자리값 표에 답이 그대로
+    // 보입니다. 이런 문제에는 그림을 붙이지 않습니다.
+    if (/\d+이 몇 개인 수|몇 개인 수일까요|자리 숫자는 무엇/.test(question.prompt)) {
+      return undefined;
+    }
+
     // 자리값 문제의 정답은 보통 한 자리 값(예: 274의 일의 자리 → 4)이라
     // 정답을 그리면 표가 000이 됩니다. 문제에 나온 수 중 가장 큰 수를 그려야
     // 학생이 실제로 분해할 수를 볼 수 있습니다.
