@@ -266,25 +266,25 @@ const promptNotes: Record<ConceptTag, string[]> = {
     '층별로 나누어 세어 보세요.',
   ],
   measurement: [
-    '시작 눈금과 끝 눈금을 함께 보세요.',
+    '어디서 시작해서 어디서 끝나는지 보세요.',
     '같은 단위끼리 비교해요.',
-    '1m와 100cm의 관계를 떠올려요.',
-    '어림한 값과 잰 값을 비교해요.',
-    '길이의 합인지 차인지 먼저 읽어요.',
+    '무엇의 길이를 묻는지 다시 읽어요.',
+    '두 길이를 나란히 놓고 생각해요.',
+    '문제에서 묻는 것을 다시 확인해요.',
   ],
   classification: [
     '분류 기준을 하나만 정해요.',
     '빠지거나 겹치는 것이 없는지 보세요.',
     '같은 기준에 맞는 것끼리 모아요.',
-    '분류한 결과를 말로 설명해요.',
+    '기준이 분명한지 다시 확인해요.',
     '기준을 바꾸면 묶음도 바뀌는지 생각해요.',
   ],
   multiplication: [
     '한 묶음의 수와 묶음 수를 나누어 봐요.',
-    '같은 수를 여러 번 더하는지 확인해요.',
-    '뛰어 세기와 곱셈식을 연결해요.',
-    '몇 배에서 기준량을 찾아요.',
-    '곱셈구구 규칙을 활용해요.',
+    '같은 수가 몇 번 있는지 세어 봐요.',
+    '그림을 묶어서 살펴봐요.',
+    '무엇을 묻는지 다시 읽어요.',
+    '수를 하나씩 짚어 가며 확인해요.',
   ],
   time: [
     '긴바늘과 짧은바늘의 역할을 나누어 봐요.',
@@ -878,6 +878,58 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
   const unitName = four ? '천' : '백';
   const seed = n(lesson, index);
 
+  // 단원 도입: 아직 백(천)도 배우기 전이므로 앞 학년에서 배운 두(세) 자리 수까지만
+  if (title.includes('단원 도입')) {
+    const small = four ? 100 + (seed % 800) : 10 + (seed % 80);
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${small}보다 1만큼 더 큰 수는 얼마일까요?`,
+        small + 1, [small - 1, small + 10, small],
+        `${small} 다음 수는 ${small + 1}입니다.`,
+        'number', '바로 뒤의 수 알기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `생활에서 ${four ? '1000보다 큰 수' : '100보다 큰 수'}를 볼 수 있는 곳으로 알맞은 것은?`,
+        four ? '책의 쪽수나 물건의 값' : '교실 사물함 번호나 책의 쪽수',
+        ['한 사람의 손가락 수', '한 주의 날수', '한 상자의 색연필 수'],
+        `생활 속에는 큰 수로 나타내야 하는 것이 많습니다.`,
+        'number', '큰 수가 필요한 상황 찾기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '물건이 아주 많을 때 수를 세는 방법으로 알맞은 것은?',
+        '10개씩 묶어서 센다',
+        ['눈으로 어림한다', '하나씩만 센다', '세지 않는다'],
+        `10개씩 묶어 세면 많은 물건도 빠르고 정확하게 셀 수 있습니다.`,
+        'number', '큰 수를 세는 방법 생각하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${small}은 10이 몇 개인 수에 가까울까요?`,
+        `${Math.floor(small / 10)}개`,
+        [`${small}개`, `${Math.floor(small / 10) + 2}개`, '1개'],
+        `${small}은 10이 ${Math.floor(small / 10)}개인 수와 가깝습니다.`,
+        'placeValue', '10씩 묶어 수 살펴보기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '수를 쓸 때 지켜야 할 것으로 알맞은 것은?',
+      '자리에 맞게 숫자를 쓴다',
+      ['크게 쓰면 된다', '순서를 바꾸어 쓴다', '색을 다르게 쓴다'],
+      `숫자는 놓인 자리에 따라 나타내는 값이 달라지므로 자리에 맞게 써야 합니다.`,
+      'placeValue', '자리에 맞게 수 쓰기',
+    );
+  }
+
   // 백을 알아볼까요 / 천을 알아볼까요 ('몇백'은 아래에서 따로 다루므로 제외)
   if ((title.includes('백을 알아') || title.includes('천을 알아')) && !title.includes('몇')) {
     const below = unitBase - (four ? 100 : 10);
@@ -961,13 +1013,13 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       );
     }
     if (variant === 2) {
-      const other = unitBase * (count === 9 ? count - 1 : count + 1);
       return makeQuestion(
         lesson, difficulty, index,
-        `${value}과 ${other} 중 더 큰 수는?`,
-        Math.max(value, other), [Math.min(value, other), unitBase, value + other],
-        `${unitBase}의 개수가 많을수록 큰 수입니다.`,
-        'number', `몇${unitName}의 크기 비교하기`,
+        `${value}을 숫자로 바르게 쓴 것은?`,
+        `${value}`,
+        [`${count}`, `${unitBase}${count}`, `${count}${unitBase}`],
+        `${unitBase}이 ${count}개이므로 ${value}이라고 씁니다.`,
+        'placeValue', `몇${unitName}을 숫자로 쓰기`,
       );
     }
     if (variant === 3) {
@@ -985,10 +1037,11 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
     if (variant === 4) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${value}에서 ${unitBase}만큼 더 큰 수는?`,
-        value + unitBase, [value - unitBase, value + 1, unitBase],
-        `${unitBase}이 하나 늘어나므로 ${value + unitBase}입니다.`,
-        'number', `몇${unitName}에서 뛰어 세기`,
+        `${unitBase}이 ${count}개이면 몇${unitName}이라고 읽을까요?`,
+        `${['이', '삼', '사', '오', '육', '칠', '팔', '구'][count - 2]}${unitName}`,
+        [`${count}${unitName}`, `${unitName}${count}`, `${value}${unitName}`],
+        `${unitBase}이 ${count}개인 수는 ${['이', '삼', '사', '오', '육', '칠', '팔', '구'][count - 2]}${unitName}이라고 읽습니다.`,
+        'number', `몇${unitName}을 말로 읽기`,
       );
     }
     return makeQuestion(
@@ -3342,6 +3395,64 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
   const variant = variantForDifficulty(difficulty, index, 5, 3);
   const seed = n(lesson, index);
 
+  if (title.includes('단원 도입')) {
+    const secondSemester = lesson.semester === '2-2';
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        secondSemester
+          ? '교실의 긴 벽처럼 아주 긴 길이를 잴 때 어떤 점이 불편할까요?'
+          : '연필과 색연필 중 어느 것이 더 긴지 알아보려면 어떻게 할까요?',
+        secondSemester ? '짧은 자로는 여러 번 재어야 해서 불편하다' : '두 물건을 나란히 맞대어 본다',
+        secondSemester
+          ? ['한 번에 잴 수 있다', '길이를 알 수 없다', '무게를 재면 된다']
+          : ['무게를 재어 본다', '색깔을 비교한다', '개수를 센다'],
+        secondSemester
+          ? '짧은 자로 긴 길이를 재면 여러 번 옮겨 재야 해서 불편합니다.'
+          : '한쪽 끝을 맞추어 나란히 놓으면 어느 것이 더 긴지 알 수 있습니다.',
+        'measurement', secondSemester ? '긴 길이를 잴 때의 불편함 알기' : '길이를 견주어 보기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '길이를 비교할 때 쓰는 말로 알맞은 것은?',
+        '더 길다, 더 짧다',
+        ['더 무겁다, 더 가볍다', '더 많다, 더 적다', '더 예쁘다, 덜 예쁘다'],
+        '길이는 더 길다, 더 짧다로 비교해서 말합니다.',
+        'measurement', '길이를 나타내는 말 알기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '길이를 재야 하는 상황으로 알맞은 것은?',
+        '책상에 맞는 책꽂이를 고를 때',
+        ['우유가 몇 개인지 셀 때', '오늘이 며칠인지 알 때', '누가 더 무거운지 알 때'],
+        '물건이 자리에 맞는지 알아보려면 길이를 재어야 합니다.',
+        'measurement', '길이 재기가 필요한 상황 찾기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '두 물건을 맞대어 길이를 비교할 때 지켜야 할 것은?',
+        '한쪽 끝을 나란히 맞춘다',
+        ['가운데를 맞춘다', '서로 겹쳐 놓는다', '아무렇게나 놓는다'],
+        '한쪽 끝을 맞추어야 어느 것이 더 긴지 바르게 알 수 있습니다.',
+        'measurement', '맞대어 비교하는 방법 알기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '길이가 무엇을 나타내는 말인지 알맞은 것은?',
+      '얼마나 긴지를 나타내는 말',
+      ['얼마나 무거운지', '몇 개인지', '어떤 색인지'],
+      '길이는 물건이 얼마나 긴지를 나타냅니다.',
+      'measurement', '길이의 뜻 알기',
+    );
+  }
+
   if (title.includes('길이를 비교하는 방법')) {
     if (variant === 0) {
       return makeQuestion(
@@ -4122,6 +4233,57 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     ? [{ name: '빨강', count: red }, { name: '파랑', count: blue }]
     : [{ name: '파랑', count: blue }, { name: '빨강', count: red }];
 
+  if (title.includes('단원 도입')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '어질러진 학용품을 정리할 때 하면 좋은 일은?',
+        '같은 것끼리 모은다',
+        ['상자에 아무렇게나 넣는다', '큰 것만 남긴다', '색을 칠한다'],
+        '같은 것끼리 모아 두면 정리도 쉽고 찾기도 쉽습니다.',
+        'classification', '같은 것끼리 모으기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '생활에서 물건을 나누어 놓은 곳으로 알맞은 것은?',
+        '가게의 물건 진열대',
+        ['빈 운동장', '하늘', '창문'],
+        '가게에서는 비슷한 물건끼리 모아 놓아 찾기 쉽게 합니다.',
+        'classification', '생활 속 분류 찾기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '물건을 나누어 놓으면 좋은 점은?',
+        '찾고 싶은 것을 쉽게 찾을 수 있다',
+        ['물건이 많아진다', '물건이 예뻐진다', '물건이 커진다'],
+        '나누어 놓으면 필요한 것을 빨리 찾을 수 있습니다.',
+        'classification', '분류하면 좋은 점 알기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '색연필과 크레파스를 함께 두었다면 무엇을 보고 나눈 것일까요?',
+        '쓰임이 비슷한 것끼리',
+        ['크기가 큰 것끼리', '값이 비싼 것끼리', '새것끼리'],
+        '둘 다 색칠할 때 쓰는 물건이므로 쓰임이 비슷합니다.',
+        'classification', '나눈 까닭 생각하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '옷장에 옷을 넣을 때 하면 좋은 방법은?',
+      '비슷한 옷끼리 모아 넣는다',
+      ['아무 칸에나 넣는다', '큰 옷만 넣는다', '색을 칠해 둔다'],
+      '비슷한 것끼리 모아 두면 옷을 쉽게 찾을 수 있습니다.',
+      'classification', '생활에서 나누어 넣기',
+    );
+  }
+
   if (title.includes('분류는 어떻게')) {
     if (variant === 0) {
       return makeQuestion(
@@ -4683,6 +4845,55 @@ const multiplyUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: num
   const groups = 3 + ((index + 2) % 5);
   const total = each * groups;
   const repeated = Array.from({ length: groups }, () => each).join('+');
+
+  if (title.includes('단원 도입')) {
+    if (variant === 0) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `물건이 ${total}개 있습니다. 하나씩 세면 어떤 점이 불편할까요?`,
+        '오래 걸리고 빠뜨리기 쉽다',
+        ['수가 줄어든다', '물건이 없어진다', '아무 불편이 없다'],
+        '물건이 많으면 하나씩 세는 것은 오래 걸리고 빠뜨리기도 쉽습니다.',
+        'multiplication', '하나씩 세기의 불편함 알기',
+      );
+    }
+    if (variant === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}씩 뛰어 세면 ${each} 다음에 오는 수는?`,
+        each * 2, [each + 1, each * 3, each],
+        `${each}씩 뛰어 세면 ${each}, ${each * 2}, ${each * 3}으로 이어집니다.`,
+        'multiplication', '뛰어 세기로 세어 보기',
+      );
+    }
+    if (variant === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '많은 물건의 수를 빠르게 세려면 어떻게 하면 좋을까요?',
+        '같은 수씩 모아서 센다',
+        ['하나씩 천천히 센다', '눈으로 어림한다', '가장 큰 것만 센다'],
+        '같은 수씩 모아 세면 빠르고 정확하게 셀 수 있습니다.',
+        'multiplication', '빠르게 세는 방법 생각하기',
+      );
+    }
+    if (variant === 3) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${each}+${each}+${each}는 얼마일까요?`,
+        each * 3, [each * 2, each + 3, each * 4],
+        `${each}를 세 번 더하면 ${each * 3}입니다.`,
+        'multiplication', '같은 수를 여러 번 더하기',
+      );
+    }
+    return makeQuestion(
+      lesson, difficulty, index,
+      '같은 수를 여러 번 더하는 상황으로 알맞은 것은?',
+      '한 접시에 같은 수씩 담겨 있을 때',
+      ['접시마다 수가 다를 때', '물건이 하나뿐일 때', '수를 모를 때'],
+      '똑같은 수가 되풀이될 때 같은 수를 여러 번 더하게 됩니다.',
+      'multiplication', '같은 수가 되풀이되는 상황 찾기',
+    );
+  }
 
   if (title.includes('여러 가지 방법으로 세어')) {
     if (variant === 0) {
@@ -6989,56 +7200,41 @@ const patternVisualFor = (items: string[], label = '무늬 규칙 자료', missi
 });
 
 const richNumberQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
-  const hard = difficulty === '상';
-  const text = `${lesson.unitTitle} ${lesson.title}`;
-  const fourDigit = text.includes('네 자리') || text.includes('1000') || text.includes('몇천');
-  const thousands = fourDigit ? 1 + (index % 8) : 0;
-  const hundreds = fourDigit ? 1 + ((index + 2) % 8) : 2 + (n(lesson, index, 41) % 7);
-  const tens = hard ? 6 + (index % 4) : difficulty === '중' ? 3 + (index % 5) : 1 + (index % 5);
-  const ones = 2 + (index % 7);
-  const normalized = thousands * 1000 + hundreds * 100 + tens * 10 + ones;
+  const four = lesson.unitTitle === '네 자리 수';
+  const unitBase = four ? 1000 : 100;
+  const count = 2 + (index % 7);
+  const value = unitBase * count;
 
-  if (index % 3 === 0) {
+  // 뛰어 세기는 6차시, 크기 비교는 7차시입니다. 그 앞 차시에서는
+  // 자리별 묶음까지만 다룹니다.
+  const jumpTaught = (lesson.unitTitle !== '세 자리 수' && !four) || lesson.lessonNo >= 6;
+
+  if (!jumpTaught) {
     return makeQuestion(
-      lesson,
-      difficulty,
-      index,
-      `${fourDigit ? `천 ${thousands}개, ` : ''}백 ${hundreds}개, 십 ${tens}개, 일 ${ones}개를 수로 나타내면?`,
-      normalized,
-      [normalized - tens * 10, normalized + 10, Math.max(0, normalized - 100)],
-      `${fourDigit ? `천 ${thousands}개는 ${thousands * 1000}, ` : ''}백 ${hundreds}개는 ${hundreds * 100}, 십 ${tens}개는 ${tens * 10}, 일 ${ones}개는 ${ones}입니다. 모두 모으면 ${normalized}입니다.`,
+      lesson, difficulty, index,
+      `${unitBase}이 ${count}개, 10이 ${count}개인 수는 얼마일까요?`,
+      value + count * 10,
+      [value, count * 10, value + count],
+      `${unitBase}이 ${count}개면 ${value}이고, 10이 ${count}개면 ${count * 10}입니다. 합하면 ${value + count * 10}입니다.`,
       'placeValue',
-      '자료 해석 · 자리값 묶음을 수로 나타내기',
-      {
-        kind: 'place-value',
-        label: '자리값 묶음 자료',
-        columns: [
-          ...(fourDigit ? [{ label: '천', value: thousands, blocks: thousands }] : []),
-          { label: '백', value: hundreds, blocks: hundreds },
-          { label: '십', value: tens, blocks: Math.min(tens, 12) },
-          { label: '일', value: ones, blocks: ones },
-        ],
-      },
+      '조건 함께 보기 · 자리별 묶음을 수로 나타내기',
+      placeValueVisualFor(value + count * 10, '자리값 시각자료'),
     );
   }
 
-  const start = hard ? 260 + index * 10 : 120 + index * 5;
-  const step = difficulty === '하' ? 10 : difficulty === '중' ? 20 : 50;
-  const target = start + step * 3;
+  const step = four ? 100 : 10;
+  const start = unitBase * count;
   return makeQuestion(
-    lesson,
-    difficulty,
-    index,
-    `수의 길 그림에서 A는 ${start}, B는 ${start + step * 2}입니다. 같은 간격으로 한 번 더 가면 도착하는 수는?`,
-    target,
-    [start + step, start + step * 2, target + step],
-    `A에서 B까지 두 칸 동안 ${step * 2}만큼 커졌으므로 한 칸은 ${step}입니다. 한 번 더 가면 ${target}입니다.`,
+    lesson, difficulty, index,
+    `${start}에서 ${step}씩 3번 뛰어 센 수는 얼마일까요?`,
+    start + step * 3,
+    [start + step, start + step * 2, start + step * 4],
+    `${step}씩 3번이면 ${step * 3}만큼 커지므로 ${start + step * 3}입니다.`,
     'number',
-    '자료 해석 · 수의 길 그림 간격 살피기',
-    numberLineVisualFor([start, start + step * 2, target], step, '간격이 같은 수의 길 그림'),
+    '조건 함께 보기 · 여러 번 뛰어 센 수 구하기',
+    numberLineVisualFor([start, start + step, start + step * 2, start + step * 3], step, '수의 위치 자료'),
   );
 };
-
 const richOperationQuestion = (lesson: Lesson, difficulty: Difficulty, index: number, mode: 'addition' | 'subtraction'): Question => {
   const start = difficulty === '하' ? 36 + (index % 20) : difficulty === '중' ? 54 + (index % 18) : 62 + (index % 17);
   const rawAdded = difficulty === '하' ? 12 + (index % 12) : difficulty === '중' ? 18 + (index % 17) : 22 + (index % 18);
@@ -7073,103 +7269,38 @@ const richOperationQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
 };
 
 const richMeasurementQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
-  const start = 2 + (index % 5);
-  const length = difficulty === '하' ? 8 + (index % 5) : difficulty === '중' ? 12 + (index % 6) : 17 + (index % 7);
-  const end = start + length;
-  const cut = difficulty === '상' ? 5 + (index % 4) : 2 + (index % 4);
-  const answer = `${length - cut}cm`;
+  const start = 1 + (index % 6);
+  const span = difficulty === '중' ? 7 + (index % 5) : 9 + (index % 7);
+  const end = start + span;
+
+  // 2-1 길이 재기는 4차시에서 1cm를, 5차시에서 자 읽는 방법을 배웁니다.
+  const rulerTaught = lesson.unitTitle !== '길이 재기' || lesson.semester === '2-2' || lesson.lessonNo >= 5;
+
+  if (!rulerTaught) {
+    const clips = 3 + (index % 5);
+    const more = clips + 1 + (index % 3);
+    return makeQuestion(
+      lesson, difficulty, index,
+      `같은 연필을 클립으로 재면 ${clips}번, 지우개로 재면 ${more}번이었습니다. 더 짧은 단위는?`,
+      '지우개',
+      ['클립', '두 단위가 같다', '알 수 없다'],
+      `같은 길이를 잴 때 잰 횟수가 많을수록 단위가 짧습니다. 지우개로 ${more}번이므로 지우개가 더 짧습니다.`,
+      'measurement',
+      '조건 함께 보기 · 잰 횟수로 단위의 길이 견주기',
+    );
+  }
 
   return makeQuestion(
-    lesson,
-    difficulty,
-    index,
-    `자에서 색 테이프가 ${start}cm 눈금부터 ${end}cm 눈금까지 놓여 있습니다. 이 테이프에서 ${cut}cm를 잘라 쓰면 남은 길이는?`,
-    answer,
-    [`${length}cm`, `${end - cut}cm`, `${Math.max(1, length - cut + 2)}cm`],
-    `테이프의 전체 길이는 끝 눈금에서 시작 눈금을 뺀 ${end}-${start}=${length}cm입니다. ${cut}cm를 쓰면 ${length}-${cut}=${length - cut}cm가 남습니다.`,
+    lesson, difficulty, index,
+    `자의 ${start}cm 눈금부터 ${end}cm 눈금까지 잰 선분을 ${end}cm라고 읽었습니다. 바른 길이는?`,
+    `${span}cm`,
+    [`${end}cm`, `${start}cm`, `${span + start}cm`],
+    `시작 눈금이 0이 아니므로 끝 눈금에서 시작 눈금을 뺍니다. ${end}-${start}=${span}cm입니다.`,
     'measurement',
-    '조건 조합 · 자 눈금과 남은 길이 계산',
-    rulerVisualFor(start, end, '시작 눈금이 0이 아닌 자'),
+    '조건 함께 보기 · 시작 눈금을 빼고 길이 읽기',
+    rulerVisualFor(0, end + 2, '자로 잰 길이', start, end),
   );
 };
-
-// 표와 그래프 단원에서는 차시 내용에 맞춘 자료 해석 문항을 냅니다.
-const richTableGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
-  if (lesson.unitTitle !== '표와 그래프') return null;
-
-  const survey = surveyFor(index + 2);
-  const total = totalOf(survey.items);
-  const most = mostOf(survey.items);
-  const least = leastOf(survey.items);
-  const listed = survey.items.map((item) => `${item.name} ${item.count}명`).join(', ');
-  const title = lesson.title;
-
-  if (title.includes('분류하여 표로') || title.includes('조사하여 표로')) {
-    const hidden = survey.items[index % survey.items.length];
-    const rest = total - hidden.count;
-    return makeQuestion(
-      lesson, difficulty, index,
-      `표의 합계는 ${total}명입니다. ${survey.items
-        .filter((item) => item.name !== hidden.name)
-        .map((item) => `${item.name} ${item.count}명`)
-        .join(', ')}일 때 ${josa(hidden.name, '은', '는')} 몇 명일까요?`,
-      `${hidden.count}명`,
-      [`${total}명`, `${rest}명`, `${hidden.count + 1}명`],
-      `합계에서 다른 항목의 수를 빼면 됩니다. ${total}-${rest}=${hidden.count}명입니다.`,
-      'data',
-      '자료 해석 · 합계에서 빠진 항목 수 구하기',
-      surveyTable(survey, { blankIndex: index % survey.items.length, showTotal: true }),
-    );
-  }
-
-  if (title.includes('그래프로 나타내 볼까요') && title.includes('분류하여')) {
-    return makeQuestion(
-      lesson, difficulty, index,
-      `그래프에 ${survey.items.map((item) => `${item.name} ◯ ${item.count}개`).join(', ')}를 그렸습니다. ◯를 모두 몇 개 그렸을까요?`,
-      `${total}개`,
-      [`${most.count}개`, `${total + 1}개`, `${Math.max(1, total - 2)}개`],
-      `◯ 한 개는 학생 1명입니다. 항목별 ◯를 모두 더하면 ${survey.items.map((item) => item.count).join('+')}=${total}개입니다.`,
-      'data',
-      '자료 해석 · 그래프의 ◯ 개수 모두 세기',
-      surveyGraph(survey),
-    );
-  }
-
-  if (title.includes('무엇을 알 수 있')) {
-    const gap = most.count - least.count;
-    return makeQuestion(
-      lesson, difficulty, index,
-      `${survey.subject}별 학생 수가 ${listed}입니다. 가장 많은 것과 가장 적은 것의 차는 몇 명일까요?`,
-      `${gap}명`,
-      [`${most.count}명`, `${least.count}명`, `${gap + 1}명`],
-      `가장 많은 것은 ${most.name} ${most.count}명, 가장 적은 것은 ${least.name} ${least.count}명입니다. ${most.count}-${least.count}=${gap}명입니다.`,
-      'data',
-      '자료 해석 · 가장 많은 것과 적은 것의 차 구하기',
-      surveyGraph(survey),
-    );
-  }
-
-  if (title.includes('표와 그래프로 나타내')) {
-    const hidden = survey.items[(index + 1) % survey.items.length];
-    const rest = total - hidden.count;
-    return makeQuestion(
-      lesson, difficulty, index,
-      `조사한 학생이 모두 ${total}명입니다. ${survey.items
-        .filter((item) => item.name !== hidden.name)
-        .map((item) => `${item.name} ${item.count}명`)
-        .join(', ')}일 때 그래프의 ${hidden.name} 칸에 ◯를 몇 개 그릴까요?`,
-      `${hidden.count}개`,
-      [`${rest}개`, `${total}개`, `${hidden.count + 1}개`],
-      `전체에서 다른 항목을 빼면 ${total}-${rest}=${hidden.count}명입니다. 그래서 ◯를 ${hidden.count}개 그립니다.`,
-      'data',
-      '자료 해석 · 합계를 이용해 그래프 완성하기',
-      surveyTable(survey, { blankIndex: (index + 1) % survey.items.length, showTotal: true }),
-    );
-  }
-
-  return null;
-};
-
 const richDataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const unit = difficulty === '상' ? 2 : 1;
   const items = [
@@ -7215,28 +7346,40 @@ const richDataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
   );
 };
 const richMultiplicationQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
-  const rows = difficulty === '하' ? 3 + (index % 2) : difficulty === '중' ? 4 + (index % 3) : 6 + (index % 4);
-  const columns = difficulty === '하' ? 3 + (index % 3) : difficulty === '중' ? 5 + (index % 3) : 7 + (index % 3);
+  const rows = difficulty === '중' ? 4 + (index % 3) : 6 + (index % 4);
+  const columns = difficulty === '중' ? 5 + (index % 3) : 7 + (index % 3);
   const hardRemovedRows = 2 + ((index + Math.floor(index / 3)) % 3);
   const removedRows = difficulty === '상' ? Math.min(hardRemovedRows, rows - 2) : 1;
   const answer = (rows - removedRows) * columns;
 
+  // 2-1 곱셈 단원은 6차시에서 곱셈식을 배웁니다. 그 앞 차시에서는
+  // 묶어 세기까지만 다루어야 합니다.
+  const timesTaught = lesson.unitTitle !== '곱셈' || lesson.lessonNo >= 6;
+
+  if (!timesTaught) {
+    return makeQuestion(
+      lesson, difficulty, index,
+      `배열 그림은 한 줄에 ${columns}개씩 ${rows}줄입니다. 아래쪽 ${removedRows}줄을 가리면 보이는 것은 몇 개일까요?`,
+      answer,
+      [rows * columns, removedRows * columns, answer + columns],
+      `처음에는 ${columns}개씩 ${rows}줄입니다. ${removedRows}줄을 가리면 ${rows - removedRows}줄이 보이므로 ${columns}씩 ${rows - removedRows}묶음, 곧 ${answer}개입니다.`,
+      'multiplication',
+      '조건 함께 보기 · 배열에서 보이는 묶음만 세기',
+      arrayVisualFor(rows, columns, '일정한 배열 그림', removedRows),
+    );
+  }
+
   return makeQuestion(
-    lesson,
-    difficulty,
-    index,
+    lesson, difficulty, index,
     `배열 그림은 한 줄에 ${columns}개씩 ${rows}줄입니다. 아래쪽 ${removedRows}줄을 가리면 보이는 것은 몇 개일까요?`,
     answer,
     [rows * columns, removedRows * columns, answer + columns],
     `처음에는 ${columns}개씩 ${rows}줄입니다. ${removedRows}줄을 가리면 ${rows - removedRows}줄이 보이므로 ${columns}×${rows - removedRows}=${answer}개입니다.`,
     'multiplication',
-    '조건 조합 · 배열에서 보이는 묶음만 계산',
+    '조건 함께 보기 · 배열에서 보이는 묶음만 계산',
     arrayVisualFor(rows, columns, '일정한 배열 그림', removedRows),
   );
 };
-
-// 심화 문항도 그 차시에서 배운 것만 다뤄야 합니다.
-// 아직 배우지 않은 뒤 차시의 내용(예: 2차시에 걸린 시간)을 내면 안 됩니다.
 const richTimeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const title = lesson.title;
   const hour = 2 + (index % 7);
@@ -8444,7 +8587,7 @@ const blockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       return makeQuestion(
         lesson, difficulty, index,
         '동전이나 시계처럼 어느 쪽에서 보아도 둥근 모양은?',
-        '원', ['삼각형', '사각형', '쌓기나무'],
+        '원', ['삼각형', '사각형', '곧은 선'],
         '어느 쪽에서 보아도 둥근 모양을 원이라고 합니다.',
         'shape', '생활 물건에서 원 찾기',
       );
@@ -8453,7 +8596,7 @@ const blockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       return makeQuestion(
         lesson, difficulty, index,
         '창문이나 책처럼 곧은 변 4개로 둘러싸인 모양은?',
-        '사각형', ['원', '삼각형', '쌓기나무'],
+        '사각형', ['원', '삼각형', '굽은 선'],
         '곧은 변 4개로 둘러싸인 모양을 사각형이라고 합니다.',
         'shape', '생활 물건에서 사각형 찾기',
       );
@@ -8462,7 +8605,7 @@ const blockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       return makeQuestion(
         lesson, difficulty, index,
         '교통 표지판처럼 곧은 변 3개로 둘러싸인 모양은?',
-        '삼각형', ['원', '사각형', '쌓기나무'],
+        '삼각형', ['원', '사각형', '둥근 모양'],
         '곧은 변 3개로 둘러싸인 모양을 삼각형이라고 합니다.',
         'shape', '생활 물건에서 삼각형 찾기',
       );

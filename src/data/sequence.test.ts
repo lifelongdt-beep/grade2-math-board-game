@@ -61,7 +61,6 @@ const notBefore: Array<{
     semester: '2-1',
     unit: '곱셈',
     rules: [
-      { pattern: /묶어|묶음/, from: 3, note: '묶어 세기는 3차시' },
       { pattern: /몇 배|\d배/, from: 4, note: '몇의 몇 배는 4차시' },
       { pattern: /곱셈|×/, from: 6, note: '곱셈식은 6차시' },
     ],
