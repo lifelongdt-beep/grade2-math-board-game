@@ -10738,6 +10738,9 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     }
 
     if (no >= 6) {
+      // 앞·옆·위에서 본 모양을 묻는 기존 심화 문항도 남겨 둡니다.
+      if (pick === 2) return null;
+
       const first = 3 + (seed % 3);
       const second = 1 + (seed % 3);
       if (pick === 0) {
@@ -11019,7 +11022,36 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       );
     }
 
-    if (no >= 5) {
+    if (title.includes('생활에서')) {
+      const start2 = 1 + (seed % 5);
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `사물함 번호가 ${start2}, ${start2 + 5}, ${start2 + 10}으로 이어집니다. 다음 사물함 번호는?`,
+          start2 + 15, [start2 + 11, start2 + 20, start2 + 5],
+          `5씩 커지는 규칙이므로 다음은 ${start2 + 15}입니다.`,
+          'pattern', '조건 함께 보기 · 생활 속 번호에서 규칙 찾기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          '달력에서 어떤 날이 화요일이면 그로부터 14일 뒤는 무슨 요일일까요?',
+          '화요일', ['수요일', '월요일', '목요일'],
+          `같은 요일은 7일마다 돌아옵니다. 14일은 7일이 두 번이므로 다시 화요일입니다.`,
+          'pattern', '조건 함께 보기 · 반복 주기를 여러 번 적용하기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        '신호등이 초록, 노랑, 빨강 순서로 되풀이됩니다. 7번째에 켜지는 색은?',
+        '초록', ['노랑', '빨강', '알 수 없다'],
+        `세 색이 한 묶음입니다. 7번째는 세 번째 묶음의 첫 번째이므로 초록입니다.`,
+        'pattern', '조건 함께 보기 · 되풀이되는 순서에서 먼 자리 찾기',
+      );
+    }
+
+    if (no >= 5 && !title.includes('생활에서')) {
       const a = 2 + (seed % 5);
       const b = 3 + (seed % 4);
       const table = title.includes('곱셈표');
@@ -11046,7 +11078,7 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
           '두 수를 바꾸어도 결과가 같다',
           ['결과가 커진다', '결과가 작아진다', '규칙이 사라진다'],
           `두 수의 순서를 바꾸어도 ${table ? '곱' : '합'}은 같습니다.`,
-          'pattern', '조건 함께 보기 · 표의 대칭 규칙 찾기',
+          'pattern', '조건 함께 보기 · 순서를 바꾸어도 같은 규칙 찾기',
         );
       }
       return makeQuestion(
