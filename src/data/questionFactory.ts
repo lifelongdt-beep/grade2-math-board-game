@@ -9005,11 +9005,13 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
       );
     }
 
-    // 자리값 문제의 정답은 보통 한 자리 값(예: 274의 일의 자리 → 4)이라
-    // 정답을 그리면 표가 000이 됩니다. 문제에 나온 수 중 가장 큰 수를 그려야
-    // 학생이 실제로 분해할 수를 볼 수 있습니다.
-    const candidates = [...promptNumbers, ...(Number.isNaN(answerNumber) ? [] : [answerNumber])];
-    return placeValueVisualFor(candidates.length ? Math.max(...candidates) : 100, '자리값 시각자료');
+    // 표는 문제에 나온 수로만 만듭니다. 정답으로 만들면 '1000이 4개, 10이 4개인
+    // 수는?' 같은 문제에서 표가 곧 답(4040)이 되어 버립니다.
+    const fromPrompt = promptNumbers.filter((value) => Number.isFinite(value));
+    const shown = fromPrompt.length ? Math.max(...fromPrompt) : 100;
+    if (Number.isFinite(answerNumber) && shown === answerNumber) return undefined;
+
+    return placeValueVisualFor(shown, '자리값 시각자료');
   }
 
   if (question.type === 'number') {

@@ -108,9 +108,12 @@ describe('question visuals', () => {
             }
           }
 
-          // 자리값 표는 '1000이 몇 개'처럼 자리 수를 묻는 문제의 답을 그대로 보여 줍니다.
-          if (visual.kind === 'place-value' && /몇 개인 수/.test(question.prompt)) {
-            gives.push(`${question.id} (자리값 표): ${question.prompt.slice(0, 34)}`);
+          // 자리값 표에 적힌 수가 곧 정답이면 표만 읽고 답을 쓸 수 있습니다.
+          if (visual.kind === 'place-value') {
+            const shown = visual.columns.reduce((total, column) => total * 10 + column.value, 0);
+            if (shown === answer) {
+              gives.push(`${question.id} (자리값 표 ${shown}): ${question.prompt.slice(0, 30)}`);
+            }
           }
         }
       }
