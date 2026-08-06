@@ -9205,6 +9205,193 @@ const makePromptsUnique = (questions: Question[]): Question[] => {
   });
 };
 
+// ── 풀이 과정 빈칸 문항 ────────────────────────────────────────────────────
+// 답만 묻는 문제는 학생이 어떻게 풀었는지 알기 어렵습니다. 교육부·시도교육청
+// 평가지에서 쓰는 방식대로 풀이 과정을 단계로 보여 주고 그중 한 곳을 ⊙로
+// 비워 두면, 학생이 과정을 따라가며 생각하게 됩니다.
+// (예: "짧은바늘이 2와 3 사이이므로 □시입니다. 긴바늘이 …")
+const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  const unit = lesson.unitTitle;
+  const title = lesson.title;
+  const seed = n(lesson, index);
+  const pick = index % 2;
+
+  // 덧셈과 뺄셈: 받아올림·받아내림 과정의 한 단계를 비웁니다.
+  if (unit === '덧셈과 뺄셈') {
+    if (title.includes('덧셈을 해 볼까요') || title.includes('여러 가지 방법으로 덧셈')) {
+      const a = 10 * (1 + (seed % 6)) + (6 + (seed % 3));
+      const b = 10 * (1 + ((seed + 1) % 3)) + (10 - (a % 10) + (index % 3));
+      const onesSum = (a % 10) + (b % 10);
+      const tensSum = Math.floor(a / 10) + Math.floor(b / 10);
+
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${a}+${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리: ${a % 10}+${b % 10}=⊙ ② 10이 넘으므로 십의 자리로 1을 올립니다.`,
+          onesSum, [onesSum % 10, onesSum + 10, Math.max(0, onesSum - 10)],
+          `일의 자리끼리 더하면 ${a % 10}+${b % 10}=${onesSum}입니다. 10이 넘으므로 십의 자리로 1을 올립니다.`,
+          'addition', '덧셈 과정의 빈칸 채우기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리: ${a % 10}+${b % 10}=${onesSum}, ${onesSum % 10}을 쓰고 1을 올립니다. ② 십의 자리: ${Math.floor(a / 10)}+${Math.floor(b / 10)}+⊙`,
+        1, [0, onesSum, 10],
+        `일의 자리에서 올린 수는 1입니다. 십의 자리는 ${Math.floor(a / 10)}+${Math.floor(b / 10)}+1=${tensSum + 1}이 됩니다.`,
+        'addition', '받아올림한 수 찾기',
+      );
+    }
+
+    if (title.includes('뺄셈을 해 볼까요') || title.includes('여러 가지 방법으로 뺄셈')) {
+      const a = 10 * (3 + (seed % 6)) + (seed % 4);
+      const b = (a % 10) + 2 + (index % 5);
+      const borrowed = (a % 10) + 10;
+
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${a}-${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리 ${a % 10}에서 ${b}를 뺄 수 없습니다. ② 십의 자리에서 10을 가져오면 ⊙-${b}가 됩니다.`,
+          borrowed, [a % 10, borrowed - b, a % 10 + b],
+          `십의 자리에서 10을 가져오면 일의 자리는 ${a % 10}+10=${borrowed}이 됩니다.`,
+          'subtraction', '받아내린 뒤의 수 찾기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}-${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 십의 자리에서 10을 가져와 ${borrowed}-${b}=${borrowed - b} ② 십의 자리는 ${Math.floor(a / 10)}에서 1이 줄어 ⊙`,
+        Math.floor(a / 10) - 1, [Math.floor(a / 10), Math.floor(a / 10) + 1, borrowed - b],
+        `10을 가져왔으므로 십의 자리는 1이 줄어 ${Math.floor(a / 10) - 1}이 됩니다.`,
+        'subtraction', '받아내린 뒤 십의 자리 찾기',
+      );
+    }
+  }
+
+  // 곱셈구구: 앞의 곱에서 한 묶음을 더해 다음 곱을 구하는 과정
+  if (unit === '곱셈구구') {
+    const dans = dansOfLesson(title);
+    if (dans.length > 0) {
+      const dan = dans[index % dans.length];
+      const k = 3 + (index % 7);
+
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${dan}×${k}를 구하는 과정입니다. ⊙에 알맞은 수는? ① ${dan}×${k - 1}=${dan * (k - 1)} ② ${dan}×${k}는 여기에 ⊙를 더합니다.`,
+          dan, [k, dan * (k - 1), dan + k],
+          `묶음이 하나 늘면 ${dan}만큼 커집니다. ${dan * (k - 1)}+${dan}=${dan * k}입니다.`,
+          'multiplication', '앞의 곱에서 다음 곱 구하기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${dan}×${k}를 구하는 과정입니다. ⊙에 알맞은 수는? ① ${dan}씩 ${k}묶음입니다. ② ${Array.from({ length: k }, () => dan).join('+')}=⊙`,
+        dan * k, [dan + k, dan * (k - 1), dan * (k + 1)],
+        `${dan}을 ${k}번 더하면 ${dan * k}입니다.`,
+        'multiplication', '더하기로 곱 확인하기',
+      );
+    }
+  }
+
+  // 시각과 시간: 평가지처럼 두 바늘을 차례로 읽는 과정
+  if (unit === '시각과 시간') {
+    const hour = 1 + (index % 11);
+    const nextHour = hour === 12 ? 1 : hour + 1;
+
+    if (title.includes('읽어 볼까요 ⑴')) {
+      const pointer = 1 + (index % 11);
+      const minute = pointer * 5;
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `시각을 읽는 과정입니다. ⊙에 알맞은 수는? ① 짧은바늘이 ${hour}과 ${nextHour} 사이이므로 ⊙시입니다. ② 긴바늘이 ${pointer}을 가리키므로 ${minute}분입니다.`,
+          hour, [nextHour, pointer, minute],
+          `짧은바늘이 지나온 숫자가 몇 시인지 알려 줍니다. 그래서 ${hour}시입니다.`,
+          'time', '시각 읽는 과정의 빈칸 채우기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `시각을 읽는 과정입니다. ⊙에 알맞은 수는? ① 짧은바늘이 ${hour}과 ${nextHour} 사이이므로 ${hour}시입니다. ② 긴바늘이 ${pointer}을 가리키므로 ⊙분입니다.`,
+        minute, [pointer, minute + 5, hour],
+        `긴바늘이 가리키는 숫자를 5씩 뛰어 세면 ${pointer}×5=${minute}분입니다.`,
+        'time', '분을 읽는 과정의 빈칸 채우기',
+      );
+    }
+
+    if (title.includes('걸린 시간')) {
+      const startMinute = 10 + (index % 5) * 5;
+      const toHour = 60 - startMinute;
+      const after = 5 + (index % 4) * 5;
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${hour}시 ${startMinute}분부터 ${nextHour}시 ${after}분까지 걸린 시간을 구하는 과정입니다. ⊙에 알맞은 수는? ① ${hour}시 ${startMinute}분에서 ${nextHour}시까지 ⊙분 ② ${nextHour}시에서 ${after}분 더`,
+          toHour, [startMinute, after, toHour + after],
+          `한 시간은 60분입니다. 60-${startMinute}=${toHour}분입니다.`,
+          'time', '걸린 시간을 나누어 구하는 과정',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${hour}시 ${startMinute}분부터 ${nextHour}시 ${after}분까지 걸린 시간을 구하는 과정입니다. ⊙에 알맞은 수는? ① ${nextHour}시까지 ${toHour}분 ② ${after}분 더 ③ 모두 ⊙분`,
+        toHour + after, [toHour, after, toHour + after + 5],
+        `두 시간을 더합니다. ${toHour}+${after}=${toHour + after}분입니다.`,
+        'time', '나누어 구한 시간을 더하기',
+      );
+    }
+  }
+
+  // 길이 재기(2-2): m끼리, cm끼리 계산하는 과정
+  if (unit === '길이 재기' && lesson.semester === '2-2') {
+    const am = 1 + (seed % 4);
+    const acm = 20 + (seed % 40);
+    const bm = 1 + ((seed + 1) % 3);
+    const bcm = 10 + ((seed + 5) % 30);
+
+    if (title.includes('길이의 합')) {
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${am}m ${acm}cm + ${bm}m ${bcm}cm를 구하는 과정입니다. ⊙에 알맞은 수는? ① m끼리: ${am}+${bm}=⊙ ② cm끼리: ${acm}+${bcm}=${acm + bcm}`,
+          am + bm, [acm + bcm, am, am + bm + 1],
+          `m는 m끼리 더합니다. ${am}+${bm}=${am + bm}m입니다.`,
+          'measurement', '길이의 합에서 m 부분 구하기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${am}m ${acm}cm + ${bm}m ${bcm}cm를 구하는 과정입니다. ⊙에 알맞은 수는? ① m끼리: ${am}+${bm}=${am + bm} ② cm끼리: ${acm}+${bcm}=⊙`,
+        acm + bcm, [am + bm, acm, acm + bcm + 10],
+        `cm는 cm끼리 더합니다. ${acm}+${bcm}=${acm + bcm}cm입니다.`,
+        'measurement', '길이의 합에서 cm 부분 구하기',
+      );
+    }
+
+    if (title.includes('길이의 차')) {
+      const bigM = am + 2;
+      const bigCm = acm + 20;
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${bigM}m ${bigCm}cm - ${bm}m ${bcm}cm를 구하는 과정입니다. ⊙에 알맞은 수는? ① m끼리: ${bigM}-${bm}=⊙ ② cm끼리: ${bigCm}-${bcm}=${bigCm - bcm}`,
+          bigM - bm, [bigCm - bcm, bigM, bigM - bm + 1],
+          `m는 m끼리 뺍니다. ${bigM}-${bm}=${bigM - bm}m입니다.`,
+          'measurement', '길이의 차에서 m 부분 구하기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${bigM}m ${bigCm}cm - ${bm}m ${bcm}cm를 구하는 과정입니다. ⊙에 알맞은 수는? ① m끼리: ${bigM}-${bm}=${bigM - bm} ② cm끼리: ${bigCm}-${bcm}=⊙`,
+        bigCm - bcm, [bigM - bm, bigCm, bigCm - bcm + 10],
+        `cm는 cm끼리 뺍니다. ${bigCm}-${bcm}=${bigCm - bcm}cm입니다.`,
+        'measurement', '길이의 차에서 cm 부분 구하기',
+      );
+    }
+  }
+
+  return null;
+};
+
 const generateRawQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] =>
   Array.from({ length: 20 }, (_, index) => {
     const tag = primaryTag(lesson);
@@ -9223,7 +9410,10 @@ const generateRawQuestions = (lesson: Lesson, difficulty: Difficulty): Question[
 export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] =>
   makePromptsUnique(
     generateRawQuestions(lesson, difficulty)
-      .map((question, index) => richQuestionFor(lesson, difficulty, index) ?? question)
+      .map((question, index) =>
+        richQuestionFor(lesson, difficulty, index)
+        // 심화 문항이 없는 자리 중 일부를 풀이 과정 빈칸 문항으로 바꿉니다.
+        ?? (index % 4 === 1 ? stepBlankQuestion(lesson, difficulty, index) ?? question : question))
       .map(withRichVisual)
       .map(addAssessmentLayer),
   );
