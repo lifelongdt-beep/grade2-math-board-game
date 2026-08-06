@@ -9387,6 +9387,48 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     const bm = 1 + ((seed + 1) % 3);
     const bcm = 10 + ((seed + 5) % 30);
 
+    if (title.includes('더 큰 단위')) {
+      const m = 2 + (seed % 4);
+      const cm = 10 + (seed % 8) * 5;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${m * 100 + cm}cm를 m와 cm로 나타내는 과정입니다. ⊙에 알맞은 수는? ① 100cm는 1m입니다. ② ${m * 100}cm는 ${m}m입니다. ③ 남은 것은 ⊙cm입니다.`,
+        cm, [m, m * 100, cm + 100],
+        `${m * 100 + cm}cm에서 ${m * 100}cm를 빼면 ${cm}cm가 남습니다.`,
+        'measurement', 'cm를 m와 cm로 나누는 과정',
+      );
+    }
+    if (title.includes('자로 길이를 재어')) {
+      const m = 1 + (seed % 3);
+      const cm = 20 + (seed % 7) * 10;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `줄자로 잰 길이를 쓰는 과정입니다. ⊙에 알맞은 수는? ① 줄자의 0에 한끝을 맞춥니다. ② 끝 눈금이 ${m * 100 + cm}cm였습니다. ③ ${m}m ⊙cm라고 씁니다.`,
+        cm, [m, m * 100 + cm, cm + 100],
+        `${m * 100 + cm}cm는 ${m}m ${cm}cm입니다.`,
+        'measurement', '줄자로 잰 값을 m와 cm로 쓰는 과정',
+      );
+    }
+    if (title.includes('어림해 볼까요 ⑴')) {
+      const span = 10 + (seed % 6);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `뼘으로 길이를 어림하는 과정입니다. ⊙에 알맞은 수는? ① 한 뼘은 약 ${span}cm입니다. ② 세 뼘이면 약 ${span * 3}cm이므로 ⊙cm쯤입니다.`,
+        span * 3, [span, span * 2, span * 4],
+        `한 뼘이 약 ${span}cm이므로 세 뼘은 약 ${span * 3}cm입니다.`,
+        'measurement', '몸의 부분으로 어림하는 과정',
+      );
+    }
+    if (title.includes('어림해 볼까요 ⑵')) {
+      const known = 10 * (2 + (seed % 4));
+      return makeQuestion(
+        lesson, difficulty, index,
+        `아는 길이를 기준으로 어림하는 과정입니다. ⊙에 알맞은 수는? ① 색 테이프는 ${known}cm입니다. ② 물건에 3번쯤 들어갑니다. ③ 물건은 약 ⊙cm입니다.`,
+        known * 3, [known, known * 2, known + 3],
+        `${known}cm가 3번이면 약 ${known * 3}cm입니다.`,
+        'measurement', '기준 길이를 세어 어림하는 과정',
+      );
+    }
     if (title.includes('길이의 합')) {
       if (pick === 0) {
         return makeQuestion(
@@ -9636,7 +9678,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         'measurement', '눈금을 빼서 길이를 구하는 과정',
       );
     }
-    if (title.includes('어림해 볼까요 ⑴')) {
+    if (title.includes('어림하고')) {
       const span = 10 + (seed % 6);
       return makeQuestion(
         lesson, difficulty, index,
@@ -9646,14 +9688,14 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         'measurement', '몸의 부분을 여러 번 써서 어림하는 과정',
       );
     }
-    if (title.includes('어림해 볼까요 ⑵')) {
-      const known = 10 * (2 + (seed % 4));
+    if (title.includes('길이를 비교하는 방법')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `아는 길이를 기준으로 어림하는 과정입니다. ⊙에 알맞은 수는? ① 색 테이프는 ${known}cm입니다. ② 물건에 3번쯤 들어갑니다. ③ 물건은 약 ⊙cm입니다.`,
-        known * 3, [known, known * 2, known + 3],
-        `${known}cm가 3번이면 약 ${known * 3}cm입니다.`,
-        'measurement', '기준 길이를 세어 어림하는 과정',
+        '옮길 수 없는 물건의 길이를 비교하는 과정입니다. ⊙에 들어갈 말은? ① 끈에 물건의 길이를 옮겨 표시합니다. ② ⊙ ③ 어느 것이 더 긴지 알 수 있습니다.',
+        '표시한 끈을 다른 물건에 대어 봅니다',
+        ['끈을 잘라 버립니다', '물건의 무게를 잽니다', '물건의 색을 봅니다'],
+        '끈에 옮긴 길이를 다른 물건에 대어 보면 길고 짧음을 알 수 있습니다.',
+        'measurement', '끈으로 옮겨 비교하는 차례',
       );
     }
   }
@@ -9878,6 +9920,156 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         `${7 * weeks}일`, [`${weeks}일`, `7일`, `${7 * weeks + 7}일`],
         `1주일이 7일이므로 ${weeks}주일은 ${7 * weeks}일입니다.`,
         'time', '주일을 날수로 바꾸는 과정',
+      );
+    }
+  }
+
+  // 분류하기: 기준을 정하고 세어 결과를 읽는 과정
+  if (unit === '분류하기') {
+    const red = 4 + (seed % 4);
+    const blue = 2 + (seed % 3);
+    const green = 1 + ((seed + 1) % 3);
+
+    if (title.includes('분류는 어떻게') || title.includes('단원 도입')) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '물건을 나누는 과정입니다. ⊙에 들어갈 말은? ① 무엇으로 나눌지 정합니다. ② ⊙ ③ 같은 것끼리 모읍니다.',
+        '누가 보아도 같게 나뉘는 기준인지 확인합니다',
+        ['내가 좋아하는 것을 고릅니다', '물건을 더 사 옵니다', '개수를 먼저 셉니다'],
+        '분류는 누가 나누어도 결과가 같은 분명한 기준이 있어야 합니다.',
+        'classification', '분류 기준을 정하는 차례',
+      );
+    }
+    if (title.includes('기준에 따라')) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        '색깔을 기준으로 나누는 과정입니다. ⊙에 들어갈 말은? ① 기준은 색깔입니다. ② 빨강끼리 모읍니다. ③ ⊙',
+        '남은 색도 색깔끼리 모읍니다',
+        ['모양끼리 다시 모읍니다', '큰 것만 모읍니다', '빨강만 남깁니다'],
+        '한 가지 기준을 끝까지 적용해 남은 것도 색깔끼리 모읍니다.',
+        'classification', '한 기준을 끝까지 적용하는 차례',
+      );
+    }
+    if (title.includes('분류하고 세어')) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `분류하고 세는 과정입니다. ⊙에 알맞은 수는? ① 빨강 ${red}개 ② 파랑 ${blue}개 ③ 초록 ${green}개 ④ 모두 ${red}+${blue}+${green}=⊙개`,
+        `${red + blue + green}개`,
+        [`${red + blue}개`, `${blue + green}개`, `${red + blue + green + 1}개`],
+        `항목별 수를 모두 더하면 ${red + blue + green}개입니다.`,
+        'data', '분류한 것을 세어 모으는 과정',
+      );
+    }
+    if (title.includes('결과를 말해')) {
+      const most = Math.max(red, blue, green);
+      const least = Math.min(red, blue, green);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `분류 결과를 말하는 과정입니다. ⊙에 알맞은 수는? ① 가장 많은 것은 ${most}개 ② 가장 적은 것은 ${least}개 ③ 차는 ${most}-${least}=⊙개`,
+        `${most - least}개`, [`${most}개`, `${least}개`, `${most + least}개`],
+        `가장 많은 것에서 가장 적은 것을 빼면 ${most - least}개입니다.`,
+        'data', '분류 결과에서 차를 구하는 과정',
+      );
+    }
+  }
+
+  // 덧셈과 뺄셈 뒷부분 차시
+  if (unit === '덧셈과 뺄셈') {
+    if (title.includes('세 수의 계산')) {
+      const a = 10 + (seed % 25);
+      const b = 5 + (seed % 15);
+      const c = 3 + ((seed + 2) % 12);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}-${c}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 앞에서부터 ${a}+${b}=${a + b} ② ${a + b}-${c}=⊙`,
+        a + b - c, [a + b, a - b + c, a + b + c],
+        `앞에서부터 차례로 계산하면 ${a + b}-${c}=${a + b - c}입니다.`,
+        'addition', '세 수를 앞에서부터 계산하는 과정',
+      );
+    }
+    if (title.includes('관계를 식으로')) {
+      const a = 10 + (seed % 30);
+      const b = 5 + (seed % 20);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}=${a + b}을 뺄셈식으로 바꾸는 과정입니다. ⊙에 알맞은 수는? ① 전체는 ${a + b}입니다. ② 부분 하나는 ${b}입니다. ③ ${a + b}-${b}=⊙`,
+        a, [b, a + b, a - b],
+        `전체에서 한 부분을 빼면 다른 부분인 ${a}가 나옵니다.`,
+        'subtraction', '덧셈식을 뺄셈식으로 바꾸는 과정',
+      );
+    }
+    if (title.includes('□의 값')) {
+      const a = 10 + (seed % 30);
+      const b = 5 + (seed % 20);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+□=${a + b}에서 □를 구하는 과정입니다. ⊙에 알맞은 수는? ① 전체는 ${a + b}입니다. ② 아는 부분은 ${a}입니다. ③ ${a + b}-${a}=⊙`,
+        b, [a, a + b, a - b],
+        `전체에서 아는 부분을 빼면 □는 ${b}입니다.`,
+        'subtraction', '□를 빼기로 구하는 과정',
+      );
+    }
+  }
+
+  // 곱셈구구 뒷부분 차시
+  if (unit === '곱셈구구') {
+    const k = 2 + (seed % 8);
+    if (title.includes('1단')) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `0×${k}를 구하는 과정입니다. ⊙에 알맞은 수는? ① 0이 ${k}묶음입니다. ② 한 묶음에 아무것도 없으므로 모두 ⊙입니다.`,
+        0, [k, 1, k + 1],
+        `0은 하나도 없다는 뜻이므로 몇 묶음이어도 0입니다.`,
+        'multiplication', '0의 곱을 따져 보는 과정',
+      );
+    }
+    if (title.includes('곱셈표')) {
+      const a = 2 + (seed % 7);
+      const b = 2 + ((seed + 3) % 7);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `곱셈표에서 ${a}와 ${b}가 만나는 칸을 채우는 과정입니다. ⊙에 알맞은 수는? ① 가로의 수는 ${a}입니다. ② 세로의 수는 ${b}입니다. ③ 두 수를 곱하면 ⊙입니다.`,
+        a * b, [a + b, a * b + a, Math.max(0, a * b - b)],
+        `곱셈표의 칸에는 두 수의 곱을 씁니다. ${a}×${b}=${a * b}입니다.`,
+        'multiplication', '곱셈표의 칸을 채우는 과정',
+      );
+    }
+    if (title.includes('문제를 해결')) {
+      const each = 2 + (seed % 7);
+      const groups = 3 + ((seed + 2) % 6);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `한 상자에 ${each}개씩 ${groups}상자의 수를 구하는 과정입니다. ⊙에 알맞은 수는? ① 한 묶음의 수는 ${each}입니다. ② 묶음 수는 ${groups}입니다. ③ ${each}×${groups}=⊙`,
+        each * groups, [each + groups, each * groups + each, Math.max(1, each * groups - each)],
+        `${each}×${groups}=${each * groups}이므로 모두 ${each * groups}개입니다.`,
+        'multiplication', '문장을 곱셈식으로 세워 푸는 과정',
+      );
+    }
+  }
+
+  // 규칙 찾기 무늬 차시
+  if (unit === '규칙 찾기') {
+    if (title.includes('무늬에서 규칙을 찾아볼까요 ⑴')) {
+      const shapes = ['○', '△', '□'];
+      const start = seed % 3;
+      const order = [0, 1, 2].map((offset) => shapes[(start + offset) % 3]);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `무늬의 규칙을 찾는 과정입니다. ⊙에 들어갈 모양은? ① ${order.join(', ')}가 되풀이됩니다. ② ${order[0]}, ${order[1]}, ${order[2]}, ${order[0]}, ${order[1]}, ⊙`,
+        order[2], [order[0], order[1], '☆'],
+        `${order.join(', ')}가 반복되므로 다음은 ${order[2]}입니다.`,
+        'pattern', '반복 묶음을 찾아 다음을 구하는 과정',
+      );
+    }
+    if (title.includes('무늬에서 규칙을 찾아볼까요 ⑵')) {
+      const start = 1 + (seed % 3);
+      const step = 1 + (seed % 2);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `무늬의 개수 규칙을 찾는 과정입니다. ⊙에 알맞은 수는? ① ${start}개, ${start + step}개, ${start + step * 2}개로 놓였습니다. ② 몇 개씩 늘어나는지 보면 ⊙개씩입니다.`,
+        step, [start, step + 1, start + step],
+        `앞뒤 수의 차가 ${step}이므로 ${step}개씩 늘어납니다.`,
+        'pattern', '늘어나는 크기를 찾는 과정',
       );
     }
   }
