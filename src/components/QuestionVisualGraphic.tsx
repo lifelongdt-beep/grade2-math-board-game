@@ -291,26 +291,49 @@ function BarModelGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: '
   );
 }
 
+const RULER_TRACK_WIDTH = 316;
+const RULER_LABEL_STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200];
+
 function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'ruler' }> }) {
   const range = Math.max(1, visual.end - visual.start);
-  const toX = (value: number) => 30 + ((value - visual.start) / range) * 316;
-  const ticks = Array.from({ length: range + 1 }, (_, index) => visual.start + index);
+  const toX = (value: number) => 30 + ((value - visual.start) / range) * RULER_TRACK_WIDTH;
+  const pixelsPerUnit = RULER_TRACK_WIDTH / range;
+
+  // 눈금 수는 자의 길이에 따라 달라집니다. 간격을 정해 두지 않으면
+  // 긴 자에서 숫자가 서로 겹쳐 읽을 수 없습니다.
+  const labelStep = RULER_LABEL_STEPS.find((step) => step * pixelsPerUnit >= 26) ?? 500;
+  const tickStep = pixelsPerUnit >= 4 ? 1 : Math.max(1, Math.round(labelStep / 5));
+
+  const ticks: number[] = [];
+  for (let value = visual.start; value <= visual.end; value += tickStep) {
+    ticks.push(value);
+  }
 
   return (
     <svg viewBox="0 0 376 132" role="img" aria-label={visual.label}>
       <rect x="4" y="6" width="368" height="120" rx="14" fill="#f6fcff" stroke="#d7edf2" />
       <rect x="26" y="48" width="324" height="46" rx="8" fill="#fff4bd" stroke="#d4a62f" />
       <rect x={toX(visual.highlightStart)} y="50" width={toX(visual.highlightEnd) - toX(visual.highlightStart)} height="42" rx="6" fill="#dffafa" opacity="0.9" />
-      {ticks.map((value) => (
-        <g key={value}>
-          <line x1={toX(value)} y1="48" x2={toX(value)} y2={value % 5 === 0 ? 78 : 66} stroke="#7b6233" strokeWidth={value % 5 === 0 ? 3 : 2} />
-          {value % 2 === 0 && (
-            <text x={toX(value)} y="113" textAnchor="middle" fill="#24364a" fontSize="13" fontWeight="800">
-              {value}
-            </text>
-          )}
-        </g>
-      ))}
+      {ticks.map((value) => {
+        const labelled = value % labelStep === 0;
+        return (
+          <g key={value}>
+            <line
+              x1={toX(value)}
+              y1="48"
+              x2={toX(value)}
+              y2={labelled ? 78 : 66}
+              stroke="#7b6233"
+              strokeWidth={labelled ? 3 : 2}
+            />
+            {labelled && (
+              <text x={toX(value)} y="113" textAnchor="middle" fill="#24364a" fontSize="13" fontWeight="800">
+                {value}
+              </text>
+            )}
+          </g>
+        );
+      })}
     </svg>
   );
 }
