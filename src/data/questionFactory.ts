@@ -7166,7 +7166,14 @@ const placeValueVisualFor = (value: number, label = '자리값표'): QuestionVis
   return { kind: 'place-value', label, columns };
 };
 
-const numberLineVisualFor = (values: number[], step = 10, label = '수의 길 그림'): QuestionVisual => {
+// activeIndex를 -1로 주면 아무 점도 강조하지 않습니다.
+// 강조한 점이 곧 정답이면 학생이 세어 보지 않고도 답을 알게 됩니다.
+const numberLineVisualFor = (
+  values: number[],
+  step = 10,
+  label = '수의 길 그림',
+  activeIndex = values.length - 1,
+): QuestionVisual => {
   const min = Math.min(...values);
   const max = Math.max(...values);
   const start = Math.floor(min / step) * step;
@@ -7178,7 +7185,7 @@ const numberLineVisualFor = (values: number[], step = 10, label = '수의 길 �
     start,
     end: Math.max(end, start + step * 4),
     step,
-    marks: values.map((value, index) => ({ value, active: index === values.length - 1 })),
+    marks: values.map((value, index) => ({ value, active: index === activeIndex })),
   };
 };
 
@@ -9009,7 +9016,14 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
     }
 
     const step = Math.max(1, values.length >= 2 ? Math.abs(values[1] - values[0]) || 10 : 10);
-    return numberLineVisualFor(values, step > 100 ? 100 : step > 10 ? 10 : step, '수의 위치 자료');
+    // 정답이 그림에 굵게 표시되면 답을 알려 주는 셈이 됩니다.
+    const answerShown = Number.isFinite(answerNumber) && values.includes(answerNumber);
+    return numberLineVisualFor(
+      values,
+      step > 100 ? 100 : step > 10 ? 10 : step,
+      '수의 위치 자료',
+      answerShown ? -1 : values.length - 1,
+    );
   }
 
   if (question.type === 'addition' || question.type === 'subtraction') {
