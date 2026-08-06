@@ -246,8 +246,10 @@ const buildScopedQuestions = (
   bankSeed: number,
 ): Question[] => {
   const questions = lessons.flatMap((sourceLesson) => generateQuestions(sourceLesson, difficulty));
-  if (scope === 'lesson') return questions;
 
+  // 한 차시를 고른 경우에도 순서를 섞습니다. 섞지 않으면 수업을 다시 해도
+  // 늘 같은 순서로 나와 학생이 순서를 외워 버립니다.
+  // bankSeed는 수업을 시작할 때마다 새로 정해지므로 매번 순서가 달라집니다.
   return shuffledBySeed(
     questions,
     `${scope}-${difficulty}-${bankSeed}-${lessons.map((item) => item.id).join('|')}`,

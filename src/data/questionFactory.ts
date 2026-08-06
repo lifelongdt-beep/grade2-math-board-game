@@ -8972,8 +8972,10 @@ const richShapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 const richQuestionFor = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
   if (difficulty === '하') return null;
 
-  const hardSlots = new Set([2, 3, 6, 7, 10, 11, 14, 15, 18, 19]);
-  const mediumSlots = new Set([3, 6, 9, 12, 15, 18]);
+  // 3의 배수 자리는 기존 유형 10문항, 나머지 20자리는 풀이 과정 문항입니다.
+  // 심화 문항은 기존 유형 자리에만 놓아 두 종류가 서로 밀어내지 않게 합니다.
+  const hardSlots = new Set([0, 3, 6, 9, 12, 15, 18, 21, 24, 27]);
+  const mediumSlots = new Set([0, 6, 12, 18, 24, 27]);
   const useRich = difficulty === '상' ? hardSlots.has(index) : mediumSlots.has(index);
   if (!useRich) return null;
 
@@ -9792,7 +9794,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 };
 
 const generateRawQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] =>
-  Array.from({ length: 20 }, (_, index) => {
+  Array.from({ length: 30 }, (_, index) => {
     const tag = primaryTag(lesson);
     if (tag === 'addition') return operationQuestion(lesson, difficulty, index, 'addition');
     if (tag === 'subtraction') return operationQuestion(lesson, difficulty, index, 'subtraction');
@@ -9810,9 +9812,10 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
   makePromptsUnique(
     generateRawQuestions(lesson, difficulty)
       .map((question, index) =>
-        richQuestionFor(lesson, difficulty, index)
-        // 심화 문항이 없는 자리 중 일부를 풀이 과정 빈칸 문항으로 바꿉니다.
-        ?? (index % 4 === 1 ? stepBlankQuestion(lesson, difficulty, index) ?? question : question))
+        // 3의 배수 자리는 기존 유형(심화 포함), 나머지는 풀이 과정 문항입니다.
+        index % 3 === 0
+          ? richQuestionFor(lesson, difficulty, index) ?? question
+          : stepBlankQuestion(lesson, difficulty, index) ?? question)
       .map(withRichVisual)
       .map(addAssessmentLayer),
   );

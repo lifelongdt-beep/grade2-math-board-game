@@ -100,11 +100,11 @@ const cubeStackIsSupported = (visual: Extract<QuestionVisual, { kind: 'cube-stac
 };
 
 describe('questionFactory', () => {
-  it('generates 20 questions for every difficulty in every lesson', () => {
+  it('generates 30 questions for every difficulty in every lesson', () => {
     for (const lesson of lessons) {
       const bank = generateLessonBank(lesson);
       for (const level of levels) {
-        expect(bank[level], `${lesson.id} ${level}`).toHaveLength(20);
+        expect(bank[level], `${lesson.id} ${level}`).toHaveLength(30);
       }
     }
   });
