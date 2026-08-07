@@ -9070,6 +9070,17 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
       return shown === undefined ? undefined : placeValueVisualFor(shown, '자리값 시각자료');
     }
 
+    // '634보다 크고 638보다 작은 수'는 사이의 수를 하나씩 세어야 합니다.
+    // 눈금이 1씩이어야 수직선을 보고 셀 수 있습니다.
+    const between = question.prompt.match(/(\d+)보다 크고 (\d+)보다 작은/);
+    if (between) {
+      const from = Number(between[1]);
+      const to = Number(between[2]);
+      if (Number.isFinite(from) && Number.isFinite(to) && to > from && to - from <= 10) {
+        return numberLineVisualFor([from, to], 1, '두 수 사이를 세는 자료', -1);
+      }
+    }
+
     // 뛰어 세는 문제는 문제에 적힌 뛰는 크기가 곧 눈금 간격입니다.
     // '3000에서 1000씩'인데 눈금이 300씩이면 세어 볼 수가 없습니다.
     const jump = question.prompt.match(/(\d+)에서 (\d+)씩/);
@@ -9752,15 +9763,21 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
     if (title.includes('크기를 비교')) {
       const high = 2 + (index % 6);
-      const a = four ? high * 1000 + 500 : high * 100 + 50;
-      const b = four ? high * 1000 + 300 : high * 100 + 30;
+      const bigDigit = 5 + (seed % 4);
+      const smallDigit = 1 + (seed % 3);
+      const a = four ? high * 1000 + bigDigit * 100 : high * 100 + bigDigit * 10;
+      const b = four ? high * 1000 + smallDigit * 100 : high * 100 + smallDigit * 10;
       const place = four ? '백' : '십';
+      // 큰 수만 계속 물으면 '더 작은 수'를 찾는 연습이 되지 않습니다.
+      const askBigger = seed % 2 === 0;
+
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}과 ${b}의 크기를 비교하는 과정입니다. ⊙에 알맞은 수는? ① 가장 높은 자리 숫자가 ${high}으로 같습니다. ② 그다음 ${place}의 자리를 비교하면 ⊙이 더 큽니다.`,
-        a, [b, high, a + b],
-        `${place}의 자리 숫자를 비교하면 ${a}이 더 큽니다.`,
-        'placeValue', '크기를 비교하는 차례 따라가기',
+        `${a}과 ${b}의 크기를 비교하는 과정입니다. ⊙에 알맞은 수는? ① 가장 높은 자리 숫자가 ${high}으로 같습니다. ② 그다음 ${place}의 자리를 비교하면 ⊙이 더 ${askBigger ? '큽니다' : '작습니다'}.`,
+        askBigger ? a : b,
+        [askBigger ? b : a, high, a + b],
+        `${place}의 자리 숫자를 비교하면 ${askBigger ? `${a}이 더 큽니다` : `${b}이 더 작습니다`}.`,
+        'placeValue', `크기를 비교해 더 ${askBigger ? '큰' : '작은'} 수 찾는 차례`,
         barModelVisualFor([{ label: '첫째 수', value: a }, { label: '둘째 수', value: b }], '두 수의 크기'),
       );
     }
@@ -10435,37 +10452,46 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
     // 7차시: 크기 비교와 수 만들기
     if (no >= 7) {
-      const a = 1 + (seed % 8);
-      const b = 1 + ((seed + 3) % 8);
-      const c = 1 + ((seed + 6) % 8);
-      const digits = [a, b, c].sort((x, y) => y - x);
-      const biggest = digits[0] * 100 + digits[1] * 10 + digits[2];
-      const smallest = digits[2] * 100 + digits[1] * 10 + digits[0];
+      // 단원에 맞는 자릿수로 만듭니다. 네 자리 수 단원이면 카드도 4장입니다.
+      const cardCount = four ? 4 : 3;
+      const cards = distinctDigits(seed, cardCount);
+      const units = four ? [1000, 100, 10, 1] : [100, 10, 1];
+      const high = [...cards].sort((x, y) => y - x);
+      const low = [...cards].sort((x, y) => x - y);
+      const toNumber = (list: number[]) =>
+        list.reduce((sum, digit, at) => sum + digit * units[at], 0);
+      const biggest = toNumber(high);
+      const smallest = toNumber(low);
+      const sizeName = four ? '네 자리 수' : '세 자리 수';
 
       if (pick === 0) {
+        const swapped = [...high];
+        [swapped[0], swapped[1]] = [swapped[1], swapped[0]];
         return makeQuestion(
           lesson, difficulty, index,
-          `수 카드 ${a}, ${b}, ${c}를 한 번씩 써서 만들 수 있는 가장 큰 세 자리 수는?`,
-          biggest, [smallest, digits[1] * 100 + digits[0] * 10 + digits[2], biggest - 1],
+          `수 카드 ${cards.join(', ')}을 한 번씩 써서 만들 수 있는 가장 큰 ${sizeName}는?`,
+          biggest, [smallest, toNumber(swapped), biggest - 1],
           `큰 숫자를 높은 자리에 놓아야 합니다. ${biggest}입니다.`,
           'number', '조건 함께 보기 · 수 카드로 가장 큰 수 만들기',
         );
       }
       if (pick === 1) {
+        const swapped = [...low];
+        [swapped[0], swapped[1]] = [swapped[1], swapped[0]];
         return makeQuestion(
           lesson, difficulty, index,
-          `수 카드 ${a}, ${b}, ${c}를 한 번씩 써서 만들 수 있는 가장 작은 세 자리 수는?`,
-          smallest, [biggest, digits[2] * 100 + digits[0] * 10 + digits[1], smallest + 1],
+          `수 카드 ${cards.join(', ')}을 한 번씩 써서 만들 수 있는 가장 작은 ${sizeName}는?`,
+          smallest, [biggest, toNumber(swapped), smallest + 1],
           `작은 숫자를 높은 자리에 놓아야 합니다. ${smallest}입니다.`,
           'number', '조건 함께 보기 · 수 카드로 가장 작은 수 만들기',
         );
       }
-      const base = digits[0] * 100 + digits[1] * 10;
+      const from = four ? high[0] * 1000 + high[1] * 100 + 4 : high[0] * 100 + high[1] * 10 + 4;
       return makeQuestion(
         lesson, difficulty, index,
-        `${base + 4}보다 크고 ${base + 8}보다 작은 수는 모두 몇 개일까요?`,
+        `${from}보다 크고 ${from + 4}보다 작은 수는 모두 몇 개일까요?`,
         '3개', ['2개', '4개', '5개'],
-        `${base + 5}, ${base + 6}, ${base + 7}로 모두 3개입니다.`,
+        `${from + 1}, ${from + 2}, ${from + 3}으로 모두 3개입니다. 양 끝의 두 수는 넣지 않습니다.`,
         'number', '조건 함께 보기 · 두 수 사이의 수 세기',
       );
     }
