@@ -4132,3 +4132,39 @@ body::before {
   background: #000000;
   border-width: 2px;
 }
+
+/* ── 결과 화면의 세 칸 ──────────────────────────────────────────────
+   '푼 문제 / 정답 / 오답' 칸은 li가 아니라 div라서 어둡게 바꾼 규칙이
+   하나도 걸리지 않았습니다. 흰 칸에 흰 글씨가 되어 푼 문제 개수가
+   보이지 않았습니다. */
+.student-result-list div {
+  background: #000000;
+  border: 2px solid rgba(120, 170, 255, 0.4);
+  border-radius: 2px;
+}
+
+.student-result-list span {
+  color: #9fd8ff;
+}
+
+.student-result-list strong {
+  color: #ffffff;
+}
+
+.student-result-list .correct-result {
+  background: #001a0c;
+  border-color: rgba(86, 226, 132, 0.75);
+}
+
+.student-result-list .correct-result strong {
+  color: #6ef0a0;
+}
+
+.student-result-list .wrong-result {
+  background: #1c0407;
+  border-color: rgba(255, 130, 130, 0.7);
+}
+
+.student-result-list .wrong-result strong {
+  color: #ff9c9c;
+}
