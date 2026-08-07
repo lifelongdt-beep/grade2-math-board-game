@@ -9070,12 +9070,32 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
       return shown === undefined ? undefined : placeValueVisualFor(shown, '자리값 시각자료');
     }
 
-    const step = Math.max(1, values.length >= 2 ? Math.abs(values[1] - values[0]) || 10 : 10);
+    // 뛰어 세는 문제는 문제에 적힌 뛰는 크기가 곧 눈금 간격입니다.
+    // '3000에서 1000씩'인데 눈금이 300씩이면 세어 볼 수가 없습니다.
+    const jump = question.prompt.match(/(\d+)에서 (\d+)씩/);
+    if (jump) {
+      const start = Number(jump[1]);
+      const step = Number(jump[2]);
+      if (Number.isFinite(start) && Number.isFinite(step) && step > 0) {
+        return numberLineVisualFor(
+          [start, start + step, start + step * 2, start + step * 3],
+          step,
+          '수의 위치 자료',
+          // 마지막 점이 답인 경우가 많아 강조하지 않습니다.
+          -1,
+        );
+      }
+    }
+
+    const gap = Math.max(1, values.length >= 2 ? Math.abs(values[1] - values[0]) || 10 : 10);
+    // 눈금이 너무 촘촘하지 않도록 간격을 값의 크기에 맞춥니다.
+    const span = Math.max(...values) - Math.min(...values);
+    const step = span > 0 ? Math.max(gap, Math.ceil(span / 8)) : gap;
     // 정답이 그림에 굵게 표시되면 답을 알려 주는 셈이 됩니다.
     const answerShown = Number.isFinite(answerNumber) && values.includes(answerNumber);
     return numberLineVisualFor(
       values,
-      step > 100 ? 100 : step > 10 ? 10 : step,
+      step,
       '수의 위치 자료',
       answerShown ? -1 : values.length - 1,
     );

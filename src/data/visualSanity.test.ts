@@ -122,6 +122,31 @@ describe('question visuals', () => {
     expect(gives).toEqual([]);
   });
 
+  it('marks the number line in the same steps the question jumps by', () => {
+    const mismatched: string[] = [];
+
+    for (const lesson of lessons) {
+      for (const level of levels) {
+        for (const question of generateQuestions(lesson, level)) {
+          if (question.visual?.kind !== 'number-line') continue;
+
+          // '3000에서 1000씩 뛰어'인데 눈금이 300씩이면 세어 볼 수가 없습니다.
+          const jump = question.prompt.match(/(\d+)에서 (\d+)씩/);
+          if (!jump) continue;
+
+          const step = Number(jump[2]);
+          if (question.visual.step !== step) {
+            mismatched.push(
+              `${question.id}: ${step}씩 뛰는데 눈금은 ${question.visual.step}씩`,
+            );
+          }
+        }
+      }
+    }
+
+    expect(mismatched).toEqual([]);
+  });
+
   it('never draws a number line whose marks all sit on one spot', () => {
     const flat: string[] = [];
 

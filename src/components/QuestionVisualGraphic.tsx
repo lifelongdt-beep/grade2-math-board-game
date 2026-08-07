@@ -216,8 +216,12 @@ function NumberLineGraphic({ visual }: { visual: Extract<QuestionVisual, { kind:
       <rect x="4" y="6" width="368" height="130" rx="14" fill="#f6fcff" stroke="#d7edf2" />
       <line x1="32" y1="76" x2="344" y2="76" stroke="#506579" strokeWidth="4" strokeLinecap="round" />
       {ticks.map((value, index) => {
-        // 첫 눈금과 마지막 눈금은 항상 보여 주어 어디서 시작하고 끝나는지 알 수 있게 합니다.
-        const labelled = index % labelEvery === 0 || index === ticks.length - 1;
+        // 첫 눈금과 마지막 눈금은 어디서 시작하고 끝나는지 알려 주므로 보여 줍니다.
+        // 다만 마지막 눈금이 앞 라벨과 붙으면 글자가 겹치므로 그때는 생략합니다.
+        const isLast = index === ticks.length - 1;
+        const lastFits = (ticks.length - 1) % labelEvery === 0
+          || (ticks.length - 1) % labelEvery >= Math.ceil(labelEvery / 2);
+        const labelled = index % labelEvery === 0 || (isLast && lastFits);
         return (
           <g key={value}>
             <line x1={toX(value)} y1="64" x2={toX(value)} y2={labelled ? 88 : 84} stroke="#8aa0b8" strokeWidth="3" />
