@@ -3,29 +3,52 @@ import { curriculum } from './curriculum';
 import { generateQuestions } from './questionFactory';
 import type { Difficulty } from '../types';
 
-const levels: Difficulty[] = ['하', '중', '상'];
+// 풀이 과정 문항은 ① ② 로 단계를 나눠 보여 주고 그 사이 빈칸을 묻습니다.
+// 읽을 것이 많고 단계를 따라가야 해서, 답만 묻는 문항보다 어렵습니다.
+// 그래서 난이도마다 몇 문항을 줄지 다르게 정해 두었습니다.
+//   하  0문항 — 아직 과정을 따라갈 단계가 아닙니다. 먼저 답을 낼 수 있어야 합니다.
+//   중 10문항 — 세 문제에 한 번쯤 과정을 짚어 봅니다.
+//   상 20문항 — 과정을 설명할 수 있어야 합니다.
+const expectedSteps: Record<Difficulty, number> = { 하: 0, 중: 10, 상: 20 };
 
-// 한 차시는 30문항이고, 그중 20문항은 풀이 과정을 보여 주는 문항이어야 합니다.
-// 답만 묻는 문제만 있으면 학생이 어떻게 풀었는지 알기 어렵습니다.
 describe('step coverage', () => {
-  it('gives every 차시 20 questions that show their working', () => {
-    const missing: string[] = [];
+  it('gives each difficulty the share of working-out questions it should have', () => {
+    const wrong: string[] = [];
 
     for (const unit of curriculum) {
       for (const lesson of unit.lessons) {
-        for (const level of levels) {
+        for (const level of Object.keys(expectedSteps) as Difficulty[]) {
           const questions = generateQuestions(lesson, level);
           // 빈칸 기호(□)는 보통 문항도 쓰므로 그것만으로는 셀 수 없습니다.
           // 풀이 과정을 ① ② 로 나눠 보여 주는 것이 이 문항의 표시입니다.
           const steps = questions.filter((question) => question.prompt.includes('①')).length;
 
-          if (steps < 20) {
-            missing.push(`${unit.title} ${lesson.lessonNo}차시 (${level}): ${steps}개`);
+          if (steps !== expectedSteps[level]) {
+            wrong.push(
+              `${unit.title} ${lesson.lessonNo}차시 (${level}): ${expectedSteps[level]}개여야 하는데 ${steps}개`,
+            );
           }
         }
       }
     }
 
-    expect(missing).toEqual([]);
+    expect(wrong).toEqual([]);
+  });
+
+  it('never puts a working-out question in the easiest level', () => {
+    // 하 수준에서 이 문항이 하나라도 새어 들어오면 그 자리에서 막습니다.
+    const leaked: string[] = [];
+
+    for (const unit of curriculum) {
+      for (const lesson of unit.lessons) {
+        for (const question of generateQuestions(lesson, '하')) {
+          if (question.prompt.includes('①')) {
+            leaked.push(`${question.id}: ${question.prompt.slice(0, 40)}`);
+          }
+        }
+      }
+    }
+
+    expect(leaked).toEqual([]);
   });
 });

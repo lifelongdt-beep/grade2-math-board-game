@@ -11271,17 +11271,28 @@ const generateRawQuestions = (lesson: Lesson, difficulty: Difficulty): Question[
     return numberQuestion(lesson, difficulty, index);
   });
 
+// 풀이 과정 문항(① ② 로 나눠 빈칸을 채우는 문항)은 읽을 것이 많고 단계를
+// 따라가야 해서 어렵습니다. 30문항 중 몇 자리를 이 문항에 줄지 난이도마다
+// 다르게 정합니다.
+//   하  0문항  — 먼저 답을 낼 수 있어야 합니다.
+//   중 10문항  — 세 문제에 한 번쯤 과정을 짚어 봅니다.
+//   상 20문항  — 과정을 설명할 수 있어야 합니다.
+const isStepSlot = (difficulty: Difficulty, index: number) => {
+  if (difficulty === '하') return false;
+  if (difficulty === '중') return index % 3 === 1;
+  return index % 3 !== 0;
+};
+
 export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] =>
   makePromptsUnique(
     generateRawQuestions(lesson, difficulty)
       .map((question, index) =>
-        // 3의 배수 자리는 기존 유형(심화 포함), 나머지는 풀이 과정 문항입니다.
-        index % 3 === 0
+        isStepSlot(difficulty, index)
+          ? stepBlankQuestion(lesson, difficulty, index) ?? question
           // 응용 문항을 먼저 쓰고, 없으면 기존 심화 문항을 씁니다.
-          ? challengeQuestion(lesson, difficulty, index)
+          : challengeQuestion(lesson, difficulty, index)
             ?? richQuestionFor(lesson, difficulty, index)
-            ?? question
-          : stepBlankQuestion(lesson, difficulty, index) ?? question)
+            ?? question)
       .map((question, index) => withRichVisual(question, index, lesson))
       .map(addAssessmentLayer),
   );
