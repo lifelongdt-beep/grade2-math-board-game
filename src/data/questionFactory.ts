@@ -7168,14 +7168,18 @@ const legacyPatternQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
 
 const numberFromAnswer = (answer: string | number) => Number(String(answer).match(/-?\d+/)?.[0] ?? Number.NaN);
 
-const placeValueVisualFor = (value: number, label = '자리값표'): QuestionVisual => {
+// places를 주면 그 자리 수만큼 칸을 만듭니다. 네 자리 수 단원에서는
+// 보여 주는 수가 100이더라도 천의 자리 칸이 있어야 합니다. 칸이 없으면
+// '100이 70개면 7000'을 천의 자리 없이 생각하게 됩니다.
+const placeValueVisualFor = (value: number, label = '자리값표', places?: number): QuestionVisual => {
   const safe = Math.max(0, Math.floor(value));
   const thousands = Math.floor(safe / 1000);
   const hundreds = Math.floor((safe % 1000) / 100);
   const tens = Math.floor((safe % 100) / 10);
   const ones = safe % 10;
+  const showThousands = places === undefined ? thousands > 0 : places >= 4;
   const columns = [
-    ...(thousands > 0 ? [{ label: '천', value: thousands, blocks: thousands }] : []),
+    ...(showThousands ? [{ label: '천', value: thousands, blocks: thousands }] : []),
     { label: '백', value: hundreds, blocks: hundreds },
     { label: '십', value: tens, blocks: tens },
     { label: '일', value: ones, blocks: ones },
@@ -9037,8 +9041,17 @@ const richQuestionFor = (lesson: Lesson, difficulty: Difficulty, index: number):
   return richNumberQuestion(lesson, difficulty, index);
 };
 
-const visualForGeneratedQuestion = (question: Question, index: number): QuestionVisual | undefined => {
+// 자리 수는 단원에서 정합니다. 정답의 자리 수로 정하면 '답이 네 자리구나'
+// 하고 보기 하나를 지울 수 있게 되므로, 답이 아니라 단원을 봅니다.
+const placesForUnit = (lesson: Lesson) => (lesson.unitTitle.includes('네 자리 수') ? 4 : 3);
+
+const visualForGeneratedQuestion = (
+  question: Question,
+  index: number,
+  lesson: Lesson,
+): QuestionVisual | undefined => {
   if (question.visual) return question.visual;
+  const places = placesForUnit(lesson);
 
   const answerNumber = numberFromAnswer(question.answer);
   const promptNumbers = question.prompt.match(/\d+/g)?.map(Number) ?? [];
@@ -9050,12 +9063,17 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
       const shown = promptNumbers.find((value) => Number.isFinite(value) && value >= 100);
       if (shown === undefined) return undefined;
 
-      const digits = String(shown).split('').map(Number);
-      const names = digits.length >= 4 ? ['천', '백', '십', '일'] : ['백', '십', '일'];
+      const digits = String(shown).padStart(places, '0').split('').map(Number);
+      const names = places >= 4 ? ['천', '백', '십', '일'] : ['백', '십', '일'];
       if (digits.length !== names.length) return undefined;
 
+      // 앞자리를 0으로 채워 칸을 맞췄으므로, 가릴 자리도 그만큼 밀립니다.
+      // 맨 앞 칸을 가리면 0을 가리는 셈이 되어 정답이 그대로 보입니다.
+      const leading = digits.findIndex((digit) => digit > 0);
+      const blankAt = leading === -1 ? 0 : leading;
+
       return tableVisualFor(
-        names.map((name, position) => ({ name, value: position === 0 ? null : digits[position] })),
+        names.map((name, position) => ({ name, value: position === blankAt ? null : digits[position] })),
         '자리값 표',
         { categoryLabel: '자리', valueLabel: '숫자' },
       );
@@ -9067,7 +9085,7 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
     const shown = fromPrompt.length ? Math.max(...fromPrompt) : 100;
     if (Number.isFinite(answerNumber) && shown === answerNumber) return undefined;
 
-    return placeValueVisualFor(shown, '자리값 시각자료');
+    return placeValueVisualFor(shown, '자리값 시각자료', places);
   }
 
   if (question.type === 'number') {
@@ -9081,7 +9099,7 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
 
     if (values.length === 0) {
       const shown = promptNumbers.find((value) => Number.isFinite(value));
-      return shown === undefined ? undefined : placeValueVisualFor(shown, '자리값 시각자료');
+      return shown === undefined ? undefined : placeValueVisualFor(shown, '자리값 시각자료', places);
     }
 
     // '14보다 1만큼 더 큰 수'는 한 칸만 움직이면 되는 문제입니다.
@@ -9235,8 +9253,8 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
   return undefined;
 };
 
-const withRichVisual = (question: Question, index: number): Question => {
-  const visual = visualForGeneratedQuestion(question, index);
+const withRichVisual = (question: Question, index: number, lesson: Lesson): Question => {
+  const visual = visualForGeneratedQuestion(question, index, lesson);
   return visual ? { ...question, visual } : question;
 };
 
@@ -11264,7 +11282,7 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
             ?? richQuestionFor(lesson, difficulty, index)
             ?? question
           : stepBlankQuestion(lesson, difficulty, index) ?? question)
-      .map(withRichVisual)
+      .map((question, index) => withRichVisual(question, index, lesson))
       .map(addAssessmentLayer),
   );
 
