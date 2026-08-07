@@ -3033,3 +3033,386 @@ body {
   0%, 100% { transform: rotate(-7deg); }
   50% { transform: rotate(7deg); }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   우주 컨셉 화면
+   ────────────────────────────────────────────────────────────────────
+   교실 전자칠판을 우주선 조종석처럼 보이게 합니다. 바깥 틀은 어둡게,
+   자리마다 하나씩 '포드'가 있고, 그 안에 밝은 화면이 하나 떠 있습니다.
+
+   중요 — 문제 화면(.student-question-body)과 그 안의 그림, 그리고 보기
+   버튼은 밝은 채로 둡니다. 수직선·시계·자·모눈 그림이 모두 어두운 선으로
+   그려져 있어서 배경을 어둡게 하면 보이지 않습니다. 아이들이 실제로 읽는
+   곳은 밝게 두고, 우주 느낌은 그 둘레(포드·상단바·버튼)로 냅니다.
+   ════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --space-deep: #04060f;
+  --space-panel: rgba(15, 22, 46, 0.92);
+  --space-raised: rgba(28, 38, 72, 0.94);
+  --space-line: rgba(122, 168, 255, 0.26);
+  --space-ink: #e9f1ff;
+  --space-muted: #9fb3da;
+  --neon: #45d6ff;
+  --neon-soft: rgba(69, 214, 255, 0.35);
+  --neon-violet: #a98bff;
+}
+
+/* ── 우주 배경 ────────────────────────────────────────────────────── */
+body {
+  background-color: var(--space-deep);
+  /* 성운입니다. 멀리서 은은하게 번지는 빛만 남깁니다. */
+  background-image:
+    radial-gradient(58% 42% at 14% 12%, rgba(58, 122, 255, 0.20) 0, transparent 70%),
+    radial-gradient(46% 38% at 88% 8%, rgba(168, 92, 255, 0.16) 0, transparent 72%),
+    radial-gradient(60% 44% at 74% 92%, rgba(0, 190, 200, 0.15) 0, transparent 74%);
+  background-attachment: fixed;
+}
+
+/* 별입니다. 크기가 다른 세 겹을 깔아 깊이가 느껴지게 합니다. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -60px;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.6px 1.6px at 32px 46px, rgba(255, 255, 255, 0.95), transparent),
+    radial-gradient(1.4px 1.4px at 148px 122px, rgba(210, 232, 255, 0.85), transparent),
+    radial-gradient(1.2px 1.2px at 214px 34px, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(1.8px 1.8px at 78px 198px, rgba(190, 220, 255, 0.9), transparent),
+    radial-gradient(1.1px 1.1px at 262px 168px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 186px 246px, rgba(230, 240, 255, 0.8), transparent);
+  background-size: 300px 300px;
+  /* 아주 천천히 흘러갑니다. 빠르면 문제 푸는 데 방해가 됩니다. */
+  animation: star-drift 150s linear infinite;
+}
+
+@keyframes star-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-300px, -300px, 0); }
+}
+
+.app-shell {
+  position: relative;
+  z-index: 1;
+}
+
+.app-shell.setup,
+.app-shell.fullscreen-mode {
+  background: transparent;
+}
+
+/* ── 조종석 패널 ──────────────────────────────────────────────────── */
+.app-header,
+.game-topbar,
+.command-bar,
+.setup-hero,
+.setup-options,
+.setup-summary,
+.support-card,
+.quick-support-card,
+.mobile-join-card {
+  background: var(--space-panel);
+  border: 1px solid var(--space-line);
+  color: var(--space-ink);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 14px 34px rgba(0, 0, 0, 0.55);
+}
+
+.app-header h1,
+.game-topbar h2,
+.setup-hero h1,
+.setup-hero h2,
+.setup-options h2,
+.setup-summary h2,
+.app-header strong,
+.setup-options strong,
+.setup-summary strong,
+.support-card strong,
+.quick-support-card strong {
+  color: var(--space-ink);
+}
+
+.app-header p,
+.game-topbar p,
+.setup-hero p,
+.setup-options p,
+.setup-summary p,
+.support-card p,
+.quick-support-card p,
+.lesson-objective-inline,
+.setup-copy,
+.setup-copy p,
+.quick-reason,
+.quick-core {
+  color: var(--space-muted);
+}
+
+.eyebrow,
+.result-kicker {
+  color: var(--neon);
+}
+
+.brand-mark {
+  background: rgba(69, 214, 255, 0.14);
+  color: var(--neon);
+  box-shadow: 0 0 18px rgba(69, 214, 255, 0.32);
+}
+
+/* ── HUD 조각 ─────────────────────────────────────────────────────── */
+.round-status span,
+.command-status span,
+.mobile-single-status,
+.setup-progress {
+  background: var(--space-raised);
+  border-color: var(--space-line);
+  color: var(--space-muted);
+}
+
+.timer-card {
+  background: rgba(46, 33, 6, 0.92);
+  border: 1px solid rgba(245, 179, 1, 0.42);
+  color: #ffd86b;
+  box-shadow: 0 0 22px rgba(245, 179, 1, 0.22);
+}
+
+/* ── 버튼 ─────────────────────────────────────────────────────────── */
+.secondary-button,
+.icon-button,
+.mobile-join-toggle {
+  background: var(--space-raised);
+  border: 1px solid var(--space-line);
+  color: var(--space-ink);
+}
+
+.secondary-button:hover:not(:disabled),
+.icon-button:hover:not(:disabled) {
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
+.primary-button,
+.teacher-button {
+  background: linear-gradient(180deg, #2fc7f0 0%, #1f8bd8 100%);
+  border: 1px solid rgba(150, 232, 255, 0.6);
+  color: #04203a;
+  box-shadow: 0 0 24px rgba(69, 214, 255, 0.35);
+}
+
+.primary-button:hover:not(:disabled),
+.teacher-button:hover:not(:disabled) {
+  box-shadow: 0 0 30px rgba(69, 214, 255, 0.55);
+}
+
+.big-segmented button,
+.time-options button {
+  background: var(--space-raised);
+  border: 1px solid var(--space-line);
+  color: var(--space-ink);
+}
+
+.big-segmented button[aria-pressed='true'],
+.time-options button[aria-pressed='true'],
+.big-segmented button.active,
+.time-options button.active {
+  background: linear-gradient(180deg, #2fc7f0 0%, #1f8bd8 100%);
+  border-color: rgba(150, 232, 255, 0.7);
+  color: #04203a;
+  box-shadow: 0 0 20px rgba(69, 214, 255, 0.4);
+}
+
+/* ── 자리 포드 ────────────────────────────────────────────────────── */
+/* 아무 표시도 없는 상태에서는 자기 자리 색으로 은은히 빛납니다. */
+.player-lane:not(.correct):not(.retry):not(.explain) {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--player-color, #45d6ff) 12%, rgba(13, 19, 40, 0.94)) 0%,
+      rgba(9, 13, 30, 0.95) 62%
+    );
+  border: 1px solid color-mix(in srgb, var(--player-color, #45d6ff) 42%, transparent);
+  box-shadow:
+    0 0 26px color-mix(in srgb, var(--player-color, #45d6ff) 26%, transparent),
+    0 14px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* 자리 색 띠를 조금 더 넓히고 빛을 얹습니다. */
+.player-lane::before {
+  height: 6px;
+  box-shadow: 0 0 14px var(--player-color, transparent);
+}
+
+.player-lane header strong {
+  color: color-mix(in srgb, var(--player-color, #ffffff) 46%, #ffffff);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--player-color, #45d6ff) 55%, transparent);
+}
+
+.player-lane header small {
+  color: var(--space-muted);
+}
+
+.player-avatar {
+  background: color-mix(in srgb, currentColor 22%, rgba(8, 12, 28, 0.9));
+  box-shadow:
+    inset 0 0 0 3px rgba(8, 12, 28, 0.55),
+    0 0 16px color-mix(in srgb, var(--player-color, #45d6ff) 55%, transparent);
+}
+
+.player-lane footer,
+.student-question-meta span {
+  color: var(--space-muted);
+}
+
+/* 정답·오답·재도전은 포드 전체가 그 색으로 물듭니다. */
+.player-lane.correct {
+  background: linear-gradient(180deg, rgba(24, 86, 46, 0.94) 0%, rgba(9, 24, 18, 0.95) 70%);
+  border: 1px solid rgba(86, 226, 132, 0.75);
+  box-shadow: 0 0 34px rgba(66, 214, 120, 0.4), 0 14px 32px rgba(0, 0, 0, 0.5);
+}
+
+.player-lane.explain {
+  background: linear-gradient(180deg, rgba(104, 34, 40, 0.94) 0%, rgba(28, 10, 14, 0.95) 70%);
+  border: 1px solid rgba(255, 130, 130, 0.7);
+  box-shadow: 0 0 34px rgba(255, 96, 96, 0.34), 0 14px 32px rgba(0, 0, 0, 0.5);
+}
+
+.player-lane.retry {
+  background: linear-gradient(180deg, rgba(104, 78, 12, 0.94) 0%, rgba(28, 21, 6, 0.95) 70%);
+  border: 1px solid rgba(255, 206, 84, 0.7);
+  box-shadow: 0 0 34px rgba(245, 190, 60, 0.32), 0 14px 32px rgba(0, 0, 0, 0.5);
+}
+
+.player-lane.finished-result {
+  background: linear-gradient(180deg, rgba(20, 28, 58, 0.94) 0%, rgba(9, 13, 30, 0.95) 70%);
+  border: 1px solid var(--space-line);
+}
+
+/* ── 문제 화면: 여기만 밝게 둡니다 ─────────────────────────────────── */
+/* 우주선 창문처럼 테두리에 빛을 둘러 띄워 놓습니다. */
+.student-question-body {
+  background: linear-gradient(180deg, #ffffff 0%, #f2fbff 100%);
+  border: 2px solid color-mix(in srgb, var(--player-color, #45d6ff) 55%, #ffffff);
+  box-shadow:
+    0 0 22px color-mix(in srgb, var(--player-color, #45d6ff) 30%, transparent),
+    0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.student-question-body p,
+.student-question-body strong {
+  color: #10202f;
+}
+
+.student-question-meta span {
+  background: #e6f6fb;
+  color: #0f6f75;
+}
+
+/* ── 보기 버튼: 밝게 두되 게임 버튼처럼 ───────────────────────────── */
+.choice-grid button {
+  background: linear-gradient(180deg, #ffffff 0%, #eef8ff 100%);
+  border-color: #b9d9ea;
+  box-shadow: 0 3px 0 #9dc2d8, 0 0 14px rgba(69, 214, 255, 0.16);
+  color: #10202f;
+}
+
+.choice-grid button:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ffffff 0%, #e2f5ff 100%);
+  border-color: var(--neon);
+  box-shadow: 0 3px 0 #7fb6d2, 0 0 20px rgba(69, 214, 255, 0.45);
+}
+
+.choice-grid button:active:not(:disabled) {
+  box-shadow: 0 0 0 #9dc2d8, 0 0 16px rgba(69, 214, 255, 0.35);
+}
+
+.choice-grid button span {
+  background: linear-gradient(180deg, #45d6ff 0%, #1f8bd8 100%);
+  color: #04203a;
+}
+
+/* ── 준비 화면 ────────────────────────────────────────────────────── */
+.setup-step-card,
+.setup-ready-card {
+  background: rgba(10, 15, 34, 0.7);
+  border: 1px solid var(--space-line);
+  color: var(--space-ink);
+}
+
+.setup-step-card > strong,
+.setup-ready-card strong {
+  color: var(--space-ink);
+}
+
+.setup-player-lane .result-kicker {
+  background: rgba(69, 214, 255, 0.12);
+  color: var(--neon);
+}
+
+/* 번호·난이도 버튼은 어두운 화면 위에 놓이므로 글자를 밝게 합니다. */
+.setup-player-lane .attendance-number-pad button,
+.setup-player-lane .difficulty-choice-grid button {
+  background: rgba(24, 33, 64, 0.92);
+  border-color: color-mix(in srgb, var(--player-color, #45d6ff) 45%, transparent);
+  color: #f2f7ff;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45);
+}
+
+.setup-player-lane .attendance-number-pad button:hover:not(:disabled),
+.setup-player-lane .difficulty-choice-grid button:hover {
+  background: color-mix(in srgb, var(--player-color, #45d6ff) 26%, rgba(24, 33, 64, 0.95));
+  border-color: var(--player-color, var(--neon));
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.45),
+    0 0 18px color-mix(in srgb, var(--player-color, #45d6ff) 45%, transparent);
+}
+
+.setup-player-lane .attendance-number-pad button:active:not(:disabled),
+.setup-player-lane .difficulty-choice-grid button:active {
+  background: color-mix(in srgb, var(--player-color, #45d6ff) 34%, rgba(24, 33, 64, 0.95));
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.45);
+  transform: translateY(3px);
+}
+
+/* ── 결과 화면 ────────────────────────────────────────────────────── */
+.student-result-summary,
+.student-result-list,
+.student-result-list li {
+  color: var(--space-ink);
+}
+
+.student-result-list li {
+  background: rgba(20, 28, 58, 0.82);
+  border-color: var(--space-line);
+}
+
+.correct-result {
+  color: #6ee79b;
+}
+
+.wrong-result {
+  color: #ff9a9a;
+}
+
+/* ── 정답·오답 알림 ───────────────────────────────────────────────── */
+.success-burst {
+  background: rgba(24, 86, 46, 0.9);
+  border: 1px solid rgba(110, 231, 155, 0.7);
+  color: #b9f5ce;
+  box-shadow: 0 0 22px rgba(66, 214, 120, 0.5);
+}
+
+.wrong-burst {
+  background: rgba(96, 42, 20, 0.9);
+  border: 1px solid rgba(255, 178, 120, 0.7);
+  color: #ffd9bd;
+  box-shadow: 0 0 22px rgba(255, 150, 80, 0.4);
+}
+
+/* 화면에 움직임이 불편한 경우를 위해 애니메이션을 멈춥니다. */
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
+}
