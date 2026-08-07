@@ -2922,3 +2922,51 @@ body {
 .timer-card.urgent {
   animation: gentle-beat 0.9s ease-in-out infinite;
 }
+
+/* ── 자리마다 다른 색 ────────────────────────────────────────────────
+   빨·주·노·초·파 순서로 자리 색이 정해집니다(App.tsx의 playerPalette).
+   "노랑 자리 친구 차례예요" 처럼 색으로 부를 수 있게 하려는 것입니다.
+   정답·오답일 때 칠해지는 초록/빨강은 그대로 두어야 하므로, 아무 표시도
+   없는 상태에만 자리 색을 깝니다. */
+.player-lane:not(.correct):not(.retry):not(.explain) {
+  background: var(--player-tint, rgba(255, 255, 255, 0.94));
+  border-color: color-mix(in srgb, var(--player-color, #d7e6ea) 34%, white);
+}
+
+/* 정답이라 초록으로 바뀌어도 자리 색은 위쪽 띠로 계속 보입니다. */
+.player-lane::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 5px;
+  background: var(--player-color, transparent);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.player-lane header {
+  padding-top: 3px;
+}
+
+.player-lane header strong {
+  color: color-mix(in srgb, var(--player-color, #123) 62%, #17303a);
+}
+
+/* 준비 화면의 번호·난이도 버튼도 자기 자리 색을 입습니다. */
+.setup-player-lane .attendance-number-pad button,
+.setup-player-lane .difficulty-choice-grid button {
+  border-color: color-mix(in srgb, var(--player-color, #cfe3e8) 40%, white);
+  color: color-mix(in srgb, var(--player-color, #17303a) 78%, #17303a);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--player-color, #dfe9f0) 22%, white);
+}
+
+.setup-player-lane .attendance-number-pad button:active:not(:disabled),
+.setup-player-lane .difficulty-choice-grid button:active {
+  background: var(--player-tint, #f4fbff);
+  box-shadow: 0 0 0 color-mix(in srgb, var(--player-color, #dfe9f0) 22%, white);
+  transform: translateY(3px);
+}
+
+.setup-player-lane .result-kicker {
+  background: var(--player-tint, #f1f9fb);
+  color: color-mix(in srgb, var(--player-color, #17303a) 72%, #17303a);
+}

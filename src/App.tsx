@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import QRCode from 'qrcode';
 import {
   BarChart3,
@@ -28,7 +29,20 @@ import { curriculum } from './data/curriculum';
 import { generateQuestions } from './data/questionFactory';
 import type { AnswerRecord, ConceptTag, Difficulty, Lesson, Player, PlayerQuestionState, Question, SessionDuration, Unit } from './types';
 
-const playerPalette = ['#19a7a8', '#f2b705', '#ef6f6c', '#4f7cff', '#32a852'];
+// 자리 색은 빨강·주황·노랑·초록·파랑 순서입니다. 아이들이 "나는 노랑" 하고
+// 바로 알아볼 수 있게 무지개 순서를 씁니다. 글씨에 쓰는 진한 색(color)과
+// 자리 배경에 까는 연한 색(tint)을 짝지어 둡니다.
+const playerPalette = ['#e5484d', '#f0761a', '#d99e00', '#2ea043', '#3b6ef5'];
+// 배경은 아주 옅게 깝니다. 정답(초록)·오답(빨강)으로 칠해질 때가 더 진해야
+// 아이들이 맞았는지 틀렸는지를 자리 색과 헷갈리지 않습니다.
+const playerTints = ['#fff7f7', '#fff9f2', '#fffcef', '#f4fbf5', '#f5f8ff'];
+const laneStyleFor = (playerId: number) => {
+  const at = (playerId - 1) % playerPalette.length;
+  return {
+    '--player-color': playerPalette[at],
+    '--player-tint': playerTints[at],
+  } as CSSProperties;
+};
 const playerIcons = [Rocket, Star, Trophy, Crown, Medal] as const;
 let successSoundUrl: string | null = null;
 const durations: SessionDuration[] = [30, 60, 120];
@@ -394,9 +408,17 @@ const playWrongSound = () => {
   ]);
 };
 
-// 보기를 누를 때 나는 아주 짧은 "톡" 소리입니다.
+// 보기나 번호를 누를 때 나는 아주 짧은 "톡" 소리입니다.
 const playTapSound = () => {
   playBlips([{ frequency: 880, at: 0, length: 0.05, volume: 0.07, type: 'triangle' }]);
+};
+
+// 한 단계를 마쳤을 때 나는 "딩동" 소리입니다.
+const playReadySound = () => {
+  playBlips([
+    { frequency: 783.99, at: 0, length: 0.09, volume: 0.1, type: 'triangle' },
+    { frequency: 1046.5, at: 0.07, length: 0.14, volume: 0.1, type: 'triangle' },
+  ]);
 };
 
 const PlayerAvatar = ({ player, active = false }: { player: Player; active?: boolean }) => {
@@ -696,16 +718,20 @@ function App() {
   };
 
   const selectAttendanceNumber = (studentId: number, attendanceNo: number) => {
+    playTapSound();
     updateStudentConfig(studentId, { attendanceNo });
     setStudentSetupSteps((prev) => ({ ...prev, [studentId]: 'difficulty' }));
   };
 
   const chooseDifficulty = (studentId: number, difficulty: Difficulty) => {
+    // 난이도까지 고르면 준비가 끝나므로 '딩동' 하고 두 음을 냅니다.
+    playReadySound();
     updateStudentConfig(studentId, { difficulty });
     setStudentSetupSteps((prev) => ({ ...prev, [studentId]: 'ready' }));
   };
 
   const resetStudentSetup = (studentId: number) => {
+    playTapSound();
     setStudentSetupSteps((prev) => ({ ...prev, [studentId]: 'attendance' }));
   };
 
@@ -1015,7 +1041,11 @@ function App() {
             const config = studentConfigs[player.id] ?? { attendanceNo: player.id, difficulty: '중' as Difficulty };
 
             return (
-              <article className={`player-lane setup-player-lane ${step}`} key={player.id}>
+              <article
+                className={`player-lane setup-player-lane ${step}`}
+                key={player.id}
+                style={laneStyleFor(player.id)}
+              >
                 <header>
                   <PlayerAvatar player={player} />
                   <strong>{player.id}번 자리</strong>
@@ -1180,7 +1210,11 @@ function App() {
               const successActive = Boolean(successSignals[player.id]);
               const wrongActive = Boolean(wrongSignals[player.id]);
               return (
-                <article className={`player-lane student-question ${mode === 'finished' ? 'finished-result' : state.feedback} ${successActive ? 'success-signal' : ''} ${wrongActive ? 'wrong-signal' : ''}`} key={player.id}>
+                <article
+                  className={`player-lane student-question ${mode === 'finished' ? 'finished-result' : state.feedback} ${successActive ? 'success-signal' : ''} ${wrongActive ? 'wrong-signal' : ''}`}
+                  key={player.id}
+                  style={laneStyleFor(player.id)}
+                >
                   <header>
                     <PlayerAvatar player={player} active={successActive} />
                     <strong>{player.name}</strong>
