@@ -3758,19 +3758,15 @@ select:focus {
   transform: translate(4px, 4px);
 }
 
-/* ── 주사선과 화면 가장자리 어둠 ──────────────────────────────────── */
+/* ── 화면 가장자리 어둠 ────────────────────────────────────────────
+   내용보다 뒤(z-index 0)에 깝니다. 앞에 덮으면 문제 글씨까지 어두워집니다. */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: 0;
   pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.1) 0 1px,
-    transparent 1px 3px
-  );
-  box-shadow: inset 0 0 190px rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 0 170px rgba(0, 0, 0, 0.55);
 }
 
 /* ── 각진 모서리 ──────────────────────────────────────────────────── */
@@ -3897,4 +3893,242 @@ body::after {
 
 .timer-cluster.urgent .sand-timer {
   animation: sand-tip 0.9s ease-in-out infinite;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   읽는 곳은 선명하게, 브라운관 결은 틀에만
+   ────────────────────────────────────────────────────────────────────
+   주사선을 화면 전체에 덮으니 문제 글씨와 보기, 도움말까지 흐려졌습니다.
+   주사선은 조종석 틀(상단바·명령바·바닥판·포드 테두리)에만 깔고,
+   문제·보기·도움말 판은 불투명하게 덮어 그 위로 아무것도 지나가지
+   않게 합니다.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── 틀에만 주사선 ────────────────────────────────────────────────── */
+.app-header,
+.game-topbar,
+.command-bar,
+.setup-hero,
+.setup-options,
+.setup-screen {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.18) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+.playfield {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.2) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+/* 포드는 자리 색 바탕 위에 주사선을 한 겹 얹습니다. */
+.player-lane:not(.correct):not(.retry):not(.explain) {
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.2) 0 1px, transparent 1px 3px),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--player-color, #45d6ff) 12%, rgba(13, 19, 40, 0.94)) 0%,
+      rgba(9, 13, 30, 0.95) 62%
+    );
+}
+
+/* ── 문제 판: 완전히 불투명하게 ───────────────────────────────────── */
+.student-question-body {
+  background: #0c1226;
+  border-width: 3px;
+}
+
+.student-question-body p,
+.student-question-body strong {
+  color: #ffffff;
+  text-shadow: none;
+}
+
+/* ── 보기 판 ──────────────────────────────────────────────────────── */
+.student-answer-dock {
+  background: #000000;
+}
+
+.choice-grid button {
+  background: #222f54;
+  border-color: rgba(150, 205, 255, 0.7);
+}
+
+.choice-grid button:hover:not(:disabled) {
+  background: #2e3f70;
+}
+
+.choice-grid button:active:not(:disabled) {
+  background: #3a4f8c;
+}
+
+/* ── 도움말 판 ────────────────────────────────────────────────────── */
+.student-feedback {
+  background: #0c1226;
+}
+
+.support-card,
+.quick-support-card {
+  background: #121a36;
+}
+
+.student-feedback p {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   갤러그(비행기 슈팅 게임) 컨셉
+   ────────────────────────────────────────────────────────────────────
+   갤러그 화면은 새까만 바탕에 별이 아래로 흐르고, 그 위에 원색 네온이
+   또렷하게 찍힙니다. 모서리는 둥글지 않고 각져 있습니다.
+   바탕이 완전한 검정이라 흰 글씨가 가장 선명하게 보입니다.
+   ════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --space-panel: rgba(0, 0, 0, 0.9);
+  --space-raised: #0a0a16;
+}
+
+/* 별은 갤러그처럼 위에서 아래로 흐릅니다. */
+@keyframes star-drift {
+  from { transform: translate3d(0, -300px, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+body::before {
+  animation: star-drift 90s linear infinite;
+}
+
+/* ── 각진 모서리 ──────────────────────────────────────────────────── */
+.app-header,
+.game-topbar,
+.command-bar,
+.playfield,
+.setup-screen,
+.setup-hero,
+.setup-options,
+.setup-summary,
+.player-lane,
+.setup-player-lane,
+.student-question-body,
+.student-answer-dock,
+.student-feedback,
+.student-result-summary,
+.setup-step-card,
+.setup-ready-card,
+.choice-grid button,
+.primary-button,
+.teacher-button,
+.secondary-button,
+.icon-button,
+.timer-card,
+.big-segmented button,
+.time-options button,
+.setup-player-lane .attendance-number-pad button,
+.setup-player-lane .difficulty-choice-grid button {
+  border-radius: 2px;
+}
+
+.player-lane::after {
+  border-radius: 0;
+}
+
+/* ── 새까만 바탕 ──────────────────────────────────────────────────── */
+.app-header,
+.game-topbar,
+.command-bar,
+.setup-hero,
+.setup-options,
+.setup-summary,
+.setup-screen,
+.playfield {
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+.player-lane:not(.correct):not(.retry):not(.explain) {
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--player-color, #45d6ff) 10%, #000000) 0%,
+      #000000 60%
+    );
+  border-width: 2px;
+  border-color: var(--player-color, var(--neon));
+}
+
+.student-question-body,
+.student-feedback,
+.student-result-summary {
+  background: #000000;
+}
+
+.student-answer-dock {
+  background: #000000;
+  border-color: rgba(69, 214, 255, 0.4);
+}
+
+/* ── 원색 네온 ────────────────────────────────────────────────────── */
+.player-lane header strong {
+  color: var(--player-color, #ffffff);
+  text-shadow: 0 0 10px var(--player-color, #45d6ff);
+  letter-spacing: 0.04em;
+}
+
+.eyebrow,
+.app-header h1,
+.game-topbar h2 {
+  text-shadow: 0 0 12px rgba(69, 214, 255, 0.75);
+}
+
+.round-status span,
+.command-status span,
+.setup-progress span,
+.setup-summary span {
+  background: #000000;
+  border-color: rgba(69, 214, 255, 0.45);
+  color: #7fe6ff;
+}
+
+.timer-card {
+  background: #000000;
+  border-color: #f5b301;
+  color: #ffd86b;
+}
+
+/* 보기 버튼은 검은 화면에서 또렷한 파란 기체처럼 보이게 합니다. */
+.choice-grid button {
+  background: #101a38;
+  border: 2px solid #4fb8ff;
+  box-shadow: 3px 3px 0 #000000;
+}
+
+.choice-grid button:hover:not(:disabled) {
+  background: #17285c;
+  border-color: #8ce6ff;
+  box-shadow: 3px 3px 0 #000000, 0 0 16px rgba(79, 184, 255, 0.6);
+}
+
+.choice-grid button:active:not(:disabled) {
+  background: #1e3576;
+  box-shadow: 0 0 0 #000000, 0 0 16px rgba(79, 184, 255, 0.5);
+  transform: translate(3px, 3px);
+}
+
+.choice-grid button span {
+  background: #4fb8ff;
+  color: #001428;
+  border-radius: 2px;
+}
+
+/* 준비 화면 번호판도 같은 결로 맞춥니다. */
+.setup-player-lane .attendance-number-pad button,
+.setup-player-lane .difficulty-choice-grid button {
+  background: #000000;
+  border-width: 2px;
 }
