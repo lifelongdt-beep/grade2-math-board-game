@@ -3163,8 +3163,7 @@ body::before {
   color: #9d2f2e;
 }
 
-.eyebrow,
-.result-kicker {
+.eyebrow {
   color: var(--neon);
 }
 
@@ -3388,24 +3387,14 @@ body::before {
   transform: translateY(3px);
 }
 
-/* ── 결과 화면 ────────────────────────────────────────────────────── */
+/* ── 결과 화면 ──────────────────────────────────────────────────────
+   무엇을 맞고 틀렸는지 아이가 되짚어 읽는 곳입니다. 문제 화면과 마찬가지로
+   밝은 종이에 진한 글씨 그대로 두고, 포드 테두리로만 우주 느낌을 냅니다. */
 .student-result-summary,
+.student-result-summary strong,
 .student-result-list,
 .student-result-list li {
-  color: var(--space-ink);
-}
-
-.student-result-list li {
-  background: rgba(20, 28, 58, 0.82);
-  border-color: var(--space-line);
-}
-
-.correct-result {
-  color: #6ee79b;
-}
-
-.wrong-result {
-  color: #ff9a9a;
+  color: #17202a;
 }
 
 /* ── 정답·오답 알림 ───────────────────────────────────────────────── */
