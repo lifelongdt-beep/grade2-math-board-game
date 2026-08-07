@@ -3416,3 +3416,62 @@ body::before {
     animation: none;
   }
 }
+
+/* ── 우주 컨셉: 남아 있던 밝은 판 정리 ──────────────────────────────
+   준비 화면에는 흰 판이 여러 겹 깔려 있었습니다. 그 위에 밝은 글씨를
+   올리면 글자가 사라지므로 판까지 같이 어둡게 바꿉니다. */
+.setup-screen {
+  background: rgba(7, 11, 28, 0.62);
+  border-color: var(--space-line);
+  color: var(--space-ink);
+}
+
+.setup-options section,
+.setup-summary span,
+.setup-progress span,
+.round-status span,
+.command-status span,
+.mobile-single-option {
+  background: var(--space-raised);
+  border-color: var(--space-line);
+  color: var(--space-ink);
+}
+
+.setup-options h3,
+.setup-screen h2,
+.setup-screen h3,
+.setup-grid label {
+  color: var(--space-ink);
+}
+
+.setup-grid label small,
+.setup-screen small {
+  color: var(--space-muted);
+}
+
+/* 목록 상자입니다. 창은 물론이고 펼쳐지는 목록까지 어둡게 합니다. */
+.setup-grid select,
+select {
+  color-scheme: dark;
+  background: var(--space-raised);
+  border-color: var(--space-line);
+  color: var(--space-ink);
+}
+
+.setup-grid select:focus,
+select:focus {
+  border-color: var(--neon);
+  outline-color: var(--neon);
+}
+
+/* 자리 포드 안의 글씨는 어두운 배경 위에 놓입니다. */
+.setup-player-lane header small,
+.setup-step-card > strong,
+.setup-ready-card strong,
+.setup-ready-card small {
+  color: var(--space-ink);
+}
+
+.setup-player-lane header small {
+  color: var(--space-muted);
+}
