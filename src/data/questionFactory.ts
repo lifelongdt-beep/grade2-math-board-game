@@ -9247,7 +9247,17 @@ const visualForGeneratedQuestion = (
   }
 
   if (question.type === 'pattern') {
-    return patternVisualFor(['○', '△', '□', '○', '△', '□', '○'], '규칙 자료', 6);
+    // 규칙 찾기 단원에는 무늬 규칙 말고도 곱셈표·덧셈표·달력·쌓기나무 규칙이
+    // 있습니다. 전에는 어떤 문제든 ○△□ 무늬를 붙였는데, 곱셈표 문제 옆에
+    // 도형이 놓이면 문제와 아무 상관이 없는 그림이 됩니다.
+    //
+    // 무늬는 문제에 적힌 그 무늬를 그대로 그립니다. 정해 둔 무늬를 그리면
+    // 문제는 ○○△가 반복된다는데 그림은 ○△□인 일이 생깁니다.
+    const drawn = question.prompt.match(/[○△□◇☆●▲■♥]/g);
+    if (!drawn || drawn.length < 3) return undefined;
+
+    // 마지막에 물음표 자리를 하나 붙여 '다음에 올 모양'을 묻는 그림으로 만듭니다.
+    return patternVisualFor([...drawn, '?'], '무늬 규칙 자료', drawn.length);
   }
 
   return undefined;

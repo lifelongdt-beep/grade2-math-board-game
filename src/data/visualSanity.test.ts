@@ -182,6 +182,33 @@ describe('question visuals', () => {
     expect(broken).toEqual([]);
   });
 
+  it('only draws a shape pattern that the question actually shows', () => {
+    // 규칙 찾기 단원에는 무늬 규칙 말고도 곱셈표·덧셈표·달력 규칙이 있습니다.
+    // 예전에는 이 단원의 모든 문제에 ○△□ 무늬를 붙여서, 곱셈표 문제 옆에
+    // 아무 상관 없는 도형이 놓였습니다. 그림에 그린 모양은 문제에도 그
+    // 순서대로 적혀 있어야 합니다.
+    const mismatched: string[] = [];
+
+    for (const lesson of lessons) {
+      for (const level of levels) {
+        for (const question of generateQuestions(lesson, level)) {
+          if (question.visual?.kind !== 'pattern') continue;
+
+          const drawn = question.visual.items.filter((item) => item !== '?');
+          const inPrompt = question.prompt.match(/[○△□◇☆●▲■♥]/g) ?? [];
+
+          if (drawn.join('') !== inPrompt.join('')) {
+            mismatched.push(
+              `${question.id}: 그림은 ${drawn.join('')}인데 문제에는 ${inPrompt.join('') || '모양이 없음'} — ${question.prompt.slice(0, 30)}`,
+            );
+          }
+        }
+      }
+    }
+
+    expect(mismatched).toEqual([]);
+  });
+
   it('never draws a number line whose marks all sit on one spot', () => {
     const flat: string[] = [];
 
