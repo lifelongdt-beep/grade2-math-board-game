@@ -3649,3 +3649,22 @@ select:focus {
 .student-feedback .support-card span {
   color: #8ce6ff;
 }
+
+/* 도움말 안의 '핵심'·'왜?' 상자입니다. 원래 규칙이 .quick-support-card로
+   한 단계 더 구체적이어서 밝은 배경이 남아 있었습니다. */
+.quick-support-card .quick-core {
+  background: rgba(25, 167, 168, 0.2);
+  border-color: rgba(69, 214, 255, 0.36);
+  color: #a6f2f4;
+}
+
+.quick-support-card .quick-reason {
+  background: rgba(242, 183, 5, 0.16);
+  border-color: rgba(255, 208, 92, 0.36);
+  color: #ffe3a6;
+}
+
+.quick-support-card .quick-core span,
+.quick-support-card .quick-reason span {
+  color: #8ce6ff;
+}
