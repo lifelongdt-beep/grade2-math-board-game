@@ -734,10 +734,14 @@ function App() {
     setStudentSetupSteps(createStudentSetupSteps(playerCount));
   }, [playerCount]);
 
+  // 차시나 인원이 바뀌면 준비를 처음부터 다시 합니다.
+  // mode는 일부러 넣지 않았습니다. 넣으면 설정 화면으로 돌아오는 것만으로도
+  // 이 효과가 돌아서, '다시 풀기'로 난이도만 다시 고르게 해 둔 것이
+  // 출석번호부터 다시 누르는 것으로 되돌아갑니다. 차시와 인원은 설정
+  // 화면에서만 바꿀 수 있으므로 mode를 볼 필요가 없습니다.
   useEffect(() => {
-    if (mode !== 'setup') return;
     setStudentSetupSteps(createStudentSetupSteps(playerCount));
-  }, [lesson.id, mode, playerCount]);
+  }, [lesson.id, playerCount]);
 
   useEffect(() => {
     if (mode !== 'setup') return;
