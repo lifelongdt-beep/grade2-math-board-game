@@ -147,10 +147,11 @@ describe('question visuals', () => {
     expect(mismatched).toEqual([]);
   });
 
-  it('counts in ones and hides the answer for "몇보다 몇만큼 더" questions', () => {
+  it('counts in the question\'s own step and hides the answer for "몇보다 몇만큼 더" questions', () => {
     // '14보다 1만큼 더 큰 수'에 13씩 눈금을 그리면 한 칸을 셀 수가 없습니다.
-    // 눈금은 1씩이어야 하고, 답이 있는 자리는 눈금만 있고 숫자는 없어야
-    // 세어 보지 않고 읽어 버리는 일이 없습니다.
+    // 눈금 한 칸이 문제가 말하는 크기와 같아야(1만큼이면 1씩, 10만큼이면
+    // 10씩) 한 칸만 세면 됩니다. 그리고 답이 있는 자리는 눈금만 있고 숫자는
+    // 없어야 세어 보지 않고 읽어 버리는 일이 없습니다.
     const broken: string[] = [];
 
     for (const lesson of lessons) {
@@ -165,8 +166,8 @@ describe('question visuals', () => {
           if (target < 0) continue;
 
           const line = question.visual;
-          if (line.step !== 1) {
-            broken.push(`${question.id}: 한 칸씩 세는 문제인데 눈금이 ${line.step}씩`);
+          if (line.step !== gap) {
+            broken.push(`${question.id}: ${gap}만큼 세는 문제인데 눈금이 ${line.step}씩`);
           }
           if (from < line.start || from > line.end || target < line.start || target > line.end) {
             broken.push(`${question.id}: ${from}과 ${target}이 ${line.start}~${line.end} 밖`);

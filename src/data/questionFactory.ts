@@ -460,6 +460,7 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
   }
 
   if (
+    visual.kind === 'unit-measure' ||
     visual.kind === 'ruler' ||
     visual.kind === 'clock' ||
     visual.kind === 'calendar' ||
@@ -3529,6 +3530,8 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
         ['재는 물건의 이름', '길이의 정확한 값', '무게를 재는 것'],
         `클립처럼 반복해서 재는 데 쓰는 것을 단위라고 합니다.`,
         'measurement', '단위의 뜻 알기',
+        // 자를 배우기 전 차시입니다. 그림 짐작에 맡기면 자가 나옵니다.
+        unitMeasureVisualFor('연필', '클립', clips),
       );
     }
     if (variant === 1) {
@@ -7204,6 +7207,15 @@ const numberLineVisualFor = (
   };
 };
 
+// 임의 단위로 재는 차시에 쓰는 그림입니다.
+const unitMeasureVisualFor = (object: string, unit: string, count: number): QuestionVisual => ({
+  kind: 'unit-measure',
+  label: `${object}을 ${unit}으로 재어 본 그림`,
+  object,
+  unit,
+  count,
+});
+
 const barModelVisualFor = (bars: Array<{ label: string; value: number }>, label = '막대모델 자료'): QuestionVisual => ({
   kind: 'bar-model',
   label,
@@ -9073,23 +9085,24 @@ const visualForGeneratedQuestion = (question: Question, index: number): Question
     }
 
     // '14보다 1만큼 더 큰 수'는 한 칸만 움직이면 되는 문제입니다.
-    // 눈금이 13씩이면 셀 수가 없으니 1칸씩으로 하고, 필요한 언저리만
-    // 보여 줍니다. 정답 자리는 눈금만 두고 숫자는 감춥니다.
+    // 눈금이 13씩이면 셀 수가 없습니다. 눈금 한 칸을 문제가 말하는 크기와
+    // 같게 맞추면(1만큼이면 1씩, 10만큼이면 10씩) 한 칸만 세면 됩니다.
+    // 필요한 언저리만 보여 주고, 정답 자리는 눈금만 두고 숫자는 감춥니다.
     const nearby = question.prompt.match(/(\d+)보다 (\d+)만큼 더 (큰|작은)/);
     if (nearby) {
       const from = Number(nearby[1]);
       const gap = Number(nearby[2]);
       const target = nearby[3] === '큰' ? from + gap : from - gap;
 
-      if (Number.isFinite(from) && Number.isFinite(gap) && gap <= 5 && target >= 0) {
-        const low = Math.max(0, Math.min(from, target) - 3);
-        const high = Math.max(from, target) + 3;
+      if (Number.isFinite(from) && Number.isFinite(gap) && gap >= 1 && target >= 0) {
+        const low = Math.max(0, Math.min(from, target) - gap * 3);
+        const high = Math.max(from, target) + gap * 3;
         return {
           kind: 'number-line',
-          label: `${from}에서 한 칸씩 세어 보는 자료`,
+          label: `${from}에서 ${gap}씩 세어 보는 자료`,
           start: low,
           end: high,
-          step: 1,
+          step: gap,
           marks: [{ value: from, label: `${from}`, active: true }],
           hiddenLabels: [target],
         };
@@ -9881,6 +9894,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         times, [times + 1, times - 1, 1],
         `클립이 ${times}번 들어갔으므로 연필의 길이는 클립으로 ${times}번입니다.`,
         'measurement', '단위를 이어 세는 과정',
+        unitMeasureVisualFor('연필', '클립', times),
       );
     }
     if (title.includes('1cm를 알아')) {

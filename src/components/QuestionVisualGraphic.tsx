@@ -88,6 +88,62 @@ const renderCube = (cube: { x: number; y: number; z: number }, index: number) =>
   );
 };
 
+// 연필 하나를 그리고, 그 길이에 딱 맞게 클립을 이어 놓습니다.
+// 자는 그리지 않습니다. 이 차시는 자를 배우기 전이기 때문입니다.
+function UnitMeasureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'unit-measure' }> }) {
+  const count = Math.max(1, Math.min(12, visual.count));
+  const left = 30;
+  const width = 316;
+  const unitWidth = width / count;
+
+  return (
+    <svg viewBox="0 0 376 128" role="img" aria-label={visual.label}>
+      {/* 연필 */}
+      <rect x={left} y="20" width={width - 26} height="24" rx="4" fill="#ffd86b" stroke="#b9812a" strokeWidth="2.5" />
+      <rect x={left} y="20" width="16" height="24" rx="4" fill="#f2a0a0" stroke="#b9812a" strokeWidth="2.5" />
+      <polygon
+        points={`${left + width - 26},20 ${left + width},32 ${left + width - 26},44`}
+        fill="#f7e2b8"
+        stroke="#b9812a"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+      />
+      <text x={left - 4} y="14" fill="#0f7175" fontSize="14" fontWeight="900">
+        {visual.object}
+      </text>
+
+      {/* 클립을 겹치지 않게 이어 놓은 모습 */}
+      {Array.from({ length: count }).map((_, index) => (
+        <g key={index}>
+          <rect
+            x={left + index * unitWidth + 2}
+            y="62"
+            width={unitWidth - 4}
+            height="22"
+            rx="11"
+            fill="#dffafa"
+            stroke="#0f9f9f"
+            strokeWidth="2.5"
+          />
+          <rect
+            x={left + index * unitWidth + 7}
+            y="67"
+            width={Math.max(3, unitWidth - 16)}
+            height="12"
+            rx="6"
+            fill="none"
+            stroke="#0f9f9f"
+            strokeWidth="1.8"
+          />
+        </g>
+      ))}
+      <text x={left - 4} y="104" fill="#0f7175" fontSize="14" fontWeight="900">
+        {visual.unit}
+      </text>
+    </svg>
+  );
+}
+
 function PlaneShapesGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'plane-shapes' }> }) {
   return (
     <svg viewBox="0 0 376 128" role="img" aria-label={visual.label}>
@@ -699,6 +755,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'cube-views' && <CubeViewsGraphic visual={visual} />}
       {visual.kind === 'tangram' && <TangramGraphic visual={visual} />}
       {visual.kind === 'number-line' && <NumberLineGraphic visual={visual} />}
+      {visual.kind === 'unit-measure' && <UnitMeasureGraphic visual={visual} />}
       {visual.kind === 'place-value' && <PlaceValueGraphic visual={visual} />}
       {visual.kind === 'bar-model' && <BarModelGraphic visual={visual} />}
       {visual.kind === 'ruler' && <RulerGraphic visual={visual} />}

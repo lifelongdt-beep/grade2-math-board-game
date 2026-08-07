@@ -105,6 +105,16 @@ export interface TangramVisual {
   label: string;
 }
 
+// 자를 배우기 전에, 클립이나 뼘처럼 가까이 있는 것을 단위로 삼아 길이를
+// 재어 보는 차시가 있습니다. 그때 자를 그려 주면 안 됩니다.
+export interface UnitMeasureVisual {
+  kind: 'unit-measure';
+  label: string;
+  object: string;
+  unit: string;
+  count: number;
+}
+
 export interface NumberLineVisual {
   kind: 'number-line';
   label: string;
@@ -217,6 +227,7 @@ export type QuestionVisual =
   | CubeViewsVisual
   | TangramVisual
   | NumberLineVisual
+  | UnitMeasureVisual
   | PlaceValueVisual
   | BarModelVisual
   | RulerVisual
