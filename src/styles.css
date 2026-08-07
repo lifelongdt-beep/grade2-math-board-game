@@ -4240,3 +4240,31 @@ body::before {
   align-items: center;
   gap: 7px;
 }
+
+/* ── 긴 문제의 글씨 크기 ────────────────────────────────────────────
+   글이 길다고 무조건 작게 줄이다 보니, 아래가 텅 비었는데도 글씨만
+   작아지는 일이 있었습니다. 문제 판은 넘칠 때 스크롤이 되므로 겁내지 말고
+   키웁니다. 교실 뒤에서도 읽혀야 합니다. */
+.student-question-body.long-question p {
+  font-size: clamp(20px, 1.6vw, 28px);
+  line-height: 1.18;
+}
+
+.student-question-body.very-long-question p {
+  font-size: clamp(18px, 1.4vw, 25px);
+  line-height: 1.16;
+}
+
+.players-3 .student-question-body.long-question p,
+.players-4 .student-question-body.long-question p,
+.players-5 .student-question-body.long-question p {
+  font-size: clamp(17px, 1.25vw, 23px);
+  line-height: 1.16;
+}
+
+.players-3 .student-question-body.very-long-question p,
+.players-4 .student-question-body.very-long-question p,
+.players-5 .student-question-body.very-long-question p {
+  font-size: clamp(15px, 1.1vw, 20px);
+  line-height: 1.14;
+}

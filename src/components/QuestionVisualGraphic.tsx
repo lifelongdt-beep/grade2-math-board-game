@@ -91,7 +91,6 @@ const renderCube = (cube: { x: number; y: number; z: number }, index: number) =>
 function PlaneShapesGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'plane-shapes' }> }) {
   return (
     <svg viewBox="0 0 376 128" role="img" aria-label={visual.label}>
-      <rect x="4" y="6" width="368" height="116" rx="14" fill="#f6fcff" stroke="#d7edf2" />
       {visual.items.map((item, index) => renderPlaneShape(item, index, visual.items.length))}
     </svg>
   );
@@ -100,7 +99,6 @@ function PlaneShapesGraphic({ visual }: { visual: Extract<QuestionVisual, { kind
 function CubeStackGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'cube-stack' }> }) {
   return (
     <svg viewBox="0 0 376 142" role="img" aria-label={visual.label}>
-      <rect x="4" y="6" width="368" height="130" rx="14" fill="#f6fcff" stroke="#d7edf2" />
       <g transform="translate(8 8)">
         {visual.cubes
           .slice()

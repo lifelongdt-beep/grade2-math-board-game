@@ -7808,13 +7808,15 @@ const shapeFocusForLesson = (lesson: Lesson, index: number): ShapeFocus => {
   return (['원', '삼각형', '사각형', '칠교'] as ShapeFocus[])[index % 4];
 };
 
-const shapeVisualForTargets = (label: string, targets: PlaneTarget[], index: number): QuestionVisual => {
-  const base = rotate<PlaneTarget>(['원', '삼각형', '사각형'], index);
-  const items = base.map((target, targetIndex) =>
-    itemForShape(target, targets.includes(target), `${targetIndex + 1}`, index + targetIndex),
+// '원 1개와 삼각형 1개의 꼭짓점을 모두 세면?' 같은 문제에 쓰는 그림입니다.
+// 전에는 원·삼각형·사각형 셋을 늘 그리고 번호를 붙였는데, 두 가지 문제가
+// 있었습니다. 문제에 없는 도형까지 그려져 그것도 세게 되고, 도형 아래 번호가
+// '번호를 고르는 문제'처럼 보였습니다. 문제가 말한 도형만, 번호 없이 그립니다.
+const shapeVisualForTargets = (label: string, targets: PlaneTarget[], index: number): QuestionVisual =>
+  planeShapesVisual(
+    label,
+    targets.map((target, targetIndex) => itemForShape(target, true, '', index + targetIndex)),
   );
-  return planeShapesVisual(label, items);
-};
 
 const countWrongs = (answer: number, unit = '개') =>
   [answer + 1, Math.max(0, answer - 1), answer + 2, Math.max(0, answer - 2), answer + 3]
@@ -10209,8 +10211,10 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       );
     }
     if (title.includes('관계를 식으로')) {
-      const a = 10 + (seed % 30);
-      const b = 5 + (seed % 20);
+      // b를 a보다 작게 잡습니다. 그러지 않으면 오답 보기 a-b가 음수가 되어
+      // 2학년이 아직 배우지 않은 수가 보기에 나옵니다.
+      const b = 5 + (seed % 14);
+      const a = b + 7 + (seed % 15);
       return makeQuestion(
         lesson, difficulty, index,
         `${a}+${b}=${a + b}을 뺄셈식으로 바꾸는 과정입니다. □에 알맞은 수는? ① 전체는 ${a + b}입니다. ② 부분 하나는 ${b}입니다. ③ ${a + b}-${b}=□`,
@@ -10220,8 +10224,8 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       );
     }
     if (title.includes('□의 값')) {
-      const a = 10 + (seed % 30);
-      const b = 5 + (seed % 20);
+      const b = 5 + (seed % 14);
+      const a = b + 7 + (seed % 15);
       return makeQuestion(
         lesson, difficulty, index,
         `${a}+□=${a + b}에서 □를 구하는 과정입니다. □에 알맞은 수는? ① 전체는 ${a + b}입니다. ② 아는 부분은 ${a}입니다. ③ ${a + b}-${a}=□`,
@@ -10786,12 +10790,18 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
           'shape', '조건 함께 보기 · 여러 도형의 변 수 모으기',
         );
       }
+      // 문제가 말하는 두 도형이 그대로 보여야 합니다. 그림 짐작에 맡기면
+      // 삼각형 두 개가 나와 문제와 그림이 어긋납니다.
       return makeQuestion(
         lesson, difficulty, index,
         '변이 3개인 도형과 변이 4개인 도형의 꼭짓점 수를 더하면 몇 개일까요?',
         7, [3, 4, 8],
         `변이 3개인 도형은 꼭짓점이 3개, 변이 4개인 도형은 꼭짓점이 4개이므로 3+4=7개입니다.`,
         'shape', '조건 함께 보기 · 두 도형의 꼭짓점 모으기',
+        planeShapesVisual('변이 3개인 도형과 변이 4개인 도형', [
+          { kind: 'triangle', active: true },
+          { kind: 'square', active: true },
+        ]),
       );
     }
 
