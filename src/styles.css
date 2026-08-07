@@ -2970,3 +2970,66 @@ body {
   background: var(--player-tint, #f1f9fb);
   color: color-mix(in srgb, var(--player-color, #17303a) 72%, #17303a);
 }
+
+/* ── 검정 배경 ──────────────────────────────────────────────────────
+   전자칠판에서는 배경이 어두울수록 흰 카드가 또렷하게 떠 보입니다.
+   글자는 모두 흰 카드 안에 있으므로 배경만 검게 바꿉니다. */
+:root {
+  --bg: #000000;
+}
+
+body {
+  background-color: #000000;
+  /* 완전히 새까맣기만 하면 딱딱하니, 아주 은은한 빛만 남겨 둡니다. */
+  background-image:
+    radial-gradient(circle at 12% 16%, rgba(25, 167, 168, 0.16) 0, transparent 34%),
+    radial-gradient(circle at 86% 10%, rgba(242, 183, 5, 0.12) 0, transparent 30%),
+    radial-gradient(circle at 72% 88%, rgba(79, 124, 255, 0.14) 0, transparent 32%);
+  background-attachment: fixed;
+}
+
+/* 준비 화면의 배경 그림도 검정으로 덮습니다. */
+.app-shell.setup {
+  background: #000000;
+}
+
+.app-shell.fullscreen-mode {
+  background: #000000;
+}
+
+/* 검은 배경 위에서 카드가 떠 보이도록 그림자를 조금 더 줍니다. */
+.player-lane,
+.app-header,
+.command-bar,
+.game-topbar,
+.playfield {
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+}
+
+/* ── 모래시계 ───────────────────────────────────────────────────── */
+.sand-timer {
+  flex: none;
+  display: block;
+}
+
+/* 모래가 또르르 떨어지는 모습입니다. */
+.sand-timer-fall {
+  animation: sand-fall 0.7s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes sand-fall {
+  0% { opacity: 0.2; }
+  40% { opacity: 1; }
+  100% { opacity: 0.2; }
+}
+
+/* 시간이 얼마 안 남으면 모래시계도 같이 흔들립니다. */
+.timer-card.urgent .sand-timer {
+  animation: sand-tip 0.9s ease-in-out infinite;
+}
+
+@keyframes sand-tip {
+  0%, 100% { transform: rotate(-7deg); }
+  50% { transform: rotate(7deg); }
+}

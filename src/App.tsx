@@ -421,6 +421,72 @@ const playReadySound = () => {
   ]);
 };
 
+// 남은 시간만큼 위쪽 모래가 남고, 지난 만큼 아래에 쌓입니다.
+// 숫자를 빨리 못 읽는 아이도 모래를 보고 시간을 가늠할 수 있습니다.
+const SandTimer = ({ remaining, total }: { remaining: number; total: number }) => {
+  const left = total > 0 ? Math.min(1, Math.max(0, remaining / total)) : 0;
+  const TOP_FLOOR = 16.4;
+  const TOP_CEILING = 5;
+  const BOTTOM_FLOOR = 29;
+  const BOTTOM_CEILING = 17.6;
+  const topHeight = (TOP_FLOOR - TOP_CEILING) * left;
+  const bottomHeight = (BOTTOM_FLOOR - BOTTOM_CEILING) * (1 - left);
+
+  return (
+    <svg
+      className="sand-timer"
+      viewBox="0 0 26 34"
+      width="23"
+      height="30"
+      role="img"
+      aria-label={`남은 시간 ${remaining}초`}
+    >
+      <defs>
+        <clipPath id="sand-timer-top">
+          <path d="M5 5 H21 L13.6 16.4 H12.4 Z" />
+        </clipPath>
+        <clipPath id="sand-timer-bottom">
+          <path d="M12.4 17.6 H13.6 L21 29 H5 Z" />
+        </clipPath>
+      </defs>
+
+      {/* 유리 */}
+      <path d="M5 5 H21 L13.6 16.4 H12.4 Z" fill="#fffdf4" />
+      <path d="M12.4 17.6 H13.6 L21 29 H5 Z" fill="#fffdf4" />
+
+      {/* 모래 */}
+      <rect
+        x="4"
+        y={TOP_FLOOR - topHeight}
+        width="18"
+        height={topHeight}
+        fill="#f5b301"
+        clipPath="url(#sand-timer-top)"
+      />
+      <rect
+        x="4"
+        y={BOTTOM_FLOOR - bottomHeight}
+        width="18"
+        height={bottomHeight}
+        fill="#f5b301"
+        clipPath="url(#sand-timer-bottom)"
+      />
+      {left > 0 && left < 1 && <rect className="sand-timer-fall" x="12.6" y="16" width="0.9" height="7" fill="#f5b301" />}
+
+      {/* 테두리와 나무틀 */}
+      <path
+        d="M5 5 H21 L13.6 16.4 H12.4 Z M12.4 17.6 H13.6 L21 29 H5 Z"
+        fill="none"
+        stroke="#b9812a"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      <rect x="3" y="1.6" width="20" height="3.4" rx="1.7" fill="#c98f2f" />
+      <rect x="3" y="29" width="20" height="3.4" rx="1.7" fill="#c98f2f" />
+    </svg>
+  );
+};
+
 const PlayerAvatar = ({ player, active = false }: { player: Player; active?: boolean }) => {
   const Icon = playerIcons[(player.id - 1) % playerIcons.length];
 
@@ -1163,6 +1229,7 @@ function App() {
           <div className={`timer-card ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}>
             <Timer size={22} />
             <strong>{remainingSeconds}초</strong>
+            <SandTimer remaining={remainingSeconds} total={sessionDuration} />
           </div>
           {!isMobileEntry && (
             <button className="teacher-button" type="button" onClick={() => setTeacherOpen(true)}>
