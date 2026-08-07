@@ -9252,10 +9252,13 @@ const visualForGeneratedQuestion = (
     // 전에는 어떤 문제든 ○△□ 무늬를 붙여서, 곱셈표 문제 옆에 아무 상관 없는
     // 도형이 놓였습니다. 문제가 무엇을 보라고 하는지에 따라 그림을 고릅니다.
 
-    // ① 문제가 무늬를 적어 두었으면 그 무늬를 그대로 그립니다.
+    // ① 문제가 무늬를 늘어놓았으면 그 무늬를 그대로 그립니다.
     //    정해 둔 무늬를 그리면 문제는 ○○△라는데 그림은 ○△□인 일이 생깁니다.
-    const drawn = question.prompt.match(/[○△□◇☆●▲■♥]/g);
-    if (drawn && drawn.length >= 3) {
+    //    쉼표로 이어진 것만 봅니다. □는 빈칸 기호로도 쓰여서, 낱개로 세면
+    //    '□에 알맞은 수는?'의 빈칸까지 도형으로 세어 버립니다.
+    const shapeRun = question.prompt.match(/[○△◇☆●▲■♥□](?:\s*,\s*[○△◇☆●▲■♥□]){2,}/);
+    if (shapeRun) {
+      const drawn = shapeRun[0].match(/[○△◇☆●▲■♥□]/g) ?? [];
       return patternVisualFor([...drawn, '?'], '무늬 규칙 자료', drawn.length);
     }
 
@@ -9299,13 +9302,22 @@ const visualForGeneratedQuestion = (
       };
     }
 
-    // ③ 무늬·모양 이야기인데 문제에 모양이 적혀 있지 않은 문제입니다.
+    // ③ '4, 6, 8, 10, □ 에서 □는?' 같은 수 규칙입니다. 늘어놓은 수를 그대로
+    //    칸에 적고 마지막을 물음표로 둡니다. 아이가 칸을 짚어 가며 얼마씩
+    //    커지는지 셀 수 있습니다.
+    const numberRun = question.prompt.match(/\d+\s*(?:,\s*\d+\s*){2,}/);
+    if (numberRun) {
+      const drawn = numberRun[0].match(/\d+/g) ?? [];
+      return patternVisualFor([...drawn, '?'], '수 규칙 자료', drawn.length);
+    }
+
+    // ④ 무늬·모양 이야기인데 문제에 모양이 적혀 있지 않은 문제입니다.
     //    ('무늬에서 ?에 들어갈 모양은?'처럼 그림이 곧 자료인 경우)
     if (/무늬|모양|색/.test(question.prompt)) {
       return patternVisualFor(['○', '△', '□', '○', '△', '□', '○'], '무늬 규칙 자료', 6);
     }
 
-    // ④ 그 밖에는 그림 없이 둡니다. 상관없는 그림보다 없는 편이 낫습니다.
+    // ⑤ 그 밖에는 그림 없이 둡니다. 상관없는 그림보다 없는 편이 낫습니다.
     return undefined;
   }
 

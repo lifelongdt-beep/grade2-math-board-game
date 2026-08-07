@@ -195,21 +195,15 @@ describe('question visuals', () => {
           if (question.visual?.kind !== 'pattern') continue;
 
           const drawn = question.visual.items.filter((item) => item !== '?');
-          const inPrompt = question.prompt.match(/[○△□◇☆●▲■♥]/g) ?? [];
+          // 그림에 적힌 것은 문제에도 적혀 있어야 합니다. 모양이든 수든
+          // 문제가 늘어놓은 것을 그대로 옮겨 그린 것이어야 하니까요.
+          const allShown = drawn.every((item) => question.prompt.includes(item));
 
-          if (inPrompt.length > 0) {
-            // 문제가 모양을 적어 두었으면 그림도 그 순서 그대로여야 합니다.
-            if (drawn.join('') !== inPrompt.join('')) {
-              mismatched.push(
-                `${question.id}: 그림은 ${drawn.join('')}인데 문제에는 ${inPrompt.join('')} — ${question.prompt.slice(0, 30)}`,
-              );
-            }
-          } else if (!/무늬|모양/.test(question.prompt)) {
-            // '무늬에서 ?에 들어갈 모양은?'처럼 그림이 곧 자료인 문제는
-            // 문제에 모양을 적지 않는 것이 맞습니다. 그러나 곱셈표·덧셈표처럼
-            // 모양 이야기가 아예 없는 문제에 무늬 그림이 붙으면 안 됩니다.
+          // '무늬에서 ?에 들어갈 모양은?'처럼 그림이 곧 자료인 문제만
+          // 예외입니다. 그런 문제는 무늬 이야기라는 것이 문제에 드러납니다.
+          if (!allShown && !/무늬|모양|색/.test(question.prompt)) {
             mismatched.push(
-              `${question.id}: 모양 이야기가 없는 문제에 ${drawn.join('')} 무늬가 붙음 — ${question.prompt.slice(0, 30)}`,
+              `${question.id}: 그림은 ${drawn.join(' ')}인데 문제에 없음 — ${question.prompt.slice(0, 34)}`,
             );
           }
         }
