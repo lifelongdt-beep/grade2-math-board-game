@@ -3110,8 +3110,6 @@ body::before {
 .setup-hero,
 .setup-options,
 .setup-summary,
-.support-card,
-.quick-support-card,
 .mobile-join-card {
   background: var(--space-panel);
   border: 1px solid var(--space-line);
@@ -3129,9 +3127,7 @@ body::before {
 .setup-summary h2,
 .app-header strong,
 .setup-options strong,
-.setup-summary strong,
-.support-card strong,
-.quick-support-card strong {
+.setup-summary strong {
   color: var(--space-ink);
 }
 
@@ -3140,14 +3136,31 @@ body::before {
 .setup-hero p,
 .setup-options p,
 .setup-summary p,
-.support-card p,
-.quick-support-card p,
 .lesson-objective-inline,
 .setup-copy,
-.setup-copy p,
+.setup-copy p {
+  color: var(--space-muted);
+}
+
+/* 오답 도움말은 어려워하는 아이가 읽는 곳입니다. 여기만은 밝은 종이에
+   진한 글씨 그대로 둡니다. 어둡게 칠하면 가장 도움이 필요한 순간에
+   글씨가 흐려집니다. */
+.student-feedback,
+.student-feedback p,
+.student-feedback strong,
+.student-feedback span,
+.support-card,
+.support-card p,
+.support-card strong,
+.quick-support-card,
 .quick-reason,
 .quick-core {
-  color: var(--space-muted);
+  color: #17202a;
+}
+
+.wrong-feedback,
+.wrong-feedback strong {
+  color: #9d2f2e;
 }
 
 .eyebrow,
@@ -3474,4 +3487,17 @@ select:focus {
 
 .setup-player-lane header small {
   color: var(--space-muted);
+}
+
+/* 자리들이 놓이는 바닥판도 어둡게 합니다. */
+.playfield {
+  background-color: rgba(6, 10, 26, 0.5);
+  background-image: none;
+  border-color: var(--space-line);
+}
+
+/* 문제 위의 작은 꼬리표를 조금 진하게 해서 또렷하게 읽히게 합니다. */
+.student-question-meta span {
+  background: #e0f4f8;
+  color: #0a565b;
 }
