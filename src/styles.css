@@ -4292,3 +4292,20 @@ body::before {
   font-size: 13px;
   font-weight: 800;
 }
+
+/* ── 휴대폰 전체화면에서 위쪽이 겹치던 문제 ─────────────────────────
+   화면 껍데기가 세로 flex라, 전체화면에서 높이가 100svh로 고정되면 위쪽
+   상자들이 내용보다 작게 눌립니다. 눌린 상자의 글씨는 사라지지 않고 밖으로
+   흘러넘쳐서 아래 상자와 겹쳐 보였습니다(명령바는 52px 자리에 149px어치가
+   들어 있었습니다).
+
+   상자를 내용 크기 그대로 두고, 넘치는 만큼은 화면을 내려 보게 합니다.
+   휴대폰은 어차피 스크롤이 자연스럽습니다. */
+.app-shell.mobile-entry > * {
+  flex: 0 0 auto;
+}
+
+.app-shell.mobile-entry.fullscreen-mode {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
