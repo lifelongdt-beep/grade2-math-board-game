@@ -3641,3 +3641,11 @@ select:focus {
 .wrong-result {
   color: #ffb0b0;
 }
+
+/* 도움말 안의 '핵심 / 볼 곳 / 정답 / 왜?' 꼬리표입니다.
+   원래 규칙이 더 구체적이라 어두운 청록색이 그대로 남아 있었습니다. */
+.support-card span,
+.quick-support-card p span,
+.student-feedback .support-card span {
+  color: #8ce6ff;
+}
