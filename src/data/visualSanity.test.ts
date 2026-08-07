@@ -199,9 +199,11 @@ describe('question visuals', () => {
           // 문제가 늘어놓은 것을 그대로 옮겨 그린 것이어야 하니까요.
           const allShown = drawn.every((item) => question.prompt.includes(item));
 
-          // '무늬에서 ?에 들어갈 모양은?'처럼 그림이 곧 자료인 문제만
-          // 예외입니다. 그런 문제는 무늬 이야기라는 것이 문제에 드러납니다.
-          if (!allShown && !/무늬|모양|색/.test(question.prompt)) {
+          // 늘어놓은 것을 문제에 적지 않는 문제도 있습니다. 그림이 곧 자료인
+          // '무늬에서 ?에 들어갈 모양은?'이나, 되풀이 자체를 묻는 문제입니다.
+          // 붙잡아야 할 것은 곱셈표·덧셈표 문제에 무늬가 붙는 경우입니다.
+          // 그 표는 자기 그림(grid-table)을 받아야 합니다.
+          if (!allShown && /곱셈표|덧셈표/.test(question.prompt)) {
             mismatched.push(
               `${question.id}: 그림은 ${drawn.join(' ')}인데 문제에 없음 — ${question.prompt.slice(0, 34)}`,
             );
