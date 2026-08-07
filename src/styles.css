@@ -4318,3 +4318,19 @@ body::before {
   border-color: rgba(255, 208, 92, 0.5);
   color: #ffd86b;
 }
+
+/* ── 난이도를 다시 고를 때 보이는 지난 판 성적 ─────────────────────── */
+.last-round-note {
+  margin: 0;
+  padding: 6px 9px;
+  border: 1px solid rgba(69, 214, 255, 0.32);
+  border-radius: 2px;
+  background: rgba(69, 214, 255, 0.1);
+  color: #9fd8ff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.last-round-note b {
+  color: #ffd86b;
+}

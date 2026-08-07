@@ -698,6 +698,10 @@ function App() {
   const [fullscreenFallback, setFullscreenFallback] = useState(false);
   const [successSignals, setSuccessSignals] = useState<Record<number, number>>({});
   const [wrongSignals, setWrongSignals] = useState<Record<number, number>>({});
+  // 다시 풀기로 난이도를 다시 고를 때 보여 줄 지난 판 성적입니다.
+  // 난이도만 다시 물으면 아이는 근거 없이 같은 것을 또 고릅니다.
+  // 난이도를 고른 뒤(출석번호는 그대로)이므로 자리 번호로 짝지어 둡니다.
+  const [lastRoundResults, setLastRoundResults] = useState<Record<number, PlayerResult>>({});
 
   useEffect(() => {
     if (skipInitialSemesterReset.current) {
@@ -923,6 +927,8 @@ function App() {
   const goSetup = () => {
     setMode('setup');
     setTeacherOpen(false);
+    // 처음으로 돌아가는 것은 새 수업을 여는 것이므로 지난 판도 지웁니다.
+    setLastRoundResults({});
     setRecords([]);
     setSuccessSignals({});
     setPlayerStates(createQuestionState(players));
@@ -936,6 +942,8 @@ function App() {
     // 출석번호는 이미 고른 것을 그대로 두어, 스무 명이 번호를 다시 누르는
     // 일이 없게 합니다. 모두 고르면 지금처럼 저절로 시작합니다.
     setTeacherOpen(false);
+    // records를 비우기 전에 챙겨 둡니다. 비운 뒤에는 셀 수 없습니다.
+    setLastRoundResults(playerResults);
     setRecords([]);
     setSuccessSignals({});
     setWrongSignals({});
@@ -1253,6 +1261,15 @@ function App() {
                   <div className="setup-step-card">
                     <span className="result-kicker">2단계</span>
                     <strong>{config.attendanceNo}번 난이도</strong>
+                    {/* 지난 판을 어떻게 풀었는지 보고 고르게 합니다.
+                        정답률까지 쓰면 2학년에게는 읽을 것이 하나 늘 뿐이라
+                        맞은 개수와 틀린 개수만 그대로 보여 줍니다. */}
+                    {lastRoundResults[player.id]?.total ? (
+                      <p className="last-round-note">
+                        지난 판 <b>{config.difficulty}</b> · 정답 {lastRoundResults[player.id].correct}개 ·
+                        오답 {lastRoundResults[player.id].wrong}개
+                      </p>
+                    ) : null}
                     <div className="difficulty-choice-grid">
                     {difficultyLevels.map((level) => (
                       <button
