@@ -116,6 +116,9 @@ export interface NumberLineVisual {
     label?: string;
     active?: boolean;
   }>;
+  // 눈금은 보이되 숫자는 감출 자리입니다. 정답 자리에 숫자를 그대로 쓰면
+  // 세어 보지 않고 답을 읽어 버립니다. 눈금만 두면 한 칸을 세어야 합니다.
+  hiddenLabels?: number[];
 }
 
 export interface PlaceValueVisual {

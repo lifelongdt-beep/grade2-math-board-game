@@ -147,6 +147,40 @@ describe('question visuals', () => {
     expect(mismatched).toEqual([]);
   });
 
+  it('counts in ones and hides the answer for "몇보다 몇만큼 더" questions', () => {
+    // '14보다 1만큼 더 큰 수'에 13씩 눈금을 그리면 한 칸을 셀 수가 없습니다.
+    // 눈금은 1씩이어야 하고, 답이 있는 자리는 눈금만 있고 숫자는 없어야
+    // 세어 보지 않고 읽어 버리는 일이 없습니다.
+    const broken: string[] = [];
+
+    for (const lesson of lessons) {
+      for (const level of levels) {
+        for (const question of generateQuestions(lesson, level)) {
+          const nearby = question.prompt.match(/(\d+)보다 (\d+)만큼 더 (큰|작은)/);
+          if (!nearby || question.visual?.kind !== 'number-line') continue;
+
+          const from = Number(nearby[1]);
+          const gap = Number(nearby[2]);
+          const target = nearby[3] === '큰' ? from + gap : from - gap;
+          if (target < 0) continue;
+
+          const line = question.visual;
+          if (line.step !== 1) {
+            broken.push(`${question.id}: 한 칸씩 세는 문제인데 눈금이 ${line.step}씩`);
+          }
+          if (from < line.start || from > line.end || target < line.start || target > line.end) {
+            broken.push(`${question.id}: ${from}과 ${target}이 ${line.start}~${line.end} 밖`);
+          }
+          if (!line.hiddenLabels?.includes(target)) {
+            broken.push(`${question.id}: 답 ${target}의 숫자가 눈금에 그대로 보임`);
+          }
+        }
+      }
+    }
+
+    expect(broken).toEqual([]);
+  });
+
   it('never draws a number line whose marks all sit on one spot', () => {
     const flat: string[] = [];
 

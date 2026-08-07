@@ -220,10 +220,12 @@ function NumberLineGraphic({ visual }: { visual: Extract<QuestionVisual, { kind:
         const lastFits = (ticks.length - 1) % labelEvery === 0
           || (ticks.length - 1) % labelEvery >= Math.ceil(labelEvery / 2);
         const labelled = index % labelEvery === 0 || (isLast && lastFits);
+        // 감추기로 한 자리는 눈금만 그리고 숫자는 쓰지 않습니다.
+        const hidden = visual.hiddenLabels?.includes(value) ?? false;
         return (
           <g key={value}>
             <line x1={toX(value)} y1="64" x2={toX(value)} y2={labelled ? 88 : 84} stroke="#8aa0b8" strokeWidth="3" />
-            {labelled && (
+            {labelled && !hidden && (
               <text x={toX(value)} y="112" textAnchor="middle" fill="#24364a" fontSize="16" fontWeight="800">
                 {value}
               </text>
