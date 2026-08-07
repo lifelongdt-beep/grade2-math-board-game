@@ -2770,3 +2770,155 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────
+   아이들이 보는 화면입니다. 각지고 사무적인 느낌 대신
+   둥글고 말랑한 느낌으로 바꾸고, 누를 때 반응이 보이게 합니다.
+   ────────────────────────────────────────────────────────────── */
+
+:root {
+  /* 모서리를 크게 둥글려 딱딱한 느낌을 없앱니다. */
+  --radius: 18px;
+  --bg: #f4f9ff;
+}
+
+body {
+  /* 연한 물방울 무늬를 깔아 종이 같은 느낌을 줍니다. */
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(25, 167, 168, 0.07) 0 12px, transparent 13px),
+    radial-gradient(circle at 82% 8%, rgba(242, 183, 5, 0.09) 0 16px, transparent 17px),
+    radial-gradient(circle at 68% 82%, rgba(79, 124, 255, 0.07) 0 14px, transparent 15px);
+  background-attachment: fixed;
+}
+
+.player-lane,
+.game-topbar,
+.command-bar,
+.playfield,
+.setup-player-lane {
+  border-radius: 22px;
+}
+
+.student-question-body {
+  border-radius: 20px;
+  border-width: 2px;
+  border-color: #cdebea;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fdfd 100%);
+}
+
+/* 보기 버튼: 통통한 모양에 눌리는 느낌을 줍니다. */
+.choice-grid button {
+  border-width: 2px;
+  border-radius: 16px;
+  border-color: #d6e7ef;
+  box-shadow: 0 3px 0 #dfe9f0;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease;
+}
+
+.choice-grid button:hover:not(:disabled) {
+  background: #f2fbff;
+  border-color: var(--teal);
+}
+
+.choice-grid button:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 #dfe9f0;
+}
+
+.choice-grid button span {
+  border-radius: 999px;
+}
+
+/* 번호와 난이도 고르는 버튼도 같은 느낌으로 맞춥니다. */
+.attendance-number-pad button,
+.difficulty-choice-grid button,
+.big-segmented button,
+.primary-button,
+.secondary-button {
+  border-radius: 999px;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.attendance-number-pad button:active,
+.difficulty-choice-grid button:active,
+.big-segmented button:active,
+.primary-button:active,
+.secondary-button:active {
+  transform: translateY(2px) scale(0.98);
+}
+
+/* 정답일 때: 통통 튀어오릅니다. */
+@keyframes cute-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.04) rotate(-0.6deg); }
+  70% { transform: scale(0.99); }
+  100% { transform: scale(1); }
+}
+
+.player-lane.success-signal {
+  animation: cute-pop 0.55s ease;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(25, 167, 168, 0.18), var(--shadow);
+}
+
+.success-burst {
+  border-radius: 999px;
+  animation: cute-pop 0.5s ease;
+}
+
+/* 오답일 때: 혼내지 않고 살짝 갸웃하게 흔들립니다. */
+@keyframes cute-wiggle {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-6px) rotate(-0.8deg); }
+  45% { transform: translateX(5px) rotate(0.8deg); }
+  70% { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
+}
+
+.player-lane.wrong-signal {
+  animation: cute-wiggle 0.5s ease;
+  border-color: #ffc9a3;
+  box-shadow: 0 0 0 4px rgba(255, 168, 108, 0.2), var(--shadow);
+}
+
+.wrong-burst {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #fff3e6;
+  border: 2px solid #ffc9a3;
+  color: #9a5a1c;
+  font-weight: 900;
+  font-size: 15px;
+  animation: cute-wiggle 0.5s ease;
+  z-index: 2;
+}
+
+.wrong-burst span:first-child {
+  font-size: 19px;
+}
+
+/* 학생 이름표를 둥글게 */
+.player-lane > header strong {
+  letter-spacing: -0.2px;
+}
+
+.player-avatar {
+  border-width: 2.5px;
+  border-radius: 999px;
+}
+
+/* 남은 시간이 얼마 없을 때 살짝 뛰게 해서 눈에 띄게 합니다. */
+@keyframes gentle-beat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+.timer-card.urgent {
+  animation: gentle-beat 0.9s ease-in-out infinite;
+}

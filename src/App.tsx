@@ -315,43 +315,88 @@ const playSuccessSoundFallback = () => {
   }
 };
 
-const playSuccessSound = () => {
+// 아이들이 좋아하는 소리는 짧고 통통 튀는 소리입니다.
+// 정답은 위로 올라가는 반짝 소리, 오답은 혼내는 소리가 아니라
+// "다시 해 보자" 느낌의 부드럽게 내려오는 소리로 만듭니다.
+type Blip = {
+  frequency: number;
+  at: number;
+  length: number;
+  volume?: number;
+  type?: OscillatorType;
+  slideTo?: number;
+};
+
+const playBlips = (blips: Blip[], fallback?: () => void) => {
   try {
     const AudioContextConstructor =
       window.AudioContext ??
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 
     if (!AudioContextConstructor) {
-      playSuccessSoundFallback();
+      fallback?.();
       return;
     }
 
     const context = new AudioContextConstructor();
     const now = context.currentTime;
-    const notes = [523.25, 659.25, 783.99];
+    let latest = 0;
 
-    notes.forEach((frequency, index) => {
+    blips.forEach((blip) => {
       const oscillator = context.createOscillator();
       const gain = context.createGain();
-      const startAt = now + index * 0.055;
-      const stopAt = startAt + 0.13;
+      const startAt = now + blip.at;
+      const stopAt = startAt + blip.length;
+      const peak = blip.volume ?? 0.16;
 
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(frequency, startAt);
+      oscillator.type = blip.type ?? 'sine';
+      oscillator.frequency.setValueAtTime(blip.frequency, startAt);
+      if (blip.slideTo) {
+        oscillator.frequency.exponentialRampToValueAtTime(blip.slideTo, stopAt);
+      }
+
       gain.gain.setValueAtTime(0.0001, startAt);
-      gain.gain.exponentialRampToValueAtTime(0.16, startAt + 0.02);
+      gain.gain.exponentialRampToValueAtTime(peak, startAt + 0.015);
       gain.gain.exponentialRampToValueAtTime(0.0001, stopAt);
 
       oscillator.connect(gain);
       gain.connect(context.destination);
       oscillator.start(startAt);
       oscillator.stop(stopAt);
+      latest = Math.max(latest, blip.at + blip.length);
     });
 
-    window.setTimeout(() => void context.close(), 420);
+    window.setTimeout(() => void context.close(), (latest + 0.2) * 1000);
   } catch {
-    playSuccessSoundFallback();
+    fallback?.();
   }
+};
+
+// 정답: 도-미-솔-도로 올라간 뒤 반짝하고 마무리합니다.
+const playSuccessSound = () => {
+  playBlips(
+    [
+      { frequency: 523.25, at: 0, length: 0.1, type: 'triangle' },
+      { frequency: 659.25, at: 0.075, length: 0.1, type: 'triangle' },
+      { frequency: 783.99, at: 0.15, length: 0.11, type: 'triangle' },
+      { frequency: 1046.5, at: 0.23, length: 0.2, volume: 0.19, type: 'triangle' },
+      { frequency: 1568, at: 0.3, length: 0.16, volume: 0.08 },
+    ],
+    playSuccessSoundFallback,
+  );
+};
+
+// 오답: 낮고 짧게 두 번 "뽀용" 하고 부드럽게 내려옵니다.
+const playWrongSound = () => {
+  playBlips([
+    { frequency: 392, at: 0, length: 0.13, volume: 0.13, type: 'triangle' },
+    { frequency: 311.13, at: 0.11, length: 0.24, volume: 0.13, type: 'triangle', slideTo: 261.63 },
+  ]);
+};
+
+// 보기를 누를 때 나는 아주 짧은 "톡" 소리입니다.
+const playTapSound = () => {
+  playBlips([{ frequency: 880, at: 0, length: 0.05, volume: 0.07, type: 'triangle' }]);
 };
 
 const PlayerAvatar = ({ player, active = false }: { player: Player; active?: boolean }) => {
@@ -479,6 +524,7 @@ function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenFallback, setFullscreenFallback] = useState(false);
   const [successSignals, setSuccessSignals] = useState<Record<number, number>>({});
+  const [wrongSignals, setWrongSignals] = useState<Record<number, number>>({});
 
   useEffect(() => {
     if (skipInitialSemesterReset.current) {
@@ -746,6 +792,19 @@ function App() {
     }));
   };
 
+  const triggerWrongSignal = (playerId: number) => {
+    const token = Date.now();
+    playWrongSound();
+    setWrongSignals((prev) => ({ ...prev, [playerId]: token }));
+    window.setTimeout(() => {
+      setWrongSignals((prev) => {
+        if (prev[playerId] !== token) return prev;
+        const { [playerId]: _removed, ...rest } = prev;
+        return rest;
+      });
+    }, 620);
+  };
+
   const triggerSuccessSignal = (playerId: number) => {
     const token = Date.now();
     playSuccessSound();
@@ -791,6 +850,8 @@ function App() {
 
     if (isCorrect) {
       triggerSuccessSignal(player.id);
+    } else {
+      triggerWrongSignal(player.id);
     }
 
     setRecords((prev) => [...prev, record]);
@@ -1069,7 +1130,7 @@ function App() {
           <p className="lesson-objective-inline">{lesson.objective}</p>
         </div>
         <div className="game-topbar-actions">
-          <div className="timer-card">
+          <div className={`timer-card ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}>
             <Timer size={22} />
             <strong>{remainingSeconds}초</strong>
           </div>
@@ -1117,8 +1178,9 @@ function App() {
               const question = getPlayerQuestion(playerQuestions, state);
               const result = playerResults[player.id] ?? { total: 0, correct: 0, wrong: 0 };
               const successActive = Boolean(successSignals[player.id]);
+              const wrongActive = Boolean(wrongSignals[player.id]);
               return (
-                <article className={`player-lane student-question ${mode === 'finished' ? 'finished-result' : state.feedback} ${successActive ? 'success-signal' : ''}`} key={player.id}>
+                <article className={`player-lane student-question ${mode === 'finished' ? 'finished-result' : state.feedback} ${successActive ? 'success-signal' : ''} ${wrongActive ? 'wrong-signal' : ''}`} key={player.id}>
                   <header>
                     <PlayerAvatar player={player} active={successActive} />
                     <strong>{player.name}</strong>
@@ -1128,6 +1190,12 @@ function App() {
                     <div className="success-burst" aria-live="polite">
                       <CheckCircle2 size={30} />
                       <span>정답!</span>
+                    </div>
+                  )}
+                  {wrongActive && (
+                    <div className="wrong-burst" aria-live="polite">
+                      <span aria-hidden="true">🤔</span>
+                      <span>다시 한번!</span>
                     </div>
                   )}
 
