@@ -417,21 +417,33 @@ const playTapSound = () => {
 // 위로, 상은 높고 씩씩하게 세 음이 올라갑니다. 소리만 듣고도 그 자리 친구가
 // 어떤 난이도를 골랐는지 알 수 있습니다.
 const difficultyBlips: Record<Difficulty, Blip[]> = {
+  // 하: 낮은 자리에서 포근하게 오르내립니다. 천천히 시작해도 괜찮다는 느낌.
   하: [
-    // 도 - 미 (낮고 부드럽게)
-    { frequency: 392, at: 0, length: 0.11, volume: 0.1, type: 'sine' },
-    { frequency: 523.25, at: 0.09, length: 0.17, volume: 0.11, type: 'sine' },
+    { frequency: 261.63, at: 0, length: 0.62, volume: 0.05, type: 'sine' },
+    { frequency: 392, at: 0, length: 0.15, volume: 0.11, type: 'sine' },
+    { frequency: 523.25, at: 0.13, length: 0.15, volume: 0.11, type: 'sine' },
+    { frequency: 659.25, at: 0.26, length: 0.15, volume: 0.11, type: 'sine' },
+    { frequency: 523.25, at: 0.39, length: 0.3, volume: 0.12, type: 'sine' },
   ],
+  // 중: 도-미-솔-도로 또박또박 올라갔다가 솔로 내려와 마무리합니다.
   중: [
-    // 미 - 솔 (가운데)
-    { frequency: 587.33, at: 0, length: 0.09, volume: 0.1, type: 'triangle' },
-    { frequency: 783.99, at: 0.075, length: 0.16, volume: 0.11, type: 'triangle' },
+    { frequency: 523.25, at: 0, length: 0.12, volume: 0.1, type: 'triangle' },
+    { frequency: 659.25, at: 0.1, length: 0.12, volume: 0.1, type: 'triangle' },
+    { frequency: 783.99, at: 0.2, length: 0.12, volume: 0.105, type: 'triangle' },
+    { frequency: 1046.5, at: 0.3, length: 0.17, volume: 0.12, type: 'triangle' },
+    { frequency: 783.99, at: 0.45, length: 0.3, volume: 0.11, type: 'triangle' },
+    { frequency: 1567.98, at: 0.47, length: 0.22, volume: 0.05 },
   ],
+  // 상: 팡파레입니다. 두 옥타브를 달려 올라가 반짝하고 끝납니다.
   상: [
-    // 솔 - 도 - 미 (높고 씩씩하게 세 음)
-    { frequency: 783.99, at: 0, length: 0.08, volume: 0.1, type: 'triangle' },
-    { frequency: 1046.5, at: 0.065, length: 0.08, volume: 0.1, type: 'triangle' },
-    { frequency: 1318.51, at: 0.13, length: 0.18, volume: 0.11, type: 'triangle' },
+    { frequency: 523.25, at: 0, length: 0.1, volume: 0.1, type: 'triangle' },
+    { frequency: 659.25, at: 0.075, length: 0.1, volume: 0.1, type: 'triangle' },
+    { frequency: 783.99, at: 0.15, length: 0.1, volume: 0.105, type: 'triangle' },
+    { frequency: 1046.5, at: 0.225, length: 0.1, volume: 0.11, type: 'triangle' },
+    { frequency: 1318.51, at: 0.3, length: 0.1, volume: 0.115, type: 'triangle' },
+    { frequency: 1567.98, at: 0.375, length: 0.34, volume: 0.13, type: 'triangle' },
+    { frequency: 2093, at: 0.45, length: 0.34, volume: 0.06 },
+    { frequency: 2637.02, at: 0.56, length: 0.3, volume: 0.045, slideTo: 3135.96 },
   ],
 };
 

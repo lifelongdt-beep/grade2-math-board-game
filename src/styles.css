@@ -3490,3 +3490,154 @@ select:focus {
   background: #e0f4f8;
   color: #0a565b;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   문제 화면까지 어둡게
+   ────────────────────────────────────────────────────────────────────
+   앞에서는 그림이 안 보일까 봐 문제 카드를 밝게 남겨 두었습니다.
+   대신 그림만 흰 판 위에 올리면 카드 전체를 어둡게 할 수 있습니다.
+   글씨는 흰색, 그림은 흰 종이 위 — 둘 다 또렷하게 보입니다.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── 문제 카드 ────────────────────────────────────────────────────── */
+.student-question-body {
+  background: linear-gradient(180deg, rgba(19, 27, 56, 0.96) 0%, rgba(10, 15, 34, 0.96) 100%);
+  border: 2px solid color-mix(in srgb, var(--player-color, #45d6ff) 55%, rgba(90, 130, 200, 0.5));
+  box-shadow:
+    0 0 22px color-mix(in srgb, var(--player-color, #45d6ff) 30%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.student-question-body p,
+.student-question-body strong {
+  color: #ffffff;
+}
+
+.student-question-meta span {
+  background: rgba(69, 214, 255, 0.14);
+  border-color: rgba(69, 214, 255, 0.34);
+  color: #8ce6ff;
+}
+
+/* ── 그림은 흰 종이 위에 ──────────────────────────────────────────
+   수직선·시계·자·모눈은 모두 어두운 선으로 그려져 있습니다.
+   그림 둘레에만 흰 판을 깔아 그림 크기는 그대로 두고 여백만 만듭니다. */
+.question-visual-figure {
+  padding: 6px 8px;
+  height: calc(var(--visual-height) + 12px);
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+.question-visual-figure.is-clock {
+  height: calc(var(--visual-height) * 1.81 + 12px);
+}
+
+/* ── 보기 버튼 ────────────────────────────────────────────────────── */
+.choice-grid button {
+  background: linear-gradient(180deg, rgba(34, 46, 88, 0.96) 0%, rgba(20, 28, 58, 0.96) 100%);
+  border-color: rgba(120, 170, 255, 0.4);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5), 0 0 14px rgba(69, 214, 255, 0.12);
+  color: #ffffff;
+}
+
+.choice-grid button:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(45, 66, 122, 0.96) 0%, rgba(26, 38, 76, 0.96) 100%);
+  border-color: var(--neon);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5), 0 0 22px rgba(69, 214, 255, 0.45);
+}
+
+.choice-grid button:active:not(:disabled) {
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.5), 0 0 18px rgba(69, 214, 255, 0.4);
+}
+
+/* ── 오답 도움말 ──────────────────────────────────────────────────── */
+.student-feedback {
+  background: linear-gradient(180deg, rgba(20, 28, 58, 0.97) 0%, rgba(10, 15, 34, 0.97) 100%);
+  border-color: rgba(120, 170, 255, 0.35);
+}
+
+.student-feedback,
+.student-feedback p,
+.student-feedback strong,
+.student-feedback li,
+.support-card,
+.support-card p,
+.support-card strong,
+.quick-support-card {
+  color: #ffffff;
+}
+
+.wrong-feedback {
+  border-color: rgba(255, 140, 140, 0.55);
+}
+
+.wrong-feedback > strong,
+.wrong-feedback,
+.wrong-feedback strong {
+  color: #ffc9c9;
+}
+
+.correct-feedback {
+  border-color: rgba(110, 231, 155, 0.55);
+}
+
+.correct-feedback,
+.correct-feedback strong {
+  color: #bff5d3;
+}
+
+/* 도움말 안의 작은 상자들입니다. */
+.support-card,
+.quick-support-card {
+  background: rgba(14, 21, 46, 0.9);
+  border-color: rgba(120, 170, 255, 0.3);
+}
+
+.quick-core {
+  background: rgba(25, 167, 168, 0.18);
+  border-color: rgba(69, 214, 255, 0.34);
+  color: #9ff0f2;
+}
+
+.quick-reason {
+  background: rgba(242, 183, 5, 0.14);
+  border-color: rgba(255, 208, 92, 0.34);
+  color: #ffdf9b;
+}
+
+.student-feedback span {
+  color: #8ce6ff;
+}
+
+.student-feedback p {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* ── 결과 화면 ────────────────────────────────────────────────────── */
+.student-result-summary {
+  background: linear-gradient(180deg, rgba(19, 27, 56, 0.96) 0%, rgba(10, 15, 34, 0.96) 100%);
+  border-color: rgba(120, 170, 255, 0.35);
+}
+
+.student-result-summary,
+.student-result-summary strong,
+.student-result-summary p,
+.student-result-list,
+.student-result-list li {
+  color: #ffffff;
+}
+
+.student-result-list li {
+  background: rgba(28, 38, 72, 0.85);
+  border-color: rgba(120, 170, 255, 0.28);
+}
+
+.correct-result {
+  color: #7cf0a8;
+}
+
+.wrong-result {
+  color: #ffb0b0;
+}
