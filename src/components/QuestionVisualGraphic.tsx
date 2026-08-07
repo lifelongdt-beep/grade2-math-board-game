@@ -721,6 +721,75 @@ function ArrayGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'arr
   );
 }
 
+// 곱셈표·덧셈표를 그립니다. 맨 윗줄과 맨 왼쪽 줄이 머리이고, 가운데가 값입니다.
+function GridTableGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'grid-table' }> }) {
+  const columns = visual.columns.slice(0, 6);
+  const rows = visual.rows.slice(0, 4);
+  const cellWidth = Math.min(52, 340 / (columns.length + 1));
+  const cellHeight = 26;
+  const left = (376 - cellWidth * (columns.length + 1)) / 2;
+  const top = 10;
+  const valueOf = (row: number, column: number) =>
+    visual.operation === '×' ? row * column : row + column;
+
+  return (
+    <svg viewBox={`0 0 376 ${top + cellHeight * (rows.length + 1) + 10}`} role="img" aria-label={visual.label}>
+      {/* 머리 칸: 연산 기호와 가로줄 숫자 */}
+      <rect x={left} y={top} width={cellWidth} height={cellHeight} fill="#e6f7f7" stroke="#0f9f9f" strokeWidth="2" />
+      <text x={left + cellWidth / 2} y={top + 18} textAnchor="middle" fill="#0f7175" fontSize="15" fontWeight="900">
+        {visual.operation}
+      </text>
+      {columns.map((column, at) => (
+        <g key={`head-${column}`}>
+          <rect x={left + cellWidth * (at + 1)} y={top} width={cellWidth} height={cellHeight} fill="#e6f7f7" stroke="#0f9f9f" strokeWidth="2" />
+          <text x={left + cellWidth * (at + 1.5)} y={top + 18} textAnchor="middle" fill="#0f7175" fontSize="15" fontWeight="900">
+            {column}
+          </text>
+        </g>
+      ))}
+
+      {rows.map((row, rowAt) => {
+        const y = top + cellHeight * (rowAt + 1);
+        const lit = visual.highlightRow === row;
+        return (
+          <g key={`row-${row}`}>
+            <rect x={left} y={y} width={cellWidth} height={cellHeight} fill="#e6f7f7" stroke="#0f9f9f" strokeWidth="2" />
+            <text x={left + cellWidth / 2} y={y + 18} textAnchor="middle" fill="#0f7175" fontSize="15" fontWeight="900">
+              {row}
+            </text>
+            {columns.map((column, at) => {
+              const hidden = visual.blank?.row === row && visual.blank?.column === column;
+              return (
+                <g key={`cell-${row}-${column}`}>
+                  <rect
+                    x={left + cellWidth * (at + 1)}
+                    y={y}
+                    width={cellWidth}
+                    height={cellHeight}
+                    fill={hidden ? '#fff4bd' : lit ? '#dffafa' : '#ffffff'}
+                    stroke={lit || hidden ? '#0f9f9f' : '#cfeaf0'}
+                    strokeWidth={lit || hidden ? 2.4 : 1.6}
+                  />
+                  <text
+                    x={left + cellWidth * (at + 1.5)}
+                    y={y + 18}
+                    textAnchor="middle"
+                    fill={hidden ? '#9a6b12' : '#182433'}
+                    fontSize="15"
+                    fontWeight={lit || hidden ? 900 : 800}
+                  >
+                    {hidden ? '?' : valueOf(row, column)}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function PatternGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'pattern' }> }) {
   return (
     <svg viewBox="0 0 376 126" role="img" aria-label={visual.label}>
@@ -765,6 +834,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'pictograph' && <PictographGraphic visual={visual} />}
       {visual.kind === 'array' && <ArrayGraphic visual={visual} />}
       {visual.kind === 'pattern' && <PatternGraphic visual={visual} />}
+      {visual.kind === 'grid-table' && <GridTableGraphic visual={visual} />}
     </figure>
   );
 }

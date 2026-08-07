@@ -460,6 +460,7 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
   }
 
   if (
+    visual.kind === 'grid-table' ||
     visual.kind === 'unit-measure' ||
     visual.kind === 'ruler' ||
     visual.kind === 'clock' ||
@@ -9247,17 +9248,65 @@ const visualForGeneratedQuestion = (
   }
 
   if (question.type === 'pattern') {
-    // 규칙 찾기 단원에는 무늬 규칙 말고도 곱셈표·덧셈표·달력·쌓기나무 규칙이
-    // 있습니다. 전에는 어떤 문제든 ○△□ 무늬를 붙였는데, 곱셈표 문제 옆에
-    // 도형이 놓이면 문제와 아무 상관이 없는 그림이 됩니다.
-    //
-    // 무늬는 문제에 적힌 그 무늬를 그대로 그립니다. 정해 둔 무늬를 그리면
-    // 문제는 ○○△가 반복된다는데 그림은 ○△□인 일이 생깁니다.
-    const drawn = question.prompt.match(/[○△□◇☆●▲■♥]/g);
-    if (!drawn || drawn.length < 3) return undefined;
+    // 규칙 찾기 단원에는 무늬 규칙 말고도 곱셈표·덧셈표 규칙이 있습니다.
+    // 전에는 어떤 문제든 ○△□ 무늬를 붙여서, 곱셈표 문제 옆에 아무 상관 없는
+    // 도형이 놓였습니다. 문제가 무엇을 보라고 하는지에 따라 그림을 고릅니다.
 
-    // 마지막에 물음표 자리를 하나 붙여 '다음에 올 모양'을 묻는 그림으로 만듭니다.
-    return patternVisualFor([...drawn, '?'], '무늬 규칙 자료', drawn.length);
+    // ① 문제가 무늬를 적어 두었으면 그 무늬를 그대로 그립니다.
+    //    정해 둔 무늬를 그리면 문제는 ○○△라는데 그림은 ○△□인 일이 생깁니다.
+    const drawn = question.prompt.match(/[○△□◇☆●▲■♥]/g);
+    if (drawn && drawn.length >= 3) {
+      return patternVisualFor([...drawn, '?'], '무늬 규칙 자료', drawn.length);
+    }
+
+    // ② 곱셈표·덧셈표 문제에는 그 표를 그려 줍니다. 표에서 규칙을 찾아
+    //    설명하는 것이 이 차시의 목표이므로, 표가 곧 학습 자료입니다.
+    const table = question.prompt.match(/(곱셈표|덧셈표)/);
+    if (table) {
+      const operation: '×' | '+' = table[1] === '곱셈표' ? '×' : '+';
+      const span = (centre: number, count: number) => {
+        const from = Math.max(1, Math.min(9 - count + 1, centre - Math.floor(count / 2)));
+        return Array.from({ length: count }, (_, at) => from + at);
+      };
+
+      // 'a×b는 얼마일까요?'는 계산해서 답을 내야 하므로 그 칸만 비웁니다.
+      const asked = question.prompt.match(/(\d+)\s*[×+]\s*(\d+)은?\s*얼마/);
+      if (asked) {
+        const row = Number(asked[1]);
+        const column = Number(asked[2]);
+        if (row >= 1 && row <= 9 && column >= 1 && column <= 9) {
+          return {
+            kind: 'grid-table',
+            label: `${table[1]}의 한 부분`,
+            operation,
+            rows: span(row, 4),
+            columns: span(column, 5),
+            blank: { row, column },
+          };
+        }
+      }
+
+      // 'N단은 오른쪽으로 갈수록 몇씩 커질까요?'는 그 줄을 짚어 줍니다.
+      const dan = question.prompt.match(/(\d+)단/);
+      const centre = dan ? Number(dan[1]) : 3;
+      return {
+        kind: 'grid-table',
+        label: `${table[1]}의 한 부분`,
+        operation,
+        rows: span(centre, 4),
+        columns: span(3, 5),
+        ...(dan ? { highlightRow: centre } : {}),
+      };
+    }
+
+    // ③ 무늬·모양 이야기인데 문제에 모양이 적혀 있지 않은 문제입니다.
+    //    ('무늬에서 ?에 들어갈 모양은?'처럼 그림이 곧 자료인 경우)
+    if (/무늬|모양|색/.test(question.prompt)) {
+      return patternVisualFor(['○', '△', '□', '○', '△', '□', '○'], '무늬 규칙 자료', 6);
+    }
+
+    // ④ 그 밖에는 그림 없이 둡니다. 상관없는 그림보다 없는 편이 낫습니다.
+    return undefined;
   }
 
   return undefined;

@@ -115,6 +115,19 @@ export interface UnitMeasureVisual {
   count: number;
 }
 
+// 곱셈표·덧셈표입니다. 규칙 찾기 단원에서 '표를 보고 규칙을 말하는' 문제에
+// 씁니다. 표 자체가 학습 자료이므로 값을 채워서 보여 주고, 계산해서 답을
+// 내야 하는 칸만 비워 둡니다.
+export interface GridTableVisual {
+  kind: 'grid-table';
+  label: string;
+  operation: '×' | '+';
+  rows: number[];
+  columns: number[];
+  blank?: { row: number; column: number };
+  highlightRow?: number;
+}
+
 export interface NumberLineVisual {
   kind: 'number-line';
   label: string;
@@ -227,6 +240,7 @@ export type QuestionVisual =
   | CubeViewsVisual
   | TangramVisual
   | NumberLineVisual
+  | GridTableVisual
   | UnitMeasureVisual
   | PlaceValueVisual
   | BarModelVisual
