@@ -927,13 +927,21 @@ function App() {
   };
 
   const resetSession = () => {
-    const now = Date.now();
+    // 한 판을 풀고 나면 그 난이도가 맞았는지 학생도 선생님도 알게 됩니다.
+    // 그래서 다시 풀기는 곧바로 시작하지 않고 난이도부터 다시 고릅니다.
+    // 출석번호는 이미 고른 것을 그대로 두어, 스무 명이 번호를 다시 누르는
+    // 일이 없게 합니다. 모두 고르면 지금처럼 저절로 시작합니다.
+    setTeacherOpen(false);
     setRecords([]);
     setSuccessSignals({});
+    setWrongSignals({});
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
-    setPlayerStates(createQuestionState(players, now));
+    setPlayerStates(createQuestionState(players));
     setRemainingSeconds(sessionDuration);
-    setMode('playing');
+    setStudentSetupSteps(
+      Object.fromEntries(players.map((player) => [player.id, 'difficulty' as SetupStep])),
+    );
+    setMode('setup');
   };
 
   const toggleFullscreen = async () => {
