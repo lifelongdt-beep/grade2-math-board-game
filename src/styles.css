@@ -4189,3 +4189,54 @@ body::before {
   border-color: rgba(69, 214, 255, 0.5);
   color: #7fe6ff;
 }
+
+/* ── 오답 복습 인쇄물 ───────────────────────────────────────────────
+   보기 번호를 직접 그려 넣습니다. 목록 기본 번호는 인쇄할 때 빠지는
+   일이 있어서, 화면에서 본 것과 같은 번호가 늘 보이도록 합니다. */
+.pdf-mini-choices {
+  list-style: none;
+  padding-left: 0;
+}
+
+.pdf-mini-choices li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pdf-choice-no {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: #1f8bd8;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+/* 해설은 한 장에 더 많이 담기도록 작게 씁니다. */
+.pdf-mini-concept,
+.pdf-mini-explanation {
+  font-size: 10.5px;
+  line-height: 1.36;
+}
+
+.pdf-mini-memo {
+  font-size: 10px;
+}
+
+.pdf-mini-answer {
+  font-size: 14px;
+  padding: 5px 7px;
+}
+
+/* ── 합쳐진 '학생별 개별 문항 · 모바일 QR' 칸 ─────────────────────── */
+.mobile-join-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}

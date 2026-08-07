@@ -1029,9 +1029,14 @@ function App() {
         <div className="setup-summary">
           <span><Users size={18} /> {isMobileEntry ? '모바일 1명' : `${playerCount}명`}</span>
           <span><Timer size={18} /> {sessionDuration}초</span>
-          <span><Sparkles size={18} /> {reviewScope === 'lesson' ? '학생별 개별 문항' : '종합 랜덤 문항'}</span>
-          {!isMobileEntry && (
+          {/* 모바일 QR로 들어오면 학생마다 다른 문항을 받습니다. 같은 이야기를
+              두 칸에 나눠 쓰면 따로따로 읽히므로 한 칸으로 합쳤습니다. */}
+          {isMobileEntry ? (
+            <span><Sparkles size={18} /> {reviewScope === 'lesson' ? '학생별 개별 문항' : '종합 랜덤 문항'}</span>
+          ) : (
             <button className="mobile-join-toggle" type="button" onClick={() => setMobileJoinOpen(true)}>
+              <Sparkles size={18} />
+              {reviewScope === 'lesson' ? '학생별 개별 문항' : '종합 랜덤 문항'}
               <QrCode size={18} />
               모바일 QR
             </button>

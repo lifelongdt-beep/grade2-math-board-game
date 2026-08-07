@@ -444,9 +444,16 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
                         <p className="pdf-mini-meta">{record.strategy}</p>
                         <QuestionVisualGraphic visual={record.visual} className="pdf-question-visual" />
                         <p className="pdf-mini-question">{record.prompt}</p>
+                        {/* 화면에서는 보기마다 1·2·3·4 번호가 붙어 있습니다.
+                            인쇄물에서도 같은 번호가 보여야 아이가 "3번을
+                            골랐구나" 하고 짚어 볼 수 있습니다. 목록 기본
+                            번호는 인쇄에서 빠지는 일이 있어 직접 씁니다. */}
                         <ol className="pdf-mini-choices">
                           {record.choices.map((choice, choiceIndex) => (
-                            <li key={`${record.id}-choice-${choiceIndex}`}>{choice}</li>
+                            <li key={`${record.id}-choice-${choiceIndex}`}>
+                              <span className="pdf-choice-no">{choiceIndex + 1}</span>
+                              {choice}
+                            </li>
                           ))}
                         </ol>
                       </article>

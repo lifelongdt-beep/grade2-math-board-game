@@ -251,8 +251,9 @@ function PlaceValueGraphic({ visual }: { visual: Extract<QuestionVisual, { kind:
   const cellWidth = 320 / visual.columns.length;
 
   return (
+    // 자리별 칸이 저마다 흰 상자를 갖고 있어서, 그 뒤에 흰 판을 한 겹 더
+    // 깔 필요가 없습니다. 판이 없으면 칸 세 개가 더 또렷하게 떨어져 보입니다.
     <svg viewBox="0 0 376 150" role="img" aria-label={visual.label}>
-      <rect x="4" y="6" width="368" height="138" rx="14" fill="#f6fcff" stroke="#d7edf2" />
       {visual.columns.map((column, index) => {
         const x = 28 + index * cellWidth;
         const blockCount = Math.min(column.blocks ?? column.value, 12);
