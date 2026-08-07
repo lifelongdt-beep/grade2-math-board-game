@@ -865,6 +865,21 @@ const makeQuestion = (
 
 const n = (lesson: Lesson, index: number, add = 0) => lesson.unitNo * 97 + lesson.lessonNo * 31 + index * 23 + add;
 
+// 서로 다른 한 자리 수를 필요한 개수만큼 만듭니다. 0은 넣지 않습니다.
+// '이 수에서 숫자 3이 나타내는 값'을 물으려면 3이 한 번만 나와야 합니다.
+const distinctDigits = (seed: number, count: number) => {
+  const pool = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const picked: number[] = [];
+  let cursor = seed;
+
+  for (let taken = 0; taken < count; taken += 1) {
+    cursor = (cursor * 7 + 3) % pool.length;
+    picked.push(pool.splice(cursor % pool.length, 1)[0]);
+  }
+
+  return picked;
+};
+
 // ── 세 자리 수(2-1 1단원) / 네 자리 수(2-2 1단원) ─────────────────────────
 // 지도서 차시: 백(천) 알기 → 몇백(몇천) → 세(네) 자리 수 → 각 자리의 숫자 →
 // 뛰어 세기 → 크기 비교. 차시마다 다루는 내용이 분명하므로 나누어 냅니다.
@@ -9683,15 +9698,22 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     }
 
     if (title.includes('각 자리')) {
-      const digit = 2 + (index % 7);
-      const value = four ? digit * 100 + 305 : digit * 10 + 305;
-      const worth = four ? digit * 100 : digit * 10;
-      const placeName = four ? '백' : '십';
+      // 묻는 숫자가 실제로 그 수 안에 있어야 하고, 같은 숫자가 두 번 나오면
+      // 어느 자리를 말하는지 알 수 없으므로 각 자리 숫자를 모두 다르게 만듭니다.
+      const digits = distinctDigits(seed, four ? 4 : 3);
+      const units = four ? [1000, 100, 10, 1] : [100, 10, 1];
+      const names = four ? ['천', '백', '십', '일'] : ['백', '십', '일'];
+      const at = seed % digits.length;
+      const value = digits.reduce((sum, digit, position) => sum + digit * units[position], 0);
+      const digit = digits[at];
+      const worth = digit * units[at];
+
       return makeQuestion(
         lesson, difficulty, index,
-        `${value}에서 숫자 ${digit}이 나타내는 값을 구하는 과정입니다. ⊙에 알맞은 수는? ① ${digit}은 ${placeName}의 자리에 있습니다. ② ${placeName}의 자리 ${digit}은 ⊙을 나타냅니다.`,
-        worth, [digit, worth * 10, value],
-        `${placeName}의 자리에 있는 ${digit}은 ${worth}을 나타냅니다.`,
+        `${value}에서 숫자 ${digit}이 나타내는 값을 구하는 과정입니다. ⊙에 알맞은 수는? ① ${digit}은 ${names[at]}의 자리에 있습니다. ② ${names[at]}의 자리 ${digit}은 ⊙을 나타냅니다.`,
+        worth,
+        [digit, worth * 10, value],
+        `${names[at]}의 자리에 있는 ${digit}은 ${worth}을 나타냅니다.`,
         'placeValue', '자리 숫자의 값을 구하는 과정',
       );
     }
@@ -10312,33 +10334,46 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
     // 5차시부터: 같은 숫자라도 자리에 따라 값이 다릅니다.
     if (no === 5) {
-      const digit = 2 + (seed % 7);
-      const value = digit * 100 + digit * 10 + (1 + (seed % 8));
+      // 같은 숫자를 이웃한 두 자리에 놓아 자리에 따라 값이 10배 달라짐을 보게 합니다.
+      const [digit, low, lower] = distinctDigits(seed, 3);
+      const highName = four ? '천' : '백';
+      const nextName = four ? '백' : '십';
+      const highWorth = four ? digit * 1000 : digit * 100;
+      const nextWorth = four ? digit * 100 : digit * 10;
+      const value = four
+        ? digit * 1000 + digit * 100 + low * 10 + lower
+        : digit * 100 + digit * 10 + low;
 
       if (pick === 0) {
         return makeQuestion(
           lesson, difficulty, index,
-          `${value}에서 백의 자리 숫자가 나타내는 값은 십의 자리 숫자가 나타내는 값의 몇 배일까요?`,
+          `${value}에서 ${highName}의 자리 숫자가 나타내는 값은 ${nextName}의 자리 숫자가 나타내는 값의 몇 배일까요?`,
           '10배', ['2배', '5배', '100배'],
-          `백의 자리 ${digit}은 ${digit * 100}을, 십의 자리 ${digit}은 ${digit * 10}을 나타냅니다. ${digit * 100}은 ${digit * 10}의 10배입니다.`,
+          `${highName}의 자리 ${digit}은 ${highWorth}을, ${nextName}의 자리 ${digit}은 ${nextWorth}을 나타냅니다. ${highWorth}은 ${nextWorth}의 10배입니다.`,
           'placeValue', '조건 함께 보기 · 같은 숫자가 나타내는 값 견주기',
         );
       }
       if (pick === 1) {
-        const other = (1 + (seed % 8)) * 100 + digit * 10 + digit;
+        // 같은 숫자가 다른 수에서는 더 낮은 자리에 오도록 만듭니다.
+        const other = four
+          ? low * 1000 + lower * 100 + digit * 10 + digit
+          : low * 100 + digit * 10 + digit;
         return makeQuestion(
           lesson, difficulty, index,
           `${value}와 ${other}에서 숫자 ${digit}이 나타내는 값이 가장 큰 것은?`,
-          `${value}의 백의 자리`,
-          [`${value}의 십의 자리`, `${other}의 십의 자리`, `${other}의 일의 자리`],
-          `${value}의 백의 자리 ${digit}은 ${digit * 100}을 나타내어 가장 큽니다.`,
+          `${value}의 ${highName}의 자리`,
+          [`${value}의 ${nextName}의 자리`, `${other}의 십의 자리`, `${other}의 일의 자리`],
+          `${value}의 ${highName}의 자리 ${digit}은 ${highWorth}을 나타내어 가장 큽니다.`,
           'placeValue', '조건 함께 보기 · 여러 수에서 자리값 견주기',
         );
       }
+      const parts = four
+        ? `1000이 ${digit}개, 100이 ${digit}개, 10이 ${low}개, 1이 ⊙개`
+        : `100이 ${digit}개, 10이 ${digit}개, 1이 ⊙개`;
       return makeQuestion(
         lesson, difficulty, index,
-        `${value}는 100이 ${digit}개, 10이 ${digit}개, 1이 ⊙개인 수입니다. ⊙는?`,
-        value % 10, [digit, value % 100, 0],
+        `${value}는 ${parts}인 수입니다. ⊙는?`,
+        value % 10, [digit, low, 0],
         `${value}에서 일의 자리 숫자가 ${value % 10}이므로 1이 ${value % 10}개입니다.`,
         'placeValue', '조건 함께 보기 · 수를 자리별로 되돌려 보기',
       );
