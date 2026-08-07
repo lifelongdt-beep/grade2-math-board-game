@@ -3519,37 +3519,36 @@ select:focus {
   color: #8ce6ff;
 }
 
-/* ── 그림은 흰 종이 위에 ──────────────────────────────────────────
-   수직선·시계·자·모눈은 모두 어두운 선으로 그려져 있습니다.
-   그림 둘레에만 흰 판을 깔아 그림 크기는 그대로 두고 여백만 만듭니다. */
+/* ── 그림 ─────────────────────────────────────────────────────────
+   그림은 저마다 SVG 안에 흰 판을 이미 그리고 있습니다. 바깥에 흰 판을
+   한 겹 더 깔면 테두리가 두 개로 보이므로, 바깥 판 없이 SVG가 그린
+   판만 씁니다. 그만큼 남는 자리는 그림을 키우는 데 씁니다. */
 .question-visual-figure {
-  padding: 6px 8px;
-  height: calc(var(--visual-height) + 12px);
-  background: #ffffff;
-  border-radius: 14px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  background: none;
+  padding: 0;
+  box-shadow: none;
 }
 
-.question-visual-figure.is-clock {
-  height: calc(var(--visual-height) * 1.81 + 12px);
-}
-
-/* ── 보기 버튼 ────────────────────────────────────────────────────── */
+/* ── 보기 버튼 ──────────────────────────────────────────────────────
+   그냥 검은 바탕입니다. 테두리를 밝게 두면 버튼마다 은색 띠가 도드라져
+   글씨보다 테두리가 먼저 보입니다. */
 .choice-grid button {
-  background: linear-gradient(180deg, rgba(34, 46, 88, 0.96) 0%, rgba(20, 28, 58, 0.96) 100%);
-  border-color: rgba(120, 170, 255, 0.4);
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5), 0 0 14px rgba(69, 214, 255, 0.12);
+  background: #000000;
+  border-color: rgba(120, 170, 255, 0.22);
+  box-shadow: none;
   color: #ffffff;
 }
 
 .choice-grid button:hover:not(:disabled) {
-  background: linear-gradient(180deg, rgba(45, 66, 122, 0.96) 0%, rgba(26, 38, 76, 0.96) 100%);
+  background: #05070f;
   border-color: var(--neon);
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5), 0 0 22px rgba(69, 214, 255, 0.45);
+  box-shadow: 0 0 18px rgba(69, 214, 255, 0.4);
 }
 
 .choice-grid button:active:not(:disabled) {
-  box-shadow: 0 0 0 rgba(0, 0, 0, 0.5), 0 0 18px rgba(69, 214, 255, 0.4);
+  background: #0b1022;
+  box-shadow: 0 0 16px rgba(69, 214, 255, 0.35);
+  transform: translateY(2px);
 }
 
 /* ── 오답 도움말 ──────────────────────────────────────────────────── */
@@ -3667,4 +3666,39 @@ select:focus {
 .quick-support-card .quick-core span,
 .quick-support-card .quick-reason span {
   color: #8ce6ff;
+}
+
+/* ── 그림 키우기 ────────────────────────────────────────────────────
+   바깥 흰 판을 없애 생긴 자리만큼 그림을 키웁니다. 교실 뒤에서도
+   눈금과 숫자가 보여야 합니다. */
+.player-lanes.individual .question-visual-figure {
+  width: min(100%, 410px);
+  --visual-height: clamp(105px, 12.8vh, 166px);
+}
+
+.players-3 .question-visual-figure,
+.players-4 .question-visual-figure,
+.players-5 .question-visual-figure {
+  width: min(100%, 305px);
+  --visual-height: clamp(92px, 11.2vh, 140px);
+}
+
+.game-layout.players-1 .question-visual-figure {
+  width: min(100%, 485px);
+  --visual-height: clamp(140px, 19vh, 230px);
+}
+
+/* ── '다음 문제' 버튼 ───────────────────────────────────────────────
+   어두운 도움말 위에 어두운 버튼이라 잘 보이지 않았습니다.
+   흰 테두리를 둘러 어디를 눌러야 하는지 바로 보이게 합니다. */
+.student-feedback button {
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.28);
+}
+
+.student-feedback button:hover {
+  background: #ffffff;
+  color: #0b1022;
+  box-shadow: 0 0 22px rgba(255, 255, 255, 0.5);
 }
