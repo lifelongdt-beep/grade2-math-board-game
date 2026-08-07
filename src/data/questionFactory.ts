@@ -9652,24 +9652,32 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     }
 
     if (title.includes('자리 수를 알아')) {
-      const h = 1 + (seed % 8);
-      const t = 1 + (seed % 8);
-      const o = 1 + ((seed + 3) % 8);
-      const value = four ? h * 1000 + t * 100 + o * 10 : h * 100 + t * 10 + o;
-      if (four) {
-        return makeQuestion(
-          lesson, difficulty, index,
-          `${value}를 만드는 과정입니다. ⊙에 알맞은 수는? ① 1000이 ${h}개이면 ${h * 1000} ② 100이 ${t}개이면 ${t * 100} ③ 10이 ${o}개이면 ⊙`,
-          o * 10, [o, o * 100, t * 100],
-          `10이 ${o}개이면 ${o * 10}입니다.`,
-          'placeValue', '자리별 묶음을 모으는 과정',
-        );
-      }
+      // 한 자리만 계속 물으면 그 자리만 익히게 됩니다.
+      // 비우는 자리를 천, 백, 십, 일로 돌아가며 바꿉니다.
+      const digits = four
+        ? [1 + (seed % 8), 1 + ((seed + 2) % 8), 1 + ((seed + 4) % 8), 1 + ((seed + 6) % 8)]
+        : [1 + (seed % 8), 1 + ((seed + 3) % 8), 1 + ((seed + 5) % 8)];
+      const units = four ? [1000, 100, 10, 1] : [100, 10, 1];
+      const marks = ['①', '②', '③', '④'];
+      const value = digits.reduce((sum, digit, at) => sum + digit * units[at], 0);
+      const blank = seed % digits.length;
+
+      const steps = digits
+        .map((digit, at) =>
+          `${marks[at]} ${units[at]}이 ${digit}개이면 ${at === blank ? '⊙' : digit * units[at]}`)
+        .join(' ');
+      const answer = digits[blank] * units[blank];
+
       return makeQuestion(
         lesson, difficulty, index,
-        `${value}를 만드는 과정입니다. ⊙에 알맞은 수는? ① 100이 ${h}개이면 ${h * 100} ② 10이 ${t}개이면 ${t * 10} ③ 1이 ${o}개이면 ⊙`,
-        o, [o * 10, h * 100, t * 10],
-        `1이 ${o}개이면 ${o}입니다.`,
+        `${value}를 만드는 과정입니다. ⊙에 알맞은 수는? ${steps}`,
+        answer,
+        [
+          digits[blank],
+          answer * 10,
+          digits[(blank + 1) % digits.length] * units[(blank + 1) % digits.length],
+        ],
+        `${units[blank]}이 ${digits[blank]}개이면 ${answer}입니다.`,
         'placeValue', '자리별 묶음을 모으는 과정',
       );
     }
