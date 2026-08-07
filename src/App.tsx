@@ -413,12 +413,30 @@ const playTapSound = () => {
   playBlips([{ frequency: 880, at: 0, length: 0.05, volume: 0.07, type: 'triangle' }]);
 };
 
-// 한 단계를 마쳤을 때 나는 "딩동" 소리입니다.
-const playReadySound = () => {
-  playBlips([
-    { frequency: 783.99, at: 0, length: 0.09, volume: 0.1, type: 'triangle' },
-    { frequency: 1046.5, at: 0.07, length: 0.14, volume: 0.1, type: 'triangle' },
-  ]);
+// 난이도마다 다른 소리가 납니다. 하는 낮고 포근하게, 중은 그보다 한 단계
+// 위로, 상은 높고 씩씩하게 세 음이 올라갑니다. 소리만 듣고도 그 자리 친구가
+// 어떤 난이도를 골랐는지 알 수 있습니다.
+const difficultyBlips: Record<Difficulty, Blip[]> = {
+  하: [
+    // 도 - 미 (낮고 부드럽게)
+    { frequency: 392, at: 0, length: 0.11, volume: 0.1, type: 'sine' },
+    { frequency: 523.25, at: 0.09, length: 0.17, volume: 0.11, type: 'sine' },
+  ],
+  중: [
+    // 미 - 솔 (가운데)
+    { frequency: 587.33, at: 0, length: 0.09, volume: 0.1, type: 'triangle' },
+    { frequency: 783.99, at: 0.075, length: 0.16, volume: 0.11, type: 'triangle' },
+  ],
+  상: [
+    // 솔 - 도 - 미 (높고 씩씩하게 세 음)
+    { frequency: 783.99, at: 0, length: 0.08, volume: 0.1, type: 'triangle' },
+    { frequency: 1046.5, at: 0.065, length: 0.08, volume: 0.1, type: 'triangle' },
+    { frequency: 1318.51, at: 0.13, length: 0.18, volume: 0.11, type: 'triangle' },
+  ],
+};
+
+const playDifficultySound = (difficulty: Difficulty) => {
+  playBlips(difficultyBlips[difficulty]);
 };
 
 // 남은 시간만큼 위쪽 모래가 남고, 지난 만큼 아래에 쌓입니다.
@@ -790,8 +808,8 @@ function App() {
   };
 
   const chooseDifficulty = (studentId: number, difficulty: Difficulty) => {
-    // 난이도까지 고르면 준비가 끝나므로 '딩동' 하고 두 음을 냅니다.
-    playReadySound();
+    // 고른 난이도에 따라 다른 소리가 납니다.
+    playDifficultySound(difficulty);
     updateStudentConfig(studentId, { difficulty });
     setStudentSetupSteps((prev) => ({ ...prev, [studentId]: 'ready' }));
   };
