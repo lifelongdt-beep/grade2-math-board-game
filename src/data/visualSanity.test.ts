@@ -191,7 +191,10 @@ describe('question visuals', () => {
           if (question.visual?.kind !== 'number-line') continue;
 
           const marks = question.visual.marks.map((mark) => mark.value);
-          if (new Set(marks).size <= 1) {
+          // 점이 하나뿐인 것은 괜찮습니다. '14에서 한 칸'처럼 출발점만
+          // 찍어 두고 도착점은 학생이 세어 찾게 하는 그림이 그렇습니다.
+          // 점이 여럿인데 모두 같은 자리에 있으면 잘못 만든 그림입니다.
+          if (marks.length > 1 && new Set(marks).size === 1) {
             flat.push(`${question.id}: ${question.prompt.slice(0, 34)}`);
           }
         }
