@@ -453,66 +453,76 @@ const playDifficultySound = (difficulty: Difficulty) => {
 
 // 남은 시간만큼 위쪽 모래가 남고, 지난 만큼 아래에 쌓입니다.
 // 숫자를 빨리 못 읽는 아이도 모래를 보고 시간을 가늠할 수 있습니다.
+// 유리는 삼각형이 아니라 항아리처럼 볼록하게 부풀렸다가 목으로 좁아집니다.
+const TOP_CEILING = 8;
+const TOP_FLOOR = 37.6;
+const BOTTOM_CEILING = 40.4;
+const BOTTOM_FLOOR = 70;
+// 위 항아리: 어깨에서 볼록하게 나왔다가 가운데 목으로 모입니다.
+const TOP_BULB = 'M 8 8 H 44 C 44 20, 38 30, 27.4 37.6 H 24.6 C 14 30, 8 20, 8 8 Z';
+const BOTTOM_BULB = 'M 24.6 40.4 H 27.4 C 38 48, 44 58, 44 70 H 8 C 8 58, 14 48, 24.6 40.4 Z';
+
 const SandTimer = ({ remaining, total }: { remaining: number; total: number }) => {
   const left = total > 0 ? Math.min(1, Math.max(0, remaining / total)) : 0;
-  const TOP_FLOOR = 16.4;
-  const TOP_CEILING = 5;
-  const BOTTOM_FLOOR = 29;
-  const BOTTOM_CEILING = 17.6;
   const topHeight = (TOP_FLOOR - TOP_CEILING) * left;
   const bottomHeight = (BOTTOM_FLOOR - BOTTOM_CEILING) * (1 - left);
 
   return (
     <svg
       className="sand-timer"
-      viewBox="0 0 26 34"
-      width="23"
-      height="30"
+      viewBox="0 0 52 78"
       role="img"
       aria-label={`남은 시간 ${remaining}초`}
     >
       <defs>
         <clipPath id="sand-timer-top">
-          <path d="M5 5 H21 L13.6 16.4 H12.4 Z" />
+          <path d={TOP_BULB} />
         </clipPath>
         <clipPath id="sand-timer-bottom">
-          <path d="M12.4 17.6 H13.6 L21 29 H5 Z" />
+          <path d={BOTTOM_BULB} />
         </clipPath>
       </defs>
 
+      {/* 나무 기둥 */}
+      <rect x="6.5" y="5" width="3.4" height="68" rx="1.7" fill="#a9741f" />
+      <rect x="42.1" y="5" width="3.4" height="68" rx="1.7" fill="#a9741f" />
+
       {/* 유리 */}
-      <path d="M5 5 H21 L13.6 16.4 H12.4 Z" fill="#fffdf4" />
-      <path d="M12.4 17.6 H13.6 L21 29 H5 Z" fill="#fffdf4" />
+      <path d={TOP_BULB} fill="#fffdf4" />
+      <path d={BOTTOM_BULB} fill="#fffdf4" />
 
       {/* 모래 */}
       <rect
-        x="4"
+        x="6"
         y={TOP_FLOOR - topHeight}
-        width="18"
+        width="40"
         height={topHeight}
         fill="#f5b301"
         clipPath="url(#sand-timer-top)"
       />
       <rect
-        x="4"
+        x="6"
         y={BOTTOM_FLOOR - bottomHeight}
-        width="18"
+        width="40"
         height={bottomHeight}
         fill="#f5b301"
         clipPath="url(#sand-timer-bottom)"
       />
-      {left > 0 && left < 1 && <rect className="sand-timer-fall" x="12.6" y="16" width="0.9" height="7" fill="#f5b301" />}
+      {left > 0 && left < 1 && (
+        <rect className="sand-timer-fall" x="25" y="37" width="2" height="17" fill="#f5b301" />
+      )}
 
-      {/* 테두리와 나무틀 */}
-      <path
-        d="M5 5 H21 L13.6 16.4 H12.4 Z M12.4 17.6 H13.6 L21 29 H5 Z"
-        fill="none"
-        stroke="#b9812a"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-      />
-      <rect x="3" y="1.6" width="20" height="3.4" rx="1.7" fill="#c98f2f" />
-      <rect x="3" y="29" width="20" height="3.4" rx="1.7" fill="#c98f2f" />
+      {/* 유리에 비치는 빛 */}
+      <path d="M 13 11 C 13 20, 17 27, 22 32" fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" opacity="0.75" />
+      <path d="M 13 67 C 13 58, 17 51, 22 46" fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" opacity="0.55" />
+
+      {/* 유리 테두리 */}
+      <path d={TOP_BULB} fill="none" stroke="#b9812a" strokeWidth="2" strokeLinejoin="round" />
+      <path d={BOTTOM_BULB} fill="none" stroke="#b9812a" strokeWidth="2" strokeLinejoin="round" />
+
+      {/* 위아래 나무 받침 */}
+      <rect x="3" y="1.5" width="46" height="6.5" rx="3.2" fill="#c98f2f" />
+      <rect x="3" y="70" width="46" height="6.5" rx="3.2" fill="#c98f2f" />
     </svg>
   );
 };
@@ -1256,10 +1266,12 @@ function App() {
           <p className="lesson-objective-inline">{lesson.objective}</p>
         </div>
         <div className="game-topbar-actions">
-          <div className={`timer-card ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}>
-            <Timer size={22} />
-            <strong>{remainingSeconds}초</strong>
+          <div className={`timer-cluster ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}>
             <SandTimer remaining={remainingSeconds} total={sessionDuration} />
+            <div className={`timer-card ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}>
+              <Timer size={22} />
+              <strong>{remainingSeconds}초</strong>
+            </div>
           </div>
           {!isMobileEntry && (
             <button className="teacher-button" type="button" onClick={() => setTeacherOpen(true)}>

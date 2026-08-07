@@ -3671,21 +3671,36 @@ select:focus {
 /* ── 그림 키우기 ────────────────────────────────────────────────────
    바깥 흰 판을 없애 생긴 자리만큼 그림을 키웁니다. 교실 뒤에서도
    눈금과 숫자가 보여야 합니다. */
-.player-lanes.individual .question-visual-figure {
-  width: min(100%, 410px);
-  --visual-height: clamp(105px, 12.8vh, 166px);
-}
-
-.players-3 .question-visual-figure,
-.players-4 .question-visual-figure,
-.players-5 .question-visual-figure {
-  width: min(100%, 305px);
-  --visual-height: clamp(92px, 11.2vh, 140px);
-}
-
+/* 사람 수와 문제 길이마다 크기 규칙이 따로 있습니다. 한 군데만 키우면
+   더 구체적인 규칙에 밀리므로 같은 짝을 모두 한 번에 키웁니다. */
 .game-layout.players-1 .question-visual-figure {
   width: min(100%, 485px);
   --visual-height: clamp(140px, 19vh, 230px);
+}
+
+.game-layout.players-2 .question-visual-figure {
+  width: min(100%, 410px);
+  --visual-height: clamp(120px, 15.4vh, 192px);
+}
+
+.game-layout.players-3 .question-visual-figure {
+  width: min(100%, 333px);
+  --visual-height: clamp(105px, 12.8vh, 154px);
+}
+
+.game-layout.players-4 .question-visual-figure,
+.game-layout.players-5 .question-visual-figure {
+  width: min(100%, 269px);
+  --visual-height: clamp(85px, 10.2vh, 123px);
+}
+
+/* 글이 긴 문제는 그림 자리가 줄지만, 줄어든 채로도 전보다는 큽니다. */
+.game-layout .student-question-body.long-question .question-visual-figure {
+  --visual-height: clamp(87px, 10.5vh, 133px);
+}
+
+.game-layout .student-question-body.very-long-question .question-visual-figure {
+  --visual-height: clamp(72px, 9vh, 108px);
 }
 
 /* ── '다음 문제' 버튼 ───────────────────────────────────────────────
@@ -3701,4 +3716,185 @@ select:focus {
   background: #ffffff;
   color: #0b1022;
   box-shadow: 0 0 22px rgba(255, 255, 255, 0.5);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   레트로 아케이드 화면
+   ────────────────────────────────────────────────────────────────────
+   옛날 오락실 기계 화면처럼 꾸밉니다. 모서리를 각지게 하고, 그림자는
+   흐리게 번지는 대신 한 칸 툭 떨어뜨려 픽셀 느낌을 냅니다. 화면 전체에
+   아주 옅은 주사선을 깔아 브라운관 같은 결을 줍니다.
+
+   주사선은 옅게(검정 10%) 깝니다. 진하면 2학년이 읽을 글씨가 흐려집니다.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── 보기 버튼 자리: 흰 바탕을 걷어냅니다 ─────────────────────────── */
+.student-answer-dock {
+  background: #000000;
+  background-image: none;
+  border: 2px solid rgba(69, 214, 255, 0.28);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+/* 버튼은 바탕보다 한 톤 밝아야 '누르는 곳'으로 보입니다. */
+.choice-grid button {
+  background: #1b2540;
+  border: 2px solid rgba(120, 190, 255, 0.55);
+  border-radius: 8px;
+  box-shadow: 4px 4px 0 #000000;
+  color: #ffffff;
+}
+
+.choice-grid button:hover:not(:disabled) {
+  background: #27365e;
+  border-color: var(--neon);
+  box-shadow: 4px 4px 0 #000000, 0 0 18px rgba(69, 214, 255, 0.5);
+}
+
+.choice-grid button:active:not(:disabled) {
+  background: #32467a;
+  box-shadow: 0 0 0 #000000, 0 0 16px rgba(69, 214, 255, 0.45);
+  transform: translate(4px, 4px);
+}
+
+/* ── 주사선과 화면 가장자리 어둠 ──────────────────────────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1) 0 1px,
+    transparent 1px 3px
+  );
+  box-shadow: inset 0 0 190px rgba(0, 0, 0, 0.6);
+}
+
+/* ── 각진 모서리 ──────────────────────────────────────────────────── */
+.player-lane,
+.setup-player-lane,
+.game-topbar,
+.command-bar,
+.app-header,
+.playfield,
+.setup-screen,
+.setup-hero,
+.setup-options,
+.student-question-body,
+.student-feedback,
+.student-result-summary {
+  border-radius: 8px;
+}
+
+/* ── 자리 포드: 안쪽에 한 겹 더 두른 프레임 ───────────────────────── */
+.player-lane::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 2px solid color-mix(in srgb, var(--player-color, #45d6ff) 30%, transparent);
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+.player-lane::before {
+  border-radius: 0;
+}
+
+/* ── 흐린 그림자 대신 한 칸 떨어뜨린 그림자 ───────────────────────── */
+.app-header,
+.game-topbar,
+.command-bar,
+.setup-hero,
+.setup-options,
+.setup-screen {
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.6);
+}
+
+.player-lane:not(.correct):not(.retry):not(.explain) {
+  box-shadow:
+    5px 5px 0 rgba(0, 0, 0, 0.6),
+    0 0 24px color-mix(in srgb, var(--player-color, #45d6ff) 26%, transparent);
+}
+
+/* ── 숫자는 오락실 계기판 글꼴로 ──────────────────────────────────── */
+.timer-card strong,
+.choice-grid button span,
+.round-status span,
+.command-status span,
+.student-result-summary strong {
+  font-family: ui-monospace, 'Consolas', 'Courier New', monospace;
+  letter-spacing: 0.04em;
+}
+
+.timer-card {
+  border-radius: 8px;
+  border-width: 2px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
+  text-shadow: 0 0 10px rgba(255, 216, 107, 0.7);
+}
+
+/* ── 제목에 네온 불빛 ─────────────────────────────────────────────── */
+.app-header h1,
+.game-topbar h2,
+.setup-hero h2 {
+  text-shadow: 0 0 14px rgba(69, 214, 255, 0.5);
+}
+
+.eyebrow {
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 10px rgba(69, 214, 255, 0.6);
+}
+
+/* ── 버튼도 각지게, 눌리면 툭 내려앉게 ────────────────────────────── */
+.primary-button,
+.teacher-button,
+.secondary-button,
+.icon-button,
+.big-segmented button,
+.time-options button,
+.setup-player-lane .attendance-number-pad button,
+.setup-player-lane .difficulty-choice-grid button {
+  border-radius: 7px;
+  border-width: 2px;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+}
+
+.primary-button:active:not(:disabled),
+.teacher-button:active:not(:disabled),
+.secondary-button:active:not(:disabled),
+.icon-button:active:not(:disabled),
+.big-segmented button:active,
+.time-options button:active,
+.setup-player-lane .attendance-number-pad button:active:not(:disabled),
+.setup-player-lane .difficulty-choice-grid button:active {
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.6);
+  transform: translate(3px, 3px);
+}
+
+/* ── 모래시계: 초 상자 왼쪽에 크게 세웁니다 ───────────────────────── */
+.timer-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sand-timer {
+  flex: none;
+  display: block;
+  width: 42px;
+  height: 63px;
+  filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.6));
+}
+
+.app-shell.playing .sand-timer,
+.app-shell.finished .sand-timer {
+  width: 36px;
+  height: 54px;
+}
+
+.timer-cluster.urgent .sand-timer {
+  animation: sand-tip 0.9s ease-in-out infinite;
 }
