@@ -15,7 +15,9 @@ describe('step coverage', () => {
       for (const lesson of unit.lessons) {
         for (const level of levels) {
           const questions = generateQuestions(lesson, level);
-          const steps = questions.filter((question) => question.prompt.includes('⊙')).length;
+          // 빈칸 기호(□)는 보통 문항도 쓰므로 그것만으로는 셀 수 없습니다.
+          // 풀이 과정을 ① ② 로 나눠 보여 주는 것이 이 문항의 표시입니다.
+          const steps = questions.filter((question) => question.prompt.includes('①')).length;
 
           if (steps < 20) {
             missing.push(`${unit.title} ${lesson.lessonNo}차시 (${level}): ${steps}개`);

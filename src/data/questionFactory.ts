@@ -9272,7 +9272,7 @@ const makePromptsUnique = (questions: Question[]): Question[] => {
 
 // ── 풀이 과정 빈칸 문항 ────────────────────────────────────────────────────
 // 답만 묻는 문제는 학생이 어떻게 풀었는지 알기 어렵습니다. 교육부·시도교육청
-// 평가지에서 쓰는 방식대로 풀이 과정을 단계로 보여 주고 그중 한 곳을 ⊙로
+// 평가지에서 쓰는 방식대로 풀이 과정을 단계로 보여 주고 그중 한 곳을 □로
 // 비워 두면, 학생이 과정을 따라가며 생각하게 됩니다.
 // (예: "짧은바늘이 2와 3 사이이므로 □시입니다. 긴바늘이 …")
 const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
@@ -9290,7 +9290,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const onesSum = (a % 10) + b;
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}+${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리끼리 더하면 ${a % 10}+${b}=⊙ ② 10이 넘으므로 십의 자리로 1을 올립니다.`,
+        `${a}+${b}를 계산하는 과정입니다. □에 알맞은 수는? ① 일의 자리끼리 더하면 ${a % 10}+${b}=□ ② 10이 넘으므로 십의 자리로 1을 올립니다.`,
         onesSum, [onesSum % 10, onesSum + 10, Math.max(0, onesSum - 10)],
         `일의 자리끼리 더하면 ${a % 10}+${b}=${onesSum}입니다.`,
         'addition', '일의 자리 합을 구하는 과정',
@@ -9305,7 +9305,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const tens = Math.floor(a / 10) + Math.floor(b / 10) + 1;
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}+${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리: ${a % 10}+${b % 10}=${onesSum}, ${onesSum % 10}을 쓰고 1을 올립니다. ② 십의 자리: ${Math.floor(a / 10)}+${Math.floor(b / 10)}+1=⊙`,
+        `${a}+${b}를 계산하는 과정입니다. □에 알맞은 수는? ① 일의 자리: ${a % 10}+${b % 10}=${onesSum}, ${onesSum % 10}을 쓰고 1을 올립니다. ② 십의 자리: ${Math.floor(a / 10)}+${Math.floor(b / 10)}+1=□`,
         tens, [tens - 1, tens + 1, onesSum],
         `올린 1까지 더하면 십의 자리는 ${tens}이 됩니다.`,
         'addition', '올린 수까지 더해 십의 자리를 구하는 과정',
@@ -9319,7 +9319,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const bOnes = 2 + (index % 5);
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}+${bTens + bOnes}를 갈라서 계산하는 과정입니다. ⊙에 알맞은 수는? ① ${bTens + bOnes}을 ${bTens}과 ${bOnes}으로 가릅니다. ② ${a}+${bTens}=${a + bTens} ③ ${a + bTens}+${bOnes}=⊙`,
+        `${a}+${bTens + bOnes}를 갈라서 계산하는 과정입니다. □에 알맞은 수는? ① ${bTens + bOnes}을 ${bTens}과 ${bOnes}으로 가릅니다. ② ${a}+${bTens}=${a + bTens} ③ ${a + bTens}+${bOnes}=□`,
         a + bTens + bOnes, [a + bTens, a + bOnes, a + bTens + bOnes + 10],
         `갈라서 차례로 더하면 ${a + bTens}+${bOnes}=${a + bTens + bOnes}입니다.`,
         'addition', '수를 갈라 차례로 더하는 과정',
@@ -9333,7 +9333,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const borrowed = (a % 10) + 10;
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}-${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리 ${a % 10}에서 ${b}를 뺄 수 없습니다. ② 십의 자리에서 10을 가져오면 일의 자리는 ⊙이 됩니다.`,
+        `${a}-${b}를 계산하는 과정입니다. □에 알맞은 수는? ① 일의 자리 ${a % 10}에서 ${b}를 뺄 수 없습니다. ② 십의 자리에서 10을 가져오면 일의 자리는 □이 됩니다.`,
         borrowed, [a % 10, borrowed - b, 10],
         `${a % 10}에 10을 더하면 ${borrowed}이 됩니다.`,
         'subtraction', '10을 가져온 뒤 일의 자리를 구하는 과정',
@@ -9346,7 +9346,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const b = 10 * (1 + (seed % 3)) + (1 + (index % 8));
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}-${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① ${a}의 일의 자리는 0이라 뺄 수 없습니다. ② 십의 자리에서 10을 가져와 10-${b % 10}=⊙`,
+        `${a}-${b}를 계산하는 과정입니다. □에 알맞은 수는? ① ${a}의 일의 자리는 0이라 뺄 수 없습니다. ② 십의 자리에서 10을 가져와 10-${b % 10}=□`,
         10 - (b % 10), [b % 10, 10, 10 + (b % 10)],
         `10에서 ${b % 10}을 빼면 ${10 - (b % 10)}입니다.`,
         'subtraction', '몇십에서 10을 가져와 빼는 과정',
@@ -9360,7 +9360,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const bOnes = 1 + (index % 5);
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}-${bTens + bOnes}을 갈라서 계산하는 과정입니다. ⊙에 알맞은 수는? ① ${bTens + bOnes}을 ${bTens}과 ${bOnes}으로 가릅니다. ② ${a}-${bTens}=${a - bTens} ③ ${a - bTens}-${bOnes}=⊙`,
+        `${a}-${bTens + bOnes}을 갈라서 계산하는 과정입니다. □에 알맞은 수는? ① ${bTens + bOnes}을 ${bTens}과 ${bOnes}으로 가릅니다. ② ${a}-${bTens}=${a - bTens} ③ ${a - bTens}-${bOnes}=□`,
         a - bTens - bOnes, [a - bTens, a - bOnes, a - bTens - bOnes + 10],
         `갈라서 차례로 빼면 ${a - bTens}-${bOnes}=${a - bTens - bOnes}입니다.`,
         'subtraction', '수를 갈라 차례로 빼는 과정',
@@ -9378,7 +9378,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       if (pick === 0) {
         return makeQuestion(
           lesson, difficulty, index,
-          `${dan}×${k}를 구하는 과정입니다. ⊙에 알맞은 수는? ① ${dan}×${k - 1}=${dan * (k - 1)} ② ${dan}×${k}는 여기에 ⊙를 더합니다.`,
+          `${dan}×${k}를 구하는 과정입니다. □에 알맞은 수는? ① ${dan}×${k - 1}=${dan * (k - 1)} ② ${dan}×${k}는 여기에 □를 더합니다.`,
           dan, [k, dan * (k - 1), dan + k],
           `묶음이 하나 늘면 ${dan}만큼 커집니다. ${dan * (k - 1)}+${dan}=${dan * k}입니다.`,
           'multiplication', `${dan}단에서 앞의 곱으로 다음 곱 구하기`,
@@ -9386,7 +9386,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       }
       return makeQuestion(
         lesson, difficulty, index,
-        `${dan}×${k}를 구하는 과정입니다. ⊙에 알맞은 수는? ① ${dan}씩 ${k}묶음입니다. ② ${Array.from({ length: k }, () => dan).join('+')}=⊙`,
+        `${dan}×${k}를 구하는 과정입니다. □에 알맞은 수는? ① ${dan}씩 ${k}묶음입니다. ② ${Array.from({ length: k }, () => dan).join('+')}=□`,
         dan * k, [dan + k, dan * (k - 1), dan * (k + 1)],
         `${dan}을 ${k}번 더하면 ${dan * k}입니다.`,
         'multiplication', `${dan}단을 더하기로 확인하는 과정`,
@@ -9405,7 +9405,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       if (pick === 0) {
         return makeQuestion(
           lesson, difficulty, index,
-          `시각을 읽는 과정입니다. ⊙에 알맞은 수는? ① 짧은바늘이 ${hour}과 ${nextHour} 사이이므로 ⊙시입니다. ② 긴바늘이 ${pointer}을 가리키므로 ${minute}분입니다.`,
+          `시각을 읽는 과정입니다. □에 알맞은 수는? ① 짧은바늘이 ${hour}과 ${nextHour} 사이이므로 □시입니다. ② 긴바늘이 ${pointer}을 가리키므로 ${minute}분입니다.`,
           hour, [nextHour, pointer, minute],
           `짧은바늘이 지나온 숫자가 몇 시인지 알려 줍니다. 그래서 ${hour}시입니다.`,
           'time', '시각 읽는 과정의 빈칸 채우기',
@@ -9413,7 +9413,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       }
       return makeQuestion(
         lesson, difficulty, index,
-        `시각을 읽는 과정입니다. ⊙에 알맞은 수는? ① 짧은바늘이 ${hour}과 ${nextHour} 사이이므로 ${hour}시입니다. ② 긴바늘이 ${pointer}을 가리키므로 ⊙분입니다.`,
+        `시각을 읽는 과정입니다. □에 알맞은 수는? ① 짧은바늘이 ${hour}과 ${nextHour} 사이이므로 ${hour}시입니다. ② 긴바늘이 ${pointer}을 가리키므로 □분입니다.`,
         minute, [pointer, minute + 5, hour],
         `긴바늘이 가리키는 숫자를 5씩 뛰어 세면 ${pointer}×5=${minute}분입니다.`,
         'time', '분을 읽는 과정의 빈칸 채우기',
@@ -9427,7 +9427,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       if (pick === 0) {
         return makeQuestion(
           lesson, difficulty, index,
-          `${hour}시 ${startMinute}분부터 ${nextHour}시 ${after}분까지 걸린 시간을 구하는 과정입니다. ⊙에 알맞은 수는? ① ${hour}시 ${startMinute}분에서 ${nextHour}시까지 ⊙분 ② ${nextHour}시에서 ${after}분 더`,
+          `${hour}시 ${startMinute}분부터 ${nextHour}시 ${after}분까지 걸린 시간을 구하는 과정입니다. □에 알맞은 수는? ① ${hour}시 ${startMinute}분에서 ${nextHour}시까지 □분 ② ${nextHour}시에서 ${after}분 더`,
           toHour, [startMinute, after, toHour + after],
           `한 시간은 60분입니다. 60-${startMinute}=${toHour}분입니다.`,
           'time', '걸린 시간을 나누어 구하는 과정',
@@ -9435,7 +9435,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       }
       return makeQuestion(
         lesson, difficulty, index,
-        `${hour}시 ${startMinute}분부터 ${nextHour}시 ${after}분까지 걸린 시간을 구하는 과정입니다. ⊙에 알맞은 수는? ① ${nextHour}시까지 ${toHour}분 ② ${after}분 더 ③ 모두 ⊙분`,
+        `${hour}시 ${startMinute}분부터 ${nextHour}시 ${after}분까지 걸린 시간을 구하는 과정입니다. □에 알맞은 수는? ① ${nextHour}시까지 ${toHour}분 ② ${after}분 더 ③ 모두 □분`,
         toHour + after, [toHour, after, toHour + after + 5],
         `두 시간을 더합니다. ${toHour}+${after}=${toHour + after}분입니다.`,
         'time', '나누어 구한 시간을 더하기',
@@ -9455,7 +9455,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const cm = 10 + (seed % 8) * 5;
       return makeQuestion(
         lesson, difficulty, index,
-        `${m * 100 + cm}cm를 m와 cm로 나타내는 과정입니다. ⊙에 알맞은 수는? ① 100cm는 1m입니다. ② ${m * 100}cm는 ${m}m입니다. ③ 남은 것은 ⊙cm입니다.`,
+        `${m * 100 + cm}cm를 m와 cm로 나타내는 과정입니다. □에 알맞은 수는? ① 100cm는 1m입니다. ② ${m * 100}cm는 ${m}m입니다. ③ 남은 것은 □cm입니다.`,
         cm, [m, m * 100, cm + 100],
         `${m * 100 + cm}cm에서 ${m * 100}cm를 빼면 ${cm}cm가 남습니다.`,
         'measurement', 'cm를 m와 cm로 나누는 과정',
@@ -9466,7 +9466,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const cm = 20 + (seed % 7) * 10;
       return makeQuestion(
         lesson, difficulty, index,
-        `줄자로 잰 길이를 쓰는 과정입니다. ⊙에 알맞은 수는? ① 줄자의 0에 한끝을 맞춥니다. ② 끝 눈금이 ${m * 100 + cm}cm였습니다. ③ ${m}m ⊙cm라고 씁니다.`,
+        `줄자로 잰 길이를 쓰는 과정입니다. □에 알맞은 수는? ① 줄자의 0에 한끝을 맞춥니다. ② 끝 눈금이 ${m * 100 + cm}cm였습니다. ③ ${m}m □cm라고 씁니다.`,
         cm, [m, m * 100 + cm, cm + 100],
         `${m * 100 + cm}cm는 ${m}m ${cm}cm입니다.`,
         'measurement', '줄자로 잰 값을 m와 cm로 쓰는 과정',
@@ -9476,7 +9476,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const span = 10 + (seed % 6);
       return makeQuestion(
         lesson, difficulty, index,
-        `뼘으로 길이를 어림하는 과정입니다. ⊙에 알맞은 수는? ① 한 뼘은 약 ${span}cm입니다. ② 세 뼘이면 약 ${span * 3}cm이므로 ⊙cm쯤입니다.`,
+        `뼘으로 길이를 어림하는 과정입니다. □에 알맞은 수는? ① 한 뼘은 약 ${span}cm입니다. ② 세 뼘이면 약 ${span * 3}cm이므로 □cm쯤입니다.`,
         span * 3, [span, span * 2, span * 4],
         `한 뼘이 약 ${span}cm이므로 세 뼘은 약 ${span * 3}cm입니다.`,
         'measurement', '몸의 부분으로 어림하는 과정',
@@ -9486,7 +9486,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const known = 10 * (2 + (seed % 4));
       return makeQuestion(
         lesson, difficulty, index,
-        `아는 길이를 기준으로 어림하는 과정입니다. ⊙에 알맞은 수는? ① 색 테이프는 ${known}cm입니다. ② 물건에 3번쯤 들어갑니다. ③ 물건은 약 ⊙cm입니다.`,
+        `아는 길이를 기준으로 어림하는 과정입니다. □에 알맞은 수는? ① 색 테이프는 ${known}cm입니다. ② 물건에 3번쯤 들어갑니다. ③ 물건은 약 □cm입니다.`,
         known * 3, [known, known * 2, known + 3],
         `${known}cm가 3번이면 약 ${known * 3}cm입니다.`,
         'measurement', '기준 길이를 세어 어림하는 과정',
@@ -9496,7 +9496,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       if (pick === 0) {
         return makeQuestion(
           lesson, difficulty, index,
-          `${am}m ${acm}cm + ${bm}m ${bcm}cm를 구하는 과정입니다. ⊙에 알맞은 수는? ① m끼리: ${am}+${bm}=⊙ ② cm끼리: ${acm}+${bcm}=${acm + bcm}`,
+          `${am}m ${acm}cm + ${bm}m ${bcm}cm를 구하는 과정입니다. □에 알맞은 수는? ① m끼리: ${am}+${bm}=□ ② cm끼리: ${acm}+${bcm}=${acm + bcm}`,
           am + bm, [acm + bcm, am, am + bm + 1],
           `m는 m끼리 더합니다. ${am}+${bm}=${am + bm}m입니다.`,
           'measurement', '길이의 합에서 m 부분 구하기',
@@ -9504,7 +9504,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       }
       return makeQuestion(
         lesson, difficulty, index,
-        `${am}m ${acm}cm + ${bm}m ${bcm}cm를 구하는 과정입니다. ⊙에 알맞은 수는? ① m끼리: ${am}+${bm}=${am + bm} ② cm끼리: ${acm}+${bcm}=⊙`,
+        `${am}m ${acm}cm + ${bm}m ${bcm}cm를 구하는 과정입니다. □에 알맞은 수는? ① m끼리: ${am}+${bm}=${am + bm} ② cm끼리: ${acm}+${bcm}=□`,
         acm + bcm, [am + bm, acm, acm + bcm + 10],
         `cm는 cm끼리 더합니다. ${acm}+${bcm}=${acm + bcm}cm입니다.`,
         'measurement', '길이의 합에서 cm 부분 구하기',
@@ -9517,7 +9517,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       if (pick === 0) {
         return makeQuestion(
           lesson, difficulty, index,
-          `${bigM}m ${bigCm}cm - ${bm}m ${bcm}cm를 구하는 과정입니다. ⊙에 알맞은 수는? ① m끼리: ${bigM}-${bm}=⊙ ② cm끼리: ${bigCm}-${bcm}=${bigCm - bcm}`,
+          `${bigM}m ${bigCm}cm - ${bm}m ${bcm}cm를 구하는 과정입니다. □에 알맞은 수는? ① m끼리: ${bigM}-${bm}=□ ② cm끼리: ${bigCm}-${bcm}=${bigCm - bcm}`,
           bigM - bm, [bigCm - bcm, bigM, bigM - bm + 1],
           `m는 m끼리 뺍니다. ${bigM}-${bm}=${bigM - bm}m입니다.`,
           'measurement', '길이의 차에서 m 부분 구하기',
@@ -9525,7 +9525,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       }
       return makeQuestion(
         lesson, difficulty, index,
-        `${bigM}m ${bigCm}cm - ${bm}m ${bcm}cm를 구하는 과정입니다. ⊙에 알맞은 수는? ① m끼리: ${bigM}-${bm}=${bigM - bm} ② cm끼리: ${bigCm}-${bcm}=⊙`,
+        `${bigM}m ${bigCm}cm - ${bm}m ${bcm}cm를 구하는 과정입니다. □에 알맞은 수는? ① m끼리: ${bigM}-${bm}=${bigM - bm} ② cm끼리: ${bigCm}-${bcm}=□`,
         bigCm - bcm, [bigM - bm, bigCm, bigCm - bcm + 10],
         `cm는 cm끼리 뺍니다. ${bigCm}-${bcm}=${bigCm - bcm}cm입니다.`,
         'measurement', '길이의 차에서 cm 부분 구하기',
@@ -9540,7 +9540,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const value = 10 + (seed % 80);
       return makeQuestion(
         lesson, difficulty, index,
-        `물건 ${value}개를 세는 과정입니다. ⊙에 알맞은 수는? ① 10개씩 묶어 셉니다. ② 묶음이 ${Math.floor(value / 10)}개 생기고 ⊙개가 남습니다.`,
+        `물건 ${value}개를 세는 과정입니다. □에 알맞은 수는? ① 10개씩 묶어 셉니다. ② 묶음이 ${Math.floor(value / 10)}개 생기고 □개가 남습니다.`,
         value % 10, [Math.floor(value / 10), value, 10],
         `${value}는 10개씩 ${Math.floor(value / 10)}묶음과 ${value % 10}개입니다.`,
         'placeValue', '10씩 묶어 세는 과정',
@@ -9551,7 +9551,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       if (seed % 3 === 0) {
         return makeQuestion(
           lesson, difficulty, index,
-          '생활 물건의 겉모양을 살펴보는 과정입니다. ⊙에 들어갈 말은? ① 물건의 테두리를 따라갑니다. ② ⊙ ③ 어떤 모양인지 말합니다.',
+          '생활 물건의 겉모양을 살펴보는 과정입니다. □에 들어갈 말은? ① 물건의 테두리를 따라갑니다. ② □ ③ 어떤 모양인지 말합니다.',
           '곧은 선인지 굽은 선인지 봅니다',
           ['물건의 색을 봅니다', '물건의 무게를 잽니다', '물건의 값을 봅니다'],
           '테두리가 곧은 선인지 굽은 선인지 보면 어떤 모양인지 알 수 있습니다.',
@@ -9562,7 +9562,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         const corners = 3 + (seed % 2);
         return makeQuestion(
           lesson, difficulty, index,
-          `모양의 뾰족한 곳을 세는 과정입니다. ⊙에 알맞은 수는? ① 테두리를 따라갑니다. ② 뾰족한 곳마다 표시합니다. ③ 표시한 곳이 ⊙개입니다.`,
+          `모양의 뾰족한 곳을 세는 과정입니다. □에 알맞은 수는? ① 테두리를 따라갑니다. ② 뾰족한 곳마다 표시합니다. ③ 표시한 곳이 □개입니다.`,
           corners, [corners + 1, corners - 1, 0],
           `뾰족한 곳을 하나씩 표시하며 세면 ${corners}개입니다.`,
           'shape', '뾰족한 곳을 세는 차례',
@@ -9570,7 +9570,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       }
       return makeQuestion(
         lesson, difficulty, index,
-        '물건을 모양끼리 모으는 과정입니다. ⊙에 들어갈 말은? ① 겉모양을 봅니다. ② ⊙ ③ 같은 모양끼리 모읍니다.',
+        '물건을 모양끼리 모으는 과정입니다. □에 들어갈 말은? ① 겉모양을 봅니다. ② □ ③ 같은 모양끼리 모읍니다.',
         '테두리가 비슷한 것을 찾습니다',
         ['큰 것부터 고릅니다', '색이 같은 것을 찾습니다', '무거운 것을 찾습니다'],
         '겉모양의 테두리가 비슷한 것끼리 모으면 같은 모양끼리 모입니다.',
@@ -9583,7 +9583,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const b = 10 * (1 + ((seed + 1) % 3)) + ((seed + 2) % 4);
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}+${b}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 일의 자리끼리 더하면 ${a % 10}+${b % 10}=${(a % 10) + (b % 10)} ② 십의 자리끼리 더하면 ${Math.floor(a / 10)}+${Math.floor(b / 10)}=⊙`,
+        `${a}+${b}를 계산하는 과정입니다. □에 알맞은 수는? ① 일의 자리끼리 더하면 ${a % 10}+${b % 10}=${(a % 10) + (b % 10)} ② 십의 자리끼리 더하면 ${Math.floor(a / 10)}+${Math.floor(b / 10)}=□`,
         Math.floor(a / 10) + Math.floor(b / 10),
         [(a % 10) + (b % 10), Math.floor(a / 10), Math.floor(a / 10) + Math.floor(b / 10) + 1],
         `십의 자리끼리 더하면 ${Math.floor(a / 10) + Math.floor(b / 10)}입니다.`,
@@ -9594,7 +9594,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (unit === '길이 재기') {
       return makeQuestion(
         lesson, difficulty, index,
-        '두 물건의 길이를 견주는 과정입니다. ⊙에 들어갈 말은? ① 두 물건을 나란히 놓습니다. ② ⊙ ③ 어느 것이 더 긴지 말합니다.',
+        '두 물건의 길이를 견주는 과정입니다. □에 들어갈 말은? ① 두 물건을 나란히 놓습니다. ② □ ③ 어느 것이 더 긴지 말합니다.',
         '한쪽 끝을 맞춥니다',
         ['가운데를 맞춥니다', '겹쳐 놓습니다', '멀리 떨어뜨립니다'],
         '한쪽 끝을 맞추어야 어느 것이 더 긴지 바르게 알 수 있습니다.',
@@ -9606,7 +9606,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const each = 2 + (seed % 5);
       return makeQuestion(
         lesson, difficulty, index,
-        `물건을 빠르게 세는 과정입니다. ⊙에 알맞은 수는? ① 하나씩 세면 오래 걸립니다. ② ${each}씩 뛰어 셉니다. ③ ${each}, ${each * 2}, ⊙`,
+        `물건을 빠르게 세는 과정입니다. □에 알맞은 수는? ① 하나씩 세면 오래 걸립니다. ② ${each}씩 뛰어 셉니다. ③ ${each}, ${each * 2}, □`,
         each * 3, [each * 2, each * 4, each + 3],
         `${each}씩 뛰어 세면 ${each * 2} 다음은 ${each * 3}입니다.`,
         'multiplication', '뛰어 세어 빠르게 세는 차례',
@@ -9617,7 +9617,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const each = 2 + (seed % 5);
       return makeQuestion(
         lesson, difficulty, index,
-        `${each}개씩 3묶음의 수를 구하는 과정입니다. ⊙에 알맞은 수는? ① 같은 수 ${each}가 3번 있습니다. ② ${each}+${each}+${each}=⊙`,
+        `${each}개씩 3묶음의 수를 구하는 과정입니다. □에 알맞은 수는? ① 같은 수 ${each}가 3번 있습니다. ② ${each}+${each}+${each}=□`,
         each * 3, [each * 2, each + 3, each * 4],
         `${each}를 세 번 더하면 ${each * 3}입니다.`,
         'multiplication', '같은 수를 여러 번 더하는 차례',
@@ -9628,7 +9628,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const hour = 1 + (seed % 11);
       return makeQuestion(
         lesson, difficulty, index,
-        `시계를 읽는 과정입니다. ⊙에 알맞은 수는? ① 짧은바늘이 ${hour}을 가리킵니다. ② 긴바늘이 12를 가리킵니다. ③ ⊙시입니다.`,
+        `시계를 읽는 과정입니다. □에 알맞은 수는? ① 짧은바늘이 ${hour}을 가리킵니다. ② 긴바늘이 12를 가리킵니다. ③ □시입니다.`,
         hour, [12, hour + 1, hour * 2],
         `긴바늘이 12를 가리키면 몇 시 정각이고, 짧은바늘이 ${hour}이므로 ${hour}시입니다.`,
         'time', '두 바늘을 차례로 보는 과정',
@@ -9640,7 +9640,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const b = 2 + ((seed + 1) % 3);
       return makeQuestion(
         lesson, difficulty, index,
-        `조사한 것을 알아보기 쉽게 하는 과정입니다. ⊙에 알맞은 수는? ① 같은 것끼리 모읍니다. ② 축구 ${a}명, 줄넘기 ${b}명 ③ 조사한 사람은 모두 ⊙명`,
+        `조사한 것을 알아보기 쉽게 하는 과정입니다. □에 알맞은 수는? ① 같은 것끼리 모읍니다. ② 축구 ${a}명, 줄넘기 ${b}명 ③ 조사한 사람은 모두 □명`,
         `${a + b}명`, [`${a}명`, `${b}명`, `${a + b + 1}명`],
         `항목별 수를 더하면 ${a}+${b}=${a + b}명입니다.`,
         'data', '모아서 세는 차례',
@@ -9650,7 +9650,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (unit === '규칙 찾기') {
       return makeQuestion(
         lesson, difficulty, index,
-        '생활에서 규칙을 찾는 과정입니다. ⊙에 들어갈 말은? ① 되풀이되는 것을 찾습니다. ② ⊙ ③ 다음에 올 것을 말합니다.',
+        '생활에서 규칙을 찾는 과정입니다. □에 들어갈 말은? ① 되풀이되는 것을 찾습니다. ② □ ③ 다음에 올 것을 말합니다.',
         '어디까지가 한 묶음인지 정합니다',
         ['맨 끝만 봅니다', '개수를 모두 셉니다', '색을 칠합니다'],
         '되풀이되는 한 묶음을 찾아야 다음에 올 것을 알 수 있습니다.',
@@ -9669,7 +9669,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const piece = four ? 100 : 10;
       return makeQuestion(
         lesson, difficulty, index,
-        `${base}을 알아보는 과정입니다. ⊙에 알맞은 수는? ① ${piece}이 9개이면 ${piece * 9} ② ${piece}이 한 개 더 있으면 ⊙`,
+        `${base}을 알아보는 과정입니다. □에 알맞은 수는? ① ${piece}이 9개이면 ${piece * 9} ② ${piece}이 한 개 더 있으면 □`,
         base, [piece * 9, piece, base + piece],
         `${piece}이 10개 모이면 ${base}입니다.`,
         'number', `${name}이 되는 과정 따라가기`,
@@ -9679,7 +9679,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('천을 알아') && !title.includes('몇')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `1000을 알아보는 과정입니다. ⊙에 알맞은 수는? ① 100이 9개이면 900 ② 100이 한 개 더 있으면 ⊙`,
+        `1000을 알아보는 과정입니다. □에 알맞은 수는? ① 100이 9개이면 900 ② 100이 한 개 더 있으면 □`,
         1000, [900, 100, 1100],
         `100이 10개 모이면 1000입니다.`,
         'number', '천이 되는 과정 따라가기',
@@ -9690,7 +9690,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const count = 3 + (index % 6);
       return makeQuestion(
         lesson, difficulty, index,
-        `${base * count}을 알아보는 과정입니다. ⊙에 알맞은 수는? ① ${base}이 1개이면 ${base} ② ${base}이 ⊙개이면 ${base * count}`,
+        `${base * count}을 알아보는 과정입니다. □에 알맞은 수는? ① ${base}이 1개이면 ${base} ② ${base}이 □개이면 ${base * count}`,
         count, [base * count, count + 1, base],
         `${base * count}은 ${base}이 ${count}개인 수입니다.`,
         'placeValue', `몇${name}을 묶음으로 세는 과정`,
@@ -9710,13 +9710,13 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
       const steps = digits
         .map((digit, at) =>
-          `${marks[at]} ${units[at]}이 ${digit}개이면 ${at === blank ? '⊙' : digit * units[at]}`)
+          `${marks[at]} ${units[at]}이 ${digit}개이면 ${at === blank ? '□' : digit * units[at]}`)
         .join(' ');
       const answer = digits[blank] * units[blank];
 
       return makeQuestion(
         lesson, difficulty, index,
-        `${value}를 만드는 과정입니다. ⊙에 알맞은 수는? ${steps}`,
+        `${value}를 만드는 과정입니다. □에 알맞은 수는? ${steps}`,
         answer,
         [
           digits[blank],
@@ -9741,7 +9741,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
       return makeQuestion(
         lesson, difficulty, index,
-        `${value}에서 숫자 ${digit}이 나타내는 값을 구하는 과정입니다. ⊙에 알맞은 수는? ① ${digit}은 ${names[at]}의 자리에 있습니다. ② ${names[at]}의 자리 ${digit}은 ⊙을 나타냅니다.`,
+        `${value}에서 숫자 ${digit}이 나타내는 값을 구하는 과정입니다. □에 알맞은 수는? ① ${digit}은 ${names[at]}의 자리에 있습니다. ② ${names[at]}의 자리 ${digit}은 □을 나타냅니다.`,
         worth,
         [digit, worth * 10, value],
         `${names[at]}의 자리에 있는 ${digit}은 ${worth}을 나타냅니다.`,
@@ -9754,7 +9754,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const start = base * (2 + (index % 6));
       return makeQuestion(
         lesson, difficulty, index,
-        `${start}에서 ${step}씩 뛰어 세는 과정입니다. ⊙에 알맞은 수는? ① ${start} ② ${start + step} ③ ⊙`,
+        `${start}에서 ${step}씩 뛰어 세는 과정입니다. □에 알맞은 수는? ① ${start} ② ${start + step} ③ □`,
         start + step * 2, [start + step, start + step * 3, start],
         `${step}씩 커지므로 ${start + step} 다음은 ${start + step * 2}입니다.`,
         'number', '뛰어 세는 과정 따라가기',
@@ -9773,7 +9773,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}과 ${b}의 크기를 비교하는 과정입니다. ⊙에 알맞은 수는? ① 가장 높은 자리 숫자가 ${high}으로 같습니다. ② 그다음 ${place}의 자리를 비교하면 ⊙이 더 ${askBigger ? '큽니다' : '작습니다'}.`,
+        `${a}과 ${b}의 크기를 비교하는 과정입니다. □에 알맞은 수는? ① 가장 높은 자리 숫자가 ${high}으로 같습니다. ② 그다음 ${place}의 자리를 비교하면 □이 더 ${askBigger ? '큽니다' : '작습니다'}.`,
         askBigger ? a : b,
         [askBigger ? b : a, high, a + b],
         `${place}의 자리 숫자를 비교하면 ${askBigger ? `${a}이 더 큽니다` : `${b}이 더 작습니다`}.`,
@@ -9788,7 +9788,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('△')) {
       return makeQuestion(
         lesson, difficulty, index,
-        '삼각형인지 알아보는 과정입니다. ⊙에 알맞은 수는? ① 곧은 선으로 둘러싸여 있습니다. ② 변을 세어 보니 ⊙개입니다.',
+        '삼각형인지 알아보는 과정입니다. □에 알맞은 수는? ① 곧은 선으로 둘러싸여 있습니다. ② 변을 세어 보니 □개입니다.',
         3, [4, 5, 0],
         '삼각형은 곧은 변이 3개입니다.',
         'shape', '삼각형을 확인하는 과정',
@@ -9797,7 +9797,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('□')) {
       return makeQuestion(
         lesson, difficulty, index,
-        '사각형인지 알아보는 과정입니다. ⊙에 알맞은 수는? ① 곧은 선으로 둘러싸여 있습니다. ② 꼭짓점을 세어 보니 ⊙개입니다.',
+        '사각형인지 알아보는 과정입니다. □에 알맞은 수는? ① 곧은 선으로 둘러싸여 있습니다. ② 꼭짓점을 세어 보니 □개입니다.',
         4, [3, 5, 0],
         '사각형은 꼭짓점이 4개입니다.',
         'shape', '사각형을 확인하는 과정',
@@ -9806,7 +9806,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('○')) {
       return makeQuestion(
         lesson, difficulty, index,
-        '원인지 알아보는 과정입니다. ⊙에 알맞은 수는? ① 굽은 선으로 둘러싸여 있습니다. ② 곧은 변을 세어 보니 ⊙개입니다.',
+        '원인지 알아보는 과정입니다. □에 알맞은 수는? ① 굽은 선으로 둘러싸여 있습니다. ② 곧은 변을 세어 보니 □개입니다.',
         0, [1, 3, 4],
         '원은 곧은 변이 하나도 없습니다.',
         'shape', '원을 확인하는 과정',
@@ -9815,7 +9815,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('칠교')) {
       return makeQuestion(
         lesson, difficulty, index,
-        '칠교 조각으로 사각형을 만드는 과정입니다. ⊙에 알맞은 수는? ① 삼각형 2개를 긴 변끼리 붙입니다. ② 바깥에 곧은 변이 ⊙개 생깁니다.',
+        '칠교 조각으로 사각형을 만드는 과정입니다. □에 알맞은 수는? ① 삼각형 2개를 긴 변끼리 붙입니다. ② 바깥에 곧은 변이 □개 생깁니다.',
         4, [3, 2, 5],
         '삼각형 두 개를 붙이면 바깥에 곧은 변이 4개 생겨 사각형이 됩니다.',
         'shape', '칠교 조각을 붙이는 과정',
@@ -9826,7 +9826,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const second = 1 + (seed % 2);
       return makeQuestion(
         lesson, difficulty, index,
-        `쌓은 모양의 쌓기나무 수를 세는 과정입니다. ⊙에 알맞은 수는? ① 1층에 ${first}개 ② 2층에 ${second}개 ③ 모두 ⊙개`,
+        `쌓은 모양의 쌓기나무 수를 세는 과정입니다. □에 알맞은 수는? ① 1층에 ${first}개 ② 2층에 ${second}개 ③ 모두 □개`,
         first + second, [first, second, first + second + 1],
         `층별로 세어 더하면 ${first}+${second}=${first + second}개입니다.`,
         'solid', '층별로 세어 모으는 과정',
@@ -9837,7 +9837,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const used = 1 + (seed % 3);
       return makeQuestion(
         lesson, difficulty, index,
-        `쌓기나무 ${total}개로 모양을 바꾸는 과정입니다. ⊙에 알맞은 수는? ① 1층에서 ${used}개를 빼 위로 옮깁니다. ② 모양은 달라졌지만 쌓기나무는 ⊙개 그대로입니다.`,
+        `쌓기나무 ${total}개로 모양을 바꾸는 과정입니다. □에 알맞은 수는? ① 1층에서 ${used}개를 빼 위로 옮깁니다. ② 모양은 달라졌지만 쌓기나무는 □개 그대로입니다.`,
         total, [total - used, total + used, used],
         `자리를 옮겨도 쌓기나무의 수는 ${total}개로 변하지 않습니다.`,
         'solid', '모양을 바꿔도 개수가 같음을 확인하는 과정',
@@ -9851,7 +9851,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const times = 4 + (index % 5);
       return makeQuestion(
         lesson, difficulty, index,
-        `클립으로 연필의 길이를 재는 과정입니다. ⊙에 알맞은 수는? ① 클립을 겹치지 않게 이어 놓습니다. ② 클립이 ⊙번 들어갔습니다. ③ 연필은 클립으로 ${times}번입니다.`,
+        `클립으로 연필의 길이를 재는 과정입니다. □에 알맞은 수는? ① 클립을 겹치지 않게 이어 놓습니다. ② 클립이 □번 들어갔습니다. ③ 연필은 클립으로 ${times}번입니다.`,
         times, [times + 1, times - 1, 1],
         `클립이 ${times}번 들어갔으므로 연필의 길이는 클립으로 ${times}번입니다.`,
         'measurement', '단위를 이어 세는 과정',
@@ -9861,7 +9861,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const times = 3 + (index % 6);
       return makeQuestion(
         lesson, difficulty, index,
-        `${times}cm를 알아보는 과정입니다. ⊙에 알맞은 수는? ① 1cm가 1번이면 1cm ② 1cm가 ⊙번이면 ${times}cm`,
+        `${times}cm를 알아보는 과정입니다. □에 알맞은 수는? ① 1cm가 1번이면 1cm ② 1cm가 □번이면 ${times}cm`,
         times, [1, times + 1, times * 2],
         `${times}cm는 1cm가 ${times}번 이어진 길이입니다.`,
         'measurement', '1cm를 이어 세는 과정',
@@ -9871,7 +9871,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const end = 4 + (seed % 9);
       return makeQuestion(
         lesson, difficulty, index,
-        `자로 길이를 재는 과정입니다. ⊙에 알맞은 수는? ① 물건의 한끝을 자의 ⊙에 맞춥니다. ② 다른 끝이 닿은 눈금 ${end}을 읽습니다.`,
+        `자로 길이를 재는 과정입니다. □에 알맞은 수는? ① 물건의 한끝을 자의 □에 맞춥니다. ② 다른 끝이 닿은 눈금 ${end}을 읽습니다.`,
         0, [1, end, end + 1],
         `한끝을 0에 맞추어야 끝 눈금을 그대로 읽을 수 있습니다.`,
         'measurement', '자를 0에 맞추는 과정',
@@ -9882,7 +9882,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const end = start + 3 + (seed % 5);
       return makeQuestion(
         lesson, difficulty, index,
-        `자로 잰 길이를 구하는 과정입니다. ⊙에 알맞은 수는? ① 시작 눈금은 ${start} ② 끝 눈금은 ${end} ③ 길이는 ${end}-${start}=⊙`,
+        `자로 잰 길이를 구하는 과정입니다. □에 알맞은 수는? ① 시작 눈금은 ${start} ② 끝 눈금은 ${end} ③ 길이는 ${end}-${start}=□`,
         `${end - start}cm`, [`${end}cm`, `${start}cm`, `${end + start}cm`],
         `끝 눈금에서 시작 눈금을 빼면 ${end - start}cm입니다.`,
         'measurement', '눈금을 빼서 길이를 구하는 과정',
@@ -9892,7 +9892,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const span = 10 + (seed % 6);
       return makeQuestion(
         lesson, difficulty, index,
-        `뼘으로 길이를 어림하는 과정입니다. ⊙에 알맞은 수는? ① 한 뼘은 약 ${span}cm입니다. ② 세 뼘이면 약 ${span}+${span}+${span}=⊙cm입니다.`,
+        `뼘으로 길이를 어림하는 과정입니다. □에 알맞은 수는? ① 한 뼘은 약 ${span}cm입니다. ② 세 뼘이면 약 ${span}+${span}+${span}=□cm입니다.`,
         span * 3, [span, span * 2, span * 4],
         `한 뼘이 약 ${span}cm이므로 세 뼘은 약 ${span * 3}cm입니다.`,
         'measurement', '몸의 부분을 여러 번 써서 어림하는 과정',
@@ -9901,7 +9901,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('길이를 비교하는 방법')) {
       return makeQuestion(
         lesson, difficulty, index,
-        '옮길 수 없는 물건의 길이를 비교하는 과정입니다. ⊙에 들어갈 말은? ① 끈에 물건의 길이를 옮겨 표시합니다. ② ⊙ ③ 어느 것이 더 긴지 알 수 있습니다.',
+        '옮길 수 없는 물건의 길이를 비교하는 과정입니다. □에 들어갈 말은? ① 끈에 물건의 길이를 옮겨 표시합니다. ② □ ③ 어느 것이 더 긴지 알 수 있습니다.',
         '표시한 끈을 다른 물건에 대어 봅니다',
         ['끈을 잘라 버립니다', '물건의 무게를 잽니다', '물건의 색을 봅니다'],
         '끈에 옮긴 길이를 다른 물건에 대어 보면 길고 짧음을 알 수 있습니다.',
@@ -9920,7 +9920,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const steps = Array.from({ length: groups - 1 }, (_, i) => each * (i + 1)).join(', ');
       return makeQuestion(
         lesson, difficulty, index,
-        `${total}개를 세는 과정입니다. ⊙에 알맞은 수는? ① 하나씩 세지 않고 ${each}씩 뛰어 셉니다. ② ${steps}, ⊙`,
+        `${total}개를 세는 과정입니다. □에 알맞은 수는? ① 하나씩 세지 않고 ${each}씩 뛰어 셉니다. ② ${steps}, □`,
         total, [total - each, total + each, each + groups],
         `${each}씩 뛰어 세면 마지막은 ${total}입니다.`,
         'multiplication', '뛰어 세어 전체를 구하는 과정',
@@ -9929,7 +9929,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('묶어 세어')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${total}개를 ${each}개씩 묶어 세는 과정입니다. ⊙에 알맞은 수는? ① ${each}개씩 묶습니다. ② 묶음이 ⊙개 생깁니다. ③ ${each}개씩 ${groups}묶음입니다.`,
+        `${total}개를 ${each}개씩 묶어 세는 과정입니다. □에 알맞은 수는? ① ${each}개씩 묶습니다. ② 묶음이 □개 생깁니다. ③ ${each}개씩 ${groups}묶음입니다.`,
         groups, [each, total, groups + 1],
         `${each}개씩 묶으면 ${groups}묶음이 됩니다.`,
         'multiplication', '묶음의 수를 세는 과정',
@@ -9938,7 +9938,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('몇의 몇 배를 알아')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${each}의 ${groups}배를 구하는 과정입니다. ⊙에 알맞은 수는? ① ${each}씩 ${groups}묶음입니다. ② ${Array.from({ length: groups }, () => each).join('+')}=⊙`,
+        `${each}의 ${groups}배를 구하는 과정입니다. □에 알맞은 수는? ① ${each}씩 ${groups}묶음입니다. ② ${Array.from({ length: groups }, () => each).join('+')}=□`,
         total, [each + groups, total - each, total + each],
         `${each}를 ${groups}번 더하면 ${total}입니다.`,
         'multiplication', '더하여 몇 배를 구하는 과정',
@@ -9949,7 +9949,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const times = 2 + (index % 4);
       return makeQuestion(
         lesson, difficulty, index,
-        `${small * times}이 ${small}의 몇 배인지 구하는 과정입니다. ⊙에 알맞은 수는? ① 기준이 되는 수는 ${small}입니다. ② ${small}씩 몇 묶음인지 세면 ⊙묶음입니다. ③ 그래서 ${times}배입니다.`,
+        `${small * times}이 ${small}의 몇 배인지 구하는 과정입니다. □에 알맞은 수는? ① 기준이 되는 수는 ${small}입니다. ② ${small}씩 몇 묶음인지 세면 □묶음입니다. ③ 그래서 ${times}배입니다.`,
         times, [small, small * times, times + 1],
         `${small}씩 ${times}묶음이면 ${small * times}이므로 ${times}배입니다.`,
         'multiplication', '기준이 되는 수로 몇 배인지 구하는 과정',
@@ -9958,7 +9958,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('곱셈을 알아')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${each}의 ${groups}배를 곱셈식으로 바꾸는 과정입니다. ⊙에 알맞은 수는? ① ${each}씩 ${groups}묶음입니다. ② 곱셈식으로 쓰면 ${each}×⊙입니다.`,
+        `${each}의 ${groups}배를 곱셈식으로 바꾸는 과정입니다. □에 알맞은 수는? ① ${each}씩 ${groups}묶음입니다. ② 곱셈식으로 쓰면 ${each}×□입니다.`,
         groups, [each, total, each + groups],
         `묶음 수가 ${groups}이므로 ${each}×${groups}로 씁니다.`,
         'multiplication', '몇 배를 곱셈식으로 바꾸는 과정',
@@ -9967,7 +9967,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('곱셈식으로 나타내')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `한 접시에 ${each}개씩 ${groups}접시를 곱셈식으로 나타내는 과정입니다. ⊙에 알맞은 수는? ① 한 묶음의 수는 ${each} ② 묶음 수는 ${groups} ③ ${each}×${groups}=⊙`,
+        `한 접시에 ${each}개씩 ${groups}접시를 곱셈식으로 나타내는 과정입니다. □에 알맞은 수는? ① 한 묶음의 수는 ${each} ② 묶음 수는 ${groups} ③ ${each}×${groups}=□`,
         total, [each + groups, total - each, total + each],
         `${each}×${groups}=${total}이므로 모두 ${total}개입니다.`,
         'multiplication', '상황을 곱셈식으로 세워 계산하는 과정',
@@ -9984,7 +9984,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('분류하여 표로')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `자료를 분류해 표를 채우는 과정입니다. ⊙에 알맞은 수는? ① 축구를 고른 사람을 셉니다. ② 센 것에 표시하며 빠뜨리지 않습니다. ③ 축구 칸에 ⊙을 씁니다.`,
+        `자료를 분류해 표를 채우는 과정입니다. □에 알맞은 수는? ① 축구를 고른 사람을 셉니다. ② 센 것에 표시하며 빠뜨리지 않습니다. ③ 축구 칸에 □을 씁니다.`,
         `${a}`, [`${a + 1}`, `${b}`, `${a + b}`],
         `축구를 고른 사람이 ${a}명이므로 표의 축구 칸에는 ${a}을 씁니다.`,
         'data', '세어서 표의 칸을 채우는 과정',
@@ -9993,7 +9993,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('조사하여 표로')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `조사한 자료를 표로 옮기는 과정입니다. ⊙에 알맞은 수는? ① 축구 ${a}명 ② 줄넘기 ${b}명 ③ 술래잡기 ${c}명 ④ 합계는 ${a}+${b}+${c}=⊙`,
+        `조사한 자료를 표로 옮기는 과정입니다. □에 알맞은 수는? ① 축구 ${a}명 ② 줄넘기 ${b}명 ③ 술래잡기 ${c}명 ④ 합계는 ${a}+${b}+${c}=□`,
         `${a + b + c}명`, [`${a + b}명`, `${b + c}명`, `${a + b + c + 1}명`],
         `항목별 수를 모두 더하면 ${a + b + c}명입니다.`,
         'data', '조사 결과의 합계를 구하는 과정',
@@ -10002,7 +10002,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('분류하여 그래프로')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `그래프를 그리는 과정입니다. ⊙에 알맞은 수는? ① 표에서 축구는 ${a}명입니다. ② 아래에서부터 한 칸에 하나씩 ◯를 ⊙개 그립니다.`,
+        `그래프를 그리는 과정입니다. □에 알맞은 수는? ① 표에서 축구는 ${a}명입니다. ② 아래에서부터 한 칸에 하나씩 ◯를 □개 그립니다.`,
         `${a}개`, [`${a + 1}개`, '1개', `${a - 1}개`],
         `${a}명이므로 ◯를 ${a}개 그립니다.`,
         'data', '그래프에 표시하는 과정',
@@ -10011,7 +10011,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('표와 그래프로 나타내')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `조사한 자료를 나타내는 차례입니다. ⊙에 들어갈 말은? ① 자료를 조사합니다. ② ⊙ ③ 표를 보고 그래프로 나타냅니다.`,
+        `조사한 자료를 나타내는 차례입니다. □에 들어갈 말은? ① 자료를 조사합니다. ② □ ③ 표를 보고 그래프로 나타냅니다.`,
         '표로 나타냅니다',
         ['그래프를 먼저 그립니다', '자료를 버립니다', '수를 바꿉니다'],
         `조사한 자료는 먼저 표로 정리한 뒤 그래프로 나타냅니다.`,
@@ -10023,7 +10023,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const least = Math.min(a, b, c);
       return makeQuestion(
         lesson, difficulty, index,
-        `가장 많은 것과 가장 적은 것의 차를 구하는 과정입니다. ⊙에 알맞은 수는? ① 가장 많은 수는 ${most} ② 가장 적은 수는 ${least} ③ 차는 ${most}-${least}=⊙`,
+        `가장 많은 것과 가장 적은 것의 차를 구하는 과정입니다. □에 알맞은 수는? ① 가장 많은 수는 ${most} ② 가장 적은 수는 ${least} ③ 차는 ${most}-${least}=□`,
         `${most - least}명`, [`${most}명`, `${least}명`, `${most + least}명`],
         `가장 많은 수에서 가장 적은 수를 빼면 ${most - least}명입니다.`,
         'data', '표에서 차를 구하는 과정',
@@ -10038,7 +10038,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const step = 1 + (index % 3);
       return makeQuestion(
         lesson, difficulty, index,
-        `쌓기나무의 규칙을 찾는 과정입니다. ⊙에 알맞은 수는? ① ${start}개, ${start + step}개, ${start + step * 2}개 ② ${step}개씩 늘어납니다. ③ 다음은 ⊙개`,
+        `쌓기나무의 규칙을 찾는 과정입니다. □에 알맞은 수는? ① ${start}개, ${start + step}개, ${start + step * 2}개 ② ${step}개씩 늘어납니다. ③ 다음은 □개`,
         start + step * 3, [start + step * 2, start + step * 4, start],
         `${step}개씩 늘어나므로 다음은 ${start + step * 3}개입니다.`,
         'pattern', '늘어나는 규칙으로 다음을 구하는 과정',
@@ -10049,7 +10049,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const y = 3 + (index % 5);
       return makeQuestion(
         lesson, difficulty, index,
-        `덧셈표의 규칙을 찾는 과정입니다. ⊙에 알맞은 수는? ① ${x}+${y}=${x + y} ② 오른쪽으로 한 칸 가면 1 커집니다. ③ ${x}+${y + 1}=⊙`,
+        `덧셈표의 규칙을 찾는 과정입니다. □에 알맞은 수는? ① ${x}+${y}=${x + y} ② 오른쪽으로 한 칸 가면 1 커집니다. ③ ${x}+${y + 1}=□`,
         x + y + 1, [x + y, x + y + 2, x + y - 1],
         `오른쪽으로 한 칸 가면 1 커지므로 ${x + y + 1}입니다.`,
         'pattern', '덧셈표에서 다음 칸을 구하는 과정',
@@ -10060,7 +10060,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const y = 3 + (index % 5);
       return makeQuestion(
         lesson, difficulty, index,
-        `곱셈표의 규칙을 찾는 과정입니다. ⊙에 알맞은 수는? ① ${x}×${y}=${x * y} ② ${x}단은 ${x}씩 커집니다. ③ ${x}×${y + 1}=⊙`,
+        `곱셈표의 규칙을 찾는 과정입니다. □에 알맞은 수는? ① ${x}×${y}=${x * y} ② ${x}단은 ${x}씩 커집니다. ③ ${x}×${y + 1}=□`,
         x * (y + 1), [x * y, x * (y + 2), x * y + 1],
         `${x}단은 ${x}씩 커지므로 ${x * y}+${x}=${x * (y + 1)}입니다.`,
         'pattern', '곱셈표에서 다음 칸을 구하는 과정',
@@ -10069,7 +10069,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('생활에서')) {
       return makeQuestion(
         lesson, difficulty, index,
-        '달력의 규칙을 찾는 과정입니다. ⊙에 알맞은 수는? ① 한 주는 7일입니다. ② 같은 요일은 ⊙일마다 돌아옵니다.',
+        '달력의 규칙을 찾는 과정입니다. □에 알맞은 수는? ① 한 주는 7일입니다. ② 같은 요일은 □일마다 돌아옵니다.',
         '7일', ['5일', '10일', '30일'],
         '한 주가 7일이므로 같은 요일은 7일마다 돌아옵니다.',
         'pattern', '달력에서 반복을 찾는 과정',
@@ -10087,7 +10087,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const extra = 1 + (index % 4);
       return makeQuestion(
         lesson, difficulty, index,
-        `시각을 읽는 과정입니다. ⊙에 알맞은 수는? ① 긴바늘이 숫자 ${pointer}을 지났으므로 ${pointer * 5}분 ② 작은 눈금 ${extra}칸을 더 갔으므로 ⊙분`,
+        `시각을 읽는 과정입니다. □에 알맞은 수는? ① 긴바늘이 숫자 ${pointer}을 지났으므로 ${pointer * 5}분 ② 작은 눈금 ${extra}칸을 더 갔으므로 □분`,
         pointer * 5 + extra, [pointer * 5, extra, pointer * 5 + 5],
         `숫자까지 ${pointer * 5}분이고 작은 눈금 ${extra}칸은 ${extra}분이므로 ${pointer * 5 + extra}분입니다.`,
         'time', '작은 눈금까지 더해 읽는 과정',
@@ -10097,7 +10097,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const before = 5 * (1 + (index % 3));
       return makeQuestion(
         lesson, difficulty, index,
-        `${hour2}시 ${60 - before}분을 다르게 읽는 과정입니다. ⊙에 알맞은 수는? ① ${next2}시까지 남은 시간을 봅니다. ② 60-${60 - before}=⊙ ③ 그래서 ${next2}시 ${before}분 전입니다.`,
+        `${hour2}시 ${60 - before}분을 다르게 읽는 과정입니다. □에 알맞은 수는? ① ${next2}시까지 남은 시간을 봅니다. ② 60-${60 - before}=□ ③ 그래서 ${next2}시 ${before}분 전입니다.`,
         before, [60 - before, next2, 60],
         `${next2}시가 되기까지 ${before}분 남았습니다.`,
         'time', '몇 분 전으로 바꾸는 과정',
@@ -10107,7 +10107,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const extra = 5 * (1 + (index % 8));
       return makeQuestion(
         lesson, difficulty, index,
-        `${60 + extra}분이 몇 시간 몇 분인지 구하는 과정입니다. ⊙에 알맞은 수는? ① 60분은 1시간 ② 남은 시간은 ${60 + extra}-60=⊙`,
+        `${60 + extra}분이 몇 시간 몇 분인지 구하는 과정입니다. □에 알맞은 수는? ① 60분은 1시간 ② 남은 시간은 ${60 + extra}-60=□`,
         `${extra}분`, [`${60 + extra}분`, `60분`, `${extra + 5}분`],
         `${60 + extra}분에서 60분을 빼면 ${extra}분이 남습니다.`,
         'time', '분을 시간과 분으로 나누는 과정',
@@ -10116,7 +10116,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('하루의 시간')) {
       return makeQuestion(
         lesson, difficulty, index,
-        '하루가 몇 시간인지 구하는 과정입니다. ⊙에 알맞은 수는? ① 오전은 12시간 ② 오후는 12시간 ③ 하루는 12+12=⊙',
+        '하루가 몇 시간인지 구하는 과정입니다. □에 알맞은 수는? ① 오전은 12시간 ② 오후는 12시간 ③ 하루는 12+12=□',
         '24시간', ['12시간', '20시간', '30시간'],
         '오전 12시간과 오후 12시간을 더하면 하루는 24시간입니다.',
         'time', '오전과 오후를 더해 하루를 구하는 과정',
@@ -10126,7 +10126,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const weeks = 2 + (index % 3);
       return makeQuestion(
         lesson, difficulty, index,
-        `${weeks}주일이 며칠인지 구하는 과정입니다. ⊙에 알맞은 수는? ① 1주일은 7일 ② ${weeks}주일은 7×${weeks}=⊙`,
+        `${weeks}주일이 며칠인지 구하는 과정입니다. □에 알맞은 수는? ① 1주일은 7일 ② ${weeks}주일은 7×${weeks}=□`,
         `${7 * weeks}일`, [`${weeks}일`, `7일`, `${7 * weeks + 7}일`],
         `1주일이 7일이므로 ${weeks}주일은 ${7 * weeks}일입니다.`,
         'time', '주일을 날수로 바꾸는 과정',
@@ -10144,7 +10144,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('단원 도입')) {
       return makeQuestion(
         lesson, difficulty, index,
-        '어질러진 학용품을 정리하는 과정입니다. ⊙에 들어갈 말은? ① 흩어진 물건을 모읍니다. ② ⊙ ③ 자리에 넣어 둡니다.',
+        '어질러진 학용품을 정리하는 과정입니다. □에 들어갈 말은? ① 흩어진 물건을 모읍니다. ② □ ③ 자리에 넣어 둡니다.',
         '비슷한 것끼리 모아 놓습니다',
         ['큰 것만 골라 둡니다', '아무 곳에나 넣습니다', '색을 칠해 둡니다'],
         '비슷한 것끼리 모아 두면 정리도 쉽고 찾기도 쉽습니다.',
@@ -10154,7 +10154,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('분류는 어떻게')) {
       return makeQuestion(
         lesson, difficulty, index,
-        '물건을 나누는 과정입니다. ⊙에 들어갈 말은? ① 무엇으로 나눌지 정합니다. ② ⊙ ③ 같은 것끼리 모읍니다.',
+        '물건을 나누는 과정입니다. □에 들어갈 말은? ① 무엇으로 나눌지 정합니다. ② □ ③ 같은 것끼리 모읍니다.',
         '누가 보아도 같게 나뉘는 기준인지 확인합니다',
         ['내가 좋아하는 것을 고릅니다', '물건을 더 사 옵니다', '개수를 먼저 셉니다'],
         '분류는 누가 나누어도 결과가 같은 분명한 기준이 있어야 합니다.',
@@ -10164,7 +10164,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('기준에 따라')) {
       return makeQuestion(
         lesson, difficulty, index,
-        '색깔을 기준으로 나누는 과정입니다. ⊙에 들어갈 말은? ① 기준은 색깔입니다. ② 빨강끼리 모읍니다. ③ ⊙',
+        '색깔을 기준으로 나누는 과정입니다. □에 들어갈 말은? ① 기준은 색깔입니다. ② 빨강끼리 모읍니다. ③ □',
         '남은 색도 색깔끼리 모읍니다',
         ['모양끼리 다시 모읍니다', '큰 것만 모읍니다', '빨강만 남깁니다'],
         '한 가지 기준을 끝까지 적용해 남은 것도 색깔끼리 모읍니다.',
@@ -10174,7 +10174,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('분류하고 세어')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `분류하고 세는 과정입니다. ⊙에 알맞은 수는? ① 빨강 ${red}개 ② 파랑 ${blue}개 ③ 초록 ${green}개 ④ 모두 ${red}+${blue}+${green}=⊙개`,
+        `분류하고 세는 과정입니다. □에 알맞은 수는? ① 빨강 ${red}개 ② 파랑 ${blue}개 ③ 초록 ${green}개 ④ 모두 ${red}+${blue}+${green}=□개`,
         `${red + blue + green}개`,
         [`${red + blue}개`, `${blue + green}개`, `${red + blue + green + 1}개`],
         `항목별 수를 모두 더하면 ${red + blue + green}개입니다.`,
@@ -10186,7 +10186,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const least = Math.min(red, blue, green);
       return makeQuestion(
         lesson, difficulty, index,
-        `분류 결과를 말하는 과정입니다. ⊙에 알맞은 수는? ① 가장 많은 것은 ${most}개 ② 가장 적은 것은 ${least}개 ③ 차는 ${most}-${least}=⊙개`,
+        `분류 결과를 말하는 과정입니다. □에 알맞은 수는? ① 가장 많은 것은 ${most}개 ② 가장 적은 것은 ${least}개 ③ 차는 ${most}-${least}=□개`,
         `${most - least}개`, [`${most}개`, `${least}개`, `${most + least}개`],
         `가장 많은 것에서 가장 적은 것을 빼면 ${most - least}개입니다.`,
         'data', '분류 결과에서 차를 구하는 과정',
@@ -10202,7 +10202,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const c = 3 + ((seed + 2) % 12);
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}+${b}-${c}를 계산하는 과정입니다. ⊙에 알맞은 수는? ① 앞에서부터 ${a}+${b}=${a + b} ② ${a + b}-${c}=⊙`,
+        `${a}+${b}-${c}를 계산하는 과정입니다. □에 알맞은 수는? ① 앞에서부터 ${a}+${b}=${a + b} ② ${a + b}-${c}=□`,
         a + b - c, [a + b, a - b + c, a + b + c],
         `앞에서부터 차례로 계산하면 ${a + b}-${c}=${a + b - c}입니다.`,
         'addition', '세 수를 앞에서부터 계산하는 과정',
@@ -10213,7 +10213,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const b = 5 + (seed % 20);
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}+${b}=${a + b}을 뺄셈식으로 바꾸는 과정입니다. ⊙에 알맞은 수는? ① 전체는 ${a + b}입니다. ② 부분 하나는 ${b}입니다. ③ ${a + b}-${b}=⊙`,
+        `${a}+${b}=${a + b}을 뺄셈식으로 바꾸는 과정입니다. □에 알맞은 수는? ① 전체는 ${a + b}입니다. ② 부분 하나는 ${b}입니다. ③ ${a + b}-${b}=□`,
         a, [b, a + b, a - b],
         `전체에서 한 부분을 빼면 다른 부분인 ${a}가 나옵니다.`,
         'subtraction', '덧셈식을 뺄셈식으로 바꾸는 과정',
@@ -10224,7 +10224,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const b = 5 + (seed % 20);
       return makeQuestion(
         lesson, difficulty, index,
-        `${a}+□=${a + b}에서 □를 구하는 과정입니다. ⊙에 알맞은 수는? ① 전체는 ${a + b}입니다. ② 아는 부분은 ${a}입니다. ③ ${a + b}-${a}=⊙`,
+        `${a}+□=${a + b}에서 □를 구하는 과정입니다. □에 알맞은 수는? ① 전체는 ${a + b}입니다. ② 아는 부분은 ${a}입니다. ③ ${a + b}-${a}=□`,
         b, [a, a + b, a - b],
         `전체에서 아는 부분을 빼면 □는 ${b}입니다.`,
         'subtraction', '□를 빼기로 구하는 과정',
@@ -10238,7 +10238,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('1단')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `0×${k}를 구하는 과정입니다. ⊙에 알맞은 수는? ① 0이 ${k}묶음입니다. ② 한 묶음에 아무것도 없으므로 모두 ⊙입니다.`,
+        `0×${k}를 구하는 과정입니다. □에 알맞은 수는? ① 0이 ${k}묶음입니다. ② 한 묶음에 아무것도 없으므로 모두 □입니다.`,
         0, [k, 1, k + 1],
         `0은 하나도 없다는 뜻이므로 몇 묶음이어도 0입니다.`,
         'multiplication', '0의 곱을 따져 보는 과정',
@@ -10249,7 +10249,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const b = 2 + ((seed + 3) % 7);
       return makeQuestion(
         lesson, difficulty, index,
-        `곱셈표에서 ${a}와 ${b}가 만나는 칸을 채우는 과정입니다. ⊙에 알맞은 수는? ① 가로의 수는 ${a}입니다. ② 세로의 수는 ${b}입니다. ③ 두 수를 곱하면 ⊙입니다.`,
+        `곱셈표에서 ${a}와 ${b}가 만나는 칸을 채우는 과정입니다. □에 알맞은 수는? ① 가로의 수는 ${a}입니다. ② 세로의 수는 ${b}입니다. ③ 두 수를 곱하면 □입니다.`,
         a * b, [a + b, a * b + a, Math.max(0, a * b - b)],
         `곱셈표의 칸에는 두 수의 곱을 씁니다. ${a}×${b}=${a * b}입니다.`,
         'multiplication', '곱셈표의 칸을 채우는 과정',
@@ -10260,7 +10260,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const groups = 3 + ((seed + 2) % 6);
       return makeQuestion(
         lesson, difficulty, index,
-        `한 상자에 ${each}개씩 ${groups}상자의 수를 구하는 과정입니다. ⊙에 알맞은 수는? ① 한 묶음의 수는 ${each}입니다. ② 묶음 수는 ${groups}입니다. ③ ${each}×${groups}=⊙`,
+        `한 상자에 ${each}개씩 ${groups}상자의 수를 구하는 과정입니다. □에 알맞은 수는? ① 한 묶음의 수는 ${each}입니다. ② 묶음 수는 ${groups}입니다. ③ ${each}×${groups}=□`,
         each * groups, [each + groups, each * groups + each, Math.max(1, each * groups - each)],
         `${each}×${groups}=${each * groups}이므로 모두 ${each * groups}개입니다.`,
         'multiplication', '문장을 곱셈식으로 세워 푸는 과정',
@@ -10276,7 +10276,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const order = [0, 1, 2].map((offset) => shapes[(start + offset) % 3]);
       return makeQuestion(
         lesson, difficulty, index,
-        `무늬의 규칙을 찾는 과정입니다. ⊙에 들어갈 모양은? ① ${order.join(', ')}가 되풀이됩니다. ② ${order[0]}, ${order[1]}, ${order[2]}, ${order[0]}, ${order[1]}, ⊙`,
+        `무늬의 규칙을 찾는 과정입니다. □에 들어갈 모양은? ① ${order.join(', ')}가 되풀이됩니다. ② ${order[0]}, ${order[1]}, ${order[2]}, ${order[0]}, ${order[1]}, □`,
         order[2], [order[0], order[1], '☆'],
         `${order.join(', ')}가 반복되므로 다음은 ${order[2]}입니다.`,
         'pattern', '반복 묶음을 찾아 다음을 구하는 과정',
@@ -10287,7 +10287,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const step = 1 + (seed % 2);
       return makeQuestion(
         lesson, difficulty, index,
-        `무늬의 개수 규칙을 찾는 과정입니다. ⊙에 알맞은 수는? ① ${start}개, ${start + step}개, ${start + step * 2}개로 놓였습니다. ② 몇 개씩 늘어나는지 보면 ⊙개씩입니다.`,
+        `무늬의 개수 규칙을 찾는 과정입니다. □에 알맞은 수는? ① ${start}개, ${start + step}개, ${start + step * 2}개로 놓였습니다. ② 몇 개씩 늘어나는지 보면 □개씩입니다.`,
         step, [start, step + 1, start + step],
         `앞뒤 수의 차가 ${step}이므로 ${step}개씩 늘어납니다.`,
         'pattern', '늘어나는 크기를 찾는 과정',
@@ -10405,11 +10405,11 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         );
       }
       const parts = four
-        ? `1000이 ${digit}개, 100이 ${digit}개, 10이 ${low}개, 1이 ⊙개`
-        : `100이 ${digit}개, 10이 ${digit}개, 1이 ⊙개`;
+        ? `1000이 ${digit}개, 100이 ${digit}개, 10이 ${low}개, 1이 □개`
+        : `100이 ${digit}개, 10이 ${digit}개, 1이 □개`;
       return makeQuestion(
         lesson, difficulty, index,
-        `${value}는 ${parts}인 수입니다. ⊙는?`,
+        `${value}는 ${parts}인 수입니다. □는?`,
         value % 10, [digit, low, 0],
         `${value}에서 일의 자리 숫자가 ${value % 10}이므로 1이 ${value % 10}개입니다.`,
         'placeValue', '조건 함께 보기 · 수를 자리별로 되돌려 보기',
@@ -11106,7 +11106,7 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       }
       return makeQuestion(
         lesson, difficulty, index,
-        `${start}, ⊙, ${start + step * 2}로 이어집니다. ⊙에 알맞은 수는?`,
+        `${start}, □, ${start + step * 2}로 이어집니다. □에 알맞은 수는?`,
         start + step, [start, start + step * 2, start + step * 3],
         `양쪽 수의 차가 ${step * 2}이므로 가운데는 ${step}만큼 큰 ${start + step}입니다.`,
         'pattern', '조건 함께 보기 · 가운데 빠진 수 찾기',
