@@ -4168,3 +4168,24 @@ body::before {
 .student-result-list .wrong-result strong {
   color: #ff9c9c;
 }
+
+/* ── 결과 화면 명령바 ───────────────────────────────────────────────
+   .command-bar.finished-actions 가 한 단계 더 구체적이라 흰 바탕이
+   그대로 남아 있었습니다. */
+.command-bar.finished-actions {
+  background: rgba(0, 0, 0, 0.9);
+  border-color: var(--space-line);
+}
+
+/* '시간 종료' 배지도 어두운 톤으로 맞춥니다. */
+.result-kicker {
+  background: #241a00;
+  border: 1px solid rgba(245, 179, 1, 0.55);
+  color: #ffd86b;
+}
+
+.setup-player-lane .result-kicker {
+  background: #001c24;
+  border-color: rgba(69, 214, 255, 0.5);
+  color: #7fe6ff;
+}

@@ -1130,7 +1130,7 @@ function App() {
       <section
         className="setup-playfield playfield"
         style={{
-          backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,.94), rgba(255,255,255,.82)), url(/assets/math-adventure-bg.png)',
+          backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(/assets/math-adventure-bg.png)',
         }}
       >
         <div className="setup-progress">
@@ -1299,7 +1299,7 @@ function App() {
       </footer>
 
       <section className={`game-layout individual players-${playerCount}`}>
-        <section className="playfield" style={{ backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,.94), rgba(255,255,255,.82)), url(/assets/math-adventure-bg.png)' }}>
+        <section className="playfield" style={{ backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(/assets/math-adventure-bg.png)' }}>
           <div className="round-status">
             <span><BarChart3 size={16} /> 정답률 {accuracy}%</span>
             <span>정답 {correctCount}개</span>
