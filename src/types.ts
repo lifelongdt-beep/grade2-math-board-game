@@ -254,6 +254,14 @@ export interface PlayerQuestionState {
   responseMs?: number;
   questionStartedAt: number;
   feedback: 'idle' | 'correct' | 'explain';
+  // 틀린 문제는 설명만 보고 넘어가면 '봤다'로 끝납니다. 몇 문제 뒤에 다시
+  // 만나 스스로 풀어 봐야 '할 수 있다'가 됩니다.
+  // answered: 이 학생이 지금까지 끝낸 문제 수 (되돌아올 때를 재는 자)
+  // retries: 다시 낼 문제들. index는 문제 은행 자리, dueAt은 몇 번째에 낼지
+  // activeRetry: 지금 화면에 떠 있는 것이 되돌아온 문제라면 그 자리
+  answered: number;
+  retries: Array<{ index: number; dueAt: number }>;
+  activeRetry: number | null;
 }
 
 export interface AnswerRecord {

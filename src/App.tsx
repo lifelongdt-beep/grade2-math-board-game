@@ -180,14 +180,59 @@ const createQuestionState = (players: Player[], now = Date.now()): Record<number
         locked: false,
         feedback: 'idle',
         questionStartedAt: now,
+        answered: 0,
+        retries: [],
+        activeRetry: null,
       },
     ]),
   );
 
 const formatMs = (ms?: number) => (ms ? `${(ms / 1000).toFixed(1)}초` : '-');
 
+// 되돌아온 문제가 있으면 그것을, 없으면 다음 새 문제를 냅니다.
 const getPlayerQuestion = (questions: Question[], state: PlayerQuestionState) =>
-  questions[state.questionIndex % questions.length];
+  questions[(state.activeRetry ?? state.questionIndex) % questions.length];
+
+// 틀린 문제는 세 문제 뒤에 다시 옵니다. 바로 다시 내면 답을 외워서 맞히고,
+// 너무 멀면 다시 만나기 전에 수업이 끝납니다.
+const RETRY_AFTER = 3;
+
+// 한 문제를 끝내고 다음으로 넘어갈 때의 상태를 만듭니다.
+// wasWrong이면 방금 문제를 다시 낼 줄에 넣고, 맞혔으면 넣지 않습니다.
+const advancePlayerState = (
+  state: PlayerQuestionState,
+  playerCount: number,
+  wasWrong: boolean,
+): PlayerQuestionState => {
+  const answered = state.answered + 1;
+  const shownIndex = state.activeRetry ?? state.questionIndex;
+  const queued = wasWrong
+    ? [...state.retries, { index: shownIndex, dueAt: answered + RETRY_AFTER }]
+    : state.retries;
+
+  // 낼 때가 된 것 중 가장 오래 기다린 것부터 냅니다.
+  const dueAt = queued.findIndex((item) => item.dueAt <= answered);
+  const servingRetry = dueAt !== -1;
+  const nextRetries = servingRetry ? queued.filter((_, at) => at !== dueAt) : queued;
+
+  return {
+    // 새 문제를 하나 썼을 때만 새 문제 차례를 앞당깁니다. 방금 푼 것이
+    // 되돌아온 문제였다면 새 문제는 아직 하나도 안 썼으므로 그대로 둡니다.
+    // (다음에 낼 것이 되돌아온 문제인지와는 상관없습니다. 그걸로 판단하면
+    //  방금 푼 새 문제를 나중에 또 내게 됩니다.)
+    questionIndex: state.activeRetry !== null
+      ? state.questionIndex
+      : state.questionIndex + playerCount,
+    selected: null,
+    correct: null,
+    locked: false,
+    feedback: 'idle',
+    questionStartedAt: Date.now(),
+    answered,
+    retries: nextRetries,
+    activeRetry: servingRetry ? queued[dueAt].index : null,
+  };
+};
 
 const unitReviewIdFor = (semester: Unit['semester'], unitNo: number) => `${semester}-u${unitNo}-review`;
 
@@ -911,17 +956,16 @@ function App() {
   };
 
   const nextForPlayer = (player: Player) => {
-    setPlayerStates((prev) => ({
-      ...prev,
-      [player.id]: {
-        questionIndex: (prev[player.id]?.questionIndex ?? 0) + players.length,
-        selected: null,
-        correct: null,
-        locked: false,
-        feedback: 'idle',
-        questionStartedAt: Date.now(),
-      },
-    }));
+    setPlayerStates((prev) => {
+      const current = prev[player.id];
+      if (!current) return prev;
+      // '다음 문제'를 누르는 자리는 정답을 맞힌 뒤와 오답 도움말을 본 뒤,
+      // 두 곳입니다. 오답이었으면 그 문제를 다시 낼 줄에 넣습니다.
+      return {
+        ...prev,
+        [player.id]: advancePlayerState(current, players.length, current.correct === false),
+      };
+    });
   };
 
   const triggerWrongSignal = (playerId: number) => {
@@ -975,7 +1019,8 @@ function App() {
       support: question.support,
       visual: question.visual,
       correct: isCorrect,
-      attempts: 1,
+      // 되돌아온 문제면 두 번째 이후 시도입니다.
+      attempts: state.activeRetry === null ? 1 : 2,
       responseMs,
       answeredAt: new Date().toISOString(),
     };
@@ -993,14 +1038,7 @@ function App() {
       if (isCorrect) {
         return {
           ...prev,
-          [player.id]: {
-            questionIndex: currentState.questionIndex + players.length,
-            selected: null,
-            correct: null,
-            locked: false,
-            feedback: 'idle',
-            questionStartedAt: Date.now(),
-          },
+          [player.id]: advancePlayerState(currentState, players.length, false),
         };
       }
 
@@ -1382,7 +1420,11 @@ function App() {
                     <>
                       <div className={`student-question-body ${question.prompt.length > 70 ? 'long-question' : ''} ${question.prompt.length > 100 ? 'very-long-question' : ''}`.trim()}>
                         <div className="student-question-meta">
-                          <span>{(state.questionIndex % playerQuestions.length) + 1} / {playerQuestions.length}</span>
+                          <span>{((state.activeRetry ?? state.questionIndex) % playerQuestions.length) + 1} / {playerQuestions.length}</span>
+                          {/* 아까 틀린 문제가 돌아왔다는 것을 알려 줍니다.
+                              모르고 다시 틀리는 것과, 알고 다시 푸는 것은
+                              아이에게 완전히 다른 일입니다. */}
+                          {state.activeRetry !== null && <span className="retry-tag">다시 도전</span>}
                           <span>{question.strategy}</span>
                         </div>
                         <QuestionVisualGraphic visual={question.visual} />
