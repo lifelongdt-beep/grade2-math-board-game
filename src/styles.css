@@ -4268,3 +4268,27 @@ body::before {
   font-size: clamp(15px, 1.1vw, 20px);
   line-height: 1.14;
 }
+
+/* ── QR로 들어왔을 때 보이는 '오늘 문제' 칸 ─────────────────────────
+   고르는 상자 대신 선생님이 정한 차시를 보여 주기만 합니다. */
+.setup-grid.mobile-fixed-lesson {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid var(--space-line);
+  border-radius: 2px;
+  padding: 12px 14px;
+}
+
+.setup-grid.mobile-fixed-lesson strong {
+  color: var(--space-ink);
+  font-size: clamp(19px, 5vw, 26px);
+  line-height: 1.2;
+}
+
+.setup-grid.mobile-fixed-lesson span {
+  color: var(--space-muted);
+  font-size: 13px;
+  font-weight: 800;
+}

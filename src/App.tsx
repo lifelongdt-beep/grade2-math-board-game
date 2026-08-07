@@ -1044,6 +1044,17 @@ function App() {
         </div>
       </div>
 
+      {/* QR로 들어온 학생은 선생님이 정해 준 차시만 풉니다. 고르는 상자를
+          그대로 두면 다른 단원으로 넘어가 버려서, 선생님이 무엇을 시켰는지와
+          아이가 무엇을 푸는지가 어긋납니다. 보여 주기만 하고 바꾸지는
+          못하게 합니다. */}
+      {isMobileEntry ? (
+        <div className="setup-grid mobile-fixed-lesson">
+          <p className="eyebrow">선생님이 정한 오늘 문제</p>
+          <strong>{lessonHeading}</strong>
+          <span>{lessonContextLabel}</span>
+        </div>
+      ) : (
       <div className="setup-grid">
         <label>
           학기
@@ -1092,6 +1103,7 @@ function App() {
           )}
         </label>
       </div>
+      )}
 
       <div className="setup-options">
         {isMobileEntry ? (
