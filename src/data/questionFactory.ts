@@ -11415,6 +11415,15 @@ const isStepSlot = (difficulty: Difficulty, index: number) => {
 const shapeStrategy = (difficulty: Difficulty, rich: string, plain: string) =>
   difficulty === '하' ? plain : rich;
 
+// 받침이 있으면 '이/은', 없으면 '가/는'입니다. '구슬가', '사과이'처럼
+// 쓰면 2학년이 읽다가 걸립니다.
+const hasFinal = (word: string) => {
+  const code = word.charCodeAt(word.length - 1);
+  return code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 !== 0;
+};
+const subject = (word: string) => `${word}${hasFinal(word) ? '이' : '가'}`;
+const topic = (word: string) => `${word}${hasFinal(word) ? '은' : '는'}`;
+
 type Shape = {
   fits: (lesson: Lesson) => boolean;
   make: (lesson: Lesson, difficulty: Difficulty, index: number) => Question | null;
@@ -11484,7 +11493,7 @@ const numberShapes: Shape[] = [
     const thing = ['사과', '구슬', '색종이', '단추'][seed % 4];
     return makeQuestion(
       lesson, difficulty, index,
-      `${thing}가 ${per}개씩 든 상자 ${box}개, 10개씩 든 봉지 ${bag}개, 낱개 ${loose}개가 있습니다. ${thing}는 모두 몇 개일까요?`,
+      `${subject(thing)} ${per}개씩 든 상자 ${box}개, 10개씩 든 봉지 ${bag}개, 낱개 ${loose}개 있습니다. ${topic(thing)} 모두 몇 개일까요?`,
       total, [total + per, total - 10, box * per + bag + loose],
       `${per}이 ${box}개, 10이 ${bag}개, 1이 ${loose}개이므로 ${total}개입니다.`,
       'placeValue', shapeStrategy(difficulty, '조건 함께 보기 · 묶음으로 담긴 물건의 수 구하기', '묶음으로 담긴 물건의 수 구하기'),
@@ -11621,7 +11630,7 @@ const multiplyShapes: Shape[] = [
     const item = ['빵', '귤', '초콜릿', '연필'][seed % 4];
     return makeQuestion(
       lesson, difficulty, index,
-      `${thing}에 ${item}이 ${per}개씩 들어 있습니다. ${groups}${thing.slice(1)}에는 ${item}이 모두 몇 개일까요?`,
+      `${thing}에 ${subject(item)} ${per}개씩 들어 있습니다. ${groups}${thing.slice(1)}에는 ${subject(item)} 모두 몇 개일까요?`,
       `${per * groups}개`,
       [`${per + groups}개`, `${per * groups + per}개`, `${per * (groups - 1)}개`],
       `${per}씩 ${groups}묶음이므로 ${per}×${groups}=${per * groups}개입니다.`,
