@@ -11536,7 +11536,7 @@ const multiplyShapes: Shape[] = [
 
   // C. 거꾸로 구하기 — 곱하는 수를 찾기
   {
-    fits: (lesson) => /단 곱셈구구|곱셈표|곱셈구구를 이용/.test(lesson.title),
+    fits: (lesson) => /곱셈표|곱셈구구를 이용/.test(lesson.title),
     make: (lesson, difficulty, index) => {
     const seed = index * 11 + lesson.lessonNo;
     const dans = dansOf(lesson);
