@@ -11413,7 +11413,7 @@ const numberShapes: Shape[] = [
       'placeValue', '같은 수를 다른 방법으로 나타내기',
       placeValueVisualFor(value, '바꾸어 나타내기', four ? 4 : 3),
     );
-  },
+  } },
 
   // D. 읽기 ↔ 쓰기
   {
@@ -11432,7 +11432,7 @@ const numberShapes: Shape[] = [
       `자리마다 숫자를 차례로 써서 ${value}입니다.`,
       'number', '읽은 것을 수로 쓰기',
     );
-  },
+  } },
 
   // E. 실생활 묶음 문장제
   {
@@ -11453,7 +11453,7 @@ const numberShapes: Shape[] = [
       `${per}이 ${box}개, 10이 ${bag}개, 1이 ${loose}개이므로 ${total}개입니다.`,
       'placeValue', '묶음으로 담긴 물건의 수 구하기',
     );
-  },
+  } },
 
   // B. 두 수 비교 — 자리마다 견주기
   {
@@ -11472,7 +11472,7 @@ const numberShapes: Shape[] = [
       `가장 높은 자리가 같으므로 다음 자리를 견주면 ${askBig ? b : a}이(가) 더 ${askBig ? '큽니다' : '작습니다'}.`,
       'placeValue', '자리마다 견주어 크기 비교하기',
     );
-  },
+  } },
 
   // F. 옳은 것 고르기 — 오개념을 보기로 세웁니다
   {
@@ -11519,7 +11519,7 @@ const multiplyShapes: Shape[] = [
       `${a1}×${b1}=${a1 * b1}, ${a2}×${b2}=${a2 * b2}이므로 ${bigger}이 더 큽니다.`,
       'multiplication', '두 곱의 크기 비교하기',
     );
-  },
+  } },
 
   // C. 거꾸로 구하기 — 곱하는 수를 찾기
   {
@@ -11536,7 +11536,7 @@ const multiplyShapes: Shape[] = [
       'multiplication', '곱하는 수를 거꾸로 찾기',
       arrayVisualFor(times, dan, `${dan}씩 묶어 보기`),
     );
-  },
+  } },
 
   // A. 같은 곱을 다른 곱셈식으로
   {
@@ -11554,7 +11554,7 @@ const multiplyShapes: Shape[] = [
       `${a}×${b * 2}=${product}이고 ${a * 2}×${b}=${product}로 곱이 같습니다.`,
       'multiplication', '곱이 같은 다른 식 찾기',
     );
-  },
+  } },
 
   // E. 실생활 문장제 — 묶음 상황
   {
@@ -11574,7 +11574,7 @@ const multiplyShapes: Shape[] = [
       'multiplication', '묶음 상황을 곱셈으로 해결하기',
       arrayVisualFor(groups, per, `${per}씩 ${groups}묶음`),
     );
-  },
+  } },
 
   // F. 옳은 것 고르기
   {
