@@ -11357,14 +11357,251 @@ const isStepSlot = (difficulty: Difficulty, index: number) => {
   return index % 3 !== 0;
 };
 
+
+// ════════════════════════════════════════════════════════════════════
+// 문제의 '모양'을 여러 가지로 갖추기
+// ────────────────────────────────────────────────────────────────────
+// 같은 차시의 문제가 숫자만 바뀐 채 되풀이되면, 아이는 문제를 이해하는
+// 대신 한 가지 절차를 외웁니다. 국가 학습 진단 평가지(에듀넷·기초학력)의
+// 같은 주제 문항들을 보면 한 주제에 열 가지 안팎의 서로 다른 모양이
+// 쓰입니다. 여기서는 그중 되풀이해서 나타나는 모양들을 갖춥니다.
+//
+//   A 같은 값 다른 표현  '112를 민준이와 다른 방법으로 나타내 보세요'
+//   B 두 값 비교        '2×8 ○ 5×3'
+//   C 거꾸로 구하기      '2×□=10'
+//   D 읽기 ↔ 쓰기       '512 ─ 오백십이 잇기'
+//   E 실생활 묶음 문장제  '100개씩 6상자, 10개씩 4봉지, 낱개 3개'
+//   F 옳은 것 고르기     오개념을 보기로 세워 판단하게 하기
+//
+// 슬롯마다 모양을 돌려 쓰므로, 운이 아니라 구조로 다양해집니다.
+// ════════════════════════════════════════════════════════════════════
+
+type ShapeMaker = (lesson: Lesson, difficulty: Difficulty, index: number) => Question | null;
+
+// ── 수(세 자리 수 / 네 자리 수) ────────────────────────────────────
+const numberShapes: ShapeMaker[] = [
+  // A. 같은 값을 다른 묶음으로 나타내기
+  (lesson, difficulty, index) => {
+    const four = lesson.unitTitle === '네 자리 수';
+    const seed = index * 7 + lesson.lessonNo * 3;
+    const big = 2 + (seed % 6);
+    const mid = 1 + (seed % 4);
+    const ones = 1 + (seed % 8);
+    const value = four ? big * 1000 + mid * 100 + ones : big * 100 + mid * 10 + ones;
+    const bigName = four ? '1000' : '100';
+    const midName = four ? '100' : '10';
+    const swap = four ? 10 : 10;
+
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${value}를 ${bigName}이 ${big}개, ${midName}이 ${mid}개, 1이 ${ones}개로 나타냈습니다. 같은 수를 다르게 나타낸 것은?`,
+      `${bigName}이 ${big - 1}개, ${midName}이 ${mid + swap}개, 1이 ${ones}개`,
+      [
+        `${bigName}이 ${big + 1}개, ${midName}이 ${mid}개, 1이 ${ones}개`,
+        `${bigName}이 ${big}개, ${midName}이 ${mid + 1}개, 1이 ${ones}개`,
+        `${bigName}이 ${big - 1}개, ${midName}이 ${mid}개, 1이 ${ones}개`,
+      ],
+      `${bigName} 1개를 ${midName} ${swap}개로 바꾸어도 수는 그대로입니다.`,
+      'placeValue', '같은 수를 다른 방법으로 나타내기',
+      placeValueVisualFor(value, '바꾸어 나타내기', four ? 4 : 3),
+    );
+  },
+
+  // D. 읽기 ↔ 쓰기
+  (lesson, difficulty, index) => {
+    const four = lesson.unitTitle === '네 자리 수';
+    const seed = index * 11 + lesson.lessonNo;
+    const value = four
+      ? (1 + (seed % 8)) * 1000 + (seed % 9) * 100 + ((seed + 3) % 9) * 10 + (seed % 8)
+      : (1 + (seed % 8)) * 100 + ((seed + 2) % 9) * 10 + ((seed + 5) % 9);
+    const said = readKoreanNumber(value);
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${said}을(를) 수로 쓰면 얼마일까요?`,
+      value, [value + (four ? 1000 : 100), value - 1, value + 10],
+      `자리마다 숫자를 차례로 써서 ${value}입니다.`,
+      'number', '읽은 것을 수로 쓰기',
+    );
+  },
+
+  // E. 실생활 묶음 문장제
+  (lesson, difficulty, index) => {
+    const four = lesson.unitTitle === '네 자리 수';
+    const seed = index * 5 + lesson.lessonNo * 2;
+    const box = 2 + (seed % 7);
+    const bag = 1 + (seed % 9);
+    const loose = 1 + (seed % 8);
+    const per = four ? 1000 : 100;
+    const total = box * per + bag * 10 + loose;
+    const thing = ['사과', '구슬', '색종이', '단추'][seed % 4];
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${thing}가 ${per}개씩 든 상자 ${box}개, 10개씩 든 봉지 ${bag}개, 낱개 ${loose}개가 있습니다. ${thing}는 모두 몇 개일까요?`,
+      total, [total + per, total - 10, box * per + bag + loose],
+      `${per}이 ${box}개, 10이 ${bag}개, 1이 ${loose}개이므로 ${total}개입니다.`,
+      'placeValue', '묶음으로 담긴 물건의 수 구하기',
+    );
+  },
+
+  // B. 두 수 비교 — 자리마다 견주기
+  (lesson, difficulty, index) => {
+    const four = lesson.unitTitle === '네 자리 수';
+    const seed = index * 13 + lesson.lessonNo;
+    const head = 2 + (seed % 6);
+    const a = four ? head * 1000 + 480 : head * 100 + 48;
+    const b = four ? head * 1000 + 840 : head * 100 + 84;
+    const askBig = seed % 2 === 0;
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${a}와 ${b} 중 더 ${askBig ? '큰' : '작은'} 수는 얼마일까요?`,
+      askBig ? b : a, [askBig ? a : b, a + b, Math.abs(a - b)],
+      `가장 높은 자리가 같으므로 다음 자리를 견주면 ${askBig ? b : a}이(가) 더 ${askBig ? '큽니다' : '작습니다'}.`,
+      'placeValue', '자리마다 견주어 크기 비교하기',
+    );
+  },
+
+  // F. 옳은 것 고르기 — 오개념을 보기로 세웁니다
+  (lesson, difficulty, index) => {
+    const four = lesson.unitTitle === '네 자리 수';
+    const seed = index * 17 + lesson.lessonNo;
+    const value = four ? 3000 + (seed % 9) * 100 + 50 : 300 + (seed % 9) * 10 + 5;
+    const digit = Math.floor((value % 100) / 10);
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${value}에 대한 설명으로 옳은 것은?`,
+      `십의 자리 숫자는 ${digit}입니다`,
+      [
+        `십의 자리 숫자는 ${value % 10}입니다`,
+        `가장 큰 자리는 일의 자리입니다`,
+        `숫자가 클수록 나타내는 값도 항상 큽니다`,
+      ],
+      `자리마다 나타내는 값이 다릅니다. 십의 자리 숫자는 ${digit}입니다.`,
+      'placeValue', '설명이 옳은지 판단하기',
+      placeValueVisualFor(value, '자리값 살펴보기', four ? 4 : 3),
+    );
+  },
+];
+
+// ── 곱셈 / 곱셈구구 ────────────────────────────────────────────────
+const multiplyShapes: ShapeMaker[] = [
+  // B. 두 곱 비교
+  (lesson, difficulty, index) => {
+    const seed = index * 7 + lesson.lessonNo;
+    const a1 = 2 + (seed % 7);
+    const b1 = 2 + ((seed + 3) % 7);
+    const a2 = 2 + ((seed + 5) % 7);
+    const b2 = 2 + ((seed + 1) % 7);
+    if (a1 * b1 === a2 * b2) return null;
+    const bigger = a1 * b1 > a2 * b2 ? `${a1}×${b1}` : `${a2}×${b2}`;
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${a1}×${b1}과 ${a2}×${b2} 중 더 큰 것은?`,
+      bigger,
+      [a1 * b1 > a2 * b2 ? `${a2}×${b2}` : `${a1}×${b1}`, '두 값은 같다', '알 수 없다'],
+      `${a1}×${b1}=${a1 * b1}, ${a2}×${b2}=${a2 * b2}이므로 ${bigger}이 더 큽니다.`,
+      'multiplication', '두 곱의 크기 비교하기',
+    );
+  },
+
+  // C. 거꾸로 구하기 — 곱하는 수를 찾기
+  (lesson, difficulty, index) => {
+    const seed = index * 11 + lesson.lessonNo;
+    const dan = 2 + (seed % 8);
+    const times = 2 + ((seed + 4) % 8);
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${dan}×□=${dan * times}에서 □에 알맞은 수는?`,
+      times, [times + 1, times - 1, dan],
+      `${dan}씩 ${times}묶음이면 ${dan * times}이므로 □는 ${times}입니다.`,
+      'multiplication', '곱하는 수를 거꾸로 찾기',
+      arrayVisualFor(times, dan, `${dan}씩 묶어 보기`),
+    );
+  },
+
+  // A. 같은 곱을 다른 곱셈식으로
+  (lesson, difficulty, index) => {
+    const seed = index * 5 + lesson.lessonNo;
+    const a = 2 + (seed % 4);
+    const b = 2 + ((seed + 2) % 4);
+    const product = a * b * 2;
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${a}×${b * 2}와 곱이 같은 곱셈식은?`,
+      `${a * 2}×${b}`,
+      [`${a}×${b}`, `${a * 2}×${b * 2}`, `${a + 2}×${b}`],
+      `${a}×${b * 2}=${product}이고 ${a * 2}×${b}=${product}로 곱이 같습니다.`,
+      'multiplication', '곱이 같은 다른 식 찾기',
+    );
+  },
+
+  // E. 실생활 문장제 — 묶음 상황
+  (lesson, difficulty, index) => {
+    const seed = index * 13 + lesson.lessonNo;
+    const per = 2 + (seed % 8);
+    const groups = 2 + ((seed + 3) % 8);
+    const thing = ['한 상자', '한 봉지', '한 접시', '한 묶음'][seed % 4];
+    const item = ['빵', '귤', '초콜릿', '연필'][seed % 4];
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${thing}에 ${item}이 ${per}개씩 들어 있습니다. ${groups}${thing.slice(1)}에는 ${item}이 모두 몇 개일까요?`,
+      `${per * groups}개`,
+      [`${per + groups}개`, `${per * groups + per}개`, `${per * (groups - 1)}개`],
+      `${per}씩 ${groups}묶음이므로 ${per}×${groups}=${per * groups}개입니다.`,
+      'multiplication', '묶음 상황을 곱셈으로 해결하기',
+      arrayVisualFor(groups, per, `${per}씩 ${groups}묶음`),
+    );
+  },
+
+  // F. 옳은 것 고르기
+  (lesson, difficulty, index) => {
+    const seed = index * 19 + lesson.lessonNo;
+    const dan = 2 + (seed % 8);
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${dan}단 곱셈구구에 대한 설명으로 옳은 것은?`,
+      `곱하는 수가 1 커지면 곱은 ${dan}씩 커집니다`,
+      [
+        `곱하는 수가 1 커지면 곱은 1씩 커집니다`,
+        `곱하는 수가 커져도 곱은 그대로입니다`,
+        `${dan}단에는 ${dan}보다 작은 곱도 있습니다`,
+      ],
+      `${dan}씩 한 묶음이 늘어나므로 곱은 ${dan}씩 커집니다.`,
+      'multiplication', '곱셈구구의 성질 판단하기',
+    );
+  },
+];
+
+// 차시가 다루는 개념에 맞는 모양 묶음을 고릅니다.
+const shapesForLesson = (lesson: Lesson): ShapeMaker[] => {
+  const tag = primaryTag(lesson);
+  if (tag === 'multiplication') return multiplyShapes;
+  if (tag === 'placeValue' || tag === 'number') return numberShapes;
+  return [];
+};
+
+// 슬롯 번호에 따라 모양을 돌려 씁니다. 한 차시 안에서 같은 모양이
+// 연달아 나오지 않도록 하는 것이 목적입니다.
+const shapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  const shapes = shapesForLesson(lesson);
+  if (shapes.length === 0) return null;
+  const maker = shapes[Math.floor(index / 3) % shapes.length];
+  try {
+    return maker(lesson, difficulty, index);
+  } catch {
+    return null;
+  }
+};
+
 export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] =>
   makePromptsUnique(
     generateRawQuestions(lesson, difficulty)
       .map((question, index) =>
         isStepSlot(difficulty, index)
           ? stepBlankQuestion(lesson, difficulty, index) ?? question
-          // 응용 문항을 먼저 쓰고, 없으면 기존 심화 문항을 씁니다.
+          // 응용 문항을 먼저, 그다음 여러 가지 모양의 문항, 그래도 없으면
+          // 기존 심화 문항을 씁니다.
           : challengeQuestion(lesson, difficulty, index)
+            ?? shapeQuestion(lesson, difficulty, index)
             ?? richQuestionFor(lesson, difficulty, index)
             ?? question)
       .map((question, index) => withRichVisual(question, index, lesson))
