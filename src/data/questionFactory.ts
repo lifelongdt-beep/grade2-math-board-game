@@ -11379,6 +11379,11 @@ const isStepSlot = (difficulty: Difficulty, index: number) => {
 // 모양마다 어느 차시에 어울리는지를 함께 적어 둡니다. 이것이 없으면
 // 한 단원의 모든 차시가 같은 문제를 받게 되어, 차시별 학습 목표와
 // 상관없는 문제가 나옵니다(크기 비교를 배우기 전에 비교를 묻는 식으로).
+// 하 수준에는 '조건 함께 보기' 같은 심화 계열 이름을 붙이지 않습니다.
+// 같은 문항이라도 하에서는 조건을 줄여 내므로 이름도 그에 맞춰야 합니다.
+const shapeStrategy = (difficulty: Difficulty, rich: string, plain: string) =>
+  difficulty === '하' ? plain : rich;
+
 type Shape = {
   fits: (lesson: Lesson) => boolean;
   make: (lesson: Lesson, difficulty: Difficulty, index: number) => Question | null;
@@ -11410,7 +11415,7 @@ const numberShapes: Shape[] = [
         `${bigName}이 ${big - 1}개, ${midName}이 ${mid}개, 1이 ${ones}개`,
       ],
       `${bigName} 1개를 ${midName} ${swap}개로 바꾸어도 수는 그대로입니다.`,
-      'placeValue', '자료 해석 · 같은 수를 다른 방법으로 나타내기',
+      'placeValue', shapeStrategy(difficulty, '자료 해석 · 같은 수를 다른 방법으로 나타내기', '같은 수를 다른 방법으로 나타내기'),
       placeValueVisualFor(value, '바꾸어 나타내기', four ? 4 : 3),
     );
   } },
@@ -11451,7 +11456,7 @@ const numberShapes: Shape[] = [
       `${thing}가 ${per}개씩 든 상자 ${box}개, 10개씩 든 봉지 ${bag}개, 낱개 ${loose}개가 있습니다. ${thing}는 모두 몇 개일까요?`,
       total, [total + per, total - 10, box * per + bag + loose],
       `${per}이 ${box}개, 10이 ${bag}개, 1이 ${loose}개이므로 ${total}개입니다.`,
-      'placeValue', '조건 함께 보기 · 묶음으로 담긴 물건의 수 구하기',
+      'placeValue', shapeStrategy(difficulty, '조건 함께 보기 · 묶음으로 담긴 물건의 수 구하기', '묶음으로 담긴 물건의 수 구하기'),
     );
   } },
 
@@ -11470,7 +11475,7 @@ const numberShapes: Shape[] = [
       `${a}와 ${b} 중 더 ${askBig ? '큰' : '작은'} 수는 얼마일까요?`,
       askBig ? b : a, [askBig ? a : b, a + b, Math.abs(a - b)],
       `가장 높은 자리가 같으므로 다음 자리를 견주면 ${askBig ? b : a}이(가) 더 ${askBig ? '큽니다' : '작습니다'}.`,
-      'placeValue', '자료 해석 · 자리마다 견주어 크기 비교하기',
+      'placeValue', shapeStrategy(difficulty, '자료 해석 · 자리마다 견주어 크기 비교하기', '자리마다 견주어 크기 비교하기'),
     );
   } },
 
@@ -11492,7 +11497,7 @@ const numberShapes: Shape[] = [
         `숫자가 클수록 나타내는 값도 항상 큽니다`,
       ],
       `자리마다 나타내는 값이 다릅니다. 십의 자리 숫자는 ${digit}입니다.`,
-      'placeValue', '자료 해석 · 설명이 옳은지 판단하기',
+      'placeValue', shapeStrategy(difficulty, '자료 해석 · 설명이 옳은지 판단하기', '설명이 옳은지 판단하기'),
       placeValueVisualFor(value, '자리값 살펴보기', four ? 4 : 3),
     );
   } },
@@ -11530,7 +11535,7 @@ const multiplyShapes: Shape[] = [
       bigger,
       [a1 * b1 > a2 * b2 ? `${a2}×${b2}` : `${a1}×${b1}`, '두 값은 같다', '알 수 없다'],
       `${a1}×${b1}=${a1 * b1}, ${a2}×${b2}=${a2 * b2}이므로 ${bigger}이 더 큽니다.`,
-      'multiplication', '자료 해석 · 두 곱의 크기 비교하기',
+      'multiplication', shapeStrategy(difficulty, '자료 해석 · 두 곱의 크기 비교하기', '두 곱의 크기 비교하기'),
     );
   } },
 
@@ -11548,7 +11553,7 @@ const multiplyShapes: Shape[] = [
       `${dan}×□=${dan * times}에서 □에 알맞은 수는?`,
       times, [times + 1, times - 1, dan],
       `${dan}씩 ${times}묶음이면 ${dan * times}이므로 □는 ${times}입니다.`,
-      'multiplication', '조건 함께 보기 · 곱하는 수를 거꾸로 찾기',
+      'multiplication', shapeStrategy(difficulty, '조건 함께 보기 · 곱하는 수를 거꾸로 찾기', '곱하는 수를 거꾸로 찾기'),
       arrayVisualFor(times, dan, `${dan}씩 묶어 보기`),
     );
   } },
@@ -11569,7 +11574,7 @@ const multiplyShapes: Shape[] = [
       `${a * 2}×${b}`,
       [`${a}×${b}`, `${a * 2}×${b * 2}`, `${a + 2}×${b}`],
       `${a}×${b * 2}=${product}이고 ${a * 2}×${b}=${product}로 곱이 같습니다.`,
-      'multiplication', '자료 해석 · 곱이 같은 다른 식 찾기',
+      'multiplication', shapeStrategy(difficulty, '자료 해석 · 곱이 같은 다른 식 찾기', '곱이 같은 다른 식 찾기'),
     );
   } },
 
@@ -11589,7 +11594,7 @@ const multiplyShapes: Shape[] = [
       `${per * groups}개`,
       [`${per + groups}개`, `${per * groups + per}개`, `${per * (groups - 1)}개`],
       `${per}씩 ${groups}묶음이므로 ${per}×${groups}=${per * groups}개입니다.`,
-      'multiplication', '조건 함께 보기 · 묶음 상황을 곱셈으로 해결하기',
+      'multiplication', shapeStrategy(difficulty, '조건 함께 보기 · 묶음 상황을 곱셈으로 해결하기', '묶음 상황을 곱셈으로 해결하기'),
       arrayVisualFor(groups, per, `${per}씩 ${groups}묶음`),
     );
   } },
@@ -11612,7 +11617,7 @@ const multiplyShapes: Shape[] = [
         `${dan}단에는 ${dan}보다 작은 곱도 있습니다`,
       ],
       `${dan}씩 한 묶음이 늘어나므로 곱은 ${dan}씩 커집니다.`,
-      'multiplication', '자료 해석 · 곱셈구구의 성질 판단하기',
+      'multiplication', shapeStrategy(difficulty, '자료 해석 · 곱셈구구의 성질 판단하기', '곱셈구구의 성질 판단하기'),
     );
   } },
 ];
