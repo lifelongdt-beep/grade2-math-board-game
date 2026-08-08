@@ -11581,7 +11581,7 @@ const shapesForLesson = (lesson: Lesson): ShapeMaker[] => {
 
 // 슬롯 번호에 따라 모양을 돌려 씁니다. 한 차시 안에서 같은 모양이
 // 연달아 나오지 않도록 하는 것이 목적입니다.
-const shapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+const variedQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
   const shapes = shapesForLesson(lesson);
   if (shapes.length === 0) return null;
   const maker = shapes[Math.floor(index / 3) % shapes.length];
@@ -11601,7 +11601,7 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
           // 응용 문항을 먼저, 그다음 여러 가지 모양의 문항, 그래도 없으면
           // 기존 심화 문항을 씁니다.
           : challengeQuestion(lesson, difficulty, index)
-            ?? shapeQuestion(lesson, difficulty, index)
+            ?? variedQuestion(lesson, difficulty, index)
             ?? richQuestionFor(lesson, difficulty, index)
             ?? question)
       .map((question, index) => withRichVisual(question, index, lesson))
