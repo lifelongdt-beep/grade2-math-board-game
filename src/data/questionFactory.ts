@@ -11575,7 +11575,7 @@ const multiplyShapes: Shape[] = [
 
   // E. 실생활 문장제 — 묶음 상황
   {
-    fits: (lesson) => /곱셈식으로 나타내|곱셈구구를 이용|단원 종합|학기 종합/.test(lesson.title),
+    fits: (lesson) => /곱셈식으로 나타내|단원 종합|학기 종합/.test(lesson.title),
     make: (lesson, difficulty, index) => {
     const seed = index * 13 + lesson.lessonNo;
     const dans = dansOf(lesson);
