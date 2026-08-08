@@ -11376,12 +11376,20 @@ const isStepSlot = (difficulty: Difficulty, index: number) => {
 // 슬롯마다 모양을 돌려 쓰므로, 운이 아니라 구조로 다양해집니다.
 // ════════════════════════════════════════════════════════════════════
 
-type ShapeMaker = (lesson: Lesson, difficulty: Difficulty, index: number) => Question | null;
+// 모양마다 어느 차시에 어울리는지를 함께 적어 둡니다. 이것이 없으면
+// 한 단원의 모든 차시가 같은 문제를 받게 되어, 차시별 학습 목표와
+// 상관없는 문제가 나옵니다(크기 비교를 배우기 전에 비교를 묻는 식으로).
+type Shape = {
+  fits: (lesson: Lesson) => boolean;
+  make: (lesson: Lesson, difficulty: Difficulty, index: number) => Question | null;
+};
 
 // ── 수(세 자리 수 / 네 자리 수) ────────────────────────────────────
-const numberShapes: ShapeMaker[] = [
+const numberShapes: Shape[] = [
   // A. 같은 값을 다른 묶음으로 나타내기
-  (lesson, difficulty, index) => {
+  {
+    fits: (lesson) => /세 자리 수를 알아|네 자리 수를 알아|각 자리의 숫자/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
     const four = lesson.unitTitle === '네 자리 수';
     const seed = index * 7 + lesson.lessonNo * 3;
     const big = 2 + (seed % 6);
@@ -11408,7 +11416,9 @@ const numberShapes: ShapeMaker[] = [
   },
 
   // D. 읽기 ↔ 쓰기
-  (lesson, difficulty, index) => {
+  {
+    fits: (lesson) => /세 자리 수를 알아|네 자리 수를 알아|몇백|몇천/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
     const four = lesson.unitTitle === '네 자리 수';
     const seed = index * 11 + lesson.lessonNo;
     const value = four
@@ -11425,7 +11435,9 @@ const numberShapes: ShapeMaker[] = [
   },
 
   // E. 실생활 묶음 문장제
-  (lesson, difficulty, index) => {
+  {
+    fits: (lesson) => /세 자리 수를 알아|네 자리 수를 알아|단원 종합|학기 종합/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
     const four = lesson.unitTitle === '네 자리 수';
     const seed = index * 5 + lesson.lessonNo * 2;
     const box = 2 + (seed % 7);
@@ -11444,7 +11456,9 @@ const numberShapes: ShapeMaker[] = [
   },
 
   // B. 두 수 비교 — 자리마다 견주기
-  (lesson, difficulty, index) => {
+  {
+    fits: (lesson) => /크기를 비교/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
     const four = lesson.unitTitle === '네 자리 수';
     const seed = index * 13 + lesson.lessonNo;
     const head = 2 + (seed % 6);
@@ -11461,7 +11475,9 @@ const numberShapes: ShapeMaker[] = [
   },
 
   // F. 옳은 것 고르기 — 오개념을 보기로 세웁니다
-  (lesson, difficulty, index) => {
+  {
+    fits: (lesson) => /각 자리의 숫자/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
     const four = lesson.unitTitle === '네 자리 수';
     const seed = index * 17 + lesson.lessonNo;
     const value = four ? 3000 + (seed % 9) * 100 + 50 : 300 + (seed % 9) * 10 + 5;
@@ -11479,13 +11495,15 @@ const numberShapes: ShapeMaker[] = [
       'placeValue', '설명이 옳은지 판단하기',
       placeValueVisualFor(value, '자리값 살펴보기', four ? 4 : 3),
     );
-  },
+  } },
 ];
 
 // ── 곱셈 / 곱셈구구 ────────────────────────────────────────────────
-const multiplyShapes: ShapeMaker[] = [
+const multiplyShapes: Shape[] = [
   // B. 두 곱 비교
-  (lesson, difficulty, index) => {
+  {
+    fits: (lesson) => /곱셈구구를 이용|단원 종합|학기 종합/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
     const seed = index * 7 + lesson.lessonNo;
     const a1 = 2 + (seed % 7);
     const b1 = 2 + ((seed + 3) % 7);
@@ -11504,7 +11522,9 @@ const multiplyShapes: ShapeMaker[] = [
   },
 
   // C. 거꾸로 구하기 — 곱하는 수를 찾기
-  (lesson, difficulty, index) => {
+  {
+    fits: (lesson) => /단 곱셈구구|곱셈표|곱셈구구를 이용/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
     const seed = index * 11 + lesson.lessonNo;
     const dan = 2 + (seed % 8);
     const times = 2 + ((seed + 4) % 8);
@@ -11519,7 +11539,9 @@ const multiplyShapes: ShapeMaker[] = [
   },
 
   // A. 같은 곱을 다른 곱셈식으로
-  (lesson, difficulty, index) => {
+  {
+    fits: (lesson) => /곱셈표|곱셈구구를 이용/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
     const seed = index * 5 + lesson.lessonNo;
     const a = 2 + (seed % 4);
     const b = 2 + ((seed + 2) % 4);
@@ -11535,7 +11557,9 @@ const multiplyShapes: ShapeMaker[] = [
   },
 
   // E. 실생활 문장제 — 묶음 상황
-  (lesson, difficulty, index) => {
+  {
+    fits: (lesson) => /곱셈|몇 배|묶어/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
     const seed = index * 13 + lesson.lessonNo;
     const per = 2 + (seed % 8);
     const groups = 2 + ((seed + 3) % 8);
@@ -11553,7 +11577,9 @@ const multiplyShapes: ShapeMaker[] = [
   },
 
   // F. 옳은 것 고르기
-  (lesson, difficulty, index) => {
+  {
+    fits: (lesson) => /단 곱셈구구/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
     const seed = index * 19 + lesson.lessonNo;
     const dan = 2 + (seed % 8);
     return makeQuestion(
@@ -11568,11 +11594,11 @@ const multiplyShapes: ShapeMaker[] = [
       `${dan}씩 한 묶음이 늘어나므로 곱은 ${dan}씩 커집니다.`,
       'multiplication', '곱셈구구의 성질 판단하기',
     );
-  },
+  } },
 ];
 
 // 차시가 다루는 개념에 맞는 모양 묶음을 고릅니다.
-const shapesForLesson = (lesson: Lesson): ShapeMaker[] => {
+const shapesForLesson = (lesson: Lesson): Shape[] => {
   const tag = primaryTag(lesson);
   if (tag === 'multiplication') return multiplyShapes;
   if (tag === 'placeValue' || tag === 'number') return numberShapes;
@@ -11582,11 +11608,12 @@ const shapesForLesson = (lesson: Lesson): ShapeMaker[] => {
 // 슬롯 번호에 따라 모양을 돌려 씁니다. 한 차시 안에서 같은 모양이
 // 연달아 나오지 않도록 하는 것이 목적입니다.
 const variedQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
-  const shapes = shapesForLesson(lesson);
+  // 이 차시에 어울리는 모양만 남깁니다.
+  const shapes = shapesForLesson(lesson).filter((shape) => shape.fits(lesson));
   if (shapes.length === 0) return null;
   const maker = shapes[Math.floor(index / 3) % shapes.length];
   try {
-    return maker(lesson, difficulty, index);
+    return maker.make(lesson, difficulty, index);
   } catch {
     return null;
   }
