@@ -11558,7 +11558,7 @@ const multiplyShapes: Shape[] = [
 
   // E. 실생활 문장제 — 묶음 상황
   {
-    fits: (lesson) => /곱셈|몇 배|묶어/.test(lesson.title),
+    fits: (lesson) => /곱셈식으로 나타내|곱셈구구를 이용|단원 종합|학기 종합/.test(lesson.title),
     make: (lesson, difficulty, index) => {
     const seed = index * 13 + lesson.lessonNo;
     const per = 2 + (seed % 8);
@@ -11625,10 +11625,11 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
       .map((question, index) =>
         isStepSlot(difficulty, index)
           ? stepBlankQuestion(lesson, difficulty, index) ?? question
-          // 응용 문항을 먼저, 그다음 여러 가지 모양의 문항, 그래도 없으면
-          // 기존 심화 문항을 씁니다.
+          // 응용 문항을 먼저 쓰고, 남은 자리의 절반만 새 모양에 내줍니다.
+          // 전부 새 모양으로 채우면 이번에는 그 모양 하나가 차시를 덮어
+          // 결국 또 같은 문제만 되풀이됩니다. 기존 문항과 섞어야 합니다.
           : challengeQuestion(lesson, difficulty, index)
-            ?? variedQuestion(lesson, difficulty, index)
+            ?? (index % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
             ?? richQuestionFor(lesson, difficulty, index)
             ?? question)
       .map((question, index) => withRichVisual(question, index, lesson))
