@@ -46,7 +46,6 @@ const laneStyleFor = (playerId: number) => {
 const playerIcons = [Rocket, Star, Trophy, Crown, Medal] as const;
 let successSoundUrl: string | null = null;
 const durations: SessionDuration[] = [30, 60, 120];
-const difficultyLevels: Difficulty[] = ['상', '중', '하'];
 const attendanceNumbers = Array.from({ length: 30 }, (_, index) => index + 1);
 
 type StudentConfig = {
@@ -54,7 +53,8 @@ type StudentConfig = {
   difficulty: Difficulty;
 };
 
-type SetupStep = 'attendance' | 'difficulty' | 'ready';
+// 수준은 이제 고르지 않습니다. 번호만 누르면 준비가 끝납니다.
+type SetupStep = 'attendance' | 'ready';
 
 type PlayerResult = {
   total: number;
@@ -183,15 +183,33 @@ const createQuestionState = (players: Player[], now = Date.now()): Record<number
         answered: 0,
         retries: [],
         activeRetry: null,
+        // 모두 하에서 시작합니다. 어디까지 갈 수 있는지는 풀면서 정해집니다.
+        level: '하',
+        streak: 0,
       },
     ]),
   );
 
 const formatMs = (ms?: number) => (ms ? `${(ms / 1000).toFixed(1)}초` : '-');
 
-// 되돌아온 문제가 있으면 그것을, 없으면 다음 새 문제를 냅니다.
-const getPlayerQuestion = (questions: Question[], state: PlayerQuestionState) =>
-  questions[(state.activeRetry ?? state.questionIndex) % questions.length];
+// 수준이 오르내리는 규칙입니다.
+// 아이를 미리 상·중·하로 나누어 두면 한번 정해진 자리에 갇힙니다.
+// 대신 하에서 시작해 잘 풀면 올리고 틀리면 내려서, 그 아이가 지금 풀 수
+// 있는 자리를 계속 따라갑니다.
+const LEVEL_LADDER: Difficulty[] = ['하', '중', '상'];
+const STEP_UP_AFTER = 3;
+
+const levelUp = (level: Difficulty): Difficulty =>
+  LEVEL_LADDER[Math.min(LEVEL_LADDER.length - 1, LEVEL_LADDER.indexOf(level) + 1)];
+
+const levelDown = (level: Difficulty): Difficulty =>
+  LEVEL_LADDER[Math.max(0, LEVEL_LADDER.indexOf(level) - 1)];
+
+// 되돌아온 문제가 있으면 그때 그 수준의 문제집에서, 없으면 지금 수준에서 냅니다.
+const getPlayerQuestion = (banks: Record<Difficulty, Question[]>, state: PlayerQuestionState) => {
+  const bank = banks[state.activeRetry?.level ?? state.level];
+  return bank[(state.activeRetry?.index ?? state.questionIndex) % bank.length];
+};
 
 // 틀린 문제는 세 문제 뒤에 다시 옵니다. 바로 다시 내면 답을 외워서 맞히고,
 // 너무 멀면 다시 만나기 전에 수업이 끝납니다.
@@ -205,10 +223,20 @@ const advancePlayerState = (
   wasWrong: boolean,
 ): PlayerQuestionState => {
   const answered = state.answered + 1;
-  const shownIndex = state.activeRetry ?? state.questionIndex;
+  const shown = state.activeRetry ?? { index: state.questionIndex, level: state.level };
   const queued = wasWrong
-    ? [...state.retries, { index: shownIndex, dueAt: answered + RETRY_AFTER }]
+    ? [...state.retries, { ...shown, dueAt: answered + RETRY_AFTER }]
     : state.retries;
+
+  // 연속으로 맞히면 올라가고, 틀리면 내려옵니다. 되돌아온 문제도 셈에 넣습니다.
+  const streak = wasWrong ? 0 : state.streak + 1;
+  const level = wasWrong
+    ? levelDown(state.level)
+    : streak >= STEP_UP_AFTER
+      ? levelUp(state.level)
+      : state.level;
+  // 수준이 바뀌면 연속 셈은 다시 0부터입니다.
+  const nextStreak = level === state.level ? streak : 0;
 
   // 낼 때가 된 것 중 가장 오래 기다린 것부터 냅니다.
   const dueAt = queued.findIndex((item) => item.dueAt <= answered);
@@ -230,7 +258,9 @@ const advancePlayerState = (
     questionStartedAt: Date.now(),
     answered,
     retries: nextRetries,
-    activeRetry: servingRetry ? queued[dueAt].index : null,
+    activeRetry: servingRetry ? { index: queued[dueAt].index, level: queued[dueAt].level } : null,
+    level,
+    streak: nextStreak,
   };
 };
 
@@ -492,8 +522,9 @@ const difficultyBlips: Record<Difficulty, Blip[]> = {
   ],
 };
 
-const playDifficultySound = (difficulty: Difficulty) => {
-  playBlips(difficultyBlips[difficulty]);
+// 번호를 누르고 준비가 끝났을 때 나는 소리입니다.
+const playReadySound = () => {
+  playBlips(difficultyBlips.중);
 };
 
 // 남은 시간만큼 위쪽 모래가 남고, 지난 만큼 아래에 쌓입니다.
@@ -698,10 +729,6 @@ function App() {
   const [fullscreenFallback, setFullscreenFallback] = useState(false);
   const [successSignals, setSuccessSignals] = useState<Record<number, number>>({});
   const [wrongSignals, setWrongSignals] = useState<Record<number, number>>({});
-  // 다시 풀기로 난이도를 다시 고를 때 보여 줄 지난 판 성적입니다.
-  // 난이도만 다시 물으면 아이는 근거 없이 같은 것을 또 고릅니다.
-  // 난이도를 고른 뒤(출석번호는 그대로)이므로 자리 번호로 짝지어 둡니다.
-  const [lastRoundResults, setLastRoundResults] = useState<Record<number, PlayerResult>>({});
 
   useEffect(() => {
     if (skipInitialSemesterReset.current) {
@@ -832,8 +859,8 @@ function App() {
   const correctCount = sessionRecords.filter((record) => record.correct).length;
   const wrongCount = sessionRecords.filter((record) => !record.correct).length;
   const accuracy = sessionRecords.length === 0 ? 0 : Math.round((correctCount / sessionRecords.length) * 100);
-  const getQuestionForPlayer = (player: Player, state: PlayerQuestionState) =>
-    getPlayerQuestion(questionBanks[player.difficulty], state);
+  const getQuestionForPlayer = (_player: Player, state: PlayerQuestionState) =>
+    getPlayerQuestion(questionBanks, state);
   const fallbackStates = createQuestionState(players);
   const firstPlayer = players[0];
   const sampleQuestion = firstPlayer
@@ -877,15 +904,10 @@ function App() {
   };
 
   const selectAttendanceNumber = (studentId: number, attendanceNo: number) => {
-    playTapSound();
+    // 번호를 누르면 바로 준비 완료입니다. 어느 수준부터 풀지는 아이가
+    // 고르는 것이 아니라, 풀어 가면서 정해집니다.
+    playReadySound();
     updateStudentConfig(studentId, { attendanceNo });
-    setStudentSetupSteps((prev) => ({ ...prev, [studentId]: 'difficulty' }));
-  };
-
-  const chooseDifficulty = (studentId: number, difficulty: Difficulty) => {
-    // 고른 난이도에 따라 다른 소리가 납니다.
-    playDifficultySound(difficulty);
-    updateStudentConfig(studentId, { difficulty });
     setStudentSetupSteps((prev) => ({ ...prev, [studentId]: 'ready' }));
   };
 
@@ -927,8 +949,6 @@ function App() {
   const goSetup = () => {
     setMode('setup');
     setTeacherOpen(false);
-    // 처음으로 돌아가는 것은 새 수업을 여는 것이므로 지난 판도 지웁니다.
-    setLastRoundResults({});
     setRecords([]);
     setSuccessSignals({});
     setPlayerStates(createQuestionState(players));
@@ -937,23 +957,16 @@ function App() {
   };
 
   const resetSession = () => {
-    // 한 판을 풀고 나면 그 난이도가 맞았는지 학생도 선생님도 알게 됩니다.
-    // 그래서 다시 풀기는 곧바로 시작하지 않고 난이도부터 다시 고릅니다.
-    // 출석번호는 이미 고른 것을 그대로 두어, 스무 명이 번호를 다시 누르는
-    // 일이 없게 합니다. 모두 고르면 지금처럼 저절로 시작합니다.
+    // 수준을 고르는 단계가 없어졌으므로 곧바로 다시 시작합니다.
+    // 다시 풀 때도 모두 하에서 출발해, 그날 컨디션에 맞게 다시 올라갑니다.
     setTeacherOpen(false);
-    // records를 비우기 전에 챙겨 둡니다. 비운 뒤에는 셀 수 없습니다.
-    setLastRoundResults(playerResults);
     setRecords([]);
     setSuccessSignals({});
     setWrongSignals({});
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
     setPlayerStates(createQuestionState(players));
     setRemainingSeconds(sessionDuration);
-    setStudentSetupSteps(
-      Object.fromEntries(players.map((player) => [player.id, 'difficulty' as SetupStep])),
-    );
-    setMode('setup');
+    setMode('playing');
   };
 
   const toggleFullscreen = async () => {
@@ -1210,7 +1223,7 @@ function App() {
       >
         <div className="setup-progress">
           <span><Users size={16} /> {isMobileEntry ? `내 준비 ${readyPlayerCount} / 1` : `학생 준비 ${readyPlayerCount} / ${playerCount}`}</span>
-          <span>{isMobileEntry ? '번호와 난이도 선택 후 자동 시작' : '출석번호 선택 후 난이도를 고르면 자동 시작'}</span>
+          <span>{isMobileEntry ? '번호를 누르면 자동 시작' : '출석번호를 누르면 자동 시작'}</span>
         </div>
 
         <div
@@ -1230,12 +1243,12 @@ function App() {
                 <header>
                   <PlayerAvatar player={player} />
                   <strong>{player.id}번 자리</strong>
-                  <small>{step === 'attendance' ? '번호 선택' : step === 'difficulty' ? `${config.attendanceNo}번` : '준비 완료'}</small>
+                  <small>{step === 'attendance' ? '번호 선택' : `${config.attendanceNo}번 · 준비 완료`}</small>
                 </header>
 
                 {step === 'attendance' && (
                   <div className="setup-step-card">
-                    <span className="result-kicker">1단계</span>
+                    <span className="result-kicker">준비</span>
                     <strong>출석번호를 누르세요</strong>
                     <div className="attendance-number-pad" aria-label={`${player.id}번 자리 출석번호 선택`}>
                       {attendanceNumbers.map((number) => {
@@ -1253,33 +1266,6 @@ function App() {
                           </button>
                         );
                       })}
-                    </div>
-                  </div>
-                )}
-
-                {step === 'difficulty' && (
-                  <div className="setup-step-card">
-                    <span className="result-kicker">2단계</span>
-                    <strong>{config.attendanceNo}번 난이도</strong>
-                    {/* 지난 판을 어떻게 풀었는지 보고 고르게 합니다.
-                        정답률까지 쓰면 2학년에게는 읽을 것이 하나 늘 뿐이라
-                        맞은 개수와 틀린 개수만 그대로 보여 줍니다. */}
-                    {lastRoundResults[player.id]?.total ? (
-                      <p className="last-round-note">
-                        지난 판 <b>{config.difficulty}</b> · 정답 {lastRoundResults[player.id].correct}개 ·
-                        오답 {lastRoundResults[player.id].wrong}개
-                      </p>
-                    ) : null}
-                    <div className="difficulty-choice-grid">
-                    {difficultyLevels.map((level) => (
-                      <button
-                        type="button"
-                        key={level}
-                        onClick={() => chooseDifficulty(player.id, level)}
-                      >
-                        {level}
-                      </button>
-                    ))}
                     </div>
                   </div>
                 )}
@@ -1397,7 +1383,7 @@ function App() {
           >
             {players.map((player) => {
               const state = playerStates[player.id] ?? fallbackStates[player.id];
-              const playerQuestions = questionBanks[player.difficulty];
+              const playerQuestions = questionBanks[state.activeRetry?.level ?? state.level];
               const question = getPlayerQuestion(playerQuestions, state);
               const result = playerResults[player.id] ?? { total: 0, correct: 0, wrong: 0 };
               const successActive = Boolean(successSignals[player.id]);
@@ -1411,7 +1397,7 @@ function App() {
                   <header>
                     <PlayerAvatar player={player} active={successActive} />
                     <strong>{player.name}</strong>
-                    <small>{player.difficulty} · {formatMs(state.responseMs)}</small>
+                    <small>{state.level} · {formatMs(state.responseMs)}</small>
                   </header>
                   {successActive && (
                     <div className="success-burst" aria-live="polite">

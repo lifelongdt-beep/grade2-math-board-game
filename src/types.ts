@@ -274,8 +274,15 @@ export interface PlayerQuestionState {
   // retries: 다시 낼 문제들. index는 문제 은행 자리, dueAt은 몇 번째에 낼지
   // activeRetry: 지금 화면에 떠 있는 것이 되돌아온 문제라면 그 자리
   answered: number;
-  retries: Array<{ index: number; dueAt: number }>;
-  activeRetry: number | null;
+  // 되돌아온 문제는 그때 풀던 수준의 문제집에서 꺼냅니다. 수준마다 문제집이
+  // 다르므로 번호만으로는 같은 문제를 다시 찾을 수 없습니다.
+  retries: Array<{ index: number; level: Difficulty; dueAt: number }>;
+  activeRetry: { index: number; level: Difficulty } | null;
+  // 풀면서 수준이 오르내립니다. 시작은 하, 연속 3번 맞히면 한 단계 위로,
+  // 틀리면 한 단계 아래로 갑니다. 아이를 상·중·하로 미리 나누지 않고
+  // 지금 이 아이에게 맞는 문제를 계속 찾아가는 방식입니다.
+  level: Difficulty;
+  streak: number;
 }
 
 export interface AnswerRecord {
