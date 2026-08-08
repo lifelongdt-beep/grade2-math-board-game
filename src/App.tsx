@@ -1384,7 +1384,7 @@ function App() {
             {players.map((player) => {
               const state = playerStates[player.id] ?? fallbackStates[player.id];
               const playerQuestions = questionBanks[state.activeRetry?.level ?? state.level];
-              const question = getPlayerQuestion(playerQuestions, state);
+              const question = getPlayerQuestion(questionBanks, state);
               const result = playerResults[player.id] ?? { total: 0, correct: 0, wrong: 0 };
               const successActive = Boolean(successSignals[player.id]);
               const wrongActive = Boolean(wrongSignals[player.id]);
@@ -1435,7 +1435,7 @@ function App() {
                     <>
                       <div className={`student-question-body ${question.prompt.length > 70 ? 'long-question' : ''} ${question.prompt.length > 100 ? 'very-long-question' : ''}`.trim()}>
                         <div className="student-question-meta">
-                          <span>{((state.activeRetry ?? state.questionIndex) % playerQuestions.length) + 1} / {playerQuestions.length}</span>
+                          <span>{((state.activeRetry?.index ?? state.questionIndex) % playerQuestions.length) + 1} / {playerQuestions.length}</span>
                           {/* 아까 틀린 문제가 돌아왔다는 것을 알려 줍니다.
                               모르고 다시 틀리는 것과, 알고 다시 푸는 것은
                               아이에게 완전히 다른 일입니다. */}
