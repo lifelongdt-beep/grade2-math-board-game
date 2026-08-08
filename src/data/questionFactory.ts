@@ -10392,6 +10392,37 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('문제를 해결')) {
       const each = 2 + (seed % 7);
       const groups = 3 + ((seed + 2) % 6);
+
+      // 문장 상황이 한 가지뿐이면 풀이 과정 20문항이 모두 같은 문제가 됩니다.
+      // 곱셈으로 푸는 상황에는 묶음 세기 말고도 덜어 내기, 두 묶음 합치기가
+      // 있습니다. 같은 곱셈이라도 상황이 다르면 세워야 할 식이 달라집니다.
+      const situation = index % 3;
+
+      if (situation === 1) {
+        const gone = 1 + (seed % 4);
+        return makeQuestion(
+          lesson, difficulty, index,
+          `한 봉지에 ${each}개씩 ${groups}봉지가 있었는데 ${gone}개를 먹었습니다. 남은 수를 구하는 과정입니다. □에 알맞은 수는? ① 처음 수는 ${each}×${groups}=${each * groups}입니다. ② 먹은 수는 ${gone}입니다. ③ ${each * groups}-${gone}=□`,
+          each * groups - gone,
+          [each * groups, each * groups + gone, Math.max(1, each * groups - gone - 1)],
+          `먼저 곱셈으로 처음 수를 구하고, 먹은 수를 빼면 ${each * groups - gone}개입니다.`,
+          'multiplication', '곱한 뒤 덜어 내는 과정',
+          arrayVisualFor(groups, each, `${each}씩 ${groups}묶음`),
+        );
+      }
+
+      if (situation === 2) {
+        const other = 2 + ((seed + 3) % 5);
+        return makeQuestion(
+          lesson, difficulty, index,
+          `빨간 상자에 ${each}개씩 ${groups}상자, 파란 상자에 ${other}개씩 ${groups}상자가 있습니다. 모두 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① 빨간 상자는 ${each}×${groups}=${each * groups}입니다. ② 파란 상자는 ${other}×${groups}=${other * groups}입니다. ③ ${each * groups}+${other * groups}=□`,
+          (each + other) * groups,
+          [each * groups, other * groups, (each + other) * groups + groups],
+          `두 상자의 수를 각각 곱셈으로 구한 뒤 더하면 ${(each + other) * groups}개입니다.`,
+          'multiplication', '두 묶음을 각각 곱해 합치는 과정',
+        );
+      }
+
       return makeQuestion(
         lesson, difficulty, index,
         `한 상자에 ${each}개씩 ${groups}상자의 수를 구하는 과정입니다. □에 알맞은 수는? ① 한 묶음의 수는 ${each}입니다. ② 묶음 수는 ${groups}입니다. ③ ${each}×${groups}=□`,
