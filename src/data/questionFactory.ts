@@ -11388,7 +11388,7 @@ type Shape = {
 const numberShapes: Shape[] = [
   // A. 같은 값을 다른 묶음으로 나타내기
   {
-    fits: (lesson) => /세 자리 수를 알아|네 자리 수를 알아|각 자리의 숫자/.test(lesson.title),
+    fits: (lesson) => /세 자리 수를 알아|네 자리 수를 알아/.test(lesson.title),
     make: (lesson, difficulty, index) => {
     const four = lesson.unitTitle === '네 자리 수';
     const seed = index * 7 + lesson.lessonNo * 3;
@@ -11417,7 +11417,7 @@ const numberShapes: Shape[] = [
 
   // D. 읽기 ↔ 쓰기
   {
-    fits: (lesson) => /세 자리 수를 알아|네 자리 수를 알아|몇백|몇천/.test(lesson.title),
+    fits: (lesson) => /세 자리 수를 알아|네 자리 수를 알아/.test(lesson.title),
     make: (lesson, difficulty, index) => {
     const four = lesson.unitTitle === '네 자리 수';
     const seed = index * 11 + lesson.lessonNo;
@@ -11476,7 +11476,7 @@ const numberShapes: Shape[] = [
 
   // F. 옳은 것 고르기 — 오개념을 보기로 세웁니다
   {
-    fits: (lesson) => /각 자리의 숫자/.test(lesson.title),
+    fits: (lesson) => /단원 종합|학기 종합/.test(lesson.title),
     make: (lesson, difficulty, index) => {
     const four = lesson.unitTitle === '네 자리 수';
     const seed = index * 17 + lesson.lessonNo;
