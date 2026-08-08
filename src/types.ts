@@ -282,7 +282,11 @@ export interface PlayerQuestionState {
   // 틀리면 한 단계 아래로 갑니다. 아이를 상·중·하로 미리 나누지 않고
   // 지금 이 아이에게 맞는 문제를 계속 찾아가는 방식입니다.
   level: Difficulty;
+  // streak: 연속 정답 수. 3이 되면 한 단계 올라갑니다.
+  // missStreak: 연속 오답 수. 2가 되어야 한 단계 내려갑니다. 한 번 틀렸다고
+  // 바로 내리면, 손이 미끄러진 한 번으로 풀 수 있던 수준을 잃습니다.
   streak: number;
+  missStreak: number;
 }
 
 export interface AnswerRecord {

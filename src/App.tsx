@@ -186,6 +186,7 @@ const createQuestionState = (players: Player[], now = Date.now()): Record<number
         // 모두 하에서 시작합니다. 어디까지 갈 수 있는지는 풀면서 정해집니다.
         level: '하',
         streak: 0,
+        missStreak: 0,
       },
     ]),
   );
@@ -198,6 +199,9 @@ const formatMs = (ms?: number) => (ms ? `${(ms / 1000).toFixed(1)}초` : '-');
 // 있는 자리를 계속 따라갑니다.
 const LEVEL_LADDER: Difficulty[] = ['하', '중', '상'];
 const STEP_UP_AFTER = 3;
+// 내려갈 때는 두 번 연속 틀려야 합니다. 2학년은 아는 문제도 잘못 누르는
+// 일이 있어서, 한 번의 실수로 수준을 내리면 실제 실력보다 아래에 머뭅니다.
+const STEP_DOWN_AFTER = 2;
 
 const levelUp = (level: Difficulty): Difficulty =>
   LEVEL_LADDER[Math.min(LEVEL_LADDER.length - 1, LEVEL_LADDER.indexOf(level) + 1)];
@@ -228,15 +232,19 @@ const advancePlayerState = (
     ? [...state.retries, { ...shown, dueAt: answered + RETRY_AFTER }]
     : state.retries;
 
-  // 연속으로 맞히면 올라가고, 틀리면 내려옵니다. 되돌아온 문제도 셈에 넣습니다.
+  // 연속 정답 3번이면 올라가고, 연속 오답 2번이면 내려옵니다.
+  // 되돌아온 문제도 똑같이 셈에 넣습니다.
   const streak = wasWrong ? 0 : state.streak + 1;
-  const level = wasWrong
+  const missStreak = wasWrong ? state.missStreak + 1 : 0;
+  const level = missStreak >= STEP_DOWN_AFTER
     ? levelDown(state.level)
     : streak >= STEP_UP_AFTER
       ? levelUp(state.level)
       : state.level;
-  // 수준이 바뀌면 연속 셈은 다시 0부터입니다.
-  const nextStreak = level === state.level ? streak : 0;
+  // 수준이 바뀌면 두 셈 모두 0부터 다시 셉니다.
+  const moved = level !== state.level;
+  const nextStreak = moved ? 0 : streak;
+  const nextMiss = moved ? 0 : missStreak;
 
   // 낼 때가 된 것 중 가장 오래 기다린 것부터 냅니다.
   const dueAt = queued.findIndex((item) => item.dueAt <= answered);
@@ -261,6 +269,7 @@ const advancePlayerState = (
     activeRetry: servingRetry ? { index: queued[dueAt].index, level: queued[dueAt].level } : null,
     level,
     streak: nextStreak,
+    missStreak: nextMiss,
   };
 };
 
