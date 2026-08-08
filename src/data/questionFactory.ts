@@ -11499,15 +11499,28 @@ const numberShapes: Shape[] = [
 ];
 
 // ── 곱셈 / 곱셈구구 ────────────────────────────────────────────────
+// 이 차시가 다루는 단입니다. '2단 곱셈구구를 알아볼까요'면 2단만 씁니다.
+// 이걸 보지 않고 아무 단이나 쓰면 2단 차시에 3단 문제가 나옵니다.
+const dansOf = (lesson: Lesson): number[] => {
+  const found = lesson.title.match(/(\d)단/g)?.map((x) => Number(x[0])) ?? [];
+  if (found.length) return found;
+  // 곱셈구구를 모두 배운 뒤(활용·종합)에는 어느 단이든 쓸 수 있습니다.
+  return /곱셈구구를 이용|곱셈표|단원 종합|학기 종합/.test(lesson.title)
+    ? [2, 3, 4, 5, 6, 7, 8, 9]
+    : [];
+};
+
 const multiplyShapes: Shape[] = [
   // B. 두 곱 비교
   {
     fits: (lesson) => /곱셈구구를 이용|단원 종합|학기 종합/.test(lesson.title),
     make: (lesson, difficulty, index) => {
     const seed = index * 7 + lesson.lessonNo;
-    const a1 = 2 + (seed % 7);
+    const dans = dansOf(lesson);
+    if (dans.length === 0) return null;
+    const a1 = dans[seed % dans.length];
     const b1 = 2 + ((seed + 3) % 7);
-    const a2 = 2 + ((seed + 5) % 7);
+    const a2 = dans[(seed + 1) % dans.length];
     const b2 = 2 + ((seed + 1) % 7);
     if (a1 * b1 === a2 * b2) return null;
     const bigger = a1 * b1 > a2 * b2 ? `${a1}×${b1}` : `${a2}×${b2}`;
@@ -11526,7 +11539,9 @@ const multiplyShapes: Shape[] = [
     fits: (lesson) => /단 곱셈구구|곱셈표|곱셈구구를 이용/.test(lesson.title),
     make: (lesson, difficulty, index) => {
     const seed = index * 11 + lesson.lessonNo;
-    const dan = 2 + (seed % 8);
+    const dans = dansOf(lesson);
+    if (dans.length === 0) return null;
+    const dan = dans[seed % dans.length];
     const times = 2 + ((seed + 4) % 8);
     return makeQuestion(
       lesson, difficulty, index,
@@ -11543,7 +11558,9 @@ const multiplyShapes: Shape[] = [
     fits: (lesson) => /곱셈표|곱셈구구를 이용/.test(lesson.title),
     make: (lesson, difficulty, index) => {
     const seed = index * 5 + lesson.lessonNo;
-    const a = 2 + (seed % 4);
+    const dans = dansOf(lesson);
+    if (dans.length === 0) return null;
+    const a = dans[seed % dans.length];
     const b = 2 + ((seed + 2) % 4);
     const product = a * b * 2;
     return makeQuestion(
@@ -11561,7 +11578,8 @@ const multiplyShapes: Shape[] = [
     fits: (lesson) => /곱셈식으로 나타내|곱셈구구를 이용|단원 종합|학기 종합/.test(lesson.title),
     make: (lesson, difficulty, index) => {
     const seed = index * 13 + lesson.lessonNo;
-    const per = 2 + (seed % 8);
+    const dans = dansOf(lesson);
+    const per = dans.length ? dans[seed % dans.length] : 2 + (seed % 8);
     const groups = 2 + ((seed + 3) % 8);
     const thing = ['한 상자', '한 봉지', '한 접시', '한 묶음'][seed % 4];
     const item = ['빵', '귤', '초콜릿', '연필'][seed % 4];
@@ -11581,7 +11599,9 @@ const multiplyShapes: Shape[] = [
     fits: (lesson) => /단 곱셈구구/.test(lesson.title),
     make: (lesson, difficulty, index) => {
     const seed = index * 19 + lesson.lessonNo;
-    const dan = 2 + (seed % 8);
+    const dans = dansOf(lesson);
+    if (dans.length === 0) return null;
+    const dan = dans[seed % dans.length];
     return makeQuestion(
       lesson, difficulty, index,
       `${dan}단 곱셈구구에 대한 설명으로 옳은 것은?`,
@@ -11629,7 +11649,7 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
           // 전부 새 모양으로 채우면 이번에는 그 모양 하나가 차시를 덮어
           // 결국 또 같은 문제만 되풀이됩니다. 기존 문항과 섞어야 합니다.
           : challengeQuestion(lesson, difficulty, index)
-            ?? (index % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
+            ?? (index % 4 === 1 ? variedQuestion(lesson, difficulty, index) : null)
             ?? richQuestionFor(lesson, difficulty, index)
             ?? question)
       .map((question, index) => withRichVisual(question, index, lesson))
