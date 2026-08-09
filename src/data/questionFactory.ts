@@ -11672,11 +11672,10 @@ const calcShapes: Shape[] = [
       const seed = index * 7 + lesson.lessonNo;
       const a = 24 + (seed % 40);
       const b = 15 + ((seed + 3) % 30);
-      const who = ['지호', '서연', '민준', '하윤'][seed % 4];
       const item = ['딱지', '구슬', '색연필', '스티커'][seed % 4];
       return makeQuestion(
         lesson, difficulty, index,
-        `${who}는 ${subject(item)} ${a}개 있고, 친구는 ${b}개 더 많이 가지고 있습니다. 친구가 가진 ${item}은 몇 개일까요?`,
+        `바구니에 ${subject(item)} ${a}개 있습니다. 상자에는 바구니보다 ${b}개 더 많습니다. 상자에 있는 ${topic(item)} 몇 개일까요?`,
         `${a + b}개`, [`${a - b > 0 ? a - b : b - a}개`, `${b}개`, `${a + b + 10}개`],
         `'더 많이'는 더하는 상황입니다. ${a}+${b}=${a + b}개입니다.`,
         'addition',
@@ -11986,7 +11985,7 @@ const timeShapes: Shape[] = [
 
   // 걸린 시간 문장 상황
   {
-    fits: (lesson) => /걸린 시간|1시간을 알아/.test(lesson.title),
+    fits: (lesson) => /걸린 시간/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 11 + lesson.lessonNo;
       const start = 1 + (seed % 9);
@@ -12053,7 +12052,7 @@ const dataShapes: Shape[] = [
         lesson, difficulty, index,
         `표에서 사과 ${a}명, 배 ${b}명이고 모두 ${total}명입니다. 포도를 좋아하는 학생은 몇 명일까요?`,
         `${c}명`, [`${total}명`, `${a + b}명`, `${c + 1}명`],
-        `모두에서 나머지를 빼면 ${total}-${a}-${b}=${c}명입니다.`,
+        `모두에서 아는 수를 차례로 빼면 ${total}-${a}-${b}=${c}명입니다.`,
         'data',
         shapeStrategy(difficulty, '자료 해석 · 합계를 이용해 빠진 수 구하기', '합계로 빠진 수 구하기'),
         tableVisualFor(
