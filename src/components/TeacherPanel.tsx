@@ -81,17 +81,89 @@ const useAnalytics = (records: AnswerRecord[], players: Player[]) =>
     const weakest = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '아직 없음';
     const weakStrategy = Object.entries(strategyCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '아직 없음';
 
+    // 문장으로 쓰려면 '무엇을 잘하는지'도 있어야 합니다. 오답만 모으면
+    // 부족한 점만 적히게 됩니다.
+    const right = mine.filter((record) => record.correct);
+    const strengthCounts = right.reduce<Record<string, number>>((acc, record) => {
+      acc[record.misconception] = (acc[record.misconception] ?? 0) + 1;
+      return acc;
+    }, {});
+    const strongest = Object.entries(strengthCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+
+    // 수준은 풀면서 오르내리므로, 어디까지 올라갔는지가 곧 도달 수준입니다.
+    const order: Record<string, number> = { 하: 0, 중: 1, 상: 2 };
+    const topLevel = mine.reduce(
+      (top, record) => (order[record.difficulty] > order[top] ? record.difficulty : top),
+      mine[0]?.difficulty ?? '하',
+    );
+    // 되돌아온 문제를 두 번째에 맞힌 횟수입니다. 설명을 듣고 해낸 것이므로
+    // 그냥 맞힌 것과는 다른 이야기가 됩니다.
+    const secondTryCorrect = mine.filter((record) => record.attempts > 1 && record.correct).length;
+
     return {
       player,
       total: mine.length,
-      correct: mine.filter((record) => record.correct).length,
+      correct: right.length,
       wrong: wrong.length,
       averageMs: average(mine.map((record) => record.responseMs)),
       weakest,
       weakStrategy,
+      strongest,
+      topLevel,
+      secondTryCorrect,
       typeCounts,
     };
   });
+
+// 생활기록부 교과 평가처럼, 잘한 것을 먼저 적고 보완할 점을 뒤에 붙입니다.
+// 등급이나 석차 같은 말은 쓰지 않고, 무엇을 할 수 있고 무엇을 더 하면
+// 좋을지를 적습니다. 문장은 '-음', '-함'으로 끝맺습니다.
+const narrativeFor = (item: ReturnType<typeof useAnalytics>[number], lesson: Lesson) => {
+  if (item.total === 0) return '아직 푼 문항이 없어 이번 수업의 학습 상태를 적기 어려움.';
+
+  const rate = Math.round((item.correct / item.total) * 100);
+  const seconds = item.averageMs / 1000;
+  const parts: string[] = [];
+
+  parts.push(
+    `‘${lesson.title}’ 학습에서 ${item.total}문항을 풀어 ${item.correct}문항을 바르게 해결함.`,
+  );
+
+  // 도달 수준: 하에서 시작해 어디까지 올라갔는지
+  if (item.topLevel === '상') {
+    parts.push('기초 문항에서 출발하여 심화 문항까지 스스로 해결하며 학습 범위를 넓혀 감.');
+  } else if (item.topLevel === '중') {
+    parts.push('기초 문항을 안정적으로 해결한 뒤 한 단계 높은 문항까지 도전함.');
+  } else {
+    parts.push('기초 문항을 중심으로 차근차근 익히는 단계에 있음.');
+  }
+
+  if (item.strongest) {
+    parts.push(`특히 ${item.strongest} 유형의 문항을 여러 차례 정확하게 해결함.`);
+  }
+
+  if (rate >= 80) {
+    parts.push('문제의 조건을 끝까지 확인하는 태도가 안정적으로 자리 잡았음.');
+  } else if (item.wrong > 0) {
+    parts.push(
+      `${item.weakest} 유형에서 어려움을 보여, 같은 유형을 반복해 풀어 보며 익히도록 지도할 필요가 있음.`,
+    );
+  }
+
+  if (item.secondTryCorrect > 0) {
+    parts.push(
+      `틀린 문항을 다시 만났을 때 ${item.secondTryCorrect}문항을 스스로 해결하여, 설명을 듣고 고쳐 나가는 힘이 있음.`,
+    );
+  }
+
+  if (seconds > 0 && seconds < 8) {
+    parts.push('문제를 빠르게 파악하나, 답을 고르기 전에 한 번 더 확인하는 습관을 기르면 좋겠음.');
+  } else if (seconds >= 20) {
+    parts.push('한 문항에 충분히 시간을 들여 생각하는 편으로, 자신감을 갖고 답을 정하도록 격려가 필요함.');
+  }
+
+  return parts.join(' ');
+};
 
 const buildAnalysisWorkbook = (
   lesson: Lesson,
@@ -115,7 +187,7 @@ const buildAnalysisWorkbook = (
   ];
 
   const studentRows = [
-    ['학생', '출석번호', '난이도', '푼 문제', '정답', '오답', '정답률(%)', '평균 시간(초)', '취약 유형', '취약 전략', '오답 유형별 개수'],
+    ['학생', '출석번호', '난이도', '푼 문제', '정답', '오답', '정답률(%)', '평균 시간(초)', '취약 유형', '취약 전략', '오답 유형별 개수', '종합 평가'],
     ...analytics.map((item) => [
       item.player.name,
       item.player.attendanceNo,
@@ -130,6 +202,7 @@ const buildAnalysisWorkbook = (
       Object.entries(item.typeCounts)
         .map(([type, count]) => `${type} ${count}`)
         .join(', ') || '없음',
+      narrativeFor(item, lesson),
     ]),
   ];
 
@@ -328,6 +401,7 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
                   <dd>{item.weakStrategy}</dd>
                 </div>
               </dl>
+              <p className="student-narrative">{narrativeFor(item, lesson)}</p>
               <div className="type-chips">
                 {Object.entries(item.typeCounts).length === 0 ? (
                   <span>아직 누적 오답 없음</span>
