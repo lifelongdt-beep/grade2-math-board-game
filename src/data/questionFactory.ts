@@ -11662,11 +11662,507 @@ const multiplyShapes: Shape[] = [
   } },
 ];
 
+
+// ── 덧셈과 뺄셈 ────────────────────────────────────────────────────
+const calcShapes: Shape[] = [
+  // 문장 상황을 식으로 세우기 (합치기 / 더 많이)
+  {
+    fits: (lesson) => /덧셈을 해|여러 가지 방법으로 덧셈/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 7 + lesson.lessonNo;
+      const a = 24 + (seed % 40);
+      const b = 15 + ((seed + 3) % 30);
+      const who = ['지호', '서연', '민준', '하윤'][seed % 4];
+      const item = ['딱지', '구슬', '색연필', '스티커'][seed % 4];
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${who}는 ${subject(item)} ${a}개 있고, 친구는 ${b}개 더 많이 가지고 있습니다. 친구가 가진 ${item}은 몇 개일까요?`,
+        `${a + b}개`, [`${a - b > 0 ? a - b : b - a}개`, `${b}개`, `${a + b + 10}개`],
+        `'더 많이'는 더하는 상황입니다. ${a}+${b}=${a + b}개입니다.`,
+        'addition',
+        shapeStrategy(difficulty, '조건 함께 보기 · 문장을 덧셈식으로 세우기', '문장을 덧셈식으로 세우기'),
+      );
+    } },
+
+  // 틀린 풀이 찾기 — 받아올림을 빠뜨린 오개념
+  {
+    fits: (lesson) => /덧셈을 해 볼까요 ⑵|여러 가지 방법으로 덧셈/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 11 + lesson.lessonNo;
+      const a = 20 + (seed % 5) * 10 + 7;
+      const b = 10 + ((seed + 2) % 5) * 10 + 8;
+      const wrong = Math.floor(a / 10) * 10 + Math.floor(b / 10) * 10 + ((a % 10) + (b % 10)) % 10;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}를 ${wrong}이라고 답했습니다. 무엇을 빠뜨렸을까요?`,
+        '일의 자리에서 받아올림한 1을 더하지 않았습니다',
+        ['십의 자리끼리 더하지 않았습니다', '일의 자리끼리 더하지 않았습니다', '틀린 곳이 없습니다'],
+        `${a % 10}+${b % 10}=${(a % 10) + (b % 10)}이므로 10을 십의 자리로 올려야 합니다. 답은 ${a + b}입니다.`,
+        'addition',
+        shapeStrategy(difficulty, '자료 해석 · 틀린 풀이에서 빠진 곳 찾기', '틀린 곳 찾기'),
+      );
+    } },
+
+  // 계산하지 않고 견주기
+  {
+    fits: (lesson) => /여러 가지 방법으로 덧셈|여러 가지 방법으로 뺄셈/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 13 + lesson.lessonNo;
+      const base = 30 + (seed % 40);
+      const add = 20 + (seed % 15);
+      const plus = /덧셈/.test(lesson.title);
+      const left = plus ? `${base}+${add}` : `${base + 40}-${add}`;
+      const right = plus ? `${base}+${add + 1}` : `${base + 40}-${add + 1}`;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${left}과 ${right} 중 더 큰 것은? 계산하지 않고 생각해 보세요.`,
+        plus ? right : left,
+        [plus ? left : right, '두 값은 같다', '알 수 없다'],
+        plus
+          ? `더하는 수가 1 크면 합도 1 큽니다.`
+          : `빼는 수가 1 크면 남는 수는 1 작습니다.`,
+        plus ? 'addition' : 'subtraction',
+        shapeStrategy(difficulty, '자료 해석 · 계산하지 않고 크기 견주기', '계산하지 않고 견주기'),
+      );
+    } },
+
+  // 뺄셈 문장 상황 (남은 것 / 차이)
+  {
+    fits: (lesson) => /뺄셈을 해/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 17 + lesson.lessonNo;
+      const all = 40 + (seed % 45);
+      const gone = 12 + ((seed + 5) % 25);
+      const item = ['사탕', '색종이', '풍선', '연필'][seed % 4];
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${subject(item)} ${all}개 있었는데 ${gone}개를 썼습니다. 남은 ${item}은 몇 개일까요?`,
+        `${all - gone}개`, [`${all + gone}개`, `${gone}개`, `${all - gone + 10}개`],
+        `쓴 만큼 덜어 내면 ${all}-${gone}=${all - gone}개입니다.`,
+        'subtraction',
+        shapeStrategy(difficulty, '조건 함께 보기 · 문장을 뺄셈식으로 세우기', '문장을 뺄셈식으로 세우기'),
+      );
+    } },
+
+  // 덧셈과 뺄셈의 관계 — 검산
+  {
+    fits: (lesson) => /관계를 식으로/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 19 + lesson.lessonNo;
+      const a = 20 + (seed % 30);
+      const b = 13 + ((seed + 4) % 25);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}=${a + b}입니다. 이것을 이용하면 ${a + b}-${b}는 얼마일까요?`,
+        a, [b, a + b, a - b > 0 ? a - b : b - a],
+        `전체에서 한 부분을 빼면 다른 부분이 나옵니다. ${a + b}-${b}=${a}입니다.`,
+        'subtraction',
+        shapeStrategy(difficulty, '자료 해석 · 덧셈으로 뺄셈 알아보기', '덧셈으로 뺄셈 알아보기'),
+      );
+    } },
+];
+
+// ── 여러 가지 도형 ─────────────────────────────────────────────────
+const figureShapes: Shape[] = [
+  // 성질을 듣고 도형 이름 찾기
+  {
+    fits: (lesson) => /을 알아보고 찾아/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const target = lesson.title.includes('△') ? '삼각형'
+        : lesson.title.includes('□') ? '사각형' : '원';
+      const facts: Record<string, string> = {
+        삼각형: '곧은 선 3개로 둘러싸인 도형',
+        사각형: '곧은 선 4개로 둘러싸인 도형',
+        원: '어느 쪽에서 보아도 똑같이 둥근 도형',
+      };
+      const others = ['삼각형', '사각형', '원'].filter((x) => x !== target);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${facts[target]}의 이름은 무엇일까요?`,
+        target, [...others, '곧은 선이 없는 도형'],
+        `${facts[target]}을 ${target}이라고 합니다.`,
+        'shape',
+        shapeStrategy(difficulty, '자료 해석 · 성질을 듣고 도형 알아보기', '성질을 듣고 도형 알아보기'),
+      );
+    } },
+
+  // 생활 속 물건과 잇기
+  {
+    fits: (lesson) => /을 알아보고 찾아/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const target = lesson.title.includes('△') ? '삼각형'
+        : lesson.title.includes('□') ? '사각형' : '원';
+      const things: Record<string, string> = { 삼각형: '삼각김밥', 사각형: '공책', 원: '동전' };
+      const others = ['삼각김밥', '공책', '동전'].filter((x) => x !== things[target]);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${target} 모양을 찾을 수 있는 물건은 무엇일까요?`,
+        things[target], [...others, '구슬'],
+        `${things[target]}의 겉면에서 ${target} 모양을 찾을 수 있습니다.`,
+        'shape',
+        shapeStrategy(difficulty, '조건 함께 보기 · 생활 속에서 도형 찾기', '생활 속에서 도형 찾기'),
+      );
+    } },
+
+  // 쌓기나무 — 위치로 말하기
+  {
+    fits: (lesson) => /쌓은 모양|쌓아 볼까요/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 7 + lesson.lessonNo;
+      const bottom = 2 + (seed % 3);
+      const top = 1 + (seed % 2);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `1층에 ${bottom}개, 2층에 ${top}개를 쌓았습니다. 쌓기나무는 모두 몇 개일까요?`,
+        `${bottom + top}개`,
+        [`${bottom}개`, `${bottom * top}개`, `${bottom + top + 1}개`],
+        `층마다 세어 더하면 ${bottom}+${top}=${bottom + top}개입니다.`,
+        'solid',
+        shapeStrategy(difficulty, '자료 해석 · 층마다 세어 개수 구하기', '층마다 세어 보기'),
+      );
+    } },
+];
+
+// ── 길이 재기 ──────────────────────────────────────────────────────
+const lengthShapes: Shape[] = [
+  // 자로 잴 때 0이 아닌 곳에서 시작한 경우
+  {
+    fits: (lesson) => /자로 길이를 재/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 7 + lesson.lessonNo;
+      const from = 1 + (seed % 4);
+      const len = 4 + (seed % 6);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `연필의 왼쪽 끝이 자의 ${from}에, 오른쪽 끝이 ${from + len}에 있습니다. 연필의 길이는 몇 cm일까요?`,
+        `${len}cm`, [`${from + len}cm`, `${len + 1}cm`, `${from}cm`],
+        `0에서 시작하지 않았으므로 ${from + len}-${from}=${len}cm입니다.`,
+        'measurement',
+        shapeStrategy(difficulty, '조건 함께 보기 · 시작 눈금을 살펴 길이 재기', '시작 눈금 살펴보기'),
+        rulerVisualFor(from, from + len, '자로 재어 보기'),
+      );
+    } },
+
+  // 어림한 길이와 실제 길이
+  {
+    fits: (lesson) => /어림/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 11 + lesson.lessonNo;
+      const real = 8 + (seed % 12);
+      const guess = real + (seed % 2 === 0 ? 2 : -2);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `막대의 길이를 약 ${guess}cm로 어림했는데 실제로 재어 보니 ${real}cm였습니다. 어림한 길이와 실제 길이의 차는 몇 cm일까요?`,
+        `${Math.abs(real - guess)}cm`,
+        [`${real + guess}cm`, `${real}cm`, `${Math.abs(real - guess) + 1}cm`],
+        `${Math.max(real, guess)}-${Math.min(real, guess)}=${Math.abs(real - guess)}cm입니다.`,
+        'measurement',
+        shapeStrategy(difficulty, '자료 해석 · 어림과 실제 길이 견주기', '어림과 실제 견주기'),
+      );
+    } },
+
+  // 단위가 다르면 잰 횟수도 다름
+  {
+    fits: (lesson) => /여러 가지 단위|길이를 비교하는 방법/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 13 + lesson.lessonNo;
+      const clips = 6 + (seed % 6);
+      const erasers = Math.max(2, clips - 2 - (seed % 2));
+      return makeQuestion(
+        lesson, difficulty, index,
+        `같은 끈을 클립으로 재면 ${clips}번, 지우개로 재면 ${erasers}번입니다. 클립과 지우개 중 더 긴 것은?`,
+        '지우개', ['클립', '길이가 같다', '알 수 없다'],
+        `같은 길이인데 잰 횟수가 적을수록 단위가 깁니다. ${erasers}번인 지우개가 더 깁니다.`,
+        'measurement',
+        shapeStrategy(difficulty, '자료 해석 · 잰 횟수로 단위 길이 견주기', '잰 횟수로 견주기'),
+      );
+    } },
+
+  // m와 cm 바꾸기
+  {
+    fits: (lesson) => /더 큰 단위/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 17 + lesson.lessonNo;
+      const m = 1 + (seed % 4);
+      const cm = 10 + (seed % 80);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${m}m ${cm}cm는 몇 cm일까요?`,
+        `${m * 100 + cm}cm`,
+        [`${m + cm}cm`, `${m * 100}cm`, `${m * 10 + cm}cm`],
+        `1m는 100cm이므로 ${m}m는 ${m * 100}cm입니다. 여기에 ${cm}cm를 더하면 ${m * 100 + cm}cm입니다.`,
+        'measurement',
+        shapeStrategy(difficulty, '조건 함께 보기 · m를 cm로 바꾸기', 'm를 cm로 바꾸기'),
+      );
+    } },
+
+  // 길이의 합·차 문장 상황
+  {
+    fits: (lesson) => /길이의 합|길이의 차/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 19 + lesson.lessonNo;
+      const a = 1 + (seed % 3);
+      const acm = 20 + (seed % 60);
+      const b = 1 + ((seed + 1) % 3);
+      const bcm = 10 + ((seed + 20) % 30);
+      const plus = lesson.title.includes('합');
+      const total = plus ? (a + b) * 100 + acm + bcm : (a - b) * 100 + acm - bcm;
+      const m = Math.floor(total / 100);
+      const cm = total % 100;
+      if (total <= 0) return null;
+      return makeQuestion(
+        lesson, difficulty, index,
+        plus
+          ? `${a}m ${acm}cm인 끈과 ${b}m ${bcm}cm인 끈을 이었습니다. 이은 끈의 길이는?`
+          : `${a}m ${acm}cm인 끈에서 ${b}m ${bcm}cm를 잘랐습니다. 남은 끈의 길이는?`,
+        `${m}m ${cm}cm`,
+        [`${m + 1}m ${cm}cm`, `${m}m ${cm + 10}cm`, `${m}m ${Math.max(0, cm - 10)}cm`],
+        `m는 m끼리, cm는 cm끼리 ${plus ? '더하면' : '빼면'} ${m}m ${cm}cm입니다.`,
+        'measurement',
+        shapeStrategy(difficulty, '조건 함께 보기 · 단위끼리 맞추어 계산하기', '단위끼리 맞추어 계산하기'),
+      );
+    } },
+];
+
+// ── 분류하기 ───────────────────────────────────────────────────────
+const sortShapes: Shape[] = [
+  {
+    fits: (lesson) => /분류는 어떻게|기준에 따라/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 7 + lesson.lessonNo;
+      const good = ['색깔', '모양', '크기'][seed % 3];
+      return makeQuestion(
+        lesson, difficulty, index,
+        `단추를 분류하려고 합니다. 분류 기준으로 알맞은 것은?`,
+        good, ['예쁜 것', '내가 좋아하는 것', '멋있는 것'],
+        `누가 분류해도 같은 결과가 나오는 것이 분류 기준입니다. ${good}은(는) 분명합니다.`,
+        'classification',
+        shapeStrategy(difficulty, '자료 해석 · 분명한 분류 기준 고르기', '분류 기준 고르기'),
+      );
+    } },
+  {
+    fits: (lesson) => /분류하고 세어|분류한 결과/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 11 + lesson.lessonNo;
+      const red = 3 + (seed % 6);
+      const blue = 2 + ((seed + 2) % 6);
+      const yellow = 1 + ((seed + 4) % 5);
+      const total = red + blue + yellow;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `빨강 ${red}개, 파랑 ${blue}개, 노랑 ${yellow}개로 분류했습니다. 분류한 것을 모두 세면 몇 개일까요?`,
+        `${total}개`, [`${red + blue}개`, `${total - 1}개`, `${Math.max(red, blue, yellow)}개`],
+        `분류한 수를 모두 더하면 처음 수와 같아야 합니다. ${red}+${blue}+${yellow}=${total}개입니다.`,
+        'classification',
+        shapeStrategy(difficulty, '자료 해석 · 분류한 수를 모두 세어 확인하기', '분류한 수 모두 세기'),
+        tableVisualFor(
+          [{ name: '빨강', value: red }, { name: '파랑', value: blue }, { name: '노랑', value: yellow }],
+          '분류한 결과', { categoryLabel: '색깔', valueLabel: '개수' },
+        ),
+      );
+    } },
+];
+
+// ── 시각과 시간 ────────────────────────────────────────────────────
+const timeShapes: Shape[] = [
+  // 몇 시 몇 분 전
+  {
+    fits: (lesson) => /여러 가지 방법으로 시각/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 7 + lesson.lessonNo;
+      const hour = 1 + (seed % 11);
+      const before = [5, 10, 15][seed % 3];
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${hour + 1}시 ${before}분 전은 몇 시 몇 분일까요?`,
+        `${hour}시 ${60 - before}분`,
+        [`${hour + 1}시 ${before}분`, `${hour}시 ${before}분`, `${hour + 1}시 ${60 - before}분`],
+        `${hour + 1}시가 되기 ${before}분 전이므로 ${hour}시 ${60 - before}분입니다.`,
+        'time',
+        shapeStrategy(difficulty, '자료 해석 · 같은 시각을 다르게 읽기', '같은 시각 다르게 읽기'),
+        clockVisualFor(hour, 60 - before, '같은 시각 읽기'),
+      );
+    } },
+
+  // 걸린 시간 문장 상황
+  {
+    fits: (lesson) => /걸린 시간|1시간을 알아/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 11 + lesson.lessonNo;
+      const start = 1 + (seed % 9);
+      const mins = [20, 30, 40, 50][seed % 4];
+      const endMin = mins;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${start}시에 시작해서 ${start}시 ${endMin}분에 끝났습니다. 걸린 시간은 몇 분일까요?`,
+        `${mins}분`, [`${60 - mins}분`, `${mins + 10}분`, `1시간`],
+        `${start}시에서 ${start}시 ${endMin}분까지이므로 ${mins}분 걸렸습니다.`,
+        'time',
+        shapeStrategy(difficulty, '조건 함께 보기 · 시작과 끝으로 걸린 시간 구하기', '걸린 시간 구하기'),
+        clockVisualFor(start, 0, '시작과 끝', start, endMin),
+      );
+    } },
+
+  // 하루의 시간 — 오전·오후
+  {
+    fits: (lesson) => /하루의 시간/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 13 + lesson.lessonNo;
+      const hour = 1 + (seed % 9);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `오전 ${hour}시에서 오후 ${hour}시까지는 몇 시간일까요?`,
+        '12시간', ['24시간', `${hour}시간`, '6시간'],
+        `오전과 오후는 각각 12시간이므로 오전 ${hour}시에서 오후 ${hour}시까지는 12시간입니다.`,
+        'time',
+        shapeStrategy(difficulty, '자료 해석 · 오전과 오후로 하루 나누어 보기', '오전과 오후 알아보기'),
+      );
+    } },
+
+  // 달력 — 같은 요일
+  {
+    fits: (lesson) => /달력/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 17 + lesson.lessonNo;
+      const day = 3 + (seed % 10);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `이번 달 ${day}일이 수요일입니다. 다음 수요일은 며칠일까요?`,
+        `${day + 7}일`, [`${day + 1}일`, `${day + 5}일`, `${day + 14}일`],
+        `같은 요일은 7일마다 돌아옵니다. ${day}+7=${day + 7}일입니다.`,
+        'time',
+        shapeStrategy(difficulty, '자료 해석 · 요일이 7일마다 돌아옴을 이용하기', '7일마다 돌아오는 요일'),
+        calendarVisualFor([{ day, tone: 'start' }], '달력에서 찾기'),
+      );
+    } },
+];
+
+// ── 표와 그래프 ────────────────────────────────────────────────────
+const dataShapes: Shape[] = [
+  // 표에서 빠진 칸 구하기
+  {
+    fits: (lesson) => /표로 나타내/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 7 + lesson.lessonNo;
+      const a = 3 + (seed % 5);
+      const b = 2 + ((seed + 2) % 5);
+      const total = 12 + (seed % 6);
+      const c = total - a - b;
+      if (c < 1) return null;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `표에서 사과 ${a}명, 배 ${b}명이고 모두 ${total}명입니다. 포도를 좋아하는 학생은 몇 명일까요?`,
+        `${c}명`, [`${total}명`, `${a + b}명`, `${c + 1}명`],
+        `모두에서 나머지를 빼면 ${total}-${a}-${b}=${c}명입니다.`,
+        'data',
+        shapeStrategy(difficulty, '자료 해석 · 합계를 이용해 빠진 수 구하기', '합계로 빠진 수 구하기'),
+        tableVisualFor(
+          [{ name: '사과', value: a }, { name: '배', value: b }, { name: '포도', value: null }],
+          '좋아하는 과일', { categoryLabel: '과일', valueLabel: '학생 수', total },
+        ),
+      );
+    } },
+
+  // 표와 그래프 각각의 좋은 점
+  {
+    fits: (lesson) => /무엇을 알 수 있을까요|표와 그래프로 나타내/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 11 + lesson.lessonNo;
+      const askGraph = seed % 2 === 0;
+      return makeQuestion(
+        lesson, difficulty, index,
+        askGraph ? '그래프가 표보다 좋은 점은 무엇일까요?' : '표가 그래프보다 좋은 점은 무엇일까요?',
+        askGraph ? '많고 적음을 한눈에 알 수 있습니다' : '정확한 수를 바로 알 수 있습니다',
+        askGraph
+          ? ['정확한 수를 바로 알 수 있습니다', '조사한 사람을 알 수 있습니다', '색깔이 예쁩니다']
+          : ['많고 적음을 한눈에 알 수 있습니다', '그림을 그릴 수 있습니다', '자리를 적게 차지합니다'],
+        askGraph
+          ? '그래프는 길이로 나타내어 많고 적음이 한눈에 보입니다.'
+          : '표는 수를 그대로 적으므로 정확한 수를 바로 읽을 수 있습니다.',
+        'data',
+        shapeStrategy(difficulty, '자료 해석 · 표와 그래프의 쓰임 견주기', '표와 그래프 견주기'),
+      );
+    } },
+];
+
+// ── 규칙 찾기 ──────────────────────────────────────────────────────
+const ruleShapes: Shape[] = [
+  // 규칙을 말로 설명한 것 고르기
+  {
+    fits: (lesson) => /무늬에서 규칙/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 7 + lesson.lessonNo;
+      const size = 2 + (seed % 2);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `무늬가 되풀이될 때 가장 먼저 할 일은 무엇일까요?`,
+        '되풀이되는 한 묶음을 찾는다',
+        ['맨 끝을 먼저 본다', '개수를 모두 센다', '색깔을 센다'],
+        `되풀이되는 한 묶음(${size}개짜리 같은)을 찾으면 다음에 올 것을 알 수 있습니다.`,
+        'pattern',
+        shapeStrategy(difficulty, '자료 해석 · 되풀이되는 묶음 찾기', '되풀이되는 묶음 찾기'),
+      );
+    } },
+
+  // 덧셈표·곱셈표에서 줄의 규칙
+  {
+    fits: (lesson) => /덧셈표에서 규칙|곱셈표에서 규칙/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 11 + lesson.lessonNo;
+      const plus = lesson.title.includes('덧셈표');
+      const dan = 2 + (seed % 6);
+      return makeQuestion(
+        lesson, difficulty, index,
+        plus
+          ? `덧셈표에서 오른쪽으로 한 칸 갈 때마다 수는 어떻게 될까요?`
+          : `곱셈표에서 ${dan}단은 오른쪽으로 갈수록 몇씩 커질까요?`,
+        plus ? '1씩 커진다' : `${dan}씩`,
+        plus
+          ? ['1씩 작아진다', '2씩 커진다', '그대로이다']
+          : ['1씩', `${dan + 1}씩`, '그대로'],
+        plus
+          ? '오른쪽으로 갈수록 더하는 수가 1씩 커지므로 합도 1씩 커집니다.'
+          : `${dan}씩 한 묶음이 늘어나므로 ${dan}씩 커집니다.`,
+        'pattern',
+        shapeStrategy(difficulty, '자료 해석 · 표에서 줄의 규칙 말하기', '표에서 규칙 말하기'),
+      );
+    } },
+
+  // 생활 속 규칙
+  {
+    fits: (lesson) => /생활에서 규칙/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 13 + lesson.lessonNo;
+      const cases = [
+        ['신호등이 초록, 노랑, 빨강 순서로 바뀝니다', '색이 정해진 순서로 되풀이됩니다'],
+        ['버스가 10분마다 옵니다', '같은 시간마다 되풀이됩니다'],
+        ['달력에서 같은 요일이 7일마다 옵니다', '7일마다 되풀이됩니다'],
+      ];
+      const [scene, rule] = cases[seed % cases.length];
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${scene} 여기에서 찾을 수 있는 규칙은 무엇일까요?`,
+        rule,
+        ['규칙이 없습니다', '수가 점점 커집니다', '모양이 커집니다'].filter((x) => x !== rule).slice(0, 3),
+        `되풀이되는 것이 무엇인지 찾으면 규칙을 말할 수 있습니다.`,
+        'pattern',
+        shapeStrategy(difficulty, '조건 함께 보기 · 생활 속 되풀이 찾기', '생활 속 되풀이 찾기'),
+      );
+    } },
+];
+
 // 차시가 다루는 개념에 맞는 모양 묶음을 고릅니다.
 const shapesForLesson = (lesson: Lesson): Shape[] => {
   const tag = primaryTag(lesson);
   if (tag === 'multiplication') return multiplyShapes;
   if (tag === 'placeValue' || tag === 'number') return numberShapes;
+  if (tag === 'addition' || tag === 'subtraction') return calcShapes;
+  if (tag === 'shape' || tag === 'solid') return figureShapes;
+  if (tag === 'measurement') return lengthShapes;
+  if (tag === 'classification') return sortShapes;
+  if (tag === 'time') return timeShapes;
+  if (tag === 'data') return dataShapes;
+  if (tag === 'pattern') return ruleShapes;
   return [];
 };
 
