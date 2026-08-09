@@ -200,22 +200,22 @@ const lessonNote = (support: LearningSupport) =>
 
 const assessmentLayers: Record<Difficulty, Array<{ label: string; note: string }>> = {
   하: [
-    { label: '기초 확인', note: '교과서 활동처럼 한 가지 핵심만 확인해요.' },
+    { label: '기초 확인', note: '한 가지 핵심만 확인해요.' },
     { label: '그림 확인', note: '그림이나 표에서 바로 보이는 단서를 찾아요.' },
-    { label: '익힘 기본', note: '수학익힘 기본 문제처럼 차근차근 풀어요.' },
+    { label: '익힘 기본', note: '차근차근 하나씩 풀어요.' },
     { label: '보충 연습', note: '헷갈리기 쉬운 부분을 쉬운 수로 다시 확인해요.' },
     { label: '개념 확인', note: '차시 목표의 핵심 낱말을 떠올려요.' },
   ],
   중: [
-    { label: '형성', note: '교과서 활동처럼 핵심 조건을 확인해요.' },
-    { label: '익힘', note: '수학익힘 문제처럼 답을 고른 까닭도 생각해요.' },
+    { label: '형성', note: '핵심 조건을 확인해요.' },
+    { label: '익힘', note: '답을 고른 까닭도 생각해요.' },
     { label: '보충', note: '헷갈리기 쉬운 부분을 다시 확인해요.' },
     { label: '적용', note: '배운 개념을 문제 상황에 맞게 써요.' },
     { label: '확인', note: '답이 맞는 까닭을 짧게 떠올려요.' },
   ],
   상: [
-    { label: '형성', note: '교과서 활동처럼 핵심 조건을 확인해요.' },
-    { label: '익힘', note: '수학익힘 문제처럼 답을 고른 까닭도 생각해요.' },
+    { label: '형성', note: '핵심 조건을 확인해요.' },
+    { label: '익힘', note: '답을 고른 까닭도 생각해요.' },
     { label: '보충', note: '헷갈리기 쉬운 부분을 다시 확인해요.' },
     { label: '심화', note: '조건을 끝까지 읽고 한 번 더 판단해요.' },
     { label: '서술', note: '답이 맞는 까닭을 말로 설명해요.' },
@@ -313,8 +313,8 @@ const duplicatePromptAngles = [
   '핵심 조건을 표시해 보세요.',
   '답을 고른 까닭까지 생각해요.',
   '틀리기 쉬운 보기를 먼저 지워요.',
-  '교과서 활동 장면으로 떠올려요.',
-  '수학익힘 확인 문제처럼 풀어요.',
+  '실제 장면으로 떠올려요.',
+  '차근차근 확인하며 풀어요.',
   '그림이나 표의 기준을 먼저 찾아요.',
   '말로 설명할 수 있는 답을 골라요.',
   '비슷한 보기끼리 비교해요.',
@@ -328,7 +328,7 @@ const duplicatePromptAngles = [
   '보기의 차이를 하나씩 비교해요.',
   '처음 조건과 마지막 질문을 연결해요.',
   '계산이나 판단 순서를 정해요.',
-  '교과서 핵심 낱말을 떠올려요.',
+  '핵심 낱말을 떠올려요.',
   '마지막에 스스로 검산해요.',
 ];
 
@@ -9380,7 +9380,7 @@ const makePromptsUnique = (questions: Question[]): Question[] => {
 
     if (count === 0 && !usedPrompts.has(question.prompt)) {
       usedPrompts.add(question.prompt);
-      return question;
+      return { ...question, basePrompt: question.prompt };
     }
 
     const notes = notesForQuestion(question);
@@ -9397,6 +9397,7 @@ const makePromptsUnique = (questions: Question[]): Question[] => {
     return {
       ...question,
       prompt,
+      basePrompt: question.prompt,
     };
   });
 };

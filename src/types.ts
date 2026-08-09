@@ -42,6 +42,10 @@ export interface Question {
   lessonId: string;
   difficulty: Difficulty;
   prompt: string;
+  // 같은 문제가 여러 번 만들어지면 뒤에 다른 안내 문구를 붙여 구별합니다.
+  // 그러면 글자는 달라도 학생에게는 같은 문제라, 겹치는지 보려면 붙이기
+  // 전의 문장이 필요합니다.
+  basePrompt?: string;
   choices: string[];
   answerIndex: number;
   answer: string;

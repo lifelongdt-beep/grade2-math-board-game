@@ -337,6 +337,33 @@ const shuffledBySeed = <T,>(items: T[], seedText: string): T[] => {
   return copy;
 };
 
+// 학생에게 같은 문제로 보이는지 가르는 기준입니다. 뒤에 붙은 안내 문구와
+// 숫자는 지웁니다. '100이 3개…'와 '100이 5개…'는 숫자만 다른 같은 문제입니다.
+const sameQuestionKey = (question: Question) =>
+  (question.basePrompt ?? question.prompt).replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
+
+// 섞기만 하면 같은 문제가 잇따라 나오는 자리가 생깁니다. 바로 앞과 같은
+// 문제는 뒤로 미루고 다른 문제를 먼저 냅니다. 미룰 것이 없으면 그대로 둡니다.
+// 여러 명이 함께 풀 때는 한 학생이 사람 수만큼 건너뛰며 받으므로, 그 간격
+// 안에서도 겹치지 않도록 사람 수만큼 앞을 살펴봅니다.
+const spaceOutRepeats = (questions: Question[], gap: number): Question[] => {
+  const remaining = [...questions];
+  const placed: Question[] = [];
+  const recent: string[] = [];
+
+  while (remaining.length > 0) {
+    let pick = remaining.findIndex((question) => !recent.includes(sameQuestionKey(question)));
+    if (pick === -1) pick = 0;
+
+    const [chosen] = remaining.splice(pick, 1);
+    placed.push(chosen);
+    recent.push(sameQuestionKey(chosen));
+    if (recent.length > gap) recent.shift();
+  }
+
+  return placed;
+};
+
 const buildScopedQuestions = (
   lessons: Lesson[],
   difficulty: Difficulty,
@@ -348,10 +375,14 @@ const buildScopedQuestions = (
   // 한 차시를 고른 경우에도 순서를 섞습니다. 섞지 않으면 수업을 다시 해도
   // 늘 같은 순서로 나와 학생이 순서를 외워 버립니다.
   // bankSeed는 수업을 시작할 때마다 새로 정해지므로 매번 순서가 달라집니다.
-  return shuffledBySeed(
+  const shuffled = shuffledBySeed(
     questions,
     `${scope}-${difficulty}-${bankSeed}-${lessons.map((item) => item.id).join('|')}`,
   );
+
+  // 앞의 두 문제와 겹치지 않게 벌려 둡니다. 두 칸이면 혼자 풀 때도,
+  // 여럿이 나누어 풀 때도 바로 앞 문제와는 달라집니다.
+  return spaceOutRepeats(shuffled, 2);
 };
 
 const writeAscii = (view: DataView, offset: number, value: string) => {
