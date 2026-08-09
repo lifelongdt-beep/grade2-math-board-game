@@ -12491,11 +12491,13 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
           // 응용 문항을 먼저 쓰고, 남은 자리의 절반만 새 모양에 내줍니다.
           // 전부 새 모양으로 채우면 이번에는 그 모양 하나가 차시를 덮어
           // 결국 또 같은 문제만 되풀이됩니다. 기존 문항과 섞어야 합니다.
-          : challengeQuestion(lesson, difficulty, index)
-            // 상 수준에서 남는 자리는 3칸 간격이라, index를 2나 4로 거르면
-            // 늘 같은 나머지가 나와 한 모양만 뽑힙니다. 자리의 '순번'
-            // (index/3)을 기준으로 삼아야 골고루 돌아갑니다.
-            ?? (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
+          // 자리의 '순번'(index/3)이 홀수인 곳은 새 모양이 먼저 가져갑니다.
+          // 응용 문항을 앞에 두면 중·상에서는 그것이 모든 자리를 채워
+          // 새 모양이 한 번도 쓰이지 않습니다. index를 2나 4로 거르지 않는
+          // 것도 같은 까닭입니다 — 상은 자리가 3칸 간격이라 늘 같은
+          // 나머지가 나옵니다.
+          : (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
+            ?? challengeQuestion(lesson, difficulty, index)
             ?? richQuestionFor(lesson, difficulty, index)
             ?? question)
       .map((question, index) => withRichVisual(question, index, lesson))
