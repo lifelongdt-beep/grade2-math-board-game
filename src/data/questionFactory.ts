@@ -11707,8 +11707,10 @@ const calcShapes: Shape[] = [
     fits: (lesson) => /여러 가지 방법으로 덧셈|여러 가지 방법으로 뺄셈/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 13 + lesson.lessonNo;
-      const base = 30 + (seed % 40);
-      const add = 20 + (seed % 15);
+      // 두 자리 수 범위를 넘지 않게 합니다. 뺄셈 쪽은 40을 더해 쓰므로
+      // 그만큼 시작 값을 낮춰 둡니다.
+      const base = 20 + (seed % 25);
+      const add = 15 + (seed % 12);
       const plus = /덧셈/.test(lesson.title);
       const left = plus ? `${base}+${add}` : `${base + 40}-${add}`;
       const right = plus ? `${base}+${add + 1}` : `${base + 40}-${add + 1}`;
@@ -12015,7 +12017,7 @@ const lengthShapes: Shape[] = [
 
   // 두 물건의 길이 견주기
   {
-    fits: (lesson) => /자로 길이를 재|길이의 차/.test(lesson.title),
+    fits: (lesson) => /길이의 차/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 23 + lesson.lessonNo;
       const a = 6 + (seed % 10);
