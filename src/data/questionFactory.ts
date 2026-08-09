@@ -9328,6 +9328,10 @@ const visualForGeneratedQuestion = (
 
 const withRichVisual = (question: Question, index: number, lesson: Lesson): Question => {
   const visual = visualForGeneratedQuestion(question, index, lesson);
+  // 차시가 아직 배우지 않은 도구는 그리지 않습니다. 예전에는 이것을
+  // 생성기마다 조심해야 했고, 그래서 자를 배우기 전 차시에 자가 나왔습니다.
+  // 이제는 차시 선언 한 곳에서 막습니다.
+  if (visual && lesson.scope.forbidVisuals?.includes(visual.kind)) return question;
   return visual ? { ...question, visual } : question;
 };
 

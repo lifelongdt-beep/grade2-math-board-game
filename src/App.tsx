@@ -309,6 +309,18 @@ const createReviewLesson = (
       ? `${selectedUnit.title} 단원의 모든 차시 내용을 종합한다.`
       : `${semester} 학기 모든 단원의 주요 개념을 종합한다.`,
     workbookFocus: '여러 차시의 문제를 무작위로 풀며 단원과 학기 성취를 점검한다.',
+    // 종합 차시는 모아 온 차시들의 선언을 합칩니다. 수 범위는 가장 넓은
+    // 것으로, 금지한 그림은 모든 차시가 허락한 것만 남깁니다.
+    scope: {
+      maxNumber: Math.max(...sourceLessons.map((item) => item.scope.maxNumber), 0),
+      representation: 'symbolic',
+      forbidVisuals: sourceLessons
+        .map((item) => item.scope.forbidVisuals ?? [])
+        .reduce<string[]>(
+          (shared, list, at) => (at === 0 ? list : shared.filter((kind) => list.includes(kind))),
+          [],
+        ),
+    },
   };
 };
 

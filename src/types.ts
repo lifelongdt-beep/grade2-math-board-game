@@ -16,6 +16,30 @@ export type ConceptTag =
   | 'data'
   | 'pattern';
 
+// 차시가 '무엇을 물어도 되는가'를 적어 둔 선언입니다.
+//
+// 지금까지 문항 생성기는 차시 제목 문자열을 보고 갈래를 정했습니다
+// (lesson.title.includes('몇백') 같은 식). 제목이 조금만 달라도 조용히
+// 어긋나고, 그래서 2단 차시에 3단이 나오거나 자를 배우기 전 차시에 자
+// 그림이 나오는 일이 반복됐습니다. 그런 판단을 제목이 아니라 이 선언에서
+// 읽어 오면, 어긋남을 테스트가 아니라 구조가 막습니다.
+export interface LessonScope {
+  // 이 차시에서 다루어도 되는 가장 큰 수입니다.
+  maxNumber: number;
+  // 곱셈구구에서 이 차시가 다루는 단입니다. 없으면 곱셈구구 차시가 아닙니다.
+  dans?: number[];
+  // 수학적 표현의 단계입니다. 지도서가 차시마다 정해 둔 것으로,
+  //   concrete  구체물(수 모형, 바둑돌, 클립)로 다루는 단계
+  //   semi      반구체물(그림, ○△)로 다루는 단계
+  //   symbolic  기호와 식으로 다루는 단계
+  // 아직 구체물 단계인 차시에 기호만 있는 문제를 내면 아이가 붙잡을 것이
+  // 없어집니다. 반대로 기호 단계에 구체물만 주면 되돌아가는 셈입니다.
+  representation: 'concrete' | 'semi' | 'symbolic';
+  // 이 차시에서 쓰면 안 되는 그림입니다. 아직 배우지 않은 도구를 그려
+  // 주면 그것부터 설명해야 합니다(자를 배우기 전의 자 그림처럼).
+  forbidVisuals?: string[];
+}
+
 export interface Lesson {
   id: string;
   semester: '2-1' | '2-2';
@@ -28,6 +52,7 @@ export interface Lesson {
   tags: ConceptTag[];
   textbookFocus: string;
   workbookFocus: string;
+  scope: LessonScope;
 }
 
 export interface Unit {

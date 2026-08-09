@@ -1,4 +1,4 @@
-import type { ConceptTag, Lesson, Unit } from '../types';
+import type { ConceptTag, Lesson, LessonScope, Unit } from '../types';
 
 // 차시 구성과 학습 목표는 동아출판 초등 수학 2-1 / 2-2 교사용 지도서의
 // '단원 전개 계획'과 각 차시 '학습 목표'를 따랐습니다.
@@ -30,8 +30,129 @@ const unit = (
     unitNo,
     unitTitle: title,
     lessonNo: index + 1,
+    scope: scopeFor(title, lesson.title, index + 1),
   })),
 });
+
+
+// 차시가 다룰 수 있는 범위입니다. 단원과 차시 순서에서 정해집니다.
+// 여기 적힌 것이 곧 규칙이고, 문항 생성기와 그림 선택이 이것을 읽습니다.
+const scopeFor = (unitTitle: string, lessonTitle: string, lessonNo: number): LessonScope => {
+  // 곱셈구구는 차시마다 다루는 단이 정해져 있습니다.
+  const dans = [2, 3, 4, 5, 6, 7, 8, 9].filter((dan) => lessonTitle.includes(`${dan}단`));
+
+  if (unitTitle === '세 자리 수') {
+    // 1차시는 아직 두 자리 수까지, 3차시부터 몇백, 4차시부터 세 자리 수입니다.
+    const maxNumber = lessonNo <= 2 ? 100 : lessonNo === 3 ? 900 : 999;
+    return {
+      maxNumber,
+      // 수 모형으로 다루다가 자리값 표와 기호로 넘어갑니다.
+      representation: lessonNo <= 4 ? 'concrete' : 'symbolic',
+      forbidVisuals: ['ruler', 'clock', 'calendar', 'grid-table', 'unit-measure'],
+    };
+  }
+
+  if (unitTitle === '네 자리 수') {
+    const maxNumber = lessonNo <= 2 ? 1000 : lessonNo === 3 ? 9000 : 9999;
+    return {
+      maxNumber,
+      representation: lessonNo <= 4 ? 'concrete' : 'symbolic',
+      forbidVisuals: ['ruler', 'clock', 'calendar', 'grid-table', 'unit-measure'],
+    };
+  }
+
+  if (unitTitle === '덧셈과 뺄셈') {
+    return {
+      maxNumber: 99,
+      representation: lessonNo <= 3 ? 'concrete' : 'symbolic',
+      forbidVisuals: ['ruler', 'clock', 'calendar', 'unit-measure', 'grid-table'],
+    };
+  }
+
+  if (unitTitle === '여러 가지 도형') {
+    return {
+      maxNumber: 20,
+      representation: 'semi',
+      forbidVisuals: ['ruler', 'clock', 'calendar', 'grid-table', 'unit-measure', 'number-line'],
+    };
+  }
+
+  if (unitTitle === '길이 재기') {
+    // 2-1은 3차시까지 임의 단위(클립, 뼘)로 재고 4차시에 1cm를 배웁니다.
+    // 자 그림은 자를 배운 뒤부터입니다.
+    const beforeRuler = unitTitle === '길이 재기' && lessonTitle.includes('여러 가지 단위')
+      || lessonTitle.includes('길이를 비교하는 방법')
+      || lessonNo <= 3;
+    return {
+      maxNumber: 300,
+      representation: beforeRuler ? 'concrete' : 'symbolic',
+      forbidVisuals: beforeRuler
+        ? ['ruler', 'clock', 'calendar', 'grid-table', 'place-value']
+        : ['clock', 'calendar', 'grid-table', 'place-value'],
+    };
+  }
+
+  if (unitTitle === '분류하기') {
+    return {
+      maxNumber: 30,
+      representation: 'concrete',
+      forbidVisuals: ['ruler', 'clock', 'calendar', 'grid-table', 'unit-measure', 'number-line'],
+    };
+  }
+
+  if (unitTitle === '곱셈') {
+    // 곱셈구구를 배우기 전입니다. 묶어 세기와 몇의 몇 배로 뜻을 세웁니다.
+    return {
+      maxNumber: 50,
+      representation: lessonNo <= 5 ? 'concrete' : 'symbolic',
+      forbidVisuals: ['ruler', 'clock', 'calendar', 'grid-table', 'unit-measure', 'place-value'],
+    };
+  }
+
+  if (unitTitle === '곱셈구구') {
+    return {
+      maxNumber: 81,
+      // 각 단 차시는 그 단만, 곱셈표·활용 차시는 배운 단을 모두 씁니다.
+      dans: dans.length
+        ? dans
+        : /곱셈표|이용하여|단원 종합|학기 종합/.test(lessonTitle)
+          ? [2, 3, 4, 5, 6, 7, 8, 9]
+          : [],
+      representation: lessonNo <= 2 ? 'concrete' : 'symbolic',
+      forbidVisuals: ['ruler', 'clock', 'calendar', 'unit-measure', 'place-value'],
+    };
+  }
+
+  if (unitTitle === '시각과 시간') {
+    return {
+      maxNumber: 60,
+      representation: 'semi',
+      // 달력은 마지막 차시에서만 씁니다.
+      forbidVisuals: lessonTitle.includes('달력')
+        ? ['ruler', 'grid-table', 'place-value', 'unit-measure']
+        : ['ruler', 'calendar', 'grid-table', 'place-value', 'unit-measure'],
+    };
+  }
+
+  if (unitTitle === '표와 그래프') {
+    return {
+      maxNumber: 40,
+      representation: 'semi',
+      forbidVisuals: ['ruler', 'clock', 'calendar', 'grid-table', 'unit-measure', 'place-value'],
+    };
+  }
+
+  if (unitTitle === '규칙 찾기') {
+    return {
+      maxNumber: 100,
+      representation: 'semi',
+      forbidVisuals: ['ruler', 'clock', 'unit-measure', 'place-value'],
+    };
+  }
+
+  // 단원 종합·학기 종합처럼 여러 단원을 섞는 경우입니다.
+  return { maxNumber: 9999, representation: 'symbolic' };
+};
 
 export const curriculum: Unit[] = [
   unit('2-1', 1, '세 자리 수', [
