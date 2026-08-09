@@ -88,7 +88,11 @@ const useAnalytics = (records: AnswerRecord[], players: Player[]) =>
       acc[record.misconception] = (acc[record.misconception] ?? 0) + 1;
       return acc;
     }, {});
-    const strongest = Object.entries(strengthCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+    // 맞힌 수가 틀린 수보다 많은 유형만 강점으로 봅니다. 그러지 않으면
+    // 한 유형을 두고 '잘한다'와 '어려워한다'를 같이 적게 됩니다.
+    const strongest = Object.entries(strengthCounts)
+      .filter(([type, count]) => count >= 2 && count > (typeCounts[type] ?? 0))
+      .sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
 
     // 수준은 풀면서 오르내리므로, 어디까지 올라갔는지가 곧 도달 수준입니다.
     const order: Record<string, number> = { 하: 0, 중: 1, 상: 2 };
