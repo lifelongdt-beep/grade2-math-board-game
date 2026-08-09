@@ -11852,6 +11852,44 @@ const calcShapes: Shape[] = [
         shapeStrategy(difficulty, '조건 함께 보기 · 두 수의 차를 구하기', '두 수의 차 구하기'),
       );
     } },
+
+  // 뺄셈 — 검산으로 확인하기
+  {
+    fits: (lesson) => /뺄셈을 해|여러 가지 방법으로 뺄셈|□의 값/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 43 + lesson.lessonNo;
+      const whole = 45 + (seed % 40);
+      const part = 15 + ((seed + 5) % 20);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${whole}-${part}=${whole - part}이 맞는지 확인하려면 어떻게 하면 될까요?`,
+        `${whole - part}+${part}가 ${whole}인지 본다`,
+        [`${whole}+${part}가 맞는지 본다`, `${whole - part}-${part}를 해 본다`, `확인할 방법이 없다`],
+        `뺀 값에 뺀 수를 도로 더하면 처음 수가 되어야 합니다.`,
+        'subtraction',
+        shapeStrategy(difficulty, '자료 해석 · 덧셈으로 뺄셈 확인하기', '덧셈으로 확인하기'),
+      );
+    } },
+
+  // 십 몇을 만들어 계산하기
+  {
+    fits: (lesson) => /여러 가지 방법으로 덧셈|여러 가지 방법으로 뺄셈|뺄셈을 해|□의 값|세 수의 계산/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 47 + lesson.lessonNo;
+      const a = 20 + (seed % 30);
+      const need = 10 - (a % 10);
+      if (need === 10) return null;
+      const b = need + 10 + (seed % 20);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}를 쉽게 계산하려고 합니다. ${b}를 어떻게 가르면 좋을까요?`,
+        `${need}과 ${b - need}`,
+        [`${b - 1}과 1`, `${Math.floor(b / 2)}과 ${b - Math.floor(b / 2)}`, `10과 ${b - 10}`],
+        `${a}에 ${need}을 더하면 ${a + need}으로 몇십이 되어 계산이 쉬워집니다.`,
+        'addition',
+        shapeStrategy(difficulty, '자료 해석 · 몇십을 만들어 쉽게 계산하기', '몇십을 만들어 계산하기'),
+      );
+    } },
 ];
 
 // ── 여러 가지 도형 ─────────────────────────────────────────────────
@@ -12410,6 +12448,7 @@ const variedQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): 
   // 이 차시에 어울리는 모양만 남깁니다.
   const shapes = shapesForLesson(lesson).filter((shape) => shape.fits(lesson));
   if (shapes.length === 0) return null;
+  // 자리를 고른 기준과 같은 값으로 돌려야 모양이 실제로 바뀝니다.
   const maker = shapes[Math.floor(index / 3) % shapes.length];
   try {
     return maker.make(lesson, difficulty, index);
@@ -12428,9 +12467,10 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
           // 전부 새 모양으로 채우면 이번에는 그 모양 하나가 차시를 덮어
           // 결국 또 같은 문제만 되풀이됩니다. 기존 문항과 섞어야 합니다.
           : challengeQuestion(lesson, difficulty, index)
-            // 상 수준은 3의 배수 자리만 남으므로 4로 거르면 자리가 거의
-            // 남지 않아 새 모양이 쓰이지 않습니다. 홀수 자리로 바꿔 둡니다.
-            ?? (index % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
+            // 상 수준에서 남는 자리는 3칸 간격이라, index를 2나 4로 거르면
+            // 늘 같은 나머지가 나와 한 모양만 뽑힙니다. 자리의 '순번'
+            // (index/3)을 기준으로 삼아야 골고루 돌아갑니다.
+            ?? (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
             ?? richQuestionFor(lesson, difficulty, index)
             ?? question)
       .map((question, index) => withRichVisual(question, index, lesson))
