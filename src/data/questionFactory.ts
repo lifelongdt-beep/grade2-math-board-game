@@ -12213,11 +12213,13 @@ const timeShapes: Shape[] = [
     fits: (lesson) => /몇 시 몇 분|여러 가지 방법으로 시각/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 23 + lesson.lessonNo;
-      const point = 1 + (seed % 11);
+      // 긴바늘이 12를 가리키는 경우(60분)는 1시간을 배우는 5차시 내용이라
+      // 보기로도 쓰지 않습니다.
+      const point = 1 + (seed % 10);
       return makeQuestion(
         lesson, difficulty, index,
         `시계에서 긴바늘이 ${point}을 가리키면 몇 분일까요?`,
-        `${point * 5}분`, [`${point}분`, `${point * 5 + 5}분`, `${point * 10}분`],
+        `${point * 5}분`, [`${point}분`, `${point * 5 - 5}분`, `${point * 10}분`],
         `긴바늘이 한 칸 갈 때마다 5분입니다. ${point}×5=${point * 5}분입니다.`,
         'time',
         shapeStrategy(difficulty, '자료 해석 · 긴바늘이 가리키는 수를 분으로 바꾸기', '긴바늘을 분으로 바꾸기'),
@@ -12227,7 +12229,7 @@ const timeShapes: Shape[] = [
 
   // 달력 — 한 주는 7일
   {
-    fits: (lesson) => /달력|하루의 시간/.test(lesson.title),
+    fits: (lesson) => /달력/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 29 + lesson.lessonNo;
       const weeks = 2 + (seed % 3);
