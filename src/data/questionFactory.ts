@@ -11759,6 +11759,97 @@ const calcShapes: Shape[] = [
         shapeStrategy(difficulty, '자료 해석 · 덧셈으로 뺄셈 알아보기', '덧셈으로 뺄셈 알아보기'),
       );
     } },
+
+  // 세 수의 계산 — 앞에서부터 차례로
+  {
+    fits: (lesson) => /세 수의 계산/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 23 + lesson.lessonNo;
+      const a = 20 + (seed % 30);
+      const b = 10 + ((seed + 3) % 20);
+      const c = 5 + ((seed + 7) % 15);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+${b}-${c}를 계산할 때, 먼저 계산해야 하는 것은?`,
+        `${a}+${b}`, [`${b}-${c}`, `${a}-${c}`, '어느 것이든 좋다'],
+        `세 수의 계산은 앞에서부터 차례로 합니다. ${a}+${b}=${a + b}, ${a + b}-${c}=${a + b - c}입니다.`,
+        'addition',
+        shapeStrategy(difficulty, '자료 해석 · 계산 차례 정하기', '계산 차례 정하기'),
+      );
+    } },
+
+  // 세 수의 계산 — 문장 상황
+  {
+    fits: (lesson) => /세 수의 계산/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 29 + lesson.lessonNo;
+      const start = 30 + (seed % 30);
+      const got = 8 + (seed % 12);
+      const gave = 5 + ((seed + 4) % 10);
+      const item = ['구슬', '딱지', '사탕', '색종이'][seed % 4];
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${subject(item)} ${start}개 있었습니다. ${got}개를 더 받고 ${gave}개를 주었습니다. 지금 ${topic(item)} 몇 개일까요?`,
+        `${start + got - gave}개`,
+        [`${start + got + gave}개`, `${start - got + gave}개`, `${start + got}개`],
+        `받으면 더하고 주면 뺍니다. ${start}+${got}-${gave}=${start + got - gave}개입니다.`,
+        'addition',
+        shapeStrategy(difficulty, '조건 함께 보기 · 받고 준 상황을 차례로 계산하기', '받고 준 상황 계산하기'),
+      );
+    } },
+
+  // □의 값 — 어떤 식으로 구할지 고르기
+  {
+    fits: (lesson) => /□의 값/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 31 + lesson.lessonNo;
+      const part = 12 + (seed % 20);
+      const whole = part + 15 + ((seed + 5) % 25);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${part}+□=${whole}에서 □를 구하려면 어떤 식으로 계산해야 할까요?`,
+        `${whole}-${part}`, [`${whole}+${part}`, `${part}-${whole}`, `${part}+${whole}`],
+        `전체에서 아는 부분을 빼면 □가 나옵니다. ${whole}-${part}=${whole - part}입니다.`,
+        'subtraction',
+        shapeStrategy(difficulty, '자료 해석 · □를 구하는 식 세우기', '□를 구하는 식 세우기'),
+      );
+    } },
+
+  // □의 값 — 문장 상황
+  {
+    fits: (lesson) => /□의 값/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 37 + lesson.lessonNo;
+      const had = 15 + (seed % 20);
+      const now = had + 10 + ((seed + 3) % 20);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `연필이 ${had}자루 있었는데 몇 자루를 더 받아 ${now}자루가 되었습니다. 더 받은 연필은 몇 자루일까요?`,
+        `${now - had}자루`,
+        [`${now + had}자루`, `${now}자루`, `${now - had + 5}자루`],
+        `늘어난 만큼이 더 받은 수입니다. ${now}-${had}=${now - had}자루입니다.`,
+        'subtraction',
+        shapeStrategy(difficulty, '조건 함께 보기 · 늘어난 수를 거꾸로 구하기', '늘어난 수 거꾸로 구하기'),
+      );
+    } },
+
+  // 뺄셈 — 두 수의 차 견주기
+  {
+    fits: (lesson) => /뺄셈을 해|여러 가지 방법으로 뺄셈/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 41 + lesson.lessonNo;
+      const big = 50 + (seed % 40);
+      const small = 20 + ((seed + 6) % 25);
+      const item = ['빨간 구슬', '파란 구슬'];
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${item[0]}이 ${big}개, ${item[1]}이 ${small}개 있습니다. ${item[0]}은 ${item[1]}보다 몇 개 더 많을까요?`,
+        `${big - small}개`, [`${big + small}개`, `${small}개`, `${big}개`],
+        `'몇 개 더 많은지'는 빼서 구합니다. ${big}-${small}=${big - small}개입니다.`,
+        'subtraction',
+        shapeStrategy(difficulty, '조건 함께 보기 · 두 수의 차를 구하기', '두 수의 차 구하기'),
+      );
+    } },
 ];
 
 // ── 여러 가지 도형 ─────────────────────────────────────────────────
@@ -11921,6 +12012,23 @@ const lengthShapes: Shape[] = [
         shapeStrategy(difficulty, '조건 함께 보기 · 단위끼리 맞추어 계산하기', '단위끼리 맞추어 계산하기'),
       );
     } },
+
+  // 두 물건의 길이 견주기
+  {
+    fits: (lesson) => /자로 길이를 재|길이의 차/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 23 + lesson.lessonNo;
+      const a = 6 + (seed % 10);
+      const b = a + 2 + (seed % 5);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `크레파스는 ${a}cm, 색연필은 ${b}cm입니다. 색연필은 크레파스보다 몇 cm 더 길까요?`,
+        `${b - a}cm`, [`${a + b}cm`, `${b}cm`, `${b - a + 1}cm`],
+        `더 긴 것에서 짧은 것을 빼면 ${b}-${a}=${b - a}cm입니다.`,
+        'measurement',
+        shapeStrategy(difficulty, '조건 함께 보기 · 두 길이의 차 구하기', '두 길이의 차 구하기'),
+      );
+    } },
 ];
 
 // ── 분류하기 ───────────────────────────────────────────────────────
@@ -12032,6 +12140,39 @@ const timeShapes: Shape[] = [
         'time',
         shapeStrategy(difficulty, '자료 해석 · 요일이 7일마다 돌아옴을 이용하기', '7일마다 돌아오는 요일'),
         calendarVisualFor([{ day, tone: 'start' }], '달력에서 찾기'),
+      );
+    } },
+
+  // 시각 읽기 — 긴바늘이 가리키는 수와 분
+  {
+    fits: (lesson) => /몇 시 몇 분|여러 가지 방법으로 시각/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 23 + lesson.lessonNo;
+      const point = 1 + (seed % 11);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `시계에서 긴바늘이 ${point}을 가리키면 몇 분일까요?`,
+        `${point * 5}분`, [`${point}분`, `${point * 5 + 5}분`, `${point * 10}분`],
+        `긴바늘이 한 칸 갈 때마다 5분입니다. ${point}×5=${point * 5}분입니다.`,
+        'time',
+        shapeStrategy(difficulty, '자료 해석 · 긴바늘이 가리키는 수를 분으로 바꾸기', '긴바늘을 분으로 바꾸기'),
+        clockVisualFor(3, point * 5, '긴바늘 살펴보기'),
+      );
+    } },
+
+  // 달력 — 한 주는 7일
+  {
+    fits: (lesson) => /달력|하루의 시간/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 29 + lesson.lessonNo;
+      const weeks = 2 + (seed % 3);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${weeks}주일은 며칠일까요?`,
+        `${weeks * 7}일`, [`${weeks}일`, `${weeks * 7 + 7}일`, `${weeks * 5}일`],
+        `1주일은 7일이므로 ${weeks}주일은 ${weeks}×7=${weeks * 7}일입니다.`,
+        'time',
+        shapeStrategy(difficulty, '자료 해석 · 주일을 날수로 바꾸기', '주일을 날수로 바꾸기'),
       );
     } },
 ];
@@ -12148,12 +12289,108 @@ const ruleShapes: Shape[] = [
         shapeStrategy(difficulty, '조건 함께 보기 · 생활 속 되풀이 찾기', '생활 속 되풀이 찾기'),
       );
     } },
+
+
+  // 표에서 세로줄의 규칙
+  {
+    fits: (lesson) => /덧셈표에서 규칙|곱셈표에서 규칙/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 23 + lesson.lessonNo;
+      const plus = lesson.title.includes('덧셈표');
+      const dan = 2 + (seed % 5);
+      return makeQuestion(
+        lesson, difficulty, index,
+        plus
+          ? '덧셈표에서 아래로 한 칸 갈 때마다 수는 어떻게 될까요?'
+          : `곱셈표에서 세로줄과 가로줄을 바꾸어 보면 곱은 어떻게 될까요?`,
+        plus ? '1씩 커진다' : '곱이 같다',
+        plus
+          ? ['1씩 작아진다', '2씩 커진다', '그대로이다']
+          : ['곱이 커진다', '곱이 작아진다', '알 수 없다'],
+        plus
+          ? '아래로 갈수록 더해지는 수가 1씩 커집니다.'
+          : `${dan}×3과 3×${dan}처럼 두 수를 바꾸어도 곱은 같습니다.`,
+        'pattern',
+        shapeStrategy(difficulty, '자료 해석 · 표를 다른 방향에서 살펴보기', '표를 다른 방향에서 보기'),
+      );
+    } },
+];
+
+// 2-1 곱셈 단원은 곱셈구구를 배우기 전입니다. 묶어 세기와 몇의 몇 배로
+// 곱셈의 뜻을 세우는 단계라, 구구를 쓰는 문제를 내면 안 됩니다.
+const earlyMultiplyShapes: Shape[] = [
+  {
+    fits: (lesson) => /묶어 세어|여러 가지 방법으로 세어/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 7 + lesson.lessonNo;
+      const per = 2 + (seed % 4);
+      const groups = 3 + ((seed + 2) % 4);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `구슬 ${per * groups}개를 ${per}개씩 묶으면 몇 묶음이 될까요?`,
+        `${groups}묶음`, [`${per}묶음`, `${groups + 1}묶음`, `${per * groups}묶음`],
+        `${per}개씩 묶어 세면 ${groups}묶음입니다.`,
+        'multiplication',
+        shapeStrategy(difficulty, '자료 해석 · 묶음 수를 세어 보기', '묶음 수 세어 보기'),
+        arrayVisualFor(groups, per, `${per}개씩 묶기`),
+      );
+    } },
+  {
+    fits: (lesson) => /몇의 몇 배/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 11 + lesson.lessonNo;
+      const base = 2 + (seed % 5);
+      const times = 2 + ((seed + 3) % 4);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${base}의 ${times}배는 ${base}씩 몇 묶음일까요?`,
+        `${times}묶음`, [`${base}묶음`, `${base * times}묶음`, `${times + 1}묶음`],
+        `몇 배는 몇 묶음과 같습니다. ${base}의 ${times}배는 ${base}씩 ${times}묶음입니다.`,
+        'multiplication',
+        shapeStrategy(difficulty, '자료 해석 · 몇 배와 몇 묶음 잇기', '몇 배와 몇 묶음 잇기'),
+        arrayVisualFor(times, base, `${base}씩 ${times}묶음`),
+      );
+    } },
+  {
+    fits: (lesson) => /곱셈을 알아|곱셈식으로 나타내/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 13 + lesson.lessonNo;
+      const per = 2 + (seed % 5);
+      const groups = 2 + ((seed + 4) % 5);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${per}씩 ${groups}묶음을 곱셈식으로 나타내면?`,
+        `${per}×${groups}`, [`${per}+${groups}`, `${groups}×${groups}`, `${per}×${per}`],
+        `몇씩 몇 묶음은 (몇)×(묶음 수)로 씁니다. ${per}×${groups}입니다.`,
+        'multiplication',
+        shapeStrategy(difficulty, '자료 해석 · 묶음을 곱셈식으로 쓰기', '묶음을 곱셈식으로 쓰기'),
+      );
+    } },
+  {
+    fits: (lesson) => /곱셈을 알아|곱셈식으로 나타내/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 17 + lesson.lessonNo;
+      const per = 2 + (seed % 5);
+      const groups = 2 + ((seed + 2) % 5);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${per}×${groups}를 덧셈식으로 나타내면?`,
+        Array.from({ length: groups }, () => per).join('+'),
+        [`${per}+${groups}`, Array.from({ length: per }, () => groups).join('+') + '+1', `${per}+${per}`],
+        `${per}을 ${groups}번 더한 것과 같습니다.`,
+        'multiplication',
+        shapeStrategy(difficulty, '자료 해석 · 곱셈을 덧셈으로 풀어 보기', '곱셈을 덧셈으로 풀기'),
+      );
+    } },
 ];
 
 // 차시가 다루는 개념에 맞는 모양 묶음을 고릅니다.
 const shapesForLesson = (lesson: Lesson): Shape[] => {
   const tag = primaryTag(lesson);
-  if (tag === 'multiplication') return multiplyShapes;
+  if (tag === 'multiplication') {
+    // 곱셈구구를 배우기 전 단원(2-1 곱셈)과 배운 뒤(2-2 곱셈구구)를 나눕니다.
+    return lesson.unitTitle === '곱셈' ? earlyMultiplyShapes : multiplyShapes;
+  }
   if (tag === 'placeValue' || tag === 'number') return numberShapes;
   if (tag === 'addition' || tag === 'subtraction') return calcShapes;
   if (tag === 'shape' || tag === 'solid') return figureShapes;
