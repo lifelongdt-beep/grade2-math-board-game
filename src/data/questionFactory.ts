@@ -12426,7 +12426,9 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
           // 전부 새 모양으로 채우면 이번에는 그 모양 하나가 차시를 덮어
           // 결국 또 같은 문제만 되풀이됩니다. 기존 문항과 섞어야 합니다.
           : challengeQuestion(lesson, difficulty, index)
-            ?? (index % 4 === 1 ? variedQuestion(lesson, difficulty, index) : null)
+            // 상 수준은 3의 배수 자리만 남으므로 4로 거르면 자리가 거의
+            // 남지 않아 새 모양이 쓰이지 않습니다. 홀수 자리로 바꿔 둡니다.
+            ?? (index % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
             ?? richQuestionFor(lesson, difficulty, index)
             ?? question)
       .map((question, index) => withRichVisual(question, index, lesson))
