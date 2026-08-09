@@ -12496,7 +12496,7 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
           // 새 모양이 한 번도 쓰이지 않습니다. index를 2나 4로 거르지 않는
           // 것도 같은 까닭입니다 — 상은 자리가 3칸 간격이라 늘 같은
           // 나머지가 나옵니다.
-          : (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
+          : (Math.floor(index / 3) % 3 === 1 ? variedQuestion(lesson, difficulty, index) : null)
             ?? challengeQuestion(lesson, difficulty, index)
             ?? richQuestionFor(lesson, difficulty, index)
             ?? question)
