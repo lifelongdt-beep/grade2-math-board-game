@@ -11898,7 +11898,7 @@ const calcShapes: Shape[] = [
 
   // 십 몇을 만들어 계산하기
   {
-    fits: (lesson) => /여러 가지 방법으로 덧셈|여러 가지 방법으로 뺄셈|뺄셈을 해|□의 값|세 수의 계산/.test(lesson.title),
+    fits: (lesson) => /여러 가지 방법으로 덧셈|세 수의 계산/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 47 + lesson.lessonNo;
       const a = 20 + (seed % 30);
