@@ -12215,11 +12215,11 @@ const timeShapes: Shape[] = [
       const seed = index * 23 + lesson.lessonNo;
       // 긴바늘이 12를 가리키는 경우(60분)는 1시간을 배우는 5차시 내용이라
       // 보기로도 쓰지 않습니다.
-      const point = 1 + (seed % 10);
+      const point = 2 + (seed % 9);
       return makeQuestion(
         lesson, difficulty, index,
         `시계에서 긴바늘이 ${point}을 가리키면 몇 분일까요?`,
-        `${point * 5}분`, [`${point}분`, `${point * 5 - 5}분`, `${point * 10}분`],
+        `${point * 5}분`, [`${point}분`, `${point * 5 - 5}분`, `${point * 5 + 5}분`],
         `긴바늘이 한 칸 갈 때마다 5분입니다. ${point}×5=${point * 5}분입니다.`,
         'time',
         shapeStrategy(difficulty, '자료 해석 · 긴바늘이 가리키는 수를 분으로 바꾸기', '긴바늘을 분으로 바꾸기'),
