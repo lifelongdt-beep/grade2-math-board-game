@@ -10356,6 +10356,31 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('□의 값')) {
       const b = 5 + (seed % 14);
       const a = b + 7 + (seed % 15);
+
+      // □가 어디에 있느냐에 따라 세우는 식이 달라집니다. 한 자리에만 두면
+      // '전체에서 아는 것을 뺀다'는 절차만 외우게 됩니다.
+      const place = index % 3;
+
+      if (place === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `□-${b}=${a}에서 □를 구하는 과정입니다. □에 알맞은 수는? ① 뺀 결과가 ${a}입니다. ② 뺀 수는 ${b}입니다. ③ ${a}+${b}=□`,
+          a + b, [a, b, a - b > 0 ? a - b : b - a],
+          `뺀 결과에 뺀 수를 도로 더하면 처음 수가 나옵니다. □는 ${a + b}입니다.`,
+          'subtraction', '빼기 전의 수를 거꾸로 구하는 과정',
+        );
+      }
+
+      if (place === 2) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${a + b}-□=${a}에서 □를 구하는 과정입니다. □에 알맞은 수는? ① 처음 수는 ${a + b}입니다. ② 남은 수는 ${a}입니다. ③ ${a + b}-${a}=□`,
+          b, [a, a + b, a + b - 1],
+          `처음 수에서 남은 수를 빼면 덜어 낸 수인 ${b}가 나옵니다.`,
+          'subtraction', '덜어 낸 수를 거꾸로 구하는 과정',
+        );
+      }
+
       return makeQuestion(
         lesson, difficulty, index,
         `${a}+□=${a + b}에서 □를 구하는 과정입니다. □에 알맞은 수는? ① 전체는 ${a + b}입니다. ② 아는 부분은 ${a}입니다. ③ ${a + b}-${a}=□`,
