@@ -1210,11 +1210,14 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       );
     }
     if (variant === 2) {
-      const c = a + (four ? 2000 : 200);
+      // 세 번째 수가 단원 범위를 넘지 않게 합니다.
+      const top = four ? 9999 : 999;
+      const c = Math.min(top, Math.max(a, b) + (four ? 2000 : 200));
       return makeQuestion(
         lesson, difficulty, index,
         `${a}, ${b}, ${c}을 작은 수부터 차례로 놓으면 가장 앞에 오는 수는?`,
-        Math.min(a, b, c), [Math.max(a, b, c), b, a + b],
+        Math.min(a, b, c),
+        [Math.max(a, b, c), b, Math.min(top, Math.min(a, b, c) + 10)],
         `세 수를 비교하면 ${Math.min(a, b, c)}이 가장 작습니다.`,
         'number', '세 수를 작은 수부터 놓기',
       );
@@ -9855,7 +9858,9 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         answer,
         [
           digits[blank],
-          answer * 10,
+          // 한 자리 아래로 잘못 읽은 값입니다. answer*10은 네 자리 수
+          // 단원에서 50000처럼 단원 범위를 벗어나 버립니다.
+          Math.max(1, Math.floor(answer / 10)),
           digits[(blank + 1) % digits.length] * units[(blank + 1) % digits.length],
         ],
         `${units[blank]}이 ${digits[blank]}개이면 ${answer}입니다.`,
@@ -9910,7 +9915,9 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         lesson, difficulty, index,
         `${a}과 ${b}의 크기를 비교하는 과정입니다. □에 알맞은 수는? ① 가장 높은 자리 숫자가 ${high}으로 같습니다. ② 그다음 ${place}의 자리를 비교하면 □이 더 ${askBigger ? '큽니다' : '작습니다'}.`,
         askBigger ? a : b,
-        [askBigger ? b : a, high, a + b],
+        // 가장 높은 자리만 보고 멈춘 경우를 오답 보기로 둡니다.
+        // a+b는 두 수를 더한 값이라 단원 범위를 넘습니다.
+        [askBigger ? b : a, high, high * (four ? 1000 : 100)],
         `${place}의 자리 숫자를 비교하면 ${askBigger ? `${a}이 더 큽니다` : `${b}이 더 작습니다`}.`,
         'placeValue', `크기를 비교해 더 ${askBigger ? '큰' : '작은'} 수 찾는 차례`,
         barModelVisualFor([{ label: '첫째 수', value: a }, { label: '둘째 수', value: b }], '두 수의 크기'),
