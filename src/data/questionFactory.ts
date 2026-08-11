@@ -9883,7 +9883,9 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         lesson, difficulty, index,
         `${value}에서 숫자 ${digit}이 나타내는 값을 구하는 과정입니다. □에 알맞은 수는? ① ${digit}은 ${names[at]}의 자리에 있습니다. ② ${names[at]}의 자리 ${digit}은 □을 나타냅니다.`,
         worth,
-        [digit, worth * 10, value],
+        // worth*10은 천의 자리에서 60000처럼 단원을 벗어납니다.
+        // 한 자리 아래로 읽은 값이 더 흔한 실수이기도 합니다.
+        [digit, Math.max(1, Math.floor(worth / 10)), value],
         `${names[at]}의 자리에 있는 ${digit}은 ${worth}을 나타냅니다.`,
         'placeValue', '자리 숫자의 값을 구하는 과정',
       );
