@@ -11822,6 +11822,60 @@ const wordStepQuestion = (
   return null;
 };
 
+// 같은 풀이를 '바른 차례로 놓기' 문항으로 바꿉니다.
+//
+// 차시마다 풀이 과정 문항의 상황을 손으로 늘리는 방법도 있지만, 그러면
+// 차시가 늘 때마다 같은 일을 되풀이해야 합니다. 이미 만들어 둔 풀이의
+// 단계를 뒤섞어 차례를 묻는 것은 어느 차시에나 통하고, 요구하는 것도
+// 다릅니다 — 빈칸을 채우는 것은 한 곳만 보면 되지만, 차례를 놓으려면
+// 풀이 전체가 왜 그 순서인지 알아야 합니다.
+const asOrderQuestion = (
+  base: Question,
+  lesson: Lesson,
+  difficulty: Difficulty,
+  index: number,
+): Question | null => {
+  // '① … ② … ③ …' 를 단계별로 끊습니다.
+  const steps = base.prompt.match(/[①②③④][^①②③④]+/g)?.map((step) => step.trim());
+  if (!steps || steps.length < 3) return null;
+
+  // 앞부분(상황 설명)은 그대로 두고 단계만 다시 씁니다.
+  const head = base.prompt.slice(0, base.prompt.indexOf('①')).replace(/□에 알맞은 수는\?\s*$/, '').trim();
+  if (!head) return null;
+
+  const labels = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ'];
+  // 뒤섞는 방법을 자리마다 다르게 골라 늘 같은 차례가 되지 않게 합니다.
+  const patterns = [[1, 2, 0], [2, 0, 1], [1, 0, 2], [2, 1, 0]];
+  const order = patterns[index % patterns.length];
+  const shown = order.map((at) => steps[at]);
+
+  // 뒤섞인 자리에서 원래 차례가 어디로 갔는지 찾습니다.
+  const answer = steps
+    .slice(0, 3)
+    .map((step) => labels[shown.indexOf(step)])
+    .join(' → ');
+
+  const others = [
+    labels.slice(0, 3).join(' → '),
+    [labels[2], labels[1], labels[0]].join(' → '),
+    [labels[1], labels[0], labels[2]].join(' → '),
+  ].filter((one) => one !== answer);
+
+  const listed = shown
+    .map((step, at) => `${labels[at]} ${step.replace(/^[①②③④]\s*/, '')}`)
+    .join(' ');
+
+  return makeQuestion(
+    lesson, difficulty, index,
+    `${head} 풀이 단계가 뒤섞였습니다. ${listed} 바른 차례로 놓으면?`,
+    answer, others.slice(0, 3),
+    `${head} 이 순서로 풀어야 답을 구할 수 있습니다.`,
+    base.type,
+    shapeStrategy(difficulty, '자료 해석 · 풀이 차례를 바로잡기', '풀이 차례 놓기'),
+    base.visual,
+  );
+};
+
 const isStepSlot = (difficulty: Difficulty, index: number) => {
   // 풀이 과정 문항은 상의 중심입니다(30문항 중 20문항).
   // 중에서 아예 빼 보았더니 곱셈·길이 재기 단원에서 차시끼리 문항이
@@ -13048,6 +13102,14 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
           // 중은 아직 상황과 절차를 한꺼번에 다루는 단계가 아닙니다.
           ? (difficulty === '상' && Math.floor(index / 3) % 2 === 0
               ? wordStepQuestion(lesson, difficulty, index)
+              : null)
+            // 풀이 과정 문항의 일부는 빈칸 대신 차례를 묻습니다. 차시마다
+            // 상황을 손으로 늘리지 않고도 문항의 모양이 갈라집니다.
+            ?? (Math.floor(index / 3) % 3 === 2
+              ? (() => {
+                  const base = stepBlankQuestion(lesson, difficulty, index);
+                  return base ? asOrderQuestion(base, lesson, difficulty, index) : null;
+                })()
               : null)
             ?? stepBlankQuestion(lesson, difficulty, index)
             ?? question
