@@ -11642,7 +11642,9 @@ const wordStepQuestion = (
     const b = 12 + ((seed + 5) % 25);
     if (a + b > limit) return null;
 
-    if (situation === 1) {
+    // 오고 간 상황은 더하고 빼기를 함께 씁니다. 세 수를 잇달아 계산하는
+    // 차시에서만 쓰고, 덧셈만 또는 뺄셈만 다루는 차시에는 넣지 않습니다.
+    if (situation === 1 && /세 수의 계산/.test(lesson.title)) {
       const gone = 5 + (seed % 10);
       if (a + b - gone < 1) return null;
       return makeQuestion(
