@@ -11861,6 +11861,9 @@ const asOrderQuestion = (
     [labels[1], labels[0], labels[2]].join(' → '),
   ].filter((one) => one !== answer);
 
+  // 원래 문항의 전략 이름에서 난이도·평가 층 표시를 걷어냅니다.
+  const baseName = base.strategy.split(' · ').slice(-1)[0].replace(/\s*과정$/, '');
+
   const listed = shown
     .map((step, at) => `${labels[at]} ${step.replace(/^[①②③④]\s*/, '')}`)
     .join(' ');
@@ -11871,7 +11874,13 @@ const asOrderQuestion = (
     answer, others.slice(0, 3),
     `${head} 이 순서로 풀어야 답을 구할 수 있습니다.`,
     base.type,
-    shapeStrategy(difficulty, '자료 해석 · 풀이 차례를 바로잡기', '풀이 차례 놓기'),
+    // 전략 이름에 원래 문항의 이름을 남깁니다. 모든 차시가 '풀이 차례
+    // 놓기' 하나로만 적히면 차시끼리 구분이 사라집니다.
+    shapeStrategy(
+      difficulty,
+      `자료 해석 · ${baseName} 차례 놓기`,
+      `${baseName} 차례 놓기`,
+    ),
     base.visual,
   );
 };

@@ -25,7 +25,10 @@ describe('step coverage', () => {
           const questions = generateQuestions(lesson, level);
           // 빈칸 기호(□)는 보통 문항도 쓰므로 그것만으로는 셀 수 없습니다.
           // 풀이 과정을 ① ② 로 나눠 보여 주는 것이 이 문항의 표시입니다.
-          const steps = questions.filter((question) => question.prompt.includes('①')).length;
+          // 빈칸을 채우는 것과 차례를 놓는 것 둘 다 풀이 과정 문항입니다.
+          const steps = questions.filter(
+            (question) => question.prompt.includes('①') || question.prompt.includes('바른 차례로 놓으면'),
+          ).length;
 
           if (steps !== expectedSteps[level]) {
             wrong.push(
