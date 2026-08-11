@@ -11446,6 +11446,129 @@ const generateRawQuestions = (lesson: Lesson, difficulty: Difficulty): Question[
 //   하  0문항  — 먼저 답을 낼 수 있어야 합니다.
 //   중 10문항  — 세 문제에 한 번쯤 과정을 짚어 봅니다.
 //   상 20문항  — 과정을 설명할 수 있어야 합니다.
+// ── 상 수준: 문장제이면서 풀이 과정 한 곳을 묻는 문항 ────────────────
+// 지금까지 상의 풀이 과정 문항은 '48+25를 계산하는 과정입니다'처럼
+// 맨 계산에 단계만 붙인 것이었습니다. 그러면 상황을 읽어 식을 세우는
+// 일은 빠지고 남의 절차를 따라가기만 하게 됩니다.
+//
+// 상은 두 가지를 한꺼번에 요구해야 합니다.
+//   ① 상황을 읽고 어떤 식을 세울지 스스로 정하기(중이 하는 일)
+//   ② 그 풀이의 한 곳을 짚어 판단하기
+// 그래서 문장 상황을 주고, 그 상황의 풀이를 단계로 보여 준 뒤
+// 한 단계를 비워 둡니다.
+const wordStepQuestion = (
+  lesson: Lesson,
+  difficulty: Difficulty,
+  index: number,
+): Question | null => {
+  const tag = primaryTag(lesson);
+  const seed = n(lesson, index);
+  const limit = lesson.scope.maxNumber;
+
+  if (tag === 'addition' || tag === 'subtraction') {
+    const item = ['구슬', '색종이', '딱지', '사탕'][seed % 4];
+    const plus = tag === 'addition';
+    const a = 20 + (seed % 30);
+    const b = 12 + ((seed + 5) % 25);
+    if (a + b > limit) return null;
+
+    if (plus) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `바구니에 ${subject(item)} ${a}개 있고, 상자에는 ${b}개 더 많습니다. 상자의 ${topic(item)} 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① '더 많다'이므로 더하는 상황입니다. ② 바구니는 ${a}개입니다. ③ ${a}+${b}=□`,
+        a + b, [Math.abs(a - b), b, a],
+        `'더 많다'는 더하는 상황이므로 ${a}+${b}=${a + b}개입니다.`,
+        'addition', '문장 상황의 풀이 한 곳 짚기',
+      );
+    }
+
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${subject(item)} ${a + b}개 있었는데 ${b}개를 나누어 주었습니다. 남은 ${topic(item)} 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① 나누어 주었으므로 빼는 상황입니다. ② 처음 수는 ${a + b}개입니다. ③ ${a + b}-${b}=□`,
+      a, [a + b, b, a + b + b <= limit ? a + b + b : b + 1],
+      `나누어 준 만큼 덜어 내면 ${a + b}-${b}=${a}개입니다.`,
+      'subtraction', '문장 상황의 풀이 한 곳 짚기',
+    );
+  }
+
+  if (tag === 'multiplication') {
+    const dans = lesson.scope.dans ?? [];
+    const per = dans.length ? dans[seed % dans.length] : 2 + (seed % 5);
+    const groups = 2 + ((seed + 3) % 6);
+    if (per * groups > limit) return null;
+    const item = ['빵', '귤', '연필', '초콜릿'][seed % 4];
+    return makeQuestion(
+      lesson, difficulty, index,
+      `한 봉지에 ${subject(item)} ${per}개씩 들어 있습니다. ${groups}봉지에 든 ${topic(item)} 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① 한 묶음은 ${per}개입니다. ② 묶음은 ${groups}개입니다. ③ ${per}×${groups}=□`,
+      per * groups, [per + groups, per * groups + per, Math.max(1, per * (groups - 1))],
+      `${per}씩 ${groups}묶음이므로 ${per}×${groups}=${per * groups}개입니다.`,
+      'multiplication', '문장 상황의 풀이 한 곳 짚기',
+      arrayVisualFor(groups, per, `${per}씩 ${groups}묶음`),
+    );
+  }
+
+  if (tag === 'measurement') {
+    const a = 6 + (seed % 12);
+    const b = 3 + ((seed + 4) % 9);
+    if (a + b > limit) return null;
+    return makeQuestion(
+      lesson, difficulty, index,
+      `색 테이프 ${a}cm와 ${b}cm를 겹치지 않게 이었습니다. 이은 길이를 구하는 과정입니다. □에 알맞은 수는? ① 이었으므로 더하는 상황입니다. ② 두 길이는 ${a}cm와 ${b}cm입니다. ③ ${a}+${b}=□`,
+      `${a + b}cm`, [`${Math.abs(a - b)}cm`, `${a}cm`, `${a + b + 1}cm`],
+      `겹치지 않게 이으면 두 길이를 더하므로 ${a}+${b}=${a + b}cm입니다.`,
+      'measurement', '문장 상황의 풀이 한 곳 짚기',
+    );
+  }
+
+  if (tag === 'placeValue' || tag === 'number') {
+    const four = lesson.unitTitle === '네 자리 수';
+    const per = four ? 1000 : 100;
+    const box = 2 + (seed % 6);
+    const bag = 1 + ((seed + 2) % 8);
+    const loose = 1 + ((seed + 4) % 8);
+    const total = box * per + bag * 10 + loose;
+    if (total > limit) return null;
+    const item = ['사과', '구슬', '단추'][seed % 3];
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${subject(item)} ${per}개씩 든 상자 ${box}개, 10개씩 든 봉지 ${bag}개, 낱개 ${loose}개 있습니다. 모두 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① ${per}이 ${box}개, 10이 ${bag}개, 1이 ${loose}개입니다. ② 자리마다 차례로 씁니다. ③ 모두 □개입니다.`,
+      total, [box * per, box + bag + loose, total - loose],
+      `${per}이 ${box}개, 10이 ${bag}개, 1이 ${loose}개이므로 ${total}개입니다.`,
+      'placeValue', '문장 상황의 풀이 한 곳 짚기',
+    );
+  }
+
+  if (tag === 'data') {
+    const a = 3 + (seed % 6);
+    const b = 2 + ((seed + 2) % 6);
+    const c = 1 + ((seed + 4) % 5);
+    const total = a + b + c;
+    if (total > limit) return null;
+    return makeQuestion(
+      lesson, difficulty, index,
+      `사과 ${a}명, 배 ${b}명, 포도 ${c}명이 좋아한다고 답했습니다. 조사한 학생 수를 구하는 과정입니다. □에 알맞은 수는? ① 세 가지 수를 모두 더합니다. ② ${a}+${b}=${a + b}입니다. ③ ${a + b}+${c}=□`,
+      `${total}명`, [`${a + b}명`, `${Math.max(a, b, c)}명`, `${total + 1}명`],
+      `표의 수를 모두 더하면 ${total}명입니다.`,
+      'data', '문장 상황의 풀이 한 곳 짚기',
+    );
+  }
+
+  if (tag === 'time') {
+    const start = 1 + (seed % 9);
+    const mins = [20, 30, 40][seed % 3];
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${start}시에 책을 읽기 시작해 ${start}시 ${mins}분에 마쳤습니다. 걸린 시간을 구하는 과정입니다. □에 알맞은 수는? ① 시작은 ${start}시입니다. ② 마친 때는 ${start}시 ${mins}분입니다. ③ 걸린 시간은 □분입니다.`,
+      `${mins}분`, [`${60 - mins}분`, `${start}분`, `${mins + 10}분`],
+      `같은 시각에서 ${mins}분이 지났으므로 걸린 시간은 ${mins}분입니다.`,
+      'time', '문장 상황의 풀이 한 곳 짚기',
+      clockVisualFor(start, 0, '시작과 끝', start, mins),
+    );
+  }
+
+  return null;
+};
+
 const isStepSlot = (difficulty: Difficulty, index: number) => {
   // 풀이 과정 문항은 상의 중심입니다(30문항 중 20문항).
   // 중에서 아예 빼 보았더니 곱셈·길이 재기 단원에서 차시끼리 문항이
@@ -12604,7 +12727,12 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
     generateRawQuestions(lesson, difficulty)
       .map((question, index) =>
         isStepSlot(difficulty, index)
-          ? stepBlankQuestion(lesson, difficulty, index) ?? question
+          // 상은 문장 상황을 읽고 그 풀이의 한 곳을 짚는 문항이 우선입니다.
+          // 중의 풀이 과정 문항은 지금처럼 맨 계산의 단계를 짚습니다 —
+          // 중은 아직 상황과 절차를 한꺼번에 다루는 단계가 아닙니다.
+          ? (difficulty === '상' ? wordStepQuestion(lesson, difficulty, index) : null)
+            ?? stepBlankQuestion(lesson, difficulty, index)
+            ?? question
           // 응용 문항을 먼저 쓰고, 남은 자리의 절반만 새 모양에 내줍니다.
           // 전부 새 모양으로 채우면 이번에는 그 모양 하나가 차시를 덮어
           // 결국 또 같은 문제만 되풀이됩니다. 기존 문항과 섞어야 합니다.
