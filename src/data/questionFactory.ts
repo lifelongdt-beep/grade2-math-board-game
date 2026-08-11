@@ -11615,6 +11615,28 @@ const numberShapes: Shape[] = [
   } },
 ];
 
+  // 자리별 묶음 수 직접 묻기 — 자리를 골고루 돌아가며 묻습니다.
+  {
+    fits: (lesson) => /각 자리의 숫자|자리 수를 알아/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const four = lesson.unitTitle === '네 자리 수';
+      const seed = index * 3 + lesson.lessonNo;
+      const digits = distinctDigits(seed, four ? 4 : 3);
+      const units = four ? [1000, 100, 10, 1] : [100, 10, 1];
+      // 묻는 자리를 슬롯 순번으로 돌려 모든 자리가 나오게 합니다.
+      const at = Math.floor(index / 2) % units.length;
+      const value = digits.reduce((sum, digit, position) => sum + digit * units[position], 0);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}는 ${units[at]}이 몇 개인 수일까요?`,
+        `${digits[at]}개`,
+        [`${digits[(at + 1) % digits.length]}개`, `${value}개`, `${digits[at] + 1}개`],
+        `${units[at]}의 자리 숫자가 ${digits[at]}이므로 ${units[at]}이 ${digits[at]}개입니다.`,
+        'placeValue',
+        shapeStrategy(difficulty, '자료 해석 · 자리별 묶음 수 구하기', '자리별 묶음 수 구하기'),
+      );
+    } },
+
 // ── 곱셈 / 곱셈구구 ────────────────────────────────────────────────
 // 이 차시가 다루는 단입니다. '2단 곱셈구구를 알아볼까요'면 2단만 씁니다.
 // 이걸 보지 않고 아무 단이나 쓰면 2단 차시에 3단 문제가 나옵니다.
