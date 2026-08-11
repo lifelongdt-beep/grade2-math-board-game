@@ -544,10 +544,14 @@ const makeChoices = (answer: string | number, wrongs: Array<string | number>, se
   };
 };
 
+// 난이도에 따라 오답 보기를 답에서 얼마나 떨어뜨릴지 정합니다.
+// limit은 그 차시가 다루는 가장 큰 수입니다. 이것을 넘겨받지 않으면
+// 984에 30을 더해 1014을 내놓는 식으로 단원을 벗어납니다.
 const tuneWrongsForDifficulty = (
   answer: string | number,
   wrongs: Array<string | number>,
   difficulty: Difficulty,
+  limit: number,
 ) => {
   const answerText = String(answer);
   const match = answerText.match(/^(-?\d+)(.*)$/);
@@ -558,14 +562,16 @@ const tuneWrongsForDifficulty = (
   const suffix = match[2];
   if (/[+\-=×÷]/.test(suffix)) return wrongs;
   const step = value >= 1000 ? 100 : value >= 100 ? 10 : 1;
+  // 위로 올리면 범위를 넘는 경우에는 아래로 내려 잡습니다.
+  const up = (gap: number) => (value + gap <= limit ? value + gap : value - gap);
   const format = (next: number) => `${Math.max(0, next)}${suffix}`;
 
   if (difficulty === '하') {
-    return [wrongs[0], format(value + step * 3), format(value - step * 3), ...wrongs.slice(1)];
+    return [wrongs[0], format(up(step * 3)), format(value - step * 3), ...wrongs.slice(1)];
   }
 
   if (difficulty === '상') {
-    return [format(value + step), format(value - step), wrongs[0], ...wrongs.slice(1)];
+    return [format(up(step)), format(value - step), wrongs[0], ...wrongs.slice(1)];
   }
 
   return wrongs;
@@ -848,7 +854,7 @@ const makeQuestion = (
   const leveledSolution = `${difficultyDesign[difficulty].solutionLead} ${solution}`;
   const madeChoices = makeChoices(
     answer,
-    tuneWrongsForDifficulty(answer, wrongs, difficulty),
+    tuneWrongsForDifficulty(answer, wrongs, difficulty, lesson.scope.maxNumber),
     lesson.unitNo * 101 + lesson.lessonNo * 17 + index * 19 + difficultyIndex[difficulty],
   );
   const support = buildLearningSupport(lesson, tag, leveledSolution, leveledStrategy);
