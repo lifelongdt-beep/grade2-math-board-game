@@ -9896,7 +9896,9 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const digits = distinctDigits(seed, four ? 4 : 3);
       const units = four ? [1000, 100, 10, 1] : [100, 10, 1];
       const names = four ? ['천', '백', '십', '일'] : ['백', '십', '일'];
-      const at = seed % digits.length;
+      // 묻는 자리는 슬롯 순번으로 돌립니다. seed로 고르면 중처럼 자리가
+      // 다섯 개뿐인 난이도에서 일의 자리가 한 번도 안 걸릴 수 있습니다.
+      const at = Math.floor(index / 6) % digits.length;
       const value = digits.reduce((sum, digit, position) => sum + digit * units[position], 0);
       const digit = digits[at];
       const worth = digit * units[at];
