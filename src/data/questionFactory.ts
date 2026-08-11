@@ -11464,6 +11464,9 @@ const wordStepQuestion = (
   const tag = primaryTag(lesson);
   const seed = n(lesson, index);
   const limit = lesson.scope.maxNumber;
+  // 상황이 하나뿐이면 상의 스무 자리를 그 하나가 덮어, 차시끼리도
+  // 똑같아집니다. 자리 순번으로 상황을 돌립니다.
+  const situation = Math.floor(index / 3) % 3;
 
   if (tag === 'addition' || tag === 'subtraction') {
     const item = ['구슬', '색종이', '딱지', '사탕'][seed % 4];
@@ -11471,6 +11474,29 @@ const wordStepQuestion = (
     const a = 20 + (seed % 30);
     const b = 12 + ((seed + 5) % 25);
     if (a + b > limit) return null;
+
+    if (situation === 1) {
+      const gone = 5 + (seed % 10);
+      if (a + b - gone < 1) return null;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `운동장에 학생이 ${a}명 있었습니다. ${b}명이 더 오고 ${gone}명이 집에 갔습니다. 지금 운동장에 있는 학생 수를 구하는 과정입니다. □에 알맞은 수는? ① 더 온 만큼 더합니다. ② ${a}+${b}=${a + b}명입니다. ③ ${a + b}-${gone}=□`,
+        `${a + b - gone}명`,
+        [`${a + b}명`, `${a + b + gone}명`, `${Math.max(1, a - gone)}명`],
+        `더 온 만큼 더하고 간 만큼 빼면 ${a + b - gone}명입니다.`,
+        'addition', '오고 간 상황의 풀이 한 곳 짚기',
+      );
+    }
+
+    if (situation === 2) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `빨간 ${item}이 ${a + b}개, 파란 ${item}이 ${b}개 있습니다. 빨간 ${item}이 몇 개 더 많은지 구하는 과정입니다. □에 알맞은 수는? ① '몇 개 더 많은지'는 빼서 구합니다. ② 빨간 것은 ${a + b}개, 파란 것은 ${b}개입니다. ③ ${a + b}-${b}=□`,
+        `${a}개`, [`${a + b + b}개`, `${b}개`, `${a + b}개`],
+        `두 수의 차를 구하면 ${a + b}-${b}=${a}개입니다.`,
+        'subtraction', '얼마나 더 많은지 구하는 풀이 짚기',
+      );
+    }
 
     if (plus) {
       return makeQuestion(
@@ -11497,6 +11523,20 @@ const wordStepQuestion = (
     const groups = 2 + ((seed + 3) % 6);
     if (per * groups > limit) return null;
     const item = ['빵', '귤', '연필', '초콜릿'][seed % 4];
+
+    if (situation === 1) {
+      const eaten = 1 + (seed % 4);
+      if (per * groups - eaten < 1) return null;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `한 접시에 ${subject(item)} ${per}개씩 ${groups}접시가 있었는데 ${eaten}개를 먹었습니다. 남은 ${topic(item)} 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① 처음 수는 ${per}×${groups}=${per * groups}개입니다. ② 먹은 수는 ${eaten}개입니다. ③ ${per * groups}-${eaten}=□`,
+        `${per * groups - eaten}개`,
+        [`${per * groups}개`, `${per * groups + eaten}개`, `${eaten}개`],
+        `곱해서 처음 수를 구한 뒤 먹은 수를 빼면 ${per * groups - eaten}개입니다.`,
+        'multiplication', '곱한 뒤 덜어 내는 풀이 짚기',
+      );
+    }
+
     return makeQuestion(
       lesson, difficulty, index,
       `한 봉지에 ${subject(item)} ${per}개씩 들어 있습니다. ${groups}봉지에 든 ${topic(item)} 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① 한 묶음은 ${per}개입니다. ② 묶음은 ${groups}개입니다. ③ ${per}×${groups}=□`,
@@ -11529,6 +11569,17 @@ const wordStepQuestion = (
     const total = box * per + bag * 10 + loose;
     if (total > limit) return null;
     const item = ['사과', '구슬', '단추'][seed % 3];
+
+    if (situation === 1) {
+      return makeQuestion(
+        lesson, difficulty, index,
+        `책이 ${total}권 있습니다. ${per}권씩 상자에 담으면 몇 상자가 되는지 구하는 과정입니다. □에 알맞은 수는? ① ${total}에서 ${per}이 몇 개인지 봅니다. ② ${per}이 ${box}개입니다. ③ 상자는 □개입니다.`,
+        `${box}상자`, [`${bag}상자`, `${box + 1}상자`, `${total}상자`],
+        `${total}에서 ${per}이 ${box}개이므로 ${box}상자입니다.`,
+        'placeValue', '묶음 수를 세는 풀이 짚기',
+      );
+    }
+
     return makeQuestion(
       lesson, difficulty, index,
       `${subject(item)} ${per}개씩 든 상자 ${box}개, 10개씩 든 봉지 ${bag}개, 낱개 ${loose}개 있습니다. 모두 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① ${per}이 ${box}개, 10이 ${bag}개, 1이 ${loose}개입니다. ② 자리마다 차례로 씁니다. ③ 모두 □개입니다.`,
@@ -12730,7 +12781,9 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
           // 상은 문장 상황을 읽고 그 풀이의 한 곳을 짚는 문항이 우선입니다.
           // 중의 풀이 과정 문항은 지금처럼 맨 계산의 단계를 짚습니다 —
           // 중은 아직 상황과 절차를 한꺼번에 다루는 단계가 아닙니다.
-          ? (difficulty === '상' ? wordStepQuestion(lesson, difficulty, index) : null)
+          ? (difficulty === '상' && Math.floor(index / 3) % 2 === 0
+              ? wordStepQuestion(lesson, difficulty, index)
+              : null)
             ?? stepBlankQuestion(lesson, difficulty, index)
             ?? question
           // 응용 문항을 먼저 쓰고, 남은 자리의 절반만 새 모양에 내줍니다.
