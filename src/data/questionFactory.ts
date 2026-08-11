@@ -11752,6 +11752,20 @@ const wordStepQuestion = (
     const item = ['사과', '구슬', '단추'][seed % 3];
 
     if (situation === 1) {
+      // 묶음 크기를 돌려 가며 물어야 자리마다 골고루 다룹니다.
+      const per2 = four ? [1000, 100, 10][seed % 3] : [100, 10][seed % 2];
+      const count = Math.floor(total / per2);
+      if (count < 1) return null;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `책이 ${total}권 있습니다. ${per2}권씩 상자에 담으면 몇 상자가 되는지 구하는 과정입니다. □에 알맞은 수는? ① ${total}에서 ${per2}이 몇 개인지 봅니다. ② ${per2}이 ${count}개입니다. ③ 상자는 □개입니다.`,
+        `${count}상자`, [`${count + 1}상자`, `${Math.max(1, count - 1)}상자`, `${total}상자`],
+        `${total}에서 ${per2}이 ${count}개이므로 ${count}상자입니다.`,
+        'placeValue', '묶음 수를 세는 풀이 짚기',
+      );
+    }
+
+    if (false) {
       return makeQuestion(
         lesson, difficulty, index,
         `책이 ${total}권 있습니다. ${per}권씩 상자에 담으면 몇 상자가 되는지 구하는 과정입니다. □에 알맞은 수는? ① ${total}에서 ${per}이 몇 개인지 봅니다. ② ${per}이 ${box}개입니다. ③ 상자는 □개입니다.`,
@@ -11786,6 +11800,8 @@ const wordStepQuestion = (
   }
 
   if (tag === 'time') {
+    // 걸린 시간을 구하는 것은 2-2 시각과 시간 6차시부터입니다.
+    if (!/걸린 시간|하루의 시간|달력/.test(lesson.title)) return null;
     const start = 1 + (seed % 9);
     const mins = [20, 30, 40][seed % 3];
     return makeQuestion(
