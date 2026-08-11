@@ -19,10 +19,7 @@ const shapeOf = (prompt: string) =>
 // 풀이 과정 생성기가 차시마다 한 가지 상황만 만들어, 상이 중과 같은
 // 문항을 쓰게 됩니다. 그 생성기에 상황을 두세 가지씩 넣으면 풀리고,
 // 넣는 대로 이 목록에서 지워야 합니다.
-const sameAsMiddle = new Set([
-  '2-1-u3-l5', '2-1-u3-l8', '2-1-u3-l9', '2-1-u3-l10',
-  '2-1-u4-l6', '2-2-u3-l3', '2-2-u3-l5', '2-2-u4-l6',
-]);
+const sameAsMiddle = new Set<string>([]);
 
 const covered = lessons.filter(
   (lesson) => lesson.title !== '단원 도입' && !sameAsMiddle.has(lesson.id));

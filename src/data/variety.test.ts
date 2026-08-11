@@ -27,14 +27,7 @@ const shapeOf = (prompt: string) =>
 // 채워도 모양이 서너 가지에 머뭅니다. 각 차시의 풀이 과정에 상황을
 // 두세 가지씩 넣어야 풀리고, 넣는 대로 이 목록에서 지워야 합니다.
 // (곱셈구구 '문제를 해결', 덧셈과 뺄셈 '□의 값'은 그렇게 해서 지웠습니다.)
-const stillThin = new Set([
-  '2-1-u3-l5', '2-1-u3-l7', '2-1-u3-l8', '2-1-u3-l9', '2-1-u3-l10',
-  '2-1-u4-l6', '2-1-u6-l3', '2-1-u6-l6', '2-1-u6-l7',
-  '2-2-u3-l5', '2-2-u4-l4', '2-2-u4-l6', '2-2-u6-l5', '2-2-u6-l6',
-  // 난이도를 인지 요구 수준으로 다시 나누면서 드러난 차시들입니다.
-  '2-1-u1-l5', '2-2-u2-l8', '2-2-u2-l10',
-  '2-2-u3-l2', '2-2-u3-l3',
-]);
+const stillThin = new Set<string>([]);
 
 const covered = lessons.filter(
   (lesson) => lesson.title !== '단원 도입' && !stillThin.has(lesson.id));
