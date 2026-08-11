@@ -11939,6 +11939,28 @@ type Shape = {
 
 // ── 수(세 자리 수 / 네 자리 수) ────────────────────────────────────
 const numberShapes: Shape[] = [
+  // 자리 숫자 바로 읽기 — 하 수준의 계산 문항
+  {
+    fits: (lesson) => /각 자리의 숫자/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const four = lesson.unitTitle === '네 자리 수';
+      const seed = index * 5 + lesson.lessonNo;
+      const digits = distinctDigits(seed, four ? 4 : 3);
+      const units = four ? [1000, 100, 10, 1] : [100, 10, 1];
+      const names = four ? ['천', '백', '십', '일'] : ['백', '십', '일'];
+      const at = Math.floor(index / 2) % names.length;
+      const value = digits.reduce((sum, digit, position) => sum + digit * units[position], 0);
+      if (value > lesson.scope.maxNumber) return null;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${value}의 ${names[at]}의 자리 숫자는 무엇일까요?`,
+        digits[at],
+        [digits[(at + 1) % digits.length], digits[(at + 2) % digits.length], digits[at] + 1],
+        `${names[at]}의 자리에 있는 숫자는 ${digits[at]}입니다.`,
+        'placeValue', '자리 숫자 바로 읽기',
+      );
+    } },
+
   // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
   {
     // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
@@ -12097,6 +12119,41 @@ const dansOf = (lesson: Lesson): number[] => {
 };
 
 const multiplyShapes: Shape[] = [
+  // 1단과 0의 곱 — 그 차시에서만 쓰는 계산 문항
+  {
+    fits: (lesson) => /1단 곱셈구구와 0의 곱/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 7 + lesson.lessonNo;
+      const k = 2 + (seed % 8);
+      const zero = index % 2 === 0;
+      return makeQuestion(
+        lesson, difficulty, index,
+        zero ? `0×${k}는 얼마일까요?` : `1×${k}는 얼마일까요?`,
+        zero ? 0 : k,
+        zero ? [k, 1, k + 1] : [0, 1, k + 1],
+        zero
+          ? `0을 ${k}번 더해도 0이므로 0입니다.`
+          : `1씩 ${k}묶음이면 ${k}이므로 ${k}입니다.`,
+        'multiplication', zero ? '0의 곱 알아보기' : '1단 곱셈구구 알아보기',
+      );
+    } },
+
+  // 1단·0의 곱의 성질
+  {
+    fits: (lesson) => /1단 곱셈구구와 0의 곱/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 11 + lesson.lessonNo;
+      const k = 2 + (seed % 8);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `어떤 수에 0을 곱하면 얼마가 될까요?`,
+        '0', [`${k}`, '1', '어떤 수 그대로'],
+        `0을 몇 번 더해도 0이므로, 어떤 수에 0을 곱하면 0입니다.`,
+        'multiplication',
+        shapeStrategy(difficulty, '자료 해석 · 0을 곱한 결과 판단하기', '0을 곱한 결과 알기'),
+      );
+    } },
+
   // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
   {
     // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
@@ -12215,6 +12272,41 @@ const multiplyShapes: Shape[] = [
 
 // ── 덧셈과 뺄셈 ────────────────────────────────────────────────────
 const calcShapes: Shape[] = [
+  // □를 바로 구하기 — 하 수준의 계산 문항
+  {
+    fits: (lesson) => /□의 값/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 7 + lesson.lessonNo;
+      const b = 5 + (seed % 14);
+      const a = b + 7 + (seed % 15);
+      if (a + b > lesson.scope.maxNumber) return null;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${a}+□=${a + b}에서 □에 알맞은 수는?`,
+        b, [a, a + b, Math.max(1, b - 1)],
+        `${a + b}에서 ${a}를 빼면 ${b}입니다.`,
+        'subtraction', '□를 바로 구하기',
+      );
+    } },
+
+  // 남은 수 바로 구하기 — 뺄셈 차시의 문장 상황 하나 더
+  {
+    fits: (lesson) => /뺄셈을 해/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 11 + lesson.lessonNo;
+      const all = 40 + (seed % 40);
+      const gone = 11 + ((seed + 3) % 20);
+      if (all > lesson.scope.maxNumber) return null;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `버스에 ${all}명이 타고 있었습니다. ${gone}명이 내렸습니다. 버스에 남은 사람은 몇 명일까요?`,
+        `${all - gone}명`, [`${all + gone}명`, `${gone}명`, `${all - gone + 1}명`],
+        `내린 만큼 빼면 ${all}-${gone}=${all - gone}명입니다.`,
+        'subtraction',
+        shapeStrategy(difficulty, '조건 함께 보기 · 내린 뒤 남은 수 구하기', '남은 수 구하기'),
+      );
+    } },
+
   // 문장 상황을 식으로 세우기 (합치기 / 더 많이)
   {
     fits: (lesson) => /덧셈을 해|여러 가지 방법으로 덧셈/.test(lesson.title),
@@ -12514,6 +12606,25 @@ const figureShapes: Shape[] = [
 
 // ── 길이 재기 ──────────────────────────────────────────────────────
 const lengthShapes: Shape[] = [
+  // 어느 쪽이 얼마나 긴지 판단하기 — 상 수준
+  {
+    fits: (lesson) => /길이의 차/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 29 + lesson.lessonNo;
+      const am = 1 + (seed % 3);
+      const acm = 20 + (seed % 50);
+      const bcm = acm + 10 + (seed % 30);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `끈 ㉮는 ${am}m ${acm}cm, 끈 ㉯는 ${am}m ${bcm}cm입니다. 두 끈에 대한 설명으로 옳은 것은?`,
+        '㉯가 ㉮보다 깁니다',
+        ['㉮가 ㉯보다 깁니다', '두 끈의 길이가 같습니다', '알 수 없습니다'],
+        `m가 같으므로 cm를 견주면 ${bcm}이 ${acm}보다 크니 ㉯가 더 깁니다.`,
+        'measurement',
+        shapeStrategy(difficulty, '자료 해석 · 같은 단위끼리 견주어 판단하기', '같은 단위끼리 견주기'),
+      );
+    } },
+
   // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
   {
     // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
@@ -12680,6 +12791,41 @@ const sortShapes: Shape[] = [
 
 // ── 시각과 시간 ────────────────────────────────────────────────────
 const timeShapes: Shape[] = [
+  // 1시간과 분 바꾸기 — 하 수준의 계산 문항
+  {
+    fits: (lesson) => /걸린 시간|1시간을 알아/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 31 + lesson.lessonNo;
+      const hours = 1 + (seed % 3);
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${hours}시간은 몇 분일까요?`,
+        `${hours * 60}분`,
+        [`${hours * 10}분`, `${hours * 100}분`, `${hours * 60 + 10}분`],
+        `1시간은 60분이므로 ${hours}시간은 ${hours * 60}분입니다.`,
+        'time', '시간을 분으로 바꾸기',
+      );
+    } },
+
+  // 몇 분 뒤의 시각 — 하 수준
+  {
+    fits: (lesson) => /걸린 시간/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 37 + lesson.lessonNo;
+      const hour = 1 + (seed % 9);
+      const from = [10, 15, 20][seed % 3];
+      const add = [10, 20, 25][seed % 3];
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${hour}시 ${from}분에서 ${add}분이 지나면 몇 시 몇 분일까요?`,
+        `${hour}시 ${from + add}분`,
+        [`${hour}시 ${from}분`, `${hour + 1}시 ${from + add}분`, `${hour}시 ${add}분`],
+        `분끼리 더하면 ${from}+${add}=${from + add}분이므로 ${hour}시 ${from + add}분입니다.`,
+        'time', '몇 분 뒤의 시각 구하기',
+        clockVisualFor(hour, from + add, '지난 뒤의 시각'),
+      );
+    } },
+
   // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
   {
     // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
@@ -12956,6 +13102,44 @@ const ruleShapes: Shape[] = [
 // 2-1 곱셈 단원은 곱셈구구를 배우기 전입니다. 묶어 세기와 몇의 몇 배로
 // 곱셈의 뜻을 세우는 단계라, 구구를 쓰는 문제를 내면 안 됩니다.
 const earlyMultiplyShapes: Shape[] = [
+  // 묶음의 전체 수 바로 구하기 — 하 수준
+  {
+    fits: (lesson) => /묶어 세어|여러 가지 방법으로 세어/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 5 + lesson.lessonNo;
+      const per = 2 + (seed % 5);
+      const groups = 2 + ((seed + 2) % 5);
+      if (per * groups > lesson.scope.maxNumber) return null;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${per}개씩 ${groups}묶음은 모두 몇 개일까요?`,
+        `${per * groups}개`,
+        [`${per + groups}개`, `${per * groups + per}개`, `${Math.max(1, per * (groups - 1))}개`],
+        `${per}씩 ${groups}번 세면 ${per * groups}개입니다.`,
+        'multiplication', '묶음의 전체 수 구하기',
+        arrayVisualFor(groups, per, `${per}씩 ${groups}묶음`),
+      );
+    } },
+
+  // 남은 낱개 세기 — 묶고 남는 것이 있는 경우
+  {
+    fits: (lesson) => /묶어 세어/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 13 + lesson.lessonNo;
+      const per = 3 + (seed % 3);
+      const groups = 2 + ((seed + 1) % 4);
+      const left = 1 + (seed % (per - 1));
+      const total = per * groups + left;
+      if (total > lesson.scope.maxNumber) return null;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `구슬 ${total}개를 ${per}개씩 묶으면 ${groups}묶음이 되고 몇 개가 남을까요?`,
+        `${left}개`, [`${per}개`, `${groups}개`, `${left + 1}개`],
+        `${per}씩 ${groups}묶음은 ${per * groups}개이고, ${total}-${per * groups}=${left}개가 남습니다.`,
+        'multiplication', '묶고 남는 수 구하기',
+      );
+    } },
+
   {
     fits: (lesson) => /묶어 세어|여러 가지 방법으로 세어/.test(lesson.title),
     make: (lesson, difficulty, index) => {
