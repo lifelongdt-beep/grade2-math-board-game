@@ -24,10 +24,11 @@ describe('difficulty is a difference in what the question asks', () => {
       const middle = new Set(generateQuestions(lesson, '중').map((q) => shapeOf(q.prompt)));
       const hard = new Set(generateQuestions(lesson, '상').map((q) => shapeOf(q.prompt)));
 
-      const shared = [...hard].filter((shape) => middle.has(shape));
-      // 겹치는 모양이 상 수준 모양의 대부분이면 두 수준을 나눈 뜻이 없습니다.
-      if (hard.size > 0 && shared.length > hard.size * 0.7) {
-        same.push(`${lesson.id}: 상 모양 ${hard.size}가지 중 ${shared.length}가지가 중과 같음`);
+      // 상에만 있는 모양이 몇 가지인지를 봅니다. 겹치는 것을 세면
+      // 문항 수가 많은 차시가 불리해지므로, '상에만 있는 것'을 셉니다.
+      const onlyHard = [...hard].filter((shape) => !middle.has(shape));
+      if (onlyHard.length < 3) {
+        same.push(`${lesson.id}: 상에만 있는 모양이 ${onlyHard.length}가지뿐`);
       }
     }
 

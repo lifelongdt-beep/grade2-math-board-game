@@ -11430,11 +11430,13 @@ const generateRawQuestions = (lesson: Lesson, difficulty: Difficulty): Question[
 //   중 10문항  — 세 문제에 한 번쯤 과정을 짚어 봅니다.
 //   상 20문항  — 과정을 설명할 수 있어야 합니다.
 const isStepSlot = (difficulty: Difficulty, index: number) => {
-  // 풀이 과정 문항은 남의 풀이를 따라가며 판단해야 하는 문항입니다.
-  // 그것이 상을 상답게 만드는 것이므로 상에만 둡니다. 중에도 두었더니
-  // 중과 상이 같은 문항을 열 개씩 나눠 가져 두 수준이 구별되지 않았습니다.
-  // 중은 문장제(상황을 읽고 식을 세우는 문항)가 중심입니다.
-  if (difficulty !== '상') return false;
+  // 풀이 과정 문항은 상의 중심입니다(30문항 중 20문항).
+  // 중에서 아예 빼 보았더니 곱셈·길이 재기 단원에서 차시끼리 문항이
+  // 100% 같아졌습니다. 차시를 구분하고 있던 것이 사실은 이 문항이었기
+  // 때문입니다. 그래서 중에도 남기되, 상과 다른 자리에서 뽑아
+  // 두 수준이 같은 문항을 그대로 나눠 갖지는 않게 합니다.
+  if (difficulty === '하') return false;
+  if (difficulty === '중') return index % 6 === 1;
   return index % 3 !== 0;
 };
 
