@@ -11507,6 +11507,9 @@ const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
   const four = lesson.unitTitle === '네 자리 수';
 
   if (tag === 'placeValue' || tag === 'number') {
+    // 자리값을 다루는 차시에서만 씁니다. 백·천을 처음 만나는 차시에는
+    // 아직 '몇의 자리 숫자'를 말할 단계가 아닙니다.
+    if (!/자리 수를 알아|각 자리|크기를 비교|뛰어 세/.test(lesson.title)) return null;
     const digits = distinctDigits(seed, four ? 4 : 3);
     const units = four ? [1000, 100, 10, 1] : [100, 10, 1];
     const names = four ? ['천', '백', '십', '일'] : ['백', '십', '일'];
@@ -11536,6 +11539,8 @@ const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
   }
 
   if (tag === 'measurement') {
+    // cm와 자를 배운 뒤부터입니다.
+    if (lesson.scope.forbidVisuals?.includes('ruler')) return null;
     const cm = 5 + (seed % 15);
     return [
       { text: '자로 잴 때는 물건의 한쪽 끝을 눈금 0에 맞춥니다.', ok: true },
@@ -11546,6 +11551,8 @@ const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
   }
 
   if (tag === 'time') {
+    // 긴바늘로 분을 읽는 것을 배운 뒤부터입니다.
+    if (/단원 도입/.test(lesson.title)) return null;
     const point = 2 + (seed % 8);
     return [
       { text: '긴바늘이 한 칸 움직이면 5분이 지납니다.', ok: true },
@@ -11574,11 +11581,21 @@ const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
   }
 
   if (tag === 'pattern') {
+    // 덧셈표·곱셈표 이야기는 그 표를 배우는 차시부터입니다.
+    if (/덧셈표|곱셈표/.test(lesson.title)) {
+      const plus = lesson.title.includes('덧셈표');
+      return [
+        { text: `${plus ? '덧셈표' : '곱셈표'}에서 오른쪽으로 갈수록 수가 커집니다.`, ok: true },
+        { text: `${plus ? '덧셈표' : '곱셈표'}는 세로줄과 가로줄을 바꾸어도 값이 같습니다.`, ok: true },
+        { text: `${plus ? '덧셈표' : '곱셈표'}에서 오른쪽으로 갈수록 수가 작아집니다.`, ok: false },
+        { text: `${plus ? '덧셈표' : '곱셈표'}에는 같은 수가 한 번씩만 나옵니다.`, ok: false },
+      ];
+    }
     return [
       { text: '규칙을 찾으려면 되풀이되는 한 묶음을 먼저 찾습니다.', ok: true },
-      { text: '덧셈표에서 오른쪽으로 갈수록 수가 커집니다.', ok: true },
+      { text: '되풀이되는 묶음을 알면 다음에 올 것을 알 수 있습니다.', ok: true },
       { text: '규칙은 맨 끝에서부터 찾는 것이 좋습니다.', ok: false },
-      { text: '덧셈표에서 오른쪽으로 갈수록 수가 작아집니다.', ok: false },
+      { text: '되풀이되는 것이 없어도 규칙이라고 합니다.', ok: false },
     ];
   }
 
@@ -11821,7 +11838,8 @@ type Shape = {
 const numberShapes: Shape[] = [
   // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
   {
-    fits: () => true,
+    // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
+    fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
       const claims = claimsForLesson(lesson, index);
       return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
@@ -11978,7 +11996,8 @@ const dansOf = (lesson: Lesson): number[] => {
 const multiplyShapes: Shape[] = [
   // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
   {
-    fits: () => true,
+    // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
+    fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
       const claims = claimsForLesson(lesson, index);
       return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
@@ -12324,7 +12343,8 @@ const calcShapes: Shape[] = [
 const figureShapes: Shape[] = [
   // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
   {
-    fits: () => true,
+    // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
+    fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
       const claims = claimsForLesson(lesson, index);
       return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
@@ -12393,7 +12413,8 @@ const figureShapes: Shape[] = [
 const lengthShapes: Shape[] = [
   // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
   {
-    fits: () => true,
+    // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
+    fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
       const claims = claimsForLesson(lesson, index);
       return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
@@ -12558,7 +12579,8 @@ const sortShapes: Shape[] = [
 const timeShapes: Shape[] = [
   // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
   {
-    fits: () => true,
+    // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
+    fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
       const claims = claimsForLesson(lesson, index);
       return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
@@ -12675,7 +12697,8 @@ const timeShapes: Shape[] = [
 const dataShapes: Shape[] = [
   // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
   {
-    fits: () => true,
+    // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
+    fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
       const claims = claimsForLesson(lesson, index);
       return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
@@ -12731,7 +12754,8 @@ const dataShapes: Shape[] = [
 const ruleShapes: Shape[] = [
   // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
   {
-    fits: () => true,
+    // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
+    fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
       const claims = claimsForLesson(lesson, index);
       return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
