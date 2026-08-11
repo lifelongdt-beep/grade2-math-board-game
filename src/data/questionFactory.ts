@@ -12126,6 +12126,9 @@ const multiplyShapes: Shape[] = [
       const seed = index * 7 + lesson.lessonNo;
       const k = 2 + (seed % 8);
       const zero = index % 2 === 0;
+      // 맨 계산이라 하에서만 씁니다. 중·상에서는 응용 문항이 그 자리를
+      // 채워야 차시가 받아야 할 응용 문항 몫이 지켜집니다.
+      if (difficulty !== '하') return null;
       return makeQuestion(
         lesson, difficulty, index,
         zero ? `0×${k}는 얼마일까요?` : `1×${k}는 얼마일까요?`,
@@ -12287,6 +12290,32 @@ const calcShapes: Shape[] = [
         `${a + b}에서 ${a}를 빼면 ${b}입니다.`,
         'subtraction', '□를 바로 구하기',
       );
+    } },
+
+  // 빼기 식의 □ 바로 구하기 — □가 다른 자리에 있는 경우
+  {
+    fits: (lesson) => /□의 값/.test(lesson.title),
+    make: (lesson, difficulty, index) => {
+      const seed = index * 13 + lesson.lessonNo;
+      const b = 6 + (seed % 12);
+      const a = b + 9 + (seed % 16);
+      if (a + b > lesson.scope.maxNumber) return null;
+      const backwards = index % 2 === 0;
+      return backwards
+        ? makeQuestion(
+            lesson, difficulty, index,
+            `□-${b}=${a}에서 □에 알맞은 수는?`,
+            a + b, [a, b, Math.max(1, a - b)],
+            `뺀 결과에 뺀 수를 도로 더하면 ${a}+${b}=${a + b}입니다.`,
+            'subtraction', '빼기 전의 수 바로 구하기',
+          )
+        : makeQuestion(
+            lesson, difficulty, index,
+            `${a + b}-□=${a}에서 □에 알맞은 수는?`,
+            b, [a, a + b, b + 1],
+            `처음 수에서 남은 수를 빼면 ${a + b}-${a}=${b}입니다.`,
+            'subtraction', '덜어 낸 수 바로 구하기',
+          );
     } },
 
   // 남은 수 바로 구하기 — 뺄셈 차시의 문장 상황 하나 더
