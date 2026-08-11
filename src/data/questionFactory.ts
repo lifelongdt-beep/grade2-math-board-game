@@ -11710,6 +11710,12 @@ const wordStepQuestion = (
   }
 
   if (tag === 'measurement') {
+    // cm는 2-1 길이 재기 4차시('1cm를 알아볼까요')부터 씁니다. 그전에는
+    // 클립·뼘 같은 임의 단위로 재는 단계입니다.
+    const cmKnown = lesson.unitTitle !== '길이 재기'
+      || lesson.semester === '2-2'
+      || /1cm를 알아|자로 길이|어림/.test(lesson.title);
+    if (!cmKnown) return null;
     const a = 6 + (seed % 12);
     const b = 3 + ((seed + 4) % 9);
     if (a + b > limit) return null;
