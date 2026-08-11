@@ -30,7 +30,7 @@ const unit = (
     unitNo,
     unitTitle: title,
     lessonNo: index + 1,
-    scope: scopeFor(title, lesson.title, index + 1),
+    scope: scopeFor(semester, title, lesson.title, index + 1),
   })),
 });
 
@@ -41,7 +41,12 @@ const unit = (
 // 처음에는 단원마다 '쓸 수 없는 그림'을 길게 적었는데, 실제 문항이 정당하게
 // 쓰고 있는 그림까지 막아 버렸습니다. 그래서 확실히 어긋나는 것만 적습니다.
 // 어긋난다는 것은 '그 단원에서 아직 배우지 않은 도구'라는 뜻입니다.
-const scopeFor = (unitTitle: string, lessonTitle: string, lessonNo: number): LessonScope => {
+const scopeFor = (
+  semester: '2-1' | '2-2',
+  unitTitle: string,
+  lessonTitle: string,
+  lessonNo: number,
+): LessonScope => {
   const dans = [2, 3, 4, 5, 6, 7, 8, 9].filter((dan) => lessonTitle.includes(`${dan}단`));
 
   // 시계와 달력은 '시각과 시간' 단원의 도구입니다. 달력은 그중에서도
@@ -52,8 +57,12 @@ const scopeFor = (unitTitle: string, lessonTitle: string, lessonNo: number): Les
 
   // 자와 임의 단위(클립·뼘)는 '길이 재기' 단원의 도구입니다.
   // 그 안에서도 자는 1cm를 배운 뒤부터, 임의 단위는 그전까지입니다.
+  // 1학기 길이 재기는 3차시까지 클립·뼘 같은 임의 단위로 재고 4차시에
+  // 1cm를 배웁니다. 그전에는 자를 그리면 안 됩니다.
+  // 2학기 길이 재기는 자를 이미 배운 뒤라 처음부터 자를 씁니다.
+  const beforeRuler = semester === '2-1' && unitTitle === '길이 재기' && lessonNo <= 3;
   const lengthTools = unitTitle === '길이 재기'
-    ? (lessonNo <= 3 ? ['ruler'] : ['unit-measure'])
+    ? (beforeRuler ? ['ruler'] : ['unit-measure'])
     : ['ruler', 'unit-measure'];
 
   // 덧셈표·곱셈표는 규칙 찾기와 곱셈구구에서만 씁니다.
@@ -115,7 +124,9 @@ const scopeFor = (unitTitle: string, lessonTitle: string, lessonNo: number): Les
   }
 
   if (unitTitle === '시각과 시간') {
-    return { maxNumber: 100, representation: 'semi', forbidVisuals };
+    // 하루는 1440분입니다. '2시간은 몇 분일까요'(120), '하루는 몇 시간'(24)
+    // 처럼 시간을 분으로 바꾸면 100을 훌쩍 넘으므로 하루만큼 열어 둡니다.
+    return { maxNumber: 1440, representation: 'semi', forbidVisuals };
   }
 
   if (unitTitle === '표와 그래프') {
