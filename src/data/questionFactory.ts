@@ -11613,8 +11613,6 @@ const numberShapes: Shape[] = [
       placeValueVisualFor(value, '자리값 살펴보기', four ? 4 : 3),
     );
   } },
-];
-
   // 자리별 묶음 수 직접 묻기 — 자리를 골고루 돌아가며 묻습니다.
   {
     fits: (lesson) => /각 자리의 숫자|자리 수를 알아/.test(lesson.title),
@@ -11636,6 +11634,7 @@ const numberShapes: Shape[] = [
         shapeStrategy(difficulty, '자료 해석 · 자리별 묶음 수 구하기', '자리별 묶음 수 구하기'),
       );
     } },
+];
 
 // ── 곱셈 / 곱셈구구 ────────────────────────────────────────────────
 // 이 차시가 다루는 단입니다. '2단 곱셈구구를 알아볼까요'면 2단만 씁니다.
