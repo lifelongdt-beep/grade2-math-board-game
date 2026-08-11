@@ -340,4 +340,8 @@ export interface AnswerRecord {
   attempts: number;
   responseMs: number;
   answeredAt: string;
+  // 틀렸을 때, 고른 보기가 무엇을 뜻하는지입니다.
+  // 48+25를 63으로 고른 아이와 73으로 고른 아이는 서로 다른 도움이
+  // 필요한데, '오답'으로만 적으면 그 차이가 사라집니다.
+  chosenMeaning?: string;
 }

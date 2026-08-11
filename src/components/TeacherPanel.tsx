@@ -104,6 +104,17 @@ const useAnalytics = (records: AnswerRecord[], players: Player[]) =>
     // 그냥 맞힌 것과는 다른 이야기가 됩니다.
     const secondTryCorrect = mine.filter((record) => record.attempts > 1 && record.correct).length;
 
+    // 되풀이되는 실수입니다. '자리값 유형에서 어려움'보다
+    // '받아올림한 1을 빠뜨림'이 무엇을 가르쳐야 할지 알려 줍니다.
+    const mistakeCounts = wrong.reduce<Record<string, number>>((acc, record) => {
+      if (!record.chosenMeaning) return acc;
+      acc[record.chosenMeaning] = (acc[record.chosenMeaning] ?? 0) + 1;
+      return acc;
+    }, {});
+    const commonMistake = Object.entries(mistakeCounts)
+      .filter(([, count]) => count >= 2)
+      .sort((a, b) => b[1] - a[1])[0];
+
     return {
       player,
       total: mine.length,
@@ -115,6 +126,7 @@ const useAnalytics = (records: AnswerRecord[], players: Player[]) =>
       strongest,
       topLevel,
       secondTryCorrect,
+      commonMistake: commonMistake ? { what: commonMistake[0], times: commonMistake[1] } : null,
       typeCounts,
     };
   });
@@ -146,7 +158,12 @@ const narrativeFor = (item: ReturnType<typeof useAnalytics>[number], lesson: Les
     parts.push(`특히 ${item.strongest} 유형의 문항을 여러 차례 정확하게 해결함.`);
   }
 
-  if (rate >= 80) {
+  if (item.commonMistake) {
+    // 어느 유형이 약한지보다, 무엇을 어떻게 틀리는지가 지도에 쓰입니다.
+    parts.push(
+      `‘${item.commonMistake.what}’ 실수가 ${item.commonMistake.times}차례 되풀이되어, 그 부분을 짚어 주는 지도가 필요함.`,
+    );
+  } else if (rate >= 80) {
     parts.push('문제의 조건을 끝까지 확인하는 태도가 안정적으로 자리 잡았음.');
   } else if (item.wrong > 0) {
     parts.push(
@@ -191,7 +208,7 @@ const buildAnalysisWorkbook = (
   ];
 
   const studentRows = [
-    ['학생', '출석번호', '난이도', '푼 문제', '정답', '오답', '정답률(%)', '평균 시간(초)', '취약 유형', '취약 전략', '오답 유형별 개수', '종합 평가'],
+    ['학생', '출석번호', '난이도', '푼 문제', '정답', '오답', '정답률(%)', '평균 시간(초)', '취약 유형', '취약 전략', '오답 유형별 개수', '되풀이되는 실수', '종합 평가'],
     ...analytics.map((item) => [
       item.player.name,
       item.player.attendanceNo,
@@ -206,6 +223,7 @@ const buildAnalysisWorkbook = (
       Object.entries(item.typeCounts)
         .map(([type, count]) => `${type} ${count}`)
         .join(', ') || '없음',
+      item.commonMistake ? `${item.commonMistake.what} ${item.commonMistake.times}회` : '없음',
       narrativeFor(item, lesson),
     ]),
   ];
@@ -403,6 +421,10 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
                 <div>
                   <dt>취약 전략</dt>
                   <dd>{item.weakStrategy}</dd>
+                </div>
+                <div>
+                  <dt>되풀이되는 실수</dt>
+                  <dd>{item.commonMistake ? `${item.commonMistake.what} ${item.commonMistake.times}회` : '아직 없음'}</dd>
                 </div>
               </dl>
               <p className="student-narrative">{narrativeFor(item, lesson)}</p>
