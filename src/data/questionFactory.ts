@@ -1,4 +1,6 @@
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, PlaneShapeVisualItem, Question, QuestionVisual } from '../types';
+import { questionBank } from './questionBank';
+import { buildFromTemplate, templateFits } from './questionTemplate';
 
 const difficultyIndex: Record<Difficulty, number> = {
   하: 0,
@@ -13290,6 +13292,20 @@ const demandsFor: Record<Difficulty, Demand[]> = {
   상: ['reason', 'connect'],
 };
 
+// 데이터로 적힌 문항 중 이 차시·난이도에 맞는 것을 하나 씁니다.
+// 코드로 쓴 생성기와 나란히 돌아가므로, 옮겨 가는 동안에도 앱은 그대로
+// 동작합니다. 문항을 하나씩 데이터로 옮길 때마다 코드가 줄어듭니다.
+const bankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  const wanted = demandsFor[difficulty];
+  const usable = questionBank.filter(
+    (template) => templateFits(template, lesson) && wanted.includes(template.demand),
+  );
+  if (usable.length === 0) return null;
+
+  const template = usable[Math.floor(index / 3) % usable.length];
+  return buildFromTemplate(template, lesson, difficulty, index, makeQuestion);
+};
+
 const variedQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
   // 이 차시에 어울리는 모양만 남깁니다.
   const shapes = shapesForLesson(lesson).filter((shape) => shape.fits(lesson));
@@ -13345,7 +13361,10 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
           // 새 모양은 응용 문항이 없는 자리를 채웁니다. 자리를 고를 때
           // index를 2나 4로 거르지 않는 것은, 상 수준에서는 남는 자리가
           // 3칸 간격이라 늘 같은 나머지만 나오기 때문입니다.
-          : (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
+          // 데이터로 적힌 문항을 먼저 봅니다. 없으면 코드로 쓴 문항이
+          // 그대로 이어받습니다.
+          : (Math.floor(index / 3) % 4 === 3 ? bankQuestion(lesson, difficulty, index) : null)
+            ?? (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
             ?? challengeQuestion(lesson, difficulty, index)
             ?? richQuestionFor(lesson, difficulty, index)
             ?? question)
