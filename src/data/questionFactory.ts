@@ -11567,7 +11567,8 @@ const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
     return [
       { text: '긴바늘이 한 칸 움직이면 5분이 지납니다.', ok: true },
       { text: `긴바늘이 ${point}을 가리키면 ${point * 5}분입니다.`, ok: true },
-      { text: '짧은바늘이 한 바퀴 돌면 하루가 지납니다.', ok: false },
+      // '하루'는 7차시 내용이라 여기서 쓸 수 없습니다.
+      { text: '긴바늘이 한 칸 움직이면 1분이 지납니다.', ok: false },
       { text: `긴바늘이 ${point}을 가리키면 ${point}분입니다.`, ok: false },
     ];
   }
