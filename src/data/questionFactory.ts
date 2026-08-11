@@ -518,10 +518,15 @@ const rotate = <T,>(items: T[], seed: number): T[] => {
 const makeChoices = (answer: string | number, wrongs: Array<string | number>, seed: number) => {
   const answerText = String(answer);
   const unique = [answerText, ...wrongs.map(String)].filter((value, index, arr) => arr.indexOf(value) === index);
+  // 보기가 넷이 안 되면 답 언저리 수로 채웁니다. 이때 위로만 더하면
+  // 984에서 1014가 나오는 식으로 그 차시의 수 범위를 벗어납니다.
+  // 아래쪽을 먼저 쓰고, 내려갈 자리가 없을 때만 위로 올립니다.
   const fallbackChoice = (delta: number) => {
     const match = answerText.match(/^(-?\d+)(.*)$/);
     if (!match) return `${answerText} 보기 ${delta}`;
-    return `${Math.max(0, Number(match[1]) + delta)}${match[2]}`;
+    const value = Number(match[1]);
+    const down = value - delta;
+    return `${down > 0 ? down : value + delta}${match[2]}`;
   };
   let delta = 1;
   while (unique.length < 4) {
