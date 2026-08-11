@@ -11542,6 +11542,16 @@ const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
     // cm와 자를 배운 뒤부터입니다.
     if (lesson.scope.forbidVisuals?.includes('ruler')) return null;
     const cm = 5 + (seed % 15);
+    // 자로 재는 방법은 2-1 길이 재기 5차시부터입니다.
+    const rulerKnown = lesson.semester === '2-2' || /자로 길이|어림/.test(lesson.title);
+    if (!rulerKnown) {
+      return [
+        { text: `1cm가 ${cm}번이면 ${cm}cm입니다.`, ok: true },
+        { text: 'cm는 길이를 나타내는 단위입니다.', ok: true },
+        { text: `1cm가 ${cm}번이면 ${cm}m입니다.`, ok: false },
+        { text: 'cm는 무게를 나타내는 단위입니다.', ok: false },
+      ];
+    }
     return [
       { text: '자로 잴 때는 물건의 한쪽 끝을 눈금 0에 맞춥니다.', ok: true },
       { text: `1m는 100cm와 같습니다.`, ok: true },
@@ -11729,6 +11739,9 @@ const wordStepQuestion = (
   }
 
   if (tag === 'placeValue' || tag === 'number') {
+    // 2057처럼 자리마다 숫자가 다른 수는 '세(네) 자리 수를 알아볼까요'
+    // 차시부터입니다. 백·천을 처음 만나는 차시에는 아직 이릅니다.
+    if (!/자리 수를 알아|각 자리|크기를 비교|뛰어 세/.test(lesson.title)) return null;
     const four = lesson.unitTitle === '네 자리 수';
     const per = four ? 1000 : 100;
     const box = 2 + (seed % 6);
