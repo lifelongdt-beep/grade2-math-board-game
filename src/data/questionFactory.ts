@@ -9334,7 +9334,16 @@ const withRichVisual = (question: Question, index: number, lesson: Lesson): Ques
   // 차시가 아직 배우지 않은 도구는 그리지 않습니다. 예전에는 이것을
   // 생성기마다 조심해야 했고, 그래서 자를 배우기 전 차시에 자가 나왔습니다.
   // 이제는 차시 선언 한 곳에서 막습니다.
-  if (visual && lesson.scope.forbidVisuals?.includes(visual.kind)) return question;
+  if (visual && lesson.scope.forbidVisuals?.includes(visual.kind)) {
+    // 다만 그냥 지우면 그림이 하나도 없는 차시가 생깁니다. 자를 배우기 전
+    // 길이 재기 차시에는 자 대신 그 차시가 실제로 쓰는 것 — 클립을 이어
+    // 놓은 그림 — 을 그립니다.
+    if (visual.kind === 'ruler' && lesson.unitTitle === '길이 재기') {
+      const clips = 4 + (index % 5);
+      return { ...question, visual: unitMeasureVisualFor('연필', '클립', clips) };
+    }
+    return question;
+  }
   return visual ? { ...question, visual } : question;
 };
 
