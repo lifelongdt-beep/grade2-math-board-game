@@ -7,9 +7,12 @@ import type { Difficulty } from '../types';
 // 읽을 것이 많고 단계를 따라가야 해서, 답만 묻는 문항보다 어렵습니다.
 // 그래서 난이도마다 몇 문항을 줄지 다르게 정해 두었습니다.
 //   하  0문항 — 아직 과정을 따라갈 단계가 아닙니다. 먼저 답을 낼 수 있어야 합니다.
-//   중 10문항 — 세 문제에 한 번쯤 과정을 짚어 봅니다.
-//   상 20문항 — 과정을 설명할 수 있어야 합니다.
-const expectedSteps: Record<Difficulty, number> = { 하: 0, 중: 10, 상: 20 };
+//   중  0문항 — 중은 문장제가 중심입니다. 상황을 읽고 어떤 식을 세울지
+//               스스로 정하는 것이 이 수준의 일입니다.
+//   상 20문항 — 남의 풀이를 따라가며 판단하는 것이 이 수준의 일입니다.
+//               중에도 두었더니 두 수준이 같은 문항을 나눠 가져 구별되지
+//               않았습니다.
+const expectedSteps: Record<Difficulty, number> = { 하: 0, 중: 0, 상: 20 };
 
 describe('step coverage', () => {
   it('gives each difficulty the share of working-out questions it should have', () => {

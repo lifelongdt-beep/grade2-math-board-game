@@ -11430,8 +11430,11 @@ const generateRawQuestions = (lesson: Lesson, difficulty: Difficulty): Question[
 //   중 10문항  — 세 문제에 한 번쯤 과정을 짚어 봅니다.
 //   상 20문항  — 과정을 설명할 수 있어야 합니다.
 const isStepSlot = (difficulty: Difficulty, index: number) => {
-  if (difficulty === '하') return false;
-  if (difficulty === '중') return index % 3 === 1;
+  // 풀이 과정 문항은 남의 풀이를 따라가며 판단해야 하는 문항입니다.
+  // 그것이 상을 상답게 만드는 것이므로 상에만 둡니다. 중에도 두었더니
+  // 중과 상이 같은 문항을 열 개씩 나눠 가져 두 수준이 구별되지 않았습니다.
+  // 중은 문장제(상황을 읽고 식을 세우는 문항)가 중심입니다.
+  if (difficulty !== '상') return false;
   return index % 3 !== 0;
 };
 
@@ -11560,7 +11563,10 @@ const numberShapes: Shape[] = [
     return makeQuestion(
       lesson, difficulty, index,
       `${a}와 ${b} 중 더 ${askBig ? '큰' : '작은'} 수는 얼마일까요?`,
-      askBig ? b : a, [askBig ? a : b, a + b, Math.abs(a - b)],
+      askBig ? b : a,
+      // a+b는 두 수를 더한 값이라 단원 범위를 넘습니다. 자리 하나만 보고
+      // 멈춘 경우를 오답 보기로 둡니다.
+      [askBig ? a : b, head * (four ? 1000 : 100), Math.abs(a - b)],
       `가장 높은 자리가 같으므로 다음 자리를 견주면 ${askBig ? b : a}이(가) 더 ${askBig ? '큽니다' : '작습니다'}.`,
       'placeValue', shapeStrategy(difficulty, '자료 해석 · 자리마다 견주어 크기 비교하기', '자리마다 견주어 크기 비교하기'),
     );
