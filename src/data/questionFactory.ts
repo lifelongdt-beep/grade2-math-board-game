@@ -9866,7 +9866,9 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const units = four ? [1000, 100, 10, 1] : [100, 10, 1];
       const marks = ['①', '②', '③', '④'];
       const value = digits.reduce((sum, digit, at) => sum + digit * units[at], 0);
-      const blank = seed % digits.length;
+      // 비우는 자리도 슬롯 순번으로 돌립니다. seed로 고르면 자리가 적은
+      // 난이도에서 일의 자리가 한 번도 안 걸릴 수 있습니다.
+      const blank = Math.floor(index / 6) % digits.length;
 
       const steps = digits
         .map((digit, at) =>
