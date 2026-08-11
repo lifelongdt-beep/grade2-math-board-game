@@ -1194,7 +1194,9 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       return makeQuestion(
         lesson, difficulty, index,
         `${a}과 ${b} 중 더 큰 수는?`,
-        b, [a, a + b, Math.abs(b - a)],
+        // a+b는 두 수를 더한 값이라 단원을 벗어납니다. 자리 하나만 보고
+        // 판단한 경우를 오답 보기로 둡니다.
+        b, [a, Math.max(a, b) - Math.abs(b - a) * 2 > 0 ? Math.max(a, b) - Math.abs(b - a) * 2 : a - 1, Math.abs(b - a)],
         `가장 높은 자리부터 차례로 비교하면 ${b}이 더 큽니다.`,
         'number', '두 수의 크기 비교하기',
       );
@@ -12575,8 +12577,8 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
           // 새 모양은 응용 문항이 없는 자리를 채웁니다. 자리를 고를 때
           // index를 2나 4로 거르지 않는 것은, 상 수준에서는 남는 자리가
           // 3칸 간격이라 늘 같은 나머지만 나오기 때문입니다.
-          : challengeQuestion(lesson, difficulty, index)
-            ?? (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
+          : (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
+            ?? challengeQuestion(lesson, difficulty, index)
             ?? richQuestionFor(lesson, difficulty, index)
             ?? question)
       .map((question, index) => withRichVisual(question, index, lesson))
