@@ -33,11 +33,11 @@ const stub = (
     studentConcept: '',
     studentHint: '',
     coreConcept: '',
-    readingTip: '',
+    readStrategy: '',
     steps: [],
     misconceptionTip: '',
-    checkQuestion: '',
     textbookConnection: '',
+    selfCheck: '',
   },
 });
 
