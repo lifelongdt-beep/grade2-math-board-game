@@ -11446,6 +11446,145 @@ const generateRawQuestions = (lesson: Lesson, difficulty: Difficulty): Question[
 //   하  0문항  — 먼저 답을 낼 수 있어야 합니다.
 //   중 10문항  — 세 문제에 한 번쯤 과정을 짚어 봅니다.
 //   상 20문항  — 과정을 설명할 수 있어야 합니다.
+// ── 여러 개를 한꺼번에 판단하는 문항 ──────────────────────────────
+// 지도서가 강조하는 '진입점과 출구점이 여러 개인 과제'는 답이 하나인
+// 4지선다와 맞지 않습니다. 그렇다고 여러 개를 눌러 고르게 하면 전자칠판
+// 조작이 늘어납니다.
+//
+// ㄱ·ㄴ·ㄷ·ㄹ 네 문장을 주고 '옳은 것을 모두 고른 것은?'을 물으면,
+// 보기는 'ㄱ, ㄹ'처럼 조합이 됩니다. 누르는 것은 하나지만 판단은 네 번
+// 해야 하므로, 4지선다 틀 안에서 여러 개를 판단하게 됩니다.
+type Claim = { text: string; ok: boolean };
+
+// 네 문장 중 옳은 것(또는 옳지 않은 것) 둘을 답으로 하는 문항을 만듭니다.
+const pickAllQuestion = (
+  lesson: Lesson,
+  difficulty: Difficulty,
+  index: number,
+  claims: Claim[],
+): Question | null => {
+  if (claims.length !== 4) return null;
+  const trueCount = claims.filter((claim) => claim.ok).length;
+  if (trueCount !== 2) return null;
+
+  const labels = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ'];
+  const seed = n(lesson, index);
+  const askOk = seed % 2 === 0;
+
+  const wanted = claims
+    .map((claim, at) => ({ ...claim, label: labels[at] }))
+    .filter((claim) => (askOk ? claim.ok : !claim.ok))
+    .map((claim) => claim.label);
+  const answer = wanted.join(', ');
+
+  // 나머지 짝들을 오답 보기로 씁니다.
+  const pairs: string[] = [];
+  for (let a = 0; a < labels.length; a += 1) {
+    for (let b = a + 1; b < labels.length; b += 1) {
+      pairs.push(`${labels[a]}, ${labels[b]}`);
+    }
+  }
+  const wrongs = pairs.filter((pair) => pair !== answer).slice(0, 3);
+
+  const listed = claims
+    .map((claim, at) => `${labels[at]} ${claim.text}`)
+    .join(' ');
+
+  return makeQuestion(
+    lesson, difficulty, index,
+    `${listed} 위에서 옳${askOk ? '은' : '지 않은'} 것을 모두 고른 것은?`,
+    answer, wrongs,
+    `${wanted.join('과 ')}이 옳${askOk ? '은' : '지 않은'} 설명입니다.`,
+    primaryTag(lesson),
+    shapeStrategy(difficulty, '자료 해석 · 여러 설명을 하나씩 판단하기', '설명을 하나씩 판단하기'),
+  );
+};
+
+// 차시 내용으로 네 문장을 만듭니다. 옳은 것 둘, 옳지 않은 것 둘입니다.
+const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
+  const tag = primaryTag(lesson);
+  const seed = n(lesson, index);
+  const four = lesson.unitTitle === '네 자리 수';
+
+  if (tag === 'placeValue' || tag === 'number') {
+    const digits = distinctDigits(seed, four ? 4 : 3);
+    const units = four ? [1000, 100, 10, 1] : [100, 10, 1];
+    const names = four ? ['천', '백', '십', '일'] : ['백', '십', '일'];
+    const value = digits.reduce((sum, digit, at) => sum + digit * units[at], 0);
+    if (value > lesson.scope.maxNumber) return null;
+    const at = seed % (names.length - 1);
+    return [
+      { text: `${value}에서 ${digits[at]}은 ${names[at]}의 자리 숫자입니다.`, ok: true },
+      { text: `${value}에서 ${digits[at]}이 나타내는 값은 ${digits[at] * units[at]}입니다.`, ok: true },
+      { text: `${value}에서 ${digits[at]}이 나타내는 값은 ${digits[at]}입니다.`, ok: false },
+      { text: `${value}는 ${names[names.length - 1]}의 자리가 가장 높은 자리입니다.`, ok: false },
+    ];
+  }
+
+  if (tag === 'multiplication') {
+    const dans = lesson.scope.dans ?? [];
+    if (dans.length === 0) return null;
+    const dan = dans[seed % dans.length];
+    const times = 3 + (seed % 5);
+    if (dan * times > lesson.scope.maxNumber) return null;
+    return [
+      { text: `${dan}×${times}는 ${dan}씩 ${times}묶음입니다.`, ok: true },
+      { text: `${dan}단은 곱하는 수가 1 커지면 ${dan}씩 커집니다.`, ok: true },
+      { text: `${dan}×${times}는 ${dan}과 ${times}를 더한 것과 같습니다.`, ok: false },
+      { text: `${dan}단은 곱하는 수가 커져도 곱은 그대로입니다.`, ok: false },
+    ];
+  }
+
+  if (tag === 'measurement') {
+    const cm = 5 + (seed % 15);
+    return [
+      { text: '자로 잴 때는 물건의 한쪽 끝을 눈금 0에 맞춥니다.', ok: true },
+      { text: `1m는 100cm와 같습니다.`, ok: true },
+      { text: `${cm}cm는 ${cm}m와 같습니다.`, ok: false },
+      { text: '자로 잴 때는 어느 눈금에서 시작해도 길이가 같습니다.', ok: false },
+    ];
+  }
+
+  if (tag === 'time') {
+    const point = 2 + (seed % 8);
+    return [
+      { text: '긴바늘이 한 칸 움직이면 5분이 지납니다.', ok: true },
+      { text: `긴바늘이 ${point}을 가리키면 ${point * 5}분입니다.`, ok: true },
+      { text: '짧은바늘이 한 바퀴 돌면 하루가 지납니다.', ok: false },
+      { text: `긴바늘이 ${point}을 가리키면 ${point}분입니다.`, ok: false },
+    ];
+  }
+
+  if (tag === 'data') {
+    return [
+      { text: '표는 항목별 수를 정확히 알아보기 좋습니다.', ok: true },
+      { text: '그래프는 많고 적음을 한눈에 알아보기 좋습니다.', ok: true },
+      { text: '표는 많고 적음을 한눈에 알아보기 좋습니다.', ok: false },
+      { text: '그래프에서는 조사한 사람의 이름을 알 수 있습니다.', ok: false },
+    ];
+  }
+
+  if (tag === 'shape') {
+    return [
+      { text: '삼각형은 곧은 선 3개로 둘러싸여 있습니다.', ok: true },
+      { text: '사각형은 꼭짓점이 4개입니다.', ok: true },
+      { text: '원은 곧은 선으로 둘러싸여 있습니다.', ok: false },
+      { text: '도형은 방향이 달라지면 다른 도형이 됩니다.', ok: false },
+    ];
+  }
+
+  if (tag === 'pattern') {
+    return [
+      { text: '규칙을 찾으려면 되풀이되는 한 묶음을 먼저 찾습니다.', ok: true },
+      { text: '덧셈표에서 오른쪽으로 갈수록 수가 커집니다.', ok: true },
+      { text: '규칙은 맨 끝에서부터 찾는 것이 좋습니다.', ok: false },
+      { text: '덧셈표에서 오른쪽으로 갈수록 수가 작아집니다.', ok: false },
+    ];
+  }
+
+  return null;
+};
+
 // ── 상 수준: 문장제이면서 풀이 과정 한 곳을 묻는 문항 ────────────────
 // 지금까지 상의 풀이 과정 문항은 '48+25를 계산하는 과정입니다'처럼
 // 맨 계산에 단계만 붙인 것이었습니다. 그러면 상황을 읽어 식을 세우는
@@ -11680,6 +11819,14 @@ type Shape = {
 
 // ── 수(세 자리 수 / 네 자리 수) ────────────────────────────────────
 const numberShapes: Shape[] = [
+  // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
+  {
+    fits: () => true,
+    make: (lesson, difficulty, index) => {
+      const claims = claimsForLesson(lesson, index);
+      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+    } },
+
   // A. 같은 값을 다른 묶음으로 나타내기
   {
     fits: (lesson) => /세 자리 수를 알아|네 자리 수를 알아/.test(lesson.title),
@@ -11829,6 +11976,14 @@ const dansOf = (lesson: Lesson): number[] => {
 };
 
 const multiplyShapes: Shape[] = [
+  // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
+  {
+    fits: () => true,
+    make: (lesson, difficulty, index) => {
+      const claims = claimsForLesson(lesson, index);
+      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+    } },
+
   // B. 두 곱 비교
   {
     fits: (lesson) => /곱셈구구를 이용|단원 종합|학기 종합/.test(lesson.title),
@@ -12167,6 +12322,14 @@ const calcShapes: Shape[] = [
 
 // ── 여러 가지 도형 ─────────────────────────────────────────────────
 const figureShapes: Shape[] = [
+  // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
+  {
+    fits: () => true,
+    make: (lesson, difficulty, index) => {
+      const claims = claimsForLesson(lesson, index);
+      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+    } },
+
   // 성질을 듣고 도형 이름 찾기
   {
     fits: (lesson) => /을 알아보고 찾아/.test(lesson.title),
@@ -12228,6 +12391,14 @@ const figureShapes: Shape[] = [
 
 // ── 길이 재기 ──────────────────────────────────────────────────────
 const lengthShapes: Shape[] = [
+  // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
+  {
+    fits: () => true,
+    make: (lesson, difficulty, index) => {
+      const claims = claimsForLesson(lesson, index);
+      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+    } },
+
   // 자로 잴 때 0이 아닌 곳에서 시작한 경우
   {
     fits: (lesson) => /자로 길이를 재/.test(lesson.title),
@@ -12385,6 +12556,14 @@ const sortShapes: Shape[] = [
 
 // ── 시각과 시간 ────────────────────────────────────────────────────
 const timeShapes: Shape[] = [
+  // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
+  {
+    fits: () => true,
+    make: (lesson, difficulty, index) => {
+      const claims = claimsForLesson(lesson, index);
+      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+    } },
+
   // 몇 시 몇 분 전
   {
     fits: (lesson) => /여러 가지 방법으로 시각/.test(lesson.title),
@@ -12494,6 +12673,14 @@ const timeShapes: Shape[] = [
 
 // ── 표와 그래프 ────────────────────────────────────────────────────
 const dataShapes: Shape[] = [
+  // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
+  {
+    fits: () => true,
+    make: (lesson, difficulty, index) => {
+      const claims = claimsForLesson(lesson, index);
+      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+    } },
+
   // 표에서 빠진 칸 구하기
   {
     fits: (lesson) => /표로 나타내/.test(lesson.title),
@@ -12542,6 +12729,14 @@ const dataShapes: Shape[] = [
 
 // ── 규칙 찾기 ──────────────────────────────────────────────────────
 const ruleShapes: Shape[] = [
+  // 여러 설명을 한꺼번에 판단하기 (ㄱ·ㄴ·ㄷ·ㄹ 조합)
+  {
+    fits: () => true,
+    make: (lesson, difficulty, index) => {
+      const claims = claimsForLesson(lesson, index);
+      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+    } },
+
   // 규칙을 말로 설명한 것 고르기
   {
     fits: (lesson) => /무늬에서 규칙/.test(lesson.title),
