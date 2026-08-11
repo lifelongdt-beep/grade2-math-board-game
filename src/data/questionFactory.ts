@@ -12493,12 +12493,59 @@ const shapesForLesson = (lesson: Lesson): Shape[] => {
 
 // 슬롯 번호에 따라 모양을 돌려 씁니다. 한 차시 안에서 같은 모양이
 // 연달아 나오지 않도록 하는 것이 목적입니다.
+// ── 인지 요구 수준으로 난이도 정하기 ──────────────────────────────
+// 지금까지 난이도는 '풀이 과정 문항을 몇 개 넣는가'로만 정해졌습니다.
+// 그러다 보니 같은 문항이 중에도 상에도 그대로 나오고, 보기만 조금
+// 달라졌습니다. 지도서가 말하는 기준은 그것이 아니라 과제의 인지적
+// 요구 수준(Stein & Smith)입니다. 무엇을 해내야 풀 수 있는가로 나눕니다.
+//
+//   recall   아는 것을 꺼내거나 배운 절차를 그대로 수행함
+//            예: 100이 3개, 10이 2개, 1이 5개인 수는?
+//   connect  상황을 읽고 어떤 식을 세울지 스스로 정해야 함
+//            예: 상자 3개, 봉지 4개, 낱개 6개면 모두 몇 개?
+//   reason   풀이를 이해하고 판단하거나 거꾸로 생각해야 함
+//            예: 112를 다른 방법으로 나타내면? 이 풀이에서 빠진 곳은?
+type Demand = 'recall' | 'connect' | 'reason';
+
+// 문항이 스스로 밝히는 전략 이름에서 요구 수준을 읽습니다.
+const demandOfStrategy = (strategy: string): Demand => {
+  if (/판단|옳은|비교|견주|거꾸로|다른 방법|틀린|빠진|차례 정하기|확인하기|규칙|쓰임|바꾸어/.test(strategy)) {
+    return 'reason';
+  }
+  if (/문장|묶음|상황|남은|받고|모두|합|차 구하기|해결/.test(strategy)) {
+    return 'connect';
+  }
+  return 'recall';
+};
+
+// 난이도마다 어떤 요구 수준을 내보낼지입니다. 앞에 적은 것이 중심이고
+// 뒤는 곁들이는 것입니다. 하에 reason이 없고 상에 recall이 없는 것이
+// 핵심 — 그래야 세 수준이 서로 다른 문제가 됩니다.
+const demandsFor: Record<Difficulty, Demand[]> = {
+  하: ['recall'],
+  중: ['connect', 'recall'],
+  상: ['reason', 'connect'],
+};
+
 const variedQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
   // 이 차시에 어울리는 모양만 남깁니다.
   const shapes = shapesForLesson(lesson).filter((shape) => shape.fits(lesson));
   if (shapes.length === 0) return null;
   // 자리를 고른 기준과 같은 값으로 돌려야 모양이 실제로 바뀝니다.
-  const maker = shapes[Math.floor(index / 3) % shapes.length];
+  // 이 난이도에 맞는 요구 수준의 모양만 씁니다. 맞는 것이 없으면
+  // 자리를 비워 두고 기존 문항이 채우게 합니다.
+  const wanted = demandsFor[difficulty];
+  const usable = shapes.filter((shape) => {
+    try {
+      const made = shape.make(lesson, difficulty, index);
+      return made !== null && wanted.includes(demandOfStrategy(made.strategy));
+    } catch {
+      return false;
+    }
+  });
+  if (usable.length === 0) return null;
+
+  const maker = usable[Math.floor(index / 3) % usable.length];
   try {
     return maker.make(lesson, difficulty, index);
   } catch {
