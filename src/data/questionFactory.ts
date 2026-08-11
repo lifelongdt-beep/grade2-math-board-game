@@ -11518,6 +11518,12 @@ const wordStepQuestion = (
   }
 
   if (tag === 'multiplication') {
+    // 곱셈식(×)은 2-1 곱셈 단원 6차시부터 씁니다. 그전 차시는 묶어 세기와
+    // 몇의 몇 배로 뜻을 세우는 단계라 곱셈식을 쓰면 앞질러 가는 것입니다.
+    const canUseTimes = lesson.unitTitle !== '곱셈'
+      || /곱셈을 알아|곱셈식으로 나타내/.test(lesson.title);
+    if (!canUseTimes) return null;
+
     const dans = lesson.scope.dans ?? [];
     const per = dans.length ? dans[seed % dans.length] : 2 + (seed % 5);
     const groups = 2 + ((seed + 3) % 6);

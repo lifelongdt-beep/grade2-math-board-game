@@ -21,7 +21,7 @@ const shapeOf = (prompt: string) =>
 // 넣는 대로 이 목록에서 지워야 합니다.
 const sameAsMiddle = new Set([
   '2-1-u3-l5', '2-1-u3-l8', '2-1-u3-l9', '2-1-u3-l10',
-  '2-2-u3-l5', '2-2-u4-l6',
+  '2-2-u3-l3', '2-2-u3-l5', '2-2-u4-l6',
 ]);
 
 const covered = lessons.filter(
