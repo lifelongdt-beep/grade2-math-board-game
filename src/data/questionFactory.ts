@@ -12826,6 +12826,8 @@ const timeShapes: Shape[] = [
     make: (lesson, difficulty, index) => {
       const seed = index * 31 + lesson.lessonNo;
       const hours = 1 + (seed % 3);
+      // 맨 계산이라 하에서만 씁니다. 중에서는 응용 문항이 그 자리를 씁니다.
+      if (difficulty !== '하') return null;
       return makeQuestion(
         lesson, difficulty, index,
         `${hours}시간은 몇 분일까요?`,
