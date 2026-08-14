@@ -345,7 +345,7 @@ export const questionBank: Template[] = [
     prompt: '{a}+{b}={sum:을} 뺄셈식으로 바르게 나타낸 것은 무엇일까요?',
     answer: '{sum}-{b}={a}',
     wrongs: ['{sum}-{b}={b}', '{a}-{b}={sum}', '{sum}+{b}={a}'],
-    solution: '전체에서 한 부분을 빼면 나머지 부분이 됩니다. {sum}-{b}={a}입니다.',
+    solution: '전체에서 한 부분을 빼면 다른 한 부분이 됩니다. {sum}-{b}={a}입니다.',
   },
   {
     id: 'blank-in-subtraction',
