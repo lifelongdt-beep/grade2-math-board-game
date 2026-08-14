@@ -176,7 +176,11 @@ describe('the maths in each question is true', () => {
         .filter((name) => name && !/자료|항목|그래프|사람|학생|모두|가장|빈|한|각|세로|가로|아무|다음/.test(name));
 
       for (const name of named) {
-        if (drawn.length > 0 && !drawn.includes(name)) {
+        // 줄 이름이 '투호 놀이'인데 문제가 '놀이 칸'이라고 부르면 그 줄이
+        // 있는 것입니다. 글자가 똑같은지가 아니라 그 줄을 가리키는지를
+        // 봅니다. 축구는 어느 줄 이름에도 들어 있지 않았습니다.
+        const pointsAtARow = drawn.some((row) => row.includes(name) || name.includes(row));
+        if (drawn.length > 0 && !pointsAtARow) {
           mismatched.push(`${lessonId} ${level} ${question.id}: 문제는 "${name}"을 세라는데 그림에는 ${drawn.join('·')}뿐`);
         }
       }
