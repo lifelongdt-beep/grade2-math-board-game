@@ -113,11 +113,15 @@ export const ResultReport = ({
             <span className="report-winner-avatars" aria-hidden="true">
               {winners.map((one) => one.player.avatar).join(' ')}
             </span>
-            <strong>
-              {winners.map((one) => one.player.name).join(', ')}
-            </strong>
-            {winners.length > 1 ? '이(가) 나란히 ' : '이(가) '}
-            {best.correct}문제를 맞혔어요!
+            {/* 혼자 풀었으면 견줄 사람이 없습니다. '가장 많이 맞힌 친구'는
+                옆에 친구가 있을 때만 뜻이 있는 말입니다. */}
+            <span className="report-winner-label">
+              {players.length > 1
+                ? winners.length > 1 ? '오늘 가장 많이 맞힌 친구들' : '오늘 가장 많이 맞힌 친구'
+                : '오늘 푼 만큼'}
+            </span>
+            <strong>{winners.map((one) => one.player.name).join(', ')}</strong>
+            <span>{best.correct}문제를 맞혔어요!</span>
           </p>
         )}
 
@@ -183,7 +187,11 @@ export const ResultReport = ({
         {/* ── 오답 노트 ────────────────────────────────────────── */}
         <section className="report-block">
           <h3>다시 볼 문제</h3>
-          {wrongByPlayer.length === 0 ? (
+          {totalSolved === 0 ? (
+            // 한 문제도 풀지 못한 채 끝났을 때 '틀린 문제가 없어요'라고 하면
+            // 칭찬이 아니라 빈말이 됩니다. 아이도 그걸 압니다.
+            <p className="report-empty quiet">아직 푼 문제가 없어요. 다음에 다시 해 봐요.</p>
+          ) : wrongByPlayer.length === 0 ? (
             <p className="report-empty">틀린 문제가 하나도 없어요. 정말 잘했어요!</p>
           ) : (
             wrongByPlayer.map(({ player, wrongs }) => (

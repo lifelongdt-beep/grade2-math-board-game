@@ -4829,3 +4829,23 @@ body::before {
     break-inside: avoid;
   }
 }
+
+/* 아무도 문제를 풀지 못한 채 끝났을 때입니다. 초록으로 칠하면 잘한
+   것처럼 보이므로 조용한 회색으로 둡니다. */
+.report-empty.quiet {
+  border-color: #d7dde8;
+  background: #f8fafc;
+  color: #4a5568;
+}
+
+/* 이름 앞에 붙는 작은 이름표입니다. 조사를 쓰지 않으려고 '누가'와
+   '무엇을'을 줄로 나눠 둡니다 — '학생이(가)'처럼 적히면 안 되니까요. */
+.report-winner-label {
+  padding: 3px 9px;
+  border-radius: 2px;
+  background: #fef3c7;
+  color: #7c5c02;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
