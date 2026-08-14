@@ -135,6 +135,9 @@ describe('the maths in each question is true', () => {
     const pointsAtSomething = /표를 보고|그래프를 보고|그림을 보고|위 표|위 그래프/;
 
     for (const { lessonId, level, question } of all) {
+      // 풀이 과정 문항의 '③ 표를 보고 그래프로 나타냅니다'는 지금 표를
+      // 보라는 말이 아니라 순서를 적어 놓은 말입니다.
+      if (question.prompt.includes('①') || question.prompt.includes('바른 차례로')) continue;
       if (!pointsAtSomething.test(question.prompt)) continue;
       // 문제 안에 수가 죽 적혀 있으면 그것이 곧 표를 옮겨 적은 것입니다.
       if ((question.prompt.match(/\d+/g) ?? []).length >= 3) continue;
