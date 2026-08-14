@@ -13358,7 +13358,10 @@ const bankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Qu
   );
   if (usable.length === 0) return null;
 
-  const template = usable[Math.floor(index / 3) % usable.length];
+  // 자리를 index로 고릅니다. Math.floor(index / 3)으로 고르면 데이터 문항이
+  // 들어가는 여섯 자리(9·10·11·21·22·23)가 모두 같은 값이 되어, 문항을
+  // 두 개 적어도 한 개만 쓰였습니다.
+  const template = usable[index % usable.length];
   return buildFromTemplate(template, lesson, difficulty, index, templateTools);
 };
 

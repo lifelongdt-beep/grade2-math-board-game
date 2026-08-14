@@ -3913,6 +3913,23 @@ export const questionBank: Template[] = [
     solution: '1시간은 60분이므로 60+{extra}={total}분입니다.',
   },
   {
+    id: 'time-after-minutes',
+    when: /걸린 시간/,
+    demand: 'recall',
+    tag: 'time',
+    strategy: '몇 분 뒤의 시각 구하기',
+    vars: {
+      hour: { from: 1, to: 11 },
+      begin: { from: 5, to: 20 },
+      span: { from: 10, to: 35 },
+      end: { calc: 'begin + span' },
+    },
+    prompt: '{hour}시 {begin}분에서 {span}분이 지나면 몇 시 몇 분일까요?',
+    answer: '{hour}시 {end}분',
+    wrongs: ['{hour}시 {begin}분', '{hour}시 {span}분', '{hour + 1}시 {end}분'],
+    solution: '분끼리 더하면 {begin}+{span}={end}이므로 {hour}시 {end}분입니다.',
+  },
+  {
     id: 'time-elapsed-claims',
     when: /걸린 시간/,
     demand: 'reason',
