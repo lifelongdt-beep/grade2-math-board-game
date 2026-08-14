@@ -5,26 +5,36 @@ import {
   BarChart3,
   CheckCircle2,
   Copy,
-  Crown,
   GraduationCap,
   Home,
   Maximize2,
-  Medal,
   Minimize2,
   MonitorUp,
   QrCode,
   RefreshCcw,
-  Rocket,
   Smartphone,
   Sparkles,
-  Star,
   Timer,
-  Trophy,
   Users,
+  Volume2,
+  VolumeX,
   XCircle,
 } from 'lucide-react';
 import { meaningOfChoice } from './data/choiceMeaning';
+import {
+  isMuted,
+  playFinishSound,
+  playReadySound,
+  playSuccessSound,
+  playTapSound,
+  playWrongSound,
+  setMuted,
+  successHoldMs,
+  wakeAudio,
+  watchMuted,
+} from './sound';
 import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
+import { ResultReport } from './components/ResultReport';
 import { TeacherPanel } from './components/TeacherPanel';
 import { curriculum } from './data/curriculum';
 import { generateQuestions } from './data/questionFactory';
@@ -44,7 +54,10 @@ const laneStyleFor = (playerId: number) => {
     '--player-tint': playerTints[at],
   } as CSSProperties;
 };
-const playerIcons = [Rocket, Star, Trophy, Crown, Medal] as const;
+// 아이가 고르는 캐릭터입니다. 자리마다 처음에 하나씩 다르게 놓여 있고,
+// 마음에 들지 않으면 눌러서 바꿉니다. 2학년이 한눈에 알아보는 동물로만
+// 골랐습니다 — 이름을 대며 "나는 여우"라고 말할 수 있어야 합니다.
+const avatarChoices = ['🦊', '🐰', '🐶', '🐱', '🐼', '🐯', '🐸', '🐧', '🦁', '🐢'] as const;
 let successSoundUrl: string | null = null;
 const durations: SessionDuration[] = [30, 60, 120];
 const attendanceNumbers = Array.from({ length: 30 }, (_, index) => index + 1);
@@ -52,6 +65,7 @@ const attendanceNumbers = Array.from({ length: 30 }, (_, index) => index + 1);
 type StudentConfig = {
   attendanceNo: number;
   difficulty: Difficulty;
+  avatar: string;
 };
 
 // 수준은 이제 고르지 않습니다. 번호만 누르면 준비가 끝납니다.
@@ -152,6 +166,7 @@ const createStudentConfigs = (count: number, previous: Record<number, StudentCon
     next[index] = {
       attendanceNo,
       difficulty: previousConfig?.difficulty ?? '중',
+      avatar: previousConfig?.avatar ?? avatarChoices[(index - 1) % avatarChoices.length],
     };
   }
 
@@ -168,6 +183,7 @@ const createPlayers = (count: number, configs: Record<number, StudentConfig>): P
     name: `${configs[index + 1]?.attendanceNo ?? index + 1}번 학생`,
     color: playerPalette[index],
     difficulty: configs[index + 1]?.difficulty ?? '중',
+    avatar: configs[index + 1]?.avatar ?? avatarChoices[index % avatarChoices.length],
   }));
 
 const createQuestionState = (players: Player[], now = Date.now()): Record<number, PlayerQuestionState> =>
@@ -458,147 +474,6 @@ const playSuccessSoundFallback = () => {
   }
 };
 
-// 아이들이 좋아하는 소리는 짧고 통통 튀는 소리입니다.
-// 정답은 위로 올라가는 반짝 소리, 오답은 혼내는 소리가 아니라
-// "다시 해 보자" 느낌의 부드럽게 내려오는 소리로 만듭니다.
-type Blip = {
-  frequency: number;
-  at: number;
-  length: number;
-  volume?: number;
-  type?: OscillatorType;
-  slideTo?: number;
-};
-
-const playBlips = (blips: Blip[], fallback?: () => void) => {
-  try {
-    const AudioContextConstructor =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-
-    if (!AudioContextConstructor) {
-      fallback?.();
-      return;
-    }
-
-    const context = new AudioContextConstructor();
-    const now = context.currentTime;
-    let latest = 0;
-
-    blips.forEach((blip) => {
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-      const startAt = now + blip.at;
-      const stopAt = startAt + blip.length;
-      const peak = blip.volume ?? 0.16;
-
-      oscillator.type = blip.type ?? 'sine';
-      oscillator.frequency.setValueAtTime(blip.frequency, startAt);
-      if (blip.slideTo) {
-        oscillator.frequency.exponentialRampToValueAtTime(blip.slideTo, stopAt);
-      }
-
-      gain.gain.setValueAtTime(0.0001, startAt);
-      gain.gain.exponentialRampToValueAtTime(peak, startAt + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0001, stopAt);
-
-      oscillator.connect(gain);
-      gain.connect(context.destination);
-      oscillator.start(startAt);
-      oscillator.stop(stopAt);
-      latest = Math.max(latest, blip.at + blip.length);
-    });
-
-    window.setTimeout(() => void context.close(), (latest + 0.2) * 1000);
-  } catch {
-    fallback?.();
-  }
-};
-
-// 정답 소리는 셋이 똑같은 가락입니다. 길이도 세기도 리듬도 같고 음높이만
-// 다릅니다. 달라진 것이 음높이 하나뿐이라, 소리를 견주어 듣지 않아도
-// 어느 수준을 맞혔는지 바로 알 수 있습니다.
-const successTune: Blip[] = [
-  { frequency: 523.25, at: 0, length: 0.1, type: 'triangle' },
-  { frequency: 659.25, at: 0.075, length: 0.1, type: 'triangle' },
-  { frequency: 783.99, at: 0.15, length: 0.11, type: 'triangle' },
-  { frequency: 1046.5, at: 0.23, length: 0.2, volume: 0.19, type: 'triangle' },
-  { frequency: 1568, at: 0.3, length: 0.16, volume: 0.08 },
-];
-
-// 같은 가락을 통째로 올립니다. 1.5배는 5도 위, 2배는 한 옥타브 위입니다.
-const transpose = (blips: Blip[], ratio: number): Blip[] =>
-  blips.map((blip) => ({
-    ...blip,
-    frequency: blip.frequency * ratio,
-    ...(blip.slideTo ? { slideTo: blip.slideTo * ratio } : {}),
-  }));
-
-const successBlips: Record<Difficulty, Blip[]> = {
-  하: successTune,
-  중: transpose(successTune, 1.5),
-  상: transpose(successTune, 2),
-};
-
-// 세 소리의 길이가 같으므로 화면의 축하도 같은 시간만큼 머뭅니다.
-const successHoldMs = 720;
-
-const playSuccessSound = (difficulty: Difficulty) => {
-  playBlips(successBlips[difficulty], playSuccessSoundFallback);
-};
-
-// 오답: 낮고 짧게 두 번 "뽀용" 하고 부드럽게 내려옵니다.
-const playWrongSound = () => {
-  playBlips([
-    { frequency: 392, at: 0, length: 0.13, volume: 0.13, type: 'triangle' },
-    { frequency: 311.13, at: 0.11, length: 0.24, volume: 0.13, type: 'triangle', slideTo: 261.63 },
-  ]);
-};
-
-// 보기나 번호를 누를 때 나는 아주 짧은 "톡" 소리입니다.
-const playTapSound = () => {
-  playBlips([{ frequency: 880, at: 0, length: 0.05, volume: 0.07, type: 'triangle' }]);
-};
-
-// 난이도마다 다른 소리가 납니다. 하는 낮고 포근하게, 중은 그보다 한 단계
-// 위로, 상은 높고 씩씩하게 세 음이 올라갑니다. 소리만 듣고도 그 자리 친구가
-// 어떤 난이도를 골랐는지 알 수 있습니다.
-const difficultyBlips: Record<Difficulty, Blip[]> = {
-  // 하: 낮은 자리에서 포근하게 오르내립니다. 천천히 시작해도 괜찮다는 느낌.
-  하: [
-    { frequency: 261.63, at: 0, length: 0.62, volume: 0.05, type: 'sine' },
-    { frequency: 392, at: 0, length: 0.15, volume: 0.11, type: 'sine' },
-    { frequency: 523.25, at: 0.13, length: 0.15, volume: 0.11, type: 'sine' },
-    { frequency: 659.25, at: 0.26, length: 0.15, volume: 0.11, type: 'sine' },
-    { frequency: 523.25, at: 0.39, length: 0.3, volume: 0.12, type: 'sine' },
-  ],
-  // 중: 도-미-솔-도로 또박또박 올라갔다가 솔로 내려와 마무리합니다.
-  중: [
-    { frequency: 523.25, at: 0, length: 0.12, volume: 0.1, type: 'triangle' },
-    { frequency: 659.25, at: 0.1, length: 0.12, volume: 0.1, type: 'triangle' },
-    { frequency: 783.99, at: 0.2, length: 0.12, volume: 0.105, type: 'triangle' },
-    { frequency: 1046.5, at: 0.3, length: 0.17, volume: 0.12, type: 'triangle' },
-    { frequency: 783.99, at: 0.45, length: 0.3, volume: 0.11, type: 'triangle' },
-    { frequency: 1567.98, at: 0.47, length: 0.22, volume: 0.05 },
-  ],
-  // 상: 팡파레입니다. 두 옥타브를 달려 올라가 반짝하고 끝납니다.
-  상: [
-    { frequency: 523.25, at: 0, length: 0.1, volume: 0.1, type: 'triangle' },
-    { frequency: 659.25, at: 0.075, length: 0.1, volume: 0.1, type: 'triangle' },
-    { frequency: 783.99, at: 0.15, length: 0.1, volume: 0.105, type: 'triangle' },
-    { frequency: 1046.5, at: 0.225, length: 0.1, volume: 0.11, type: 'triangle' },
-    { frequency: 1318.51, at: 0.3, length: 0.1, volume: 0.115, type: 'triangle' },
-    { frequency: 1567.98, at: 0.375, length: 0.34, volume: 0.13, type: 'triangle' },
-    { frequency: 2093, at: 0.45, length: 0.34, volume: 0.06 },
-    { frequency: 2637.02, at: 0.56, length: 0.3, volume: 0.045, slideTo: 3135.96 },
-  ],
-};
-
-// 번호를 누르고 준비가 끝났을 때 나는 소리입니다.
-const playReadySound = () => {
-  playBlips(difficultyBlips.중);
-};
-
 // 남은 시간만큼 위쪽 모래가 남고, 지난 만큼 아래에 쌓입니다.
 // 숫자를 빨리 못 읽는 아이도 모래를 보고 시간을 가늠할 수 있습니다.
 // 유리는 삼각형이 아니라 항아리처럼 볼록하게 부풀렸다가 목으로 좁아집니다.
@@ -675,19 +550,15 @@ const SandTimer = ({ remaining, total }: { remaining: number; total: number }) =
   );
 };
 
-const PlayerAvatar = ({ player, active = false }: { player: Player; active?: boolean }) => {
-  const Icon = playerIcons[(player.id - 1) % playerIcons.length];
-
-  return (
-    <span
-      className={`player-avatar ${active ? 'success' : ''}`}
-      style={{ borderColor: player.color, color: player.color }}
-      aria-hidden="true"
-    >
-      <Icon size={18} strokeWidth={3} />
-    </span>
-  );
-};
+const PlayerAvatar = ({ player, active = false }: { player: Player; active?: boolean }) => (
+  <span
+    className={`player-avatar ${active ? 'success' : ''}`}
+    style={{ borderColor: player.color }}
+    aria-hidden="true"
+  >
+    {player.avatar}
+  </span>
+);
 
 const ClassroomQrCode = ({ value }: { value: string }) => {
   const [qrImageUrl, setQrImageUrl] = useState('');
@@ -780,6 +651,8 @@ function App() {
   const [studentConfigs, setStudentConfigs] = useState<Record<number, StudentConfig>>(() => createStudentConfigs(isMobileEntry ? 1 : 3));
   const [studentSetupSteps, setStudentSetupSteps] = useState<Record<number, SetupStep>>(() => createStudentSetupSteps(isMobileEntry ? 1 : 3));
   const [sessionDuration, setSessionDuration] = useState<SessionDuration>(initialRoute.duration);
+  const [muted, setMutedState] = useState(isMuted);
+  const [reportOpen, setReportOpen] = useState(false);
   const players = useMemo(() => createPlayers(playerCount, studentConfigs), [playerCount, studentConfigs]);
   const [bankSeed, setBankSeed] = useState(0);
   const questionBanks = useMemo<Record<Difficulty, Question[]>>(
@@ -846,6 +719,22 @@ function App() {
     setStudentSetupSteps(createStudentSetupSteps(playerCount));
   }, [lesson.id, playerCount]);
 
+  // 브라우저는 화면을 한 번 건드리기 전에는 소리를 내지 못하게 막습니다.
+  // 어디를 누르든 그때 한 번 깨워 두면 첫 정답 소리부터 제대로 납니다.
+  useEffect(() => {
+    const wake = () => wakeAudio();
+    window.addEventListener('pointerdown', wake, { once: true });
+    window.addEventListener('keydown', wake, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', wake);
+      window.removeEventListener('keydown', wake);
+    };
+  }, []);
+
+  // 소리를 껐다 켜는 것은 이 화면 말고 다른 곳에서도 바뀔 수 있으므로
+  // 저장된 값을 지켜보다 따라갑니다.
+  useEffect(() => watchMuted(setMutedState), []);
+
   useEffect(() => {
     if (mode !== 'setup') return;
     setPlayerStates(createQuestionState(players));
@@ -858,7 +747,9 @@ function App() {
       setRemainingSeconds((value) => {
         if (value <= 1) {
           window.clearInterval(timerId);
+          playFinishSound();
           setMode('finished');
+          setReportOpen(true);
           return 0;
         }
         return value - 1;
@@ -970,6 +861,7 @@ function App() {
         ...prev[studentId],
         attendanceNo: prev[studentId]?.attendanceNo ?? studentId,
         difficulty: prev[studentId]?.difficulty ?? '중',
+        avatar: prev[studentId]?.avatar ?? avatarChoices[(studentId - 1) % avatarChoices.length],
         ...nextConfig,
       },
     }));
@@ -981,6 +873,14 @@ function App() {
     playReadySound();
     updateStudentConfig(studentId, { attendanceNo });
     setStudentSetupSteps((prev) => ({ ...prev, [studentId]: 'ready' }));
+  };
+
+  // 캐릭터를 고릅니다. 남이 이미 고른 것은 누를 수 없게 해 두었으므로
+  // 여기서는 그대로 받습니다. 같은 동물이 둘이면 아이들이 자기 자리를
+  // 헷갈립니다.
+  const selectAvatar = (studentId: number, avatar: string) => {
+    playTapSound();
+    updateStudentConfig(studentId, { avatar });
   };
 
   const resetStudentSetup = (studentId: number) => {
@@ -1021,6 +921,7 @@ function App() {
   const goSetup = () => {
     setMode('setup');
     setTeacherOpen(false);
+    setReportOpen(false);
     setRecords([]);
     setSuccessSignals({});
     setPlayerStates(createQuestionState(players));
@@ -1032,6 +933,7 @@ function App() {
     // 수준을 고르는 단계가 없어졌으므로 곧바로 다시 시작합니다.
     // 다시 풀 때도 모두 하에서 출발해, 그날 컨디션에 맞게 다시 올라갑니다.
     setTeacherOpen(false);
+    setReportOpen(false);
     setRecords([]);
     setSuccessSignals({});
     setWrongSignals({});
@@ -1124,6 +1026,7 @@ function App() {
       support: question.support,
       visual: question.visual,
       correct: isCorrect,
+      chosen: question.choices[choiceIndex] ?? '',
       // 되돌아온 문제면 두 번째 이후 시도입니다.
       attempts: state.activeRetry === null ? 1 : 2,
       responseMs,
@@ -1314,7 +1217,7 @@ function App() {
         >
           {players.map((player) => {
             const step = studentSetupSteps[player.id] ?? 'attendance';
-            const config = studentConfigs[player.id] ?? { attendanceNo: player.id, difficulty: '중' as Difficulty };
+            const config = studentConfigs[player.id] ?? { attendanceNo: player.id, difficulty: '중' as Difficulty, avatar: player.avatar };
 
             return (
               <article
@@ -1330,6 +1233,30 @@ function App() {
 
                 {step === 'attendance' && (
                   <div className="setup-step-card">
+                    {/* 캐릭터를 먼저 고릅니다. 번호를 누르면 바로 시작되므로
+                        캐릭터가 번호보다 앞에 있어야 고를 틈이 있습니다. */}
+                    <span className="result-kicker">캐릭터</span>
+                    <div className="avatar-pad" role="group" aria-label={`${player.id}번 자리 캐릭터 선택`}>
+                      {avatarChoices.map((avatar) => {
+                        const takenByOther = players.some(
+                          (other) => other.id !== player.id && other.avatar === avatar,
+                        );
+                        return (
+                          <button
+                            type="button"
+                            key={avatar}
+                            className={config.avatar === avatar ? 'chosen' : ''}
+                            disabled={takenByOther}
+                            aria-pressed={config.avatar === avatar}
+                            aria-label={takenByOther ? `${avatar} 이미 다른 자리에서 고름` : avatar}
+                            onClick={() => selectAvatar(player.id, avatar)}
+                          >
+                            {avatar}
+                          </button>
+                        );
+                      })}
+                    </div>
+
                     <span className="result-kicker">준비</span>
                     <strong>출석번호를 누르세요</strong>
                     <div className="attendance-number-pad" aria-label={`${player.id}번 자리 출석번호 선택`}>
@@ -1355,7 +1282,7 @@ function App() {
                 {step === 'ready' && (
                   <div className="setup-ready-card">
                     <CheckCircle2 size={30} />
-                    <strong>{config.attendanceNo}번 · {config.difficulty}</strong>
+                    <strong><span className="ready-avatar">{config.avatar}</span> {config.attendanceNo}번</strong>
                     <span>준비 완료</span>
                     <button className="secondary-button" type="button" onClick={() => resetStudentSetup(player.id)}>
                       다시 선택
@@ -1425,6 +1352,18 @@ function App() {
               <strong>{remainingSeconds}초</strong>
             </div>
           </div>
+          {/* 교실에서 소리를 꺼야 할 때가 있습니다. 옆 반이 시험을 보거나
+              선생님이 설명하는 동안입니다. 끈 것은 다음 수업에도 남습니다. */}
+          <button
+            className={`sound-toggle ${muted ? 'off' : ''}`}
+            type="button"
+            onClick={() => setMuted(!muted)}
+            aria-pressed={muted}
+            title={muted ? '소리 켜기' : '소리 끄기'}
+          >
+            {muted ? <VolumeX size={19} /> : <Volume2 size={19} />}
+            <span>{muted ? '소리 꺼짐' : '소리 켜짐'}</span>
+          </button>
           {!isMobileEntry && (
             <button className="teacher-button" type="button" onClick={() => setTeacherOpen(true)}>
               <MonitorUp size={19} />
@@ -1604,6 +1543,17 @@ function App() {
         lesson={lesson}
         currentQuestion={sampleQuestion}
       />
+
+      {reportOpen && (
+        <ResultReport
+          players={players}
+          records={sessionRecords}
+          lesson={lesson}
+          onClose={() => setReportOpen(false)}
+          onPlayAgain={resetSession}
+          onHome={goSetup}
+        />
+      )}
     </main>
   );
 }

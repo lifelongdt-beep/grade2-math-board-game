@@ -287,6 +287,9 @@ export interface Player {
   name: string;
   color: string;
   difficulty: Difficulty;
+  // 아이가 고른 동물입니다. 자리 색만으로는 "빨강 자리"라고 부르게 되는데,
+  // 아이들은 "내 여우"라고 부르는 쪽을 훨씬 좋아합니다.
+  avatar: string;
 }
 
 export interface PlayerQuestionState {
@@ -337,6 +340,9 @@ export interface AnswerRecord {
   support: LearningSupport;
   visual?: QuestionVisual;
   correct: boolean;
+  // 아이가 실제로 누른 보기입니다. 무엇을 골랐는지가 남아 있어야
+  // 오답 노트에서 "48+25를 63이라고 했구나" 하고 짚어 줄 수 있습니다.
+  chosen: string;
   attempts: number;
   responseMs: number;
   answeredAt: string;
