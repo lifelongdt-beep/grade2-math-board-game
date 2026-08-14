@@ -87,6 +87,9 @@ export type Template = {
   when: RegExp;
   // 어느 단원에서 쓰는지. 비우면 제목만 맞으면 씁니다.
   units?: string[];
+  // 어느 학기에서 쓰는지. '자로 길이를 재어 볼까요'처럼 두 학기에 같은
+  // 제목이 있고 다루는 내용이 다를 때 씁니다.
+  semester?: '2-1' | '2-2';
   // 이 문항이 요구하는 것. 난이도를 가르는 기준입니다.
   demand: 'recall' | 'connect' | 'reason';
   tag: ConceptTag;
@@ -207,6 +210,7 @@ const seedOf = (lesson: Lesson, index: number, salt: number) => {
 
 export const templateFits = (template: Template, lesson: Lesson) => {
   if (template.units && !template.units.includes(lesson.unitTitle)) return false;
+  if (template.semester && template.semester !== lesson.semester) return false;
   return template.when.test(lesson.title);
 };
 
