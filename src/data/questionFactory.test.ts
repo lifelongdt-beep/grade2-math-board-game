@@ -178,6 +178,19 @@ describe('questionFactory', () => {
     }
   });
 
+  // 분류하기의 앞 차시는 '무엇을 기준으로 나눌까'를 다룹니다. 셀 수도,
+  // 표로 옮길 자료도 아직 없습니다.
+  //
+  // 이 차시들은 오랫동안 14개를 채우고 있었는데, 그림이 전부 지어낸
+  // 것이었습니다 — 자료가 없으면 '가·나·다'에 아무 수나 넣어 표를 그렸고,
+  // 그래서 '축구를 고른 사람을 세시오' 옆에 축구가 없는 표가 놓였습니다.
+  // 지어내기를 그만두자 0이 되었습니다. 숫자가 줄어든 것이 아니라, 원래
+  // 없던 것이 드러난 것입니다.
+  //
+  // 채우려면 이 차시의 문항에 실제로 셀 자료를 넣어야 합니다. 그때 이
+  // 목록에서 지웁니다.
+  const noDataToDraw = new Set<string>(['2-1-u5-l1', '2-1-u5-l2', '2-1-u5-l3']);
+
   it('adds rich visual materials and higher-order items across every lesson', () => {
     const expectedRichCount: Record<Difficulty, number> = {
       하: 0,
@@ -192,7 +205,9 @@ describe('questionFactory', () => {
         const visualCount = questions.filter((question) => question.visual).length;
         const richCount = questions.filter((question) => /자료 해석|조건 함께 보기/.test(question.strategy)).length;
 
-        expect(visualCount, `${lesson.id} ${level} visual count`).toBeGreaterThanOrEqual(14);
+        if (!noDataToDraw.has(lesson.id)) {
+          expect(visualCount, `${lesson.id} ${level} visual count`).toBeGreaterThanOrEqual(14);
+        }
         expect(richCount, `${lesson.id} ${level} rich count`).toBeGreaterThanOrEqual(expectedRichCount[level]);
 
         questions.forEach((question) => {
