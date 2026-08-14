@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { lessons } from './curriculum';
+import { demandOfStrategy } from './questionFactory';
 import { questionBank } from './questionBank';
 import { buildFromTemplate, templateFits } from './questionTemplate';
 import type { ConceptTag, Difficulty, Lesson, Question } from '../types';
@@ -54,6 +55,22 @@ describe('questions written as data', () => {
     }
 
     expect(unused).toEqual([]);
+  });
+
+  it('says the same thing in its demand and in its strategy name', () => {
+    // 요구 수준은 두 군데에서 읽힙니다. 어느 난이도에 낼지는 template.demand로
+    // 정하고, 교사용 분석은 문항에 적힌 전략 이름에서 다시 읽습니다. 둘이
+    // 어긋나면 상에 낸 문항이 분석에서는 하로 잡힙니다.
+    const mismatched: string[] = [];
+
+    for (const template of questionBank) {
+      const fromName = demandOfStrategy(template.strategy);
+      if (fromName !== template.demand) {
+        mismatched.push(`${template.id}: demand는 ${template.demand}인데 "${template.strategy}"는 ${fromName}으로 읽힘`);
+      }
+    }
+
+    expect(mismatched).toEqual([]);
   });
 
   it('never lets a number past the range its lesson works in', () => {

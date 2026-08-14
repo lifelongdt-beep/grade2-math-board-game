@@ -13273,7 +13273,7 @@ const shapesForLesson = (lesson: Lesson): Shape[] => {
 type Demand = 'recall' | 'connect' | 'reason';
 
 // 문항이 스스로 밝히는 전략 이름에서 요구 수준을 읽습니다.
-const demandOfStrategy = (strategy: string): Demand => {
+export const demandOfStrategy = (strategy: string): Demand => {
   if (/판단|옳은|비교|견주|거꾸로|다른 방법|틀린|빠진|차례 정하기|확인하기|규칙|쓰임|바꾸어/.test(strategy)) {
     return 'reason';
   }
@@ -13297,9 +13297,14 @@ const demandsFor: Record<Difficulty, Demand[]> = {
 // 동작합니다. 문항을 하나씩 데이터로 옮길 때마다 코드가 줄어듭니다.
 const bankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
   const wanted = demandsFor[difficulty];
-  const usable = questionBank.filter(
-    (template) => templateFits(template, lesson) && wanted.includes(template.demand),
-  );
+  const fitting = questionBank.filter((template) => templateFits(template, lesson));
+
+  // 그 난이도가 중심으로 삼는 요구 수준만 씁니다.
+  //   하 단순 계산 / 중 문장제 / 상 풀이를 판단하거나 거꾸로 생각
+  // 곁들이는 수준까지 받으면 중이 하의 계산 문항을, 상이 중의 문장제를
+  // 그대로 받게 됩니다. 맞는 것이 없으면 자리를 비워 두고 코드 쪽
+  // 생성기가 채우게 합니다.
+  const usable = fitting.filter((template) => template.demand === wanted[0]);
   if (usable.length === 0) return null;
 
   const template = usable[Math.floor(index / 3) % usable.length];

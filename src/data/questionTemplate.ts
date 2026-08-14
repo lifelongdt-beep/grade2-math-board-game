@@ -17,7 +17,36 @@ import type { ConceptTag, Difficulty, Lesson, Question } from '../types';
 // 변수를 만드는 방법입니다.
 //   {from, to}  그 사이의 수에서 고릅니다.
 //   {calc}      이미 정해진 변수로 계산합니다. 예: 'a + b'
-export type VarSpec = { from: number; to: number } | { calc: string };
+//   {dan: true} 이 차시가 다루는 단에서 고릅니다(Lesson.scope.dans).
+//               2단 차시에서 7씩 묶는 문제가 나오지 않게 하는 것이 이
+//               한 줄이 하는 일입니다. 곱하는 수를 직접 적으면 차시마다
+//               다시 확인해야 하지만, 여기서는 차시 선언이 대신 정합니다.
+export type VarSpec = { from: number; to: number } | { calc: string } | { dan: true };
+
+// 수를 소리 내어 읽었을 때 받침이 있는지입니다.
+//   0 영  1 일  3 삼  6 육  7 칠  8 팔 → 받침 있음
+//   2 이  4 사  5 오  9 구             → 받침 없음
+// 0으로 끝나면 십·백·천으로 읽으므로 모두 받침이 있습니다.
+const numberHasFinal = [true, true, false, true, false, false, true, true, true, false];
+
+const hasFinalSound = (word: string) => {
+  const last = word[word.length - 1];
+  if (/\d/.test(last)) return numberHasFinal[Number(last)];
+  const code = word.charCodeAt(word.length - 1);
+  return code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 !== 0;
+};
+
+// 받침이 있으면 '이/은/을/과', 없으면 '가/는/를/와'입니다.
+// 낱말뿐 아니라 수에도 붙습니다 — '31+33는', '9을'처럼 어긋나면 아이가
+// 문제를 읽다가 걸립니다.
+const withParticle = (word: string, kind: string) => {
+  const hasFinal = hasFinalSound(word);
+  if (kind === '이') return `${word}${hasFinal ? '이' : '가'}`;
+  if (kind === '은') return `${word}${hasFinal ? '은' : '는'}`;
+  if (kind === '을') return `${word}${hasFinal ? '을' : '를'}`;
+  if (kind === '와') return `${word}${hasFinal ? '과' : '와'}`;
+  return word;
+};
 
 export type Template = {
   id: string;
@@ -30,6 +59,10 @@ export type Template = {
   tag: ConceptTag;
   strategy: string;
   vars: Record<string, VarSpec>;
+  // 문장에 쓸 낱말입니다. 자리마다 하나를 골라 씁니다.
+  // 문장에서는 {item}으로 쓰고, 조사가 필요하면 {item:이}처럼 적으면
+  // 받침을 보고 이/가, 은/는, 을/를을 골라 줍니다.
+  words?: Record<string, string[]>;
   // {a}, {a + b}처럼 중괄호 안에 변수나 계산을 씁니다.
   prompt: string;
   answer: string;
@@ -43,42 +76,69 @@ const evaluate = (expression: string, values: Record<string, number>): number | 
   const tokens = expression.match(/[A-Za-z가-힣]+|\d+|[+\-*]/g);
   if (!tokens) return null;
 
-  let total: number | null = null;
-  let pending: '+' | '-' | '*' = '+';
+  // ×를 +와 −보다 먼저 계산합니다. 앞에서부터 차례로만 계산하면
+  // 'hundreds * 100 + tens * 10 + ones'가 (백의 자리*100+십의 자리)*10+…이
+  // 되어, 적은 대로가 아닌 다른 수가 나옵니다.
+  let sum = 0;
+  let sign = 1;
+  let term: number | null = null;
+  let multiplying = false;
 
   for (const token of tokens) {
-    if (token === '+' || token === '-' || token === '*') {
-      pending = token;
+    if (token === '*') {
+      if (term === null) return null;
+      multiplying = true;
+      continue;
+    }
+
+    if (token === '+' || token === '-') {
+      if (term === null) return null;
+      sum += sign * term;
+      term = null;
+      multiplying = false;
+      sign = token === '+' ? 1 : -1;
       continue;
     }
 
     const value = /^\d+$/.test(token) ? Number(token) : values[token];
     if (value === undefined || !Number.isFinite(value)) return null;
 
-    if (total === null) {
-      total = value;
-    } else if (pending === '+') {
-      total += value;
-    } else if (pending === '-') {
-      total -= value;
+    if (term === null) {
+      term = value;
+    } else if (multiplying) {
+      term *= value;
+      multiplying = false;
     } else {
-      total *= value;
+      // 연산자 없이 두 수가 붙어 있습니다.
+      return null;
     }
   }
 
-  return total;
+  if (term === null) return null;
+  return sum + sign * term;
 };
 
 // 중괄호 안의 변수와 계산을 실제 수로 바꿉니다.
-const fill = (text: string, values: Record<string, number>): string | null => {
+const fill = (
+  text: string,
+  values: Record<string, number>,
+  words: Record<string, string> = {},
+): string | null => {
   let failed = false;
-  const filled = text.replace(/\{([^}]+)\}/g, (_, expression: string) => {
-    const value = evaluate(expression.trim(), values);
+  const filled = text.replace(/\{([^}]+)\}/g, (_, inside: string) => {
+    const [name, particle] = inside.split(':').map((part) => part.trim());
+
+    // 낱말이면 조사까지 붙여 돌려줍니다.
+    if (words[name] !== undefined) {
+      return particle ? withParticle(words[name], particle) : words[name];
+    }
+
+    const value = evaluate(name, values);
     if (value === null) {
       failed = true;
       return '';
     }
-    return String(value);
+    return particle ? withParticle(String(value), particle) : String(value);
   });
   return failed ? null : filled;
 };
@@ -128,6 +188,12 @@ export const buildFromTemplate = (
       const value = evaluate(spec.calc, values);
       if (value === null) return null;
       values[name] = value;
+    } else if ('dan' in spec) {
+      // 아직 배우지 않은 단은 고를 수 없습니다. 이 차시가 다루는 단이
+      // 없으면 문항을 만들지 않습니다.
+      const dans = lesson.scope.dans;
+      if (!dans || dans.length === 0) return null;
+      values[name] = dans[seedOf(lesson, index, salt) % dans.length];
     } else {
       const span = spec.to - spec.from + 1;
       if (span <= 0) return null;
@@ -135,18 +201,26 @@ export const buildFromTemplate = (
     }
   }
 
+  // 낱말도 자리마다 다르게 고릅니다.
+  const words: Record<string, string> = {};
+  for (const [name, list] of Object.entries(template.words ?? {})) {
+    if (list.length === 0) return null;
+    salt += 1;
+    words[name] = list[seedOf(lesson, index, salt) % list.length];
+  }
+
   // 나온 수가 모두 이 차시가 다루는 범위 안이어야 합니다.
   const limit = lesson.scope.maxNumber;
   if (Object.values(values).some((value) => value > limit || value < 0)) return null;
 
-  const prompt = fill(template.prompt, values);
-  const answer = fill(template.answer, values);
-  const solution = fill(template.solution, values);
+  const prompt = fill(template.prompt, values, words);
+  const answer = fill(template.answer, values, words);
+  const solution = fill(template.solution, values, words);
   if (prompt === null || answer === null || solution === null) return null;
 
   const wrongs: string[] = [];
   for (const one of template.wrongs) {
-    const filled = fill(one, values);
+    const filled = fill(one, values, words);
     // 답과 같아진 보기는 버립니다. 남은 자리는 문항을 만드는 쪽에서 채웁니다.
     if (filled !== null && filled !== answer && !wrongs.includes(filled)) wrongs.push(filled);
   }
