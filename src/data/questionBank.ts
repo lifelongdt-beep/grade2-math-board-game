@@ -256,7 +256,7 @@ export const questionBank: Template[] = [
     words: { item: ['딱지', '구슬', '스티커', '색연필'] },
     prompt: '형은 {item:을} {a}개, 동생은 {b}개 가지고 있습니다. 두 사람이 가진 {item:은} 모두 몇 개일까요?',
     answer: '{total}개',
-    wrongs: ['{a - b}개', '{total - 10}개', '{a}개'],
+    wrongs: ['{total + 10}개', '{total - 10}개', '{a}개'],
     solution: '두 사람의 수를 더하면 {a}+{b}={total}개입니다.',
   },
   {
@@ -2098,8 +2098,8 @@ export const questionBank: Template[] = [
     tag: 'classification',
     strategy: '조건 함께 보기 · 나눈 두 자리의 차를 구하는 상황',
     vars: {
-      big: { from: 4, to: 9 },
-      small: { from: 2, to: 6 },
+      big: { from: 5, to: 9 },
+      small: { from: 2, to: 4 },
     },
     prompt: '블록을 크기에 따라 나누었더니 큰 것 {big}개, 작은 것 {small}개였습니다. 큰 것은 작은 것보다 몇 개 더 많을까요?',
     answer: '{big - small}개',
@@ -3294,7 +3294,7 @@ export const questionBank: Template[] = [
     },
     prompt: '운동장에 남학생 {a}명과 여학생 {b}명이 있습니다. 운동장에 있는 학생은 모두 몇 명일까요?',
     answer: '{total}명',
-    wrongs: ['{a - b}명', '{a}명', '{total - 10}명'],
+    wrongs: ['{total + 10}명', '{a}명', '{total - 10}명'],
     solution: '{a}+{b}={total}명입니다.',
   },
   {
@@ -3354,7 +3354,7 @@ export const questionBank: Template[] = [
     },
     prompt: '{a}-{b:은} 얼마일까요?',
     answer: '{diff}',
-    wrongs: ['{diff + 10}', '{diff - 10}', '{a}'],
+    wrongs: ['{diff + 10}', '{aTens * 10 - bTens * 10}', '{a}'],
     solution: '{a}의 일의 자리가 0이므로 십의 자리에서 10을 가져와 빼면 {diff}입니다.',
   },
   {

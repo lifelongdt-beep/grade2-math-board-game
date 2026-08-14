@@ -129,8 +129,10 @@ describe('the maths in each question is true', () => {
     // 아니라 아는 것이라 수가 하나뿐인 것이 맞습니다. 예순일곱 건 가운데
     // 진짜는 하나도 없었습니다. 짖기만 하는 검사는 아무도 보지 않게 되므로,
     // 기계가 틀림없이 판단할 수 있는 곳까지 좁혔습니다.
+    // '표는 항목별 수를 알아보기 좋습니다' 같은 문장은 표를 읽으라는 말이
+    // 아니라 표가 무엇인지 이야기하는 말입니다. 시키는 말만 봅니다.
     const missing: string[] = [];
-    const pointsAtSomething = /표를 보고|표에서|그래프를 보고|그래프에서|그림을 보고|그림에서|위 표|위 그래프/;
+    const pointsAtSomething = /표를 보고|그래프를 보고|그림을 보고|위 표|위 그래프/;
 
     for (const { lessonId, level, question } of all) {
       if (!pointsAtSomething.test(question.prompt)) continue;
@@ -158,10 +160,16 @@ describe('the maths in each question is true', () => {
         ? visual.items.map((item) => item.label)
         : visual.columns.map((column) => column.name);
 
-      // 문제가 부르는 이름들입니다. '축구를', '축구 칸' 같은 말에서 뽑습니다.
-      const named = [...question.prompt.matchAll(/([가-힣]{2,4})(?:를|을)\s*(?:고른|좋아하는|세)|([가-힣]{2,4})\s*칸/g)]
-        .map((match) => match[1] ?? match[2])
-        .filter((name) => name && !/자료|항목|그래프|사람|학생|모두|가장/.test(name));
+      // 문제가 '그 칸에 쓰라'고 이름을 대는 곳만 봅니다.
+      //
+      // 처음에는 '축구를 고른'처럼 세라는 말까지 넣었는데, 그러면
+      // '단추를 색깔에 따라 나누었더니 … 단추는 모두 몇 개일까요?'가
+      // 걸립니다. 단추는 표의 칸 이름이 아니라 나누는 물건이고, 그림에
+      // 빨강·파랑·노랑이 있는 것이 맞습니다. 표의 칸 이름을 대는 말만
+      // 남기면 남는 것은 실제로 어긋난 경우뿐입니다.
+      const named = [...question.prompt.matchAll(/([가-힣]{2,4})\s*칸/g)]
+        .map((match) => match[1])
+        .filter((name) => name && !/자료|항목|그래프|사람|학생|모두|가장|빈|한|각/.test(name));
 
       for (const name of named) {
         if (drawn.length > 0 && !drawn.includes(name)) {

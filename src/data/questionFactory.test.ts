@@ -189,7 +189,7 @@ describe('questionFactory', () => {
   //
   // 채우려면 이 차시의 문항에 실제로 셀 자료를 넣어야 합니다. 그때 이
   // 목록에서 지웁니다.
-  const noDataToDraw = new Set<string>(['2-1-u5-l1', '2-1-u5-l2', '2-1-u5-l3']);
+  const noDataToDraw = new Set<string>(['2-1-u5-l1', '2-1-u5-l2', '2-1-u5-l3', '2-2-u5-l1']);
 
   it('adds rich visual materials and higher-order items across every lesson', () => {
     const expectedRichCount: Record<Difficulty, number> = {
