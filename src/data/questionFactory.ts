@@ -9209,16 +9209,16 @@ const visualForGeneratedQuestion = (
       })
       .filter((item): item is { label: string; count: number } => item !== null);
 
-    const items =
-      labeledCounts && labeledCounts.length >= 2
-        ? labeledCounts.slice(0, 3)
-        : [
-            { label: '가', count: promptNumbers[0] ?? 5 },
-            { label: '나', count: promptNumbers[1] ?? 7 },
-            { label: '다', count: promptNumbers[2] ?? 4 },
-          ];
+    // 문제에 셀 자료가 적혀 있을 때만 그립니다.
+    //
+    // 예전에는 자료가 없으면 '가·나·다'에 아무 수나 넣어 표를 지어냈습니다.
+    // 그러면 '축구를 고른 사람을 세어 표에 쓰세요'라는 문제 옆에 축구가
+    // 없는 표가 놓이고, 아이가 그 표를 세어 답한 수는 정답과 다릅니다.
+    // 자료가 없으면 그림도 없는 것이 맞습니다 — 없는 그림보다 틀린 그림이
+    // 훨씬 나쁩니다.
+    if (!labeledCounts || labeledCounts.length < 2) return undefined;
 
-    return pictographVisualFor(items, 1, '자료 조사 그림그래프');
+    return pictographVisualFor(labeledCounts.slice(0, 3), 1, '자료 조사 그림그래프');
   }
 
   if (question.type === 'multiplication') {
@@ -10151,15 +10151,19 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
   // 표와 그래프: 세고, 표에 옮기고, 해석하는 과정
   if (unit === '표와 그래프') {
+    // 세 수가 서로 겹치지 않게 범위를 갈라 둡니다. 겹치면 오답 보기가
+    // 정답과 같아지고, 그림에서도 어느 줄을 세는 것인지 흐려집니다.
     const a = 5 + (index % 4);
-    const b = 3 + ((index + 1) % 3);
-    const c = 2 + ((index + 2) % 3);
+    const b = 3 + ((index + 1) % 2);
+    const c = 1 + ((index + 2) % 2);
 
     if (title.includes('분류하여 표로')) {
+      // 셀 자료를 문제 안에 적어 둡니다. 예전에는 '축구를 고른 사람을
+      // 셉니다'라고만 하고 셀 것을 주지 않아, 답을 찍는 수밖에 없었습니다.
       return makeQuestion(
         lesson, difficulty, index,
-        `자료를 분류해 표를 채우는 과정입니다. □에 알맞은 수는? ① 축구를 고른 사람을 셉니다. ② 센 것에 표시하며 빠뜨리지 않습니다. ③ 축구 칸에 □을 씁니다.`,
-        `${a}`, [`${a + 1}`, `${b}`, `${a + b}`],
+        `좋아하는 운동을 조사했더니 축구 ${a}명, 줄넘기 ${b}명, 술래잡기 ${c}명이었습니다. 이것을 표로 옮기는 과정입니다. □에 알맞은 수는? ① 축구를 고른 사람을 셉니다. ② 센 것에 표시하며 빠뜨리지 않습니다. ③ 표의 축구 칸에 □을 씁니다.`,
+        `${a}`, [`${b}`, `${c}`, `${a + b}`],
         `축구를 고른 사람이 ${a}명이므로 표의 축구 칸에는 ${a}을 씁니다.`,
         'data', '세어서 표의 칸을 채우는 과정',
       );
