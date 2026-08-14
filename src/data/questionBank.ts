@@ -3913,6 +3913,22 @@ export const questionBank: Template[] = [
     solution: '1시간은 60분이므로 60+{extra}={total}분입니다.',
   },
   {
+    id: 'time-whole-hours',
+    when: /걸린 시간/,
+    demand: 'recall',
+    tag: 'time',
+    strategy: '몇 시간이 걸렸는지 구하기',
+    vars: {
+      hour: { from: 1, to: 7 },
+      span: { from: 2, to: 4 },
+      later: { calc: 'hour + span' },
+    },
+    prompt: '{hour}시부터 {later}시까지는 몇 시간일까요?',
+    answer: '{span}시간',
+    wrongs: ['{hour}시간', '{later}시간', '{span + 1}시간'],
+    solution: '{later}-{hour}={span}이므로 {span}시간입니다.',
+  },
+  {
     id: 'time-after-minutes',
     when: /걸린 시간/,
     demand: 'recall',
