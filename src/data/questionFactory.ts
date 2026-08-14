@@ -9207,7 +9207,11 @@ const visualForGeneratedQuestion = (
       .match(/[가-힣]{1,4}\s*\d+(?:명|개)/g)
       ?.map((chunk) => {
         const chunkMatch = chunk.match(/^([가-힣]{1,4})\s*(\d+)/);
-        return chunkMatch ? { label: chunkMatch[1], count: Number(chunkMatch[2]) } : null;
+        if (!chunkMatch) return null;
+        // '사과는 6명'에서 이름은 '사과'입니다. 조사를 떼지 않으면 표의
+        // 줄 이름이 '사과는'으로 적힙니다.
+        const label = chunkMatch[1].replace(/(?:은|는|이|가|을|를)$/, '');
+        return label ? { label, count: Number(chunkMatch[2]) } : null;
       })
       .filter((item): item is { label: string; count: number } => item !== null);
 

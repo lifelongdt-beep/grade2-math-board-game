@@ -172,7 +172,8 @@ describe('the maths in each question is true', () => {
       // 남기면 남는 것은 실제로 어긋난 경우뿐입니다.
       const named = [...question.prompt.matchAll(/([가-힣]{2,4})\s*칸/g)]
         .map((match) => match[1])
-        .filter((name) => name && !/자료|항목|그래프|사람|학생|모두|가장|빈|한|각/.test(name));
+        // '세로 칸', '아무 칸에나'의 세로·아무는 줄 이름이 아닙니다.
+        .filter((name) => name && !/자료|항목|그래프|사람|학생|모두|가장|빈|한|각|세로|가로|아무|다음/.test(name));
 
       for (const name of named) {
         if (drawn.length > 0 && !drawn.includes(name)) {
