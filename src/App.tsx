@@ -515,57 +515,33 @@ const playBlips = (blips: Blip[], fallback?: () => void) => {
   }
 };
 
-// 정답 소리는 그 문제의 수준을 따릅니다. 어려운 문제를 맞혔을 때 더 크게
-// 울려야, 올라간 것이 소리로도 느껴집니다. 옆자리 친구가 어디까지 갔는지
-// 듣기만 해도 알 수 있습니다.
+// 정답 소리는 셋이 똑같은 가락입니다. 길이도 세기도 리듬도 같고 음높이만
+// 다릅니다. 달라진 것이 음높이 하나뿐이라, 소리를 견주어 듣지 않아도
+// 어느 수준을 맞혔는지 바로 알 수 있습니다.
+const successTune: Blip[] = [
+  { frequency: 523.25, at: 0, length: 0.1, type: 'triangle' },
+  { frequency: 659.25, at: 0.075, length: 0.1, type: 'triangle' },
+  { frequency: 783.99, at: 0.15, length: 0.11, type: 'triangle' },
+  { frequency: 1046.5, at: 0.23, length: 0.2, volume: 0.19, type: 'triangle' },
+  { frequency: 1568, at: 0.3, length: 0.16, volume: 0.08 },
+];
+
+// 같은 가락을 통째로 올립니다. 1.5배는 5도 위, 2배는 한 옥타브 위입니다.
+const transpose = (blips: Blip[], ratio: number): Blip[] =>
+  blips.map((blip) => ({
+    ...blip,
+    frequency: blip.frequency * ratio,
+    ...(blip.slideTo ? { slideTo: blip.slideTo * ratio } : {}),
+  }));
+
 const successBlips: Record<Difficulty, Blip[]> = {
-  // 하: 도-미-솔-도로 올라간 뒤 반짝하고 끝납니다. 짧고 산뜻하게.
-  하: [
-    { frequency: 523.25, at: 0, length: 0.1, type: 'triangle' },
-    { frequency: 659.25, at: 0.075, length: 0.1, type: 'triangle' },
-    { frequency: 783.99, at: 0.15, length: 0.11, type: 'triangle' },
-    { frequency: 1046.5, at: 0.23, length: 0.2, volume: 0.19, type: 'triangle' },
-    { frequency: 1568, at: 0.3, length: 0.16, volume: 0.08 },
-  ],
-  // 중: 같은 자리에서 한 번 더 힘을 주어 도로 올라섭니다. 아래에서
-  // 낮은 도가 받쳐 주어 소리가 두툼해집니다.
-  중: [
-    { frequency: 261.63, at: 0, length: 0.92, volume: 0.045, type: 'sine' },
-    { frequency: 523.25, at: 0, length: 0.11, volume: 0.13, type: 'triangle' },
-    { frequency: 659.25, at: 0.08, length: 0.11, volume: 0.13, type: 'triangle' },
-    { frequency: 783.99, at: 0.16, length: 0.11, volume: 0.135, type: 'triangle' },
-    { frequency: 1046.5, at: 0.24, length: 0.14, volume: 0.15, type: 'triangle' },
-    { frequency: 987.77, at: 0.41, length: 0.1, volume: 0.13, type: 'triangle' },
-    { frequency: 1046.5, at: 0.51, length: 0.42, volume: 0.17, type: 'triangle' },
-    { frequency: 1318.51, at: 0.53, length: 0.38, volume: 0.07, type: 'triangle' },
-    { frequency: 2093, at: 0.57, length: 0.32, volume: 0.05 },
-  ],
-  // 상: 팡파레입니다. 나팔처럼 세 번 부르고 두 옥타브를 달려 올라가,
-  // 화음으로 길게 울리며 위로 반짝이며 흩어집니다.
-  상: [
-    { frequency: 783.99, at: 0, length: 0.07, volume: 0.11, type: 'square' },
-    { frequency: 783.99, at: 0.09, length: 0.07, volume: 0.11, type: 'square' },
-    { frequency: 783.99, at: 0.18, length: 0.1, volume: 0.12, type: 'square' },
-
-    { frequency: 523.25, at: 0.3, length: 0.08, volume: 0.11, type: 'triangle' },
-    { frequency: 659.25, at: 0.37, length: 0.08, volume: 0.11, type: 'triangle' },
-    { frequency: 783.99, at: 0.44, length: 0.08, volume: 0.115, type: 'triangle' },
-    { frequency: 1046.5, at: 0.51, length: 0.08, volume: 0.12, type: 'triangle' },
-    { frequency: 1318.51, at: 0.58, length: 0.08, volume: 0.125, type: 'triangle' },
-    { frequency: 1567.98, at: 0.65, length: 0.08, volume: 0.13, type: 'triangle' },
-
-    { frequency: 2093, at: 0.72, length: 0.52, volume: 0.15, type: 'triangle' },
-    { frequency: 1046.5, at: 0.72, length: 0.56, volume: 0.09, type: 'triangle' },
-    { frequency: 1318.51, at: 0.74, length: 0.53, volume: 0.07, type: 'triangle' },
-    { frequency: 1567.98, at: 0.76, length: 0.5, volume: 0.055, type: 'triangle' },
-
-    { frequency: 2637.02, at: 0.86, length: 0.44, volume: 0.05, slideTo: 4186 },
-    { frequency: 3135.96, at: 1.0, length: 0.34, volume: 0.032, slideTo: 4698.64 },
-  ],
+  하: successTune,
+  중: transpose(successTune, 1.5),
+  상: transpose(successTune, 2),
 };
 
-// 소리가 끝나기 전에 화면의 축하가 먼저 사라지면 어색합니다.
-const successHoldMs: Record<Difficulty, number> = { 하: 720, 중: 1020, 상: 1480 };
+// 세 소리의 길이가 같으므로 화면의 축하도 같은 시간만큼 머뭅니다.
+const successHoldMs = 720;
 
 const playSuccessSound = (difficulty: Difficulty) => {
   playBlips(successBlips[difficulty], playSuccessSoundFallback);
@@ -1120,7 +1096,7 @@ function App() {
         const { [playerId]: _removed, ...rest } = prev;
         return rest;
       });
-    }, successHoldMs[difficulty]);
+    }, successHoldMs);
   };
 
   const answerQuestion = (player: Player, question: Question, choiceIndex: number) => {
