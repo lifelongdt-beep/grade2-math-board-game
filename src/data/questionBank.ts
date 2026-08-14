@@ -1970,7 +1970,8 @@ export const questionBank: Template[] = [
       one: { from: 1, to: 9 },
       value: { calc: 't * 1000 + h * 100 + ten * 10 + one' },
     },
-    visual: { kind: 'place-value', value: 'value', places: 4, label: '자리값표' },
+    // 자리값표를 그리면 표를 읽는 것이 곧 답이 됩니다. 이 문항은 자리마다의
+    // 수를 스스로 모아 보는 것이 할 일이므로 표를 주지 않습니다.
     prompt: '1000이 {t}개, 100이 {h}개, 10이 {ten}개, 1이 {one}개인 수는 얼마일까요?',
     answer: '{value}',
     wrongs: ['{t + h + ten + one}', '{t * 1000}', '{value + 100}'],
