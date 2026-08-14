@@ -120,27 +120,28 @@ describe('the maths in each question is true', () => {
     expect(below).toEqual([]);
   });
 
-  it('gives the numbers the question asks the child to work with', () => {
-    // '축구를 고른 사람을 세시오'라고 하면서 축구가 몇 명인지도, 셀 그림도
-    // 주지 않으면 답을 낼 길이 없습니다. 셈을 시키는 말이 있으면 문제나
-    // 그림 어딘가에 수가 둘 이상은 있어야 합니다.
-    const impossible: string[] = [];
-    const asksToCompute = /모두 몇|몇 개 더|몇 명 더|몇 cm 더|차는|합은|세어|더하면|빼면/;
+  it('shows the table or picture it tells the child to read', () => {
+    // '표를 보고', '그래프에서'라고 해 놓고 표가 없으면 볼 것이 없습니다.
+    //
+    // 처음에는 이 검사를 훨씬 넓게 썼습니다 — '셈을 시키는 말이 있으면 수가
+    // 둘은 있어야 한다'로요. 그랬더니 '원 3개를 그렸습니다. 꼭짓점은 모두
+    // 몇 개일까요?'가 걸렸습니다. 원에 꼭짓점이 없다는 것은 세는 것이
+    // 아니라 아는 것이라 수가 하나뿐인 것이 맞습니다. 예순일곱 건 가운데
+    // 진짜는 하나도 없었습니다. 짖기만 하는 검사는 아무도 보지 않게 되므로,
+    // 기계가 틀림없이 판단할 수 있는 곳까지 좁혔습니다.
+    const missing: string[] = [];
+    const pointsAtSomething = /표를 보고|표에서|그래프를 보고|그래프에서|그림을 보고|그림에서|위 표|위 그래프/;
 
     for (const { lessonId, level, question } of all) {
-      if (!asksToCompute.test(question.prompt)) continue;
+      if (!pointsAtSomething.test(question.prompt)) continue;
+      // 문제 안에 수가 죽 적혀 있으면 그것이 곧 표를 옮겨 적은 것입니다.
+      if ((question.prompt.match(/\d+/g) ?? []).length >= 3) continue;
+      if (question.visual) continue;
 
-      const inPrompt = (question.prompt.match(/\d+/g) ?? []).length;
-      const inVisual = question.visual
-        ? JSON.stringify(question.visual).match(/:\s*-?\d+/g)?.length ?? 0
-        : 0;
-
-      if (inPrompt + inVisual < 2) {
-        impossible.push(`${lessonId} ${level} ${question.id}: 셀 것이 없음 — ${question.prompt.slice(0, 50)}`);
-      }
+      missing.push(`${lessonId} ${level} ${question.id}: 보라고 한 것이 없음 — ${question.prompt.slice(0, 50)}`);
     }
 
-    expect(impossible).toEqual([]);
+    expect(missing).toEqual([]);
   });
 
   it('draws only what the question is about', () => {

@@ -749,7 +749,6 @@ function App() {
           window.clearInterval(timerId);
           playFinishSound();
           setMode('finished');
-          setReportOpen(true);
           return 0;
         }
         return value - 1;
@@ -1383,6 +1382,12 @@ function App() {
           <span>{sessionDuration}초 수업</span>
           <span>{mode === 'finished' ? '시간 종료' : '진행 중'}</span>
         </div>
+        {mode === 'finished' && (
+          <button className="secondary-button" type="button" onClick={() => setReportOpen(true)}>
+            <BarChart3 size={18} />
+            결과 보기
+          </button>
+        )}
         <button className="primary-button" type="button" onClick={resetSession}>
           <RefreshCcw size={18} />
           {mode === 'finished' ? '다시 풀기' : '다시 시작'}

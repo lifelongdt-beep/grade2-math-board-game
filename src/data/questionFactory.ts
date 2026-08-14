@@ -1962,7 +1962,8 @@ const calcUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
       );
     }
     if (variant === 2) {
-      const round = Math.round(b / 10) * 10;
+      // 15는 10과 5로 갈라야 합니다. 반올림하면 20과 -5가 됩니다.
+      const round = Math.floor(b / 10) * 10;
       return makeQuestion(
         lesson, difficulty, index,
         `${a}+${b}를 쉽게 계산하려고 ${b}를 ${round}과 ${b - round}로 나누었습니다. 다음에 할 일은?`,
@@ -2082,7 +2083,8 @@ const calcUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
     const b = 10 * (1 + (seed % 3)) + ((a % 10) + 1 + (index % 4));
     if (variant === 0) return carryAsk(a, b, 'subtraction', '두 자리 수끼리 받아내림 뺄셈하기');
     if (variant === 1) {
-      const round = Math.round(b / 10) * 10;
+      // 15는 10과 5로 갈라야 합니다. 반올림하면 20과 -5가 됩니다.
+      const round = Math.floor(b / 10) * 10;
       return makeQuestion(
         lesson, difficulty, index,
         `${a}-${b}를 쉽게 계산하려고 ${b}를 ${round}과 ${b - round}로 나누었습니다. 다음에 할 일은?`,
@@ -10536,12 +10538,18 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
 const KOREAN_ONES = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
 
-// 세 자리 수를 우리말로 읽습니다. (305 -> 삼백오)
+// 수를 우리말로 읽습니다. (305 → 삼백오, 5175 → 오천백칠십오)
+//
+// 천의 자리가 없었습니다. 네 자리 수 차시에서 5175를 읽히면 백의 자리를
+// Math.floor(5175 / 100) = 51로 잡고 KOREAN_ONES[51]을 찾다가 undefined가
+// 나와, 아이 화면에 'undefined백칠십오'가 그대로 찍혔습니다.
 const readKoreanNumber = (value: number) => {
-  const hundreds = Math.floor(value / 100);
+  const thousands = Math.floor(value / 1000);
+  const hundreds = Math.floor((value % 1000) / 100);
   const tens = Math.floor((value % 100) / 10);
   const ones = value % 10;
   const parts = [
+    thousands > 0 ? `${thousands > 1 ? KOREAN_ONES[thousands] : ''}천` : '',
     hundreds > 0 ? `${hundreds > 1 ? KOREAN_ONES[hundreds] : ''}백` : '',
     tens > 0 ? `${tens > 1 ? KOREAN_ONES[tens] : ''}십` : '',
     ones > 0 ? KOREAN_ONES[ones] : '',
@@ -10764,7 +10772,7 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         lesson, difficulty, index,
         `구슬을 ${a}개 가지고 있었는데 ${b}개를 더 얻고 ${5 + (seed % 5)}개를 잃었습니다. 지금 몇 개일까요?`,
         `${a + b - (5 + (seed % 5))}개`,
-        [`${a + b}개`, `${a - b}개`, `${a + b + (5 + (seed % 5))}개`],
+        [`${a + b}개`, `${Math.abs(a - b)}개`, `${a + b + (5 + (seed % 5))}개`],
         `얻으면 더하고 잃으면 뺍니다. ${a}+${b}-${5 + (seed % 5)}=${a + b - (5 + (seed % 5))}개입니다.`,
         'addition', '조건 함께 보기 · 두 번 바뀌는 상황 계산하기',
       );
@@ -11944,6 +11952,7 @@ const hasFinal = (word: string) => {
 };
 const subject = (word: string) => `${word}${hasFinal(word) ? '이' : '가'}`;
 const topic = (word: string) => `${word}${hasFinal(word) ? '은' : '는'}`;
+const object = (word: string) => `${word}${hasFinal(word) ? '을' : '를'}`;
 
 type Shape = {
   fits: (lesson: Lesson) => boolean;
@@ -12024,7 +12033,7 @@ const numberShapes: Shape[] = [
     const said = readKoreanNumber(value);
     return makeQuestion(
       lesson, difficulty, index,
-      `${said}을(를) 수로 쓰면 얼마일까요?`,
+      `${object(said)} 수로 쓰면 얼마일까요?`,
       value, [value + (four ? 1000 : 100), value - 1, value + 10],
       `자리마다 숫자를 차례로 써서 ${value}입니다.`,
       'number', '읽은 것을 수로 쓰기',
