@@ -42,6 +42,34 @@ const stub = (
   },
 });
 
+// ㄱ·ㄴ·ㄷ·ㄹ 문항은 보기를 짝으로 만드는 곳이 questionFactory에 있습니다.
+// 여기서는 네 문장이 제대로 채워졌는지만 보면 되므로 짧게 흉내 냅니다.
+const pickAllStub = (
+  lesson: Lesson,
+  difficulty: Difficulty,
+  index: number,
+  claims: Array<{ text: string; ok: boolean }>,
+  lead: string,
+  tag: ConceptTag,
+  strategy: string,
+): Question | null => {
+  if (claims.length !== 4 || claims.filter((claim) => claim.ok).length !== 2) return null;
+  const labels = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ'];
+  const listed = claims.map((claim, at) => `${labels[at]} ${claim.text}`).join(' ');
+  const answer = claims
+    .map((claim, at) => (claim.ok ? labels[at] : ''))
+    .filter(Boolean)
+    .join(', ');
+  return stub(
+    lesson, difficulty, index,
+    `${lead} ${listed} 위에서 옳은 것을 모두 고른 것은?`,
+    answer, ['ㄱ, ㄴ', 'ㄴ, ㄷ', 'ㄷ, ㄹ'].filter((one) => one !== answer),
+    '', tag, strategy,
+  );
+};
+
+const tools = { make: stub, pickAll: pickAllStub };
+
 describe('questions written as data', () => {
   it('turns every template into a question somewhere', () => {
     const unused: string[] = [];
@@ -49,7 +77,7 @@ describe('questions written as data', () => {
     for (const template of questionBank) {
       const fitting = lessons.filter((lesson) => templateFits(template, lesson));
       const made = fitting.some((lesson) =>
-        [0, 3, 6, 9].some((index) => buildFromTemplate(template, lesson, '중', index, stub) !== null),
+        [0, 3, 6, 9].some((index) => buildFromTemplate(template, lesson, '중', index, tools) !== null),
       );
       if (!made) unused.push(`${template.id}: 어느 차시에서도 문항이 되지 않음`);
     }
@@ -79,7 +107,7 @@ describe('questions written as data', () => {
     for (const template of questionBank) {
       for (const lesson of lessons.filter((one) => templateFits(template, one))) {
         for (let index = 0; index < 30; index += 1) {
-          const made = buildFromTemplate(template, lesson, '중', index, stub);
+          const made = buildFromTemplate(template, lesson, '중', index, tools);
           if (!made) continue;
 
           const biggest = [made.prompt, ...made.choices]
@@ -104,7 +132,7 @@ describe('questions written as data', () => {
     for (const template of questionBank) {
       for (const lesson of lessons.filter((one) => templateFits(template, one))) {
         for (let index = 0; index < 12; index += 1) {
-          const made = buildFromTemplate(template, lesson, '중', index, stub);
+          const made = buildFromTemplate(template, lesson, '중', index, tools);
           if (!made) continue;
           if (new Set(made.choices).size !== made.choices.length) {
             repeated.push(`${template.id} / ${lesson.id}: ${made.choices.join(' / ')}`);

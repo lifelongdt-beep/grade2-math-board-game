@@ -1,4 +1,4 @@
-import type { ConceptTag, Difficulty, Lesson, Question } from '../types';
+import type { ConceptTag, Difficulty, Lesson, Question, QuestionVisual } from '../types';
 
 // ════════════════════════════════════════════════════════════════════
 // 문항을 데이터로 쓰기
@@ -48,6 +48,39 @@ const withParticle = (word: string, kind: string) => {
   return word;
 };
 
+// ── 그림 ────────────────────────────────────────────────────────────
+// 수를 적는 자리(rows, value, hour …)에는 vars의 calc와 같은 식을 씁니다
+// — 중괄호 없이 'per * groups'처럼. 글을 적는 자리(label, object …)에는
+// 문장과 같이 중괄호를 씁니다.
+//
+// 차시가 아직 배우지 않은 도구는 그리지 않습니다(Lesson.scope.forbidVisuals).
+// 1cm를 배우기 전 차시에 자가 나오던 일이 여기서 막힙니다. 그림만 빠지고
+// 문항은 그대로 나갑니다.
+export type VisualSpec =
+  | { kind: 'array'; rows: string; columns: string; label?: string }
+  | { kind: 'place-value'; value: string; places?: number; label?: string }
+  | { kind: 'number-line'; values: string[]; step: string; active?: number; label?: string }
+  | { kind: 'clock'; hour: string; minute: string; endHour?: string; endMinute?: string; label?: string }
+  | { kind: 'unit-measure'; object: string; unit: string; count: string }
+  | { kind: 'ruler'; start: string; end: string; label?: string }
+  | { kind: 'bar-model'; bars: Array<{ label: string; value: string }>; label?: string }
+  | { kind: 'pictograph'; items: Array<{ label: string; count: string }>; unit?: number; label?: string };
+
+// 식을 모두 수로 바꾼 그림입니다. 실제 그림은 questionFactory가 그립니다 —
+// 눈금 여백이나 수직선 시작점 같은 규칙이 이미 그쪽에 있고, 그것을 여기에
+// 옮겨 적으면 두 벌이 되어 서로 어긋납니다.
+export type DrawnVisual =
+  | { kind: 'array'; rows: number; columns: number; label?: string }
+  | { kind: 'place-value'; value: number; places?: number; label?: string }
+  | { kind: 'number-line'; values: number[]; step: number; active?: number; label?: string }
+  | { kind: 'clock'; hour: number; minute: number; endHour?: number; endMinute?: number; label?: string }
+  | { kind: 'unit-measure'; object: string; unit: string; count: number }
+  | { kind: 'ruler'; start: number; end: number; label?: string }
+  | { kind: 'bar-model'; bars: Array<{ label: string; value: number }>; label?: string }
+  | { kind: 'pictograph'; items: Array<{ label: string; count: number }>; unit?: number; label?: string };
+
+export type Claim = { text: string; ok: boolean };
+
 export type Template = {
   id: string;
   // 어느 차시에 쓰는지. 차시 제목과 맞춰 봅니다.
@@ -65,9 +98,27 @@ export type Template = {
   words?: Record<string, string[]>;
   // {a}, {a + b}처럼 중괄호 안에 변수나 계산을 씁니다.
   prompt: string;
-  answer: string;
-  wrongs: string[];
-  solution: string;
+  // ㄱ·ㄴ·ㄷ·ㄹ 문항은 보기가 문장의 짝으로 정해지므로 적지 않습니다.
+  answer?: string;
+  wrongs?: string[];
+  solution?: string;
+
+  // ── 여기서부터는 필요할 때만 씁니다 ──────────────────────────────
+
+  // 그림입니다.
+  visual?: VisualSpec;
+
+  // 풀이 과정 문항입니다. prompt 뒤에 ① ② ③으로 이어 붙고, □가 들어간
+  // 단계가 묻는 곳입니다. 남의 풀이를 따라가며 한 단계를 채우는 문항이라
+  // 상 수준에서만 씁니다.
+  //   prompt '{a}+{b:을} 계산하는 과정입니다. □에 알맞은 수는?'
+  //   steps  ['일의 자리끼리 더하면 {aOnes}+{bOnes}=□', '10을 올립니다.']
+  steps?: string[];
+
+  // ㄱ·ㄴ·ㄷ·ㄹ 네 문장입니다. 옳은 것이 둘이어야 하고, '옳은 것을 모두
+  // 고른 것은?' 형태의 문항이 됩니다. 이때 prompt는 문장 앞에 붙는
+  // 상황 설명으로 쓰이고, answer·wrongs는 쓰이지 않습니다.
+  claims?: Claim[];
 };
 
 // 아주 작은 계산기입니다. 변수와 정수, + - × 만 다룹니다.
@@ -159,14 +210,10 @@ export const templateFits = (template: Template, lesson: Lesson) => {
   return template.when.test(lesson.title);
 };
 
-// 데이터로 적힌 문항을 실제 문항으로 만듭니다.
-// 차시 범위를 넘는 수가 하나라도 나오면 만들지 않습니다 — 이것이
-// 생성기마다 조심해야 했던 일을 한 곳으로 모아 주는 부분입니다.
-export const buildFromTemplate = (
-  template: Template,
-  lesson: Lesson,
-  difficulty: Difficulty,
-  index: number,
+// 문항을 실제로 만들어 내는 일은 questionFactory가 합니다. 보기를 섞고,
+// 학습 도움말을 붙이고, 그림을 그리는 규칙이 모두 그쪽에 있습니다.
+// 여기서는 무엇을 물을지만 정하고 그 일들을 넘깁니다.
+export type TemplateTools = {
   make: (
     lesson: Lesson,
     difficulty: Difficulty,
@@ -177,8 +224,121 @@ export const buildFromTemplate = (
     solution: string,
     tag: ConceptTag,
     strategy: string,
-  ) => Question,
+    visual?: QuestionVisual,
+  ) => Question;
+  // 그림을 그립니다. 차시가 못 쓰는 도구면 undefined를 돌려줍니다.
+  draw?: (drawn: DrawnVisual, lesson: Lesson) => QuestionVisual | undefined;
+  // ㄱ·ㄴ·ㄷ·ㄹ 문항을 만듭니다.
+  pickAll?: (
+    lesson: Lesson,
+    difficulty: Difficulty,
+    index: number,
+    claims: Claim[],
+    lead: string,
+    tag: ConceptTag,
+    strategy: string,
+    visual?: QuestionVisual,
+  ) => Question | null;
+};
+
+// 그림에 적힌 식을 수로 바꿉니다. 하나라도 풀리지 않으면 그림을 뺍니다.
+const resolveVisual = (
+  spec: VisualSpec,
+  values: Record<string, number>,
+  words: Record<string, string>,
+): DrawnVisual | null => {
+  const at = (expression: string) => evaluate(expression, values);
+  const text = (one?: string) => (one === undefined ? undefined : fill(one, values, words) ?? undefined);
+
+  if (spec.kind === 'array') {
+    const rows = at(spec.rows);
+    const columns = at(spec.columns);
+    if (rows === null || columns === null || rows <= 0 || columns <= 0) return null;
+    return { kind: 'array', rows, columns, label: text(spec.label) };
+  }
+
+  if (spec.kind === 'place-value') {
+    const value = at(spec.value);
+    if (value === null || value < 0) return null;
+    return { kind: 'place-value', value, places: spec.places, label: text(spec.label) };
+  }
+
+  if (spec.kind === 'number-line') {
+    const marks = spec.values.map(at);
+    const step = at(spec.step);
+    if (step === null || step <= 0 || marks.some((one) => one === null)) return null;
+    return {
+      kind: 'number-line',
+      values: marks as number[],
+      step,
+      active: spec.active,
+      label: text(spec.label),
+    };
+  }
+
+  if (spec.kind === 'clock') {
+    const hour = at(spec.hour);
+    const minute = at(spec.minute);
+    if (hour === null || minute === null) return null;
+    const endHour = spec.endHour === undefined ? null : at(spec.endHour);
+    const endMinute = spec.endMinute === undefined ? null : at(spec.endMinute);
+    return {
+      kind: 'clock',
+      hour,
+      minute,
+      ...(endHour === null ? {} : { endHour }),
+      ...(endMinute === null ? {} : { endMinute }),
+      label: text(spec.label),
+    };
+  }
+
+  if (spec.kind === 'unit-measure') {
+    const count = at(spec.count);
+    const object = text(spec.object);
+    const unit = text(spec.unit);
+    if (count === null || count <= 0 || !object || !unit) return null;
+    return { kind: 'unit-measure', object, unit, count };
+  }
+
+  if (spec.kind === 'ruler') {
+    const start = at(spec.start);
+    const end = at(spec.end);
+    if (start === null || end === null || end <= start) return null;
+    return { kind: 'ruler', start, end, label: text(spec.label) };
+  }
+
+  if (spec.kind === 'bar-model') {
+    const bars: Array<{ label: string; value: number }> = [];
+    for (const bar of spec.bars) {
+      const value = at(bar.value);
+      const label = text(bar.label);
+      if (value === null || value < 0 || !label) return null;
+      bars.push({ label, value });
+    }
+    return { kind: 'bar-model', bars, label: text(spec.label) };
+  }
+
+  const items: Array<{ label: string; count: number }> = [];
+  for (const item of spec.items) {
+    const count = at(item.count);
+    const label = text(item.label);
+    if (count === null || count < 0 || !label) return null;
+    items.push({ label, count });
+  }
+  return { kind: 'pictograph', items, unit: spec.unit, label: text(spec.label) };
+};
+
+// 데이터로 적힌 문항을 실제 문항으로 만듭니다.
+// 차시 범위를 넘는 수가 하나라도 나오면 만들지 않습니다 — 이것이
+// 생성기마다 조심해야 했던 일을 한 곳으로 모아 주는 부분입니다.
+export const buildFromTemplate = (
+  template: Template,
+  lesson: Lesson,
+  difficulty: Difficulty,
+  index: number,
+  tools: TemplateTools,
 ): Question | null => {
+  const { make, draw, pickAll } = tools;
   const values: Record<string, number> = {};
 
   let salt = 0;
@@ -213,18 +373,58 @@ export const buildFromTemplate = (
   const limit = lesson.scope.maxNumber;
   if (Object.values(values).some((value) => value > limit || value < 0)) return null;
 
-  const prompt = fill(template.prompt, values, words);
-  const answer = fill(template.answer, values, words);
-  const solution = fill(template.solution, values, words);
-  if (prompt === null || answer === null || solution === null) return null;
+  const lead = fill(template.prompt, values, words);
+  if (lead === null) return null;
+
+  // 그림은 있으면 좋은 것이지 없으면 못 낼 것이 아닙니다. 그리지 못하면
+  // 그림 없이 냅니다.
+  const drawn = template.visual ? resolveVisual(template.visual, values, words) : null;
+  const visual = drawn && draw ? draw(drawn, lesson) : undefined;
+
+  // ㄱ·ㄴ·ㄷ·ㄹ 문항은 보기를 짝으로 만들어야 해서 만드는 길이 다릅니다.
+  if (template.claims) {
+    if (!pickAll) return null;
+    const claims: Claim[] = [];
+    for (const claim of template.claims) {
+      const text = fill(claim.text, values, words);
+      if (text === null) return null;
+      claims.push({ text, ok: claim.ok });
+    }
+    return pickAll(lesson, difficulty, index, claims, lead, template.tag, template.strategy, visual);
+  }
+
+  // ㄱ·ㄴ·ㄷ·ㄹ이 아니면 답과 풀이가 있어야 문항이 됩니다.
+  const answer = template.answer === undefined ? null : fill(template.answer, values, words);
+  const solution = template.solution === undefined ? null : fill(template.solution, values, words);
+  if (answer === null || solution === null) return null;
+
+  // 풀이 과정 문항은 단계를 ① ② ③으로 이어 붙입니다.
+  let prompt = lead;
+  if (template.steps) {
+    const marks = ['①', '②', '③', '④'];
+    if (template.steps.length < 2 || template.steps.length > marks.length) return null;
+    const parts: string[] = [];
+    for (let at = 0; at < template.steps.length; at += 1) {
+      const step = fill(template.steps[at], values, words);
+      if (step === null) return null;
+      parts.push(`${marks[at]} ${step}`);
+    }
+    // □가 어느 단계에도 없으면 무엇을 묻는지 알 수 없습니다.
+    if (!parts.some((part) => part.includes('□'))) return null;
+    prompt = `${lead} ${parts.join(' ')}`;
+  }
 
   const wrongs: string[] = [];
-  for (const one of template.wrongs) {
+  for (const one of template.wrongs ?? []) {
     const filled = fill(one, values, words);
     // 답과 같아진 보기는 버립니다. 남은 자리는 문항을 만드는 쪽에서 채웁니다.
     if (filled !== null && filled !== answer && !wrongs.includes(filled)) wrongs.push(filled);
   }
   if (wrongs.length === 0) return null;
 
-  return make(lesson, difficulty, index, prompt, answer, wrongs, solution, template.tag, template.strategy);
+  return make(
+    lesson, difficulty, index,
+    prompt, answer, wrongs, solution,
+    template.tag, template.strategy, visual,
+  );
 };

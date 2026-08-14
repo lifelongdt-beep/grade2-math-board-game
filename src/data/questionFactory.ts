@@ -1,6 +1,7 @@
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, PlaneShapeVisualItem, Question, QuestionVisual } from '../types';
 import { questionBank } from './questionBank';
 import { buildFromTemplate, templateFits } from './questionTemplate';
+import type { DrawnVisual } from './questionTemplate';
 
 const difficultyIndex: Record<Difficulty, number> = {
   하: 0,
@@ -11464,6 +11465,11 @@ const pickAllQuestion = (
   difficulty: Difficulty,
   index: number,
   claims: Claim[],
+  // 데이터로 적은 문항은 자기 상황 설명과 갈래·전략 이름을 함께 넘깁니다.
+  lead = '',
+  tag?: ConceptTag,
+  strategy?: string,
+  visual?: QuestionVisual,
 ): Question | null => {
   if (claims.length !== 4) return null;
   const trueCount = claims.filter((claim) => claim.ok).length;
@@ -11494,11 +11500,12 @@ const pickAllQuestion = (
 
   return makeQuestion(
     lesson, difficulty, index,
-    `${listed} 위에서 옳${askOk ? '은' : '지 않은'} 것을 모두 고른 것은?`,
+    `${lead ? `${lead} ` : ''}${listed} 위에서 옳${askOk ? '은' : '지 않은'} 것을 모두 고른 것은?`,
     answer, wrongs,
     `${wanted.join('과 ')}이 옳${askOk ? '은' : '지 않은'} 설명입니다.`,
-    primaryTag(lesson),
-    shapeStrategy(difficulty, '자료 해석 · 여러 설명을 하나씩 판단하기', '설명을 하나씩 판단하기'),
+    tag ?? primaryTag(lesson),
+    strategy ?? shapeStrategy(difficulty, '자료 해석 · 여러 설명을 하나씩 판단하기', '설명을 하나씩 판단하기'),
+    visual,
   );
 };
 
@@ -13295,6 +13302,47 @@ const demandsFor: Record<Difficulty, Demand[]> = {
 // 데이터로 적힌 문항 중 이 차시·난이도에 맞는 것을 하나 씁니다.
 // 코드로 쓴 생성기와 나란히 돌아가므로, 옮겨 가는 동안에도 앱은 그대로
 // 동작합니다. 문항을 하나씩 데이터로 옮길 때마다 코드가 줄어듭니다.
+// 데이터로 적은 그림을 실제 그림으로 그립니다. 눈금 여백이나 수직선의
+// 시작점 같은 규칙은 위에 있는 그림 함수들이 이미 지키고 있으므로 그대로
+// 넘깁니다. 차시가 아직 배우지 않은 도구면 그리지 않습니다.
+const drawTemplateVisual = (drawn: DrawnVisual, lesson: Lesson): QuestionVisual | undefined => {
+  if ((lesson.scope.forbidVisuals ?? []).includes(drawn.kind)) return undefined;
+
+  if (drawn.kind === 'array') {
+    return arrayVisualFor(drawn.rows, drawn.columns, drawn.label ?? '배열 자료');
+  }
+  if (drawn.kind === 'place-value') {
+    return placeValueVisualFor(drawn.value, drawn.label ?? '자리값표', drawn.places);
+  }
+  if (drawn.kind === 'number-line') {
+    return numberLineVisualFor(
+      drawn.values,
+      drawn.step,
+      drawn.label ?? '수의 길 그림',
+      drawn.active ?? -1,
+    );
+  }
+  if (drawn.kind === 'clock') {
+    return clockVisualFor(drawn.hour, drawn.minute, drawn.label ?? '시계 자료');
+  }
+  if (drawn.kind === 'unit-measure') {
+    return unitMeasureVisualFor(drawn.object, drawn.unit, drawn.count);
+  }
+  if (drawn.kind === 'ruler') {
+    return rulerVisualFor(drawn.start, drawn.end, drawn.label ?? '자 눈금 자료');
+  }
+  if (drawn.kind === 'bar-model') {
+    return barModelVisualFor(drawn.bars, drawn.label ?? '막대모델 자료');
+  }
+  return pictographVisualFor(drawn.items, drawn.unit ?? 1, drawn.label ?? '그림그래프 자료');
+};
+
+const templateTools = {
+  make: makeQuestion,
+  draw: drawTemplateVisual,
+  pickAll: pickAllQuestion,
+};
+
 const bankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
   const wanted = demandsFor[difficulty];
   const fitting = questionBank.filter((template) => templateFits(template, lesson));
@@ -13304,11 +13352,28 @@ const bankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Qu
   // 곁들이는 수준까지 받으면 중이 하의 계산 문항을, 상이 중의 문장제를
   // 그대로 받게 됩니다. 맞는 것이 없으면 자리를 비워 두고 코드 쪽
   // 생성기가 채우게 합니다.
-  const usable = fitting.filter((template) => template.demand === wanted[0]);
+  // 풀이 과정 문항은 풀이 과정 자리에서만 씁니다.
+  const usable = fitting.filter(
+    (template) => template.demand === wanted[0] && !template.steps,
+  );
   if (usable.length === 0) return null;
 
   const template = usable[Math.floor(index / 3) % usable.length];
-  return buildFromTemplate(template, lesson, difficulty, index, makeQuestion);
+  return buildFromTemplate(template, lesson, difficulty, index, templateTools);
+};
+
+// 데이터로 적은 풀이 과정 문항입니다. 남의 풀이를 따라가며 한 단계를
+// 채우는 문항이라 상 수준의 풀이 과정 자리에서만 씁니다.
+const bankStepQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (difficulty !== '상') return null;
+
+  const usable = questionBank.filter(
+    (template) => template.steps && templateFits(template, lesson),
+  );
+  if (usable.length === 0) return null;
+
+  const template = usable[Math.floor(index / 3) % usable.length];
+  return buildFromTemplate(template, lesson, difficulty, index, templateTools);
 };
 
 const variedQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
@@ -13356,6 +13421,8 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
                   return base ? asOrderQuestion(base, lesson, difficulty, index) : null;
                 })()
               : null)
+            // 데이터로 적은 풀이 과정 문항이 있으면 그것을 씁니다.
+            ?? bankStepQuestion(lesson, difficulty, index)
             ?? stepBlankQuestion(lesson, difficulty, index)
             ?? question
           // 응용 문항을 먼저 쓰고, 남은 자리의 절반만 새 모양에 내줍니다.
