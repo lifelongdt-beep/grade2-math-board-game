@@ -126,6 +126,34 @@ describe('questions written as data', () => {
     expect(over).toEqual([]);
   });
 
+  it('never lets a wrong statement come out the same as a right one', () => {
+    // ㄱ·ㄴ·ㄷ·ㄹ은 옳은 것 둘, 옳지 않은 것 둘이어야 합니다. 두 변수가
+    // 같은 수로 뽑히면 '틀리게 쓴 문장'이 옳은 문장과 글자까지 똑같아져,
+    // 답이 둘이 되는 문항이 나갑니다. (5씩 커지는 규칙에 start도 5가
+    // 뽑히면 ㄱ과 ㄷ이 같은 문장이 되는 식입니다.)
+    const collided: string[] = [];
+
+    for (const template of questionBank) {
+      if (!template.claims) continue;
+
+      for (const lesson of lessons.filter((one) => templateFits(template, one))) {
+        for (let index = 0; index < 30; index += 1) {
+          const made = buildFromTemplate(template, lesson, '상', index, tools);
+          if (!made) continue;
+
+          // 만들어진 문항에서 ㄱ~ㄹ 네 문장을 다시 꺼냅니다.
+          const said = made.prompt.match(/[ㄱㄴㄷㄹ][^ㄱㄴㄷㄹ]+/g) ?? [];
+          const texts = said.map((one) => one.slice(1).trim());
+          if (new Set(texts).size !== texts.length) {
+            collided.push(`${template.id} / ${lesson.id}: ${texts.join(' | ')}`);
+          }
+        }
+      }
+    }
+
+    expect(collided).toEqual([]);
+  });
+
   it('never offers the right answer twice', () => {
     const repeated: string[] = [];
 
