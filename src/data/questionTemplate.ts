@@ -93,6 +93,9 @@ export type Template = {
   // 이 문항이 요구하는 것. 난이도를 가르는 기준입니다.
   demand: 'recall' | 'connect' | 'reason';
   tag: ConceptTag;
+  // 문장과 마찬가지로 중괄호를 쓸 수 있습니다. 한 템플릿이 여러 차시에
+  // 걸칠 때 필요합니다 — 2단부터 9단까지 한 템플릿으로 쓰면서 이름이
+  // 모두 같으면, 교사용 분석에서 일곱 차시가 한 가지 문항으로 보입니다.
   strategy: string;
   vars: Record<string, VarSpec>;
   // 문장에 쓸 낱말입니다. 자리마다 하나를 골라 씁니다.
@@ -380,6 +383,8 @@ export const buildFromTemplate = (
   const lead = fill(template.prompt, values, words);
   if (lead === null) return null;
 
+  const strategy = fill(template.strategy, values, words) ?? template.strategy;
+
   // 그림은 있으면 좋은 것이지 없으면 못 낼 것이 아닙니다. 그리지 못하면
   // 그림 없이 냅니다.
   const drawn = template.visual ? resolveVisual(template.visual, values, words) : null;
@@ -394,7 +399,7 @@ export const buildFromTemplate = (
       if (text === null) return null;
       claims.push({ text, ok: claim.ok });
     }
-    return pickAll(lesson, difficulty, index, claims, lead, template.tag, template.strategy, visual);
+    return pickAll(lesson, difficulty, index, claims, lead, template.tag, strategy, visual);
   }
 
   // ㄱ·ㄴ·ㄷ·ㄹ이 아니면 답과 풀이가 있어야 문항이 됩니다.
@@ -429,6 +434,6 @@ export const buildFromTemplate = (
   return make(
     lesson, difficulty, index,
     prompt, answer, wrongs, solution,
-    template.tag, template.strategy, visual,
+    template.tag, strategy, visual,
   );
 };
