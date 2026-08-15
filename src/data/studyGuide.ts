@@ -44,18 +44,20 @@ export type WeakKind = {
   kind: string;
   wrong: number;
   total: number;
-  // 이 갈래 문항에 이미 적혀 있는 도움말입니다. 새로 지어내지 않습니다 —
-  // 지어낸 말은 그 차시와 맞지 않을 수 있습니다.
-  concept: string;
-  watchOut: string;
-  selfCheck: string;
-  how: string;
 };
 
 export type StudyGuide = {
   answered: number;
   strong: StrongKind[];
   weak: WeakKind[];
+  // 공부하는 방법입니다. 걸린 갈래가 요구하던 것이 같으면 한 번만
+  // 말합니다. 계산에서 두 갈래가 걸렸다고 같은 말을 두 번 읽힐 이유가
+  // 없습니다.
+  advice: string[];
+  // 이 차시에서 조심할 곳과 다 풀고 확인할 것입니다. 차시마다 하나씩
+  // 정해져 있으므로 갈래마다 되풀이하지 않고 아래에 한 번 둡니다.
+  watchOut: string;
+  selfCheck: string;
 };
 
 export const studyGuideFor = (records: AnswerRecord[], playerId: number): StudyGuide => {
@@ -90,19 +92,31 @@ export const studyGuideFor = (records: AnswerRecord[], playerId: number): StudyG
 
   // 어려웠던 갈래. 많이 걸린 것부터입니다. 셋까지만 보여 줍니다 —
   // 한 번에 여러 가지를 고치라고 하면 아무것도 고치지 못합니다.
-  const weak = kinds
+  const missed = kinds
     .filter(([, count]) => count.wrong > 0)
     .sort((a, b) => b[1].wrong - a[1].wrong || b[1].total - a[1].total)
-    .slice(0, 3)
-    .map(([kind, count]) => ({
-      kind,
-      wrong: count.wrong,
-      total: count.total,
-      concept: count.sample.support.studentConcept,
-      watchOut: count.sample.support.misconceptionTip,
-      selfCheck: count.sample.support.selfCheck,
-      how: howToPractise(count.sample.strategy),
-    }));
+    .slice(0, 3);
 
-  return { answered: mine.length, strong, weak };
+  const weak = missed.map(([kind, count]) => ({
+    kind,
+    wrong: count.wrong,
+    total: count.total,
+  }));
+
+  // 같은 말은 한 번만 합니다. 갈래마다 붙이면 세 갈래가 모두 계산일 때
+  // 똑같은 문장을 세 번 읽게 됩니다.
+  const advice = [...new Set(missed.map(([, count]) => howToPractise(count.sample.strategy)))];
+
+  // 조심할 곳과 확인 질문은 그 차시의 것이라 갈래가 달라도 같습니다.
+  // 하나만 골라 아래에 둡니다.
+  const first = missed[0]?.[1].sample;
+
+  return {
+    answered: mine.length,
+    strong,
+    weak,
+    advice,
+    watchOut: first?.support.misconceptionTip ?? '',
+    selfCheck: first?.support.selfCheck ?? '',
+  };
 };

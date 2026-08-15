@@ -1506,18 +1506,32 @@ function App() {
                             ) : (
                               <section className="lane-guide-block">
                                 <h4>더 공부하면 좋은 것</h4>
-                                {guide.weak.map((one) => (
-                                  <article className="lane-guide-weak" key={one.kind}>
-                                    <p className="lane-guide-kind">
+                                {/* 걸린 갈래를 먼저 늘어놓고, 공부하는
+                                    방법과 조심할 곳은 아래에 한 번만
+                                    적습니다. 갈래마다 붙이면 같은 문장을
+                                    세 번 읽게 됩니다. */}
+                                <ul className="lane-guide-kinds missed">
+                                  {guide.weak.map((one) => (
+                                    <li key={one.kind}>
                                       <strong>{one.kind}</strong>
                                       <span>{one.total}번 중 {one.wrong}번 걸렸어요</span>
+                                    </li>
+                                  ))}
+                                </ul>
+
+                                <div className="lane-guide-advice">
+                                  {guide.advice.map((line) => (
+                                    <p className="lane-guide-line how" key={line}>
+                                      <span>이렇게 해 봐요</span>{line}
                                     </p>
-                                    <p className="lane-guide-line"><span>이건 이런 거예요</span>{one.concept}</p>
-                                    <p className="lane-guide-line"><span>조심할 곳</span>{one.watchOut}</p>
-                                    <p className="lane-guide-line how"><span>이렇게 해 봐요</span>{one.how}</p>
-                                    <p className="lane-guide-line check"><span>다 풀고 나서</span>{one.selfCheck}</p>
-                                  </article>
-                                ))}
+                                  ))}
+                                  {guide.watchOut && (
+                                    <p className="lane-guide-line"><span>조심할 곳</span>{guide.watchOut}</p>
+                                  )}
+                                  {guide.selfCheck && (
+                                    <p className="lane-guide-line check"><span>다 풀고 나서</span>{guide.selfCheck}</p>
+                                  )}
+                                </div>
                               </section>
                             )}
                           </div>
