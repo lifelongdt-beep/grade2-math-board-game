@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Home, Printer, RefreshCcw, XCircle } from 'lucide-react';
 import type { AnswerRecord, Lesson, Player } from '../types';
 
@@ -11,6 +12,11 @@ import type { AnswerRecord, Lesson, Player } from '../types';
 // 둘, 무엇을 보여 주는가. 못한 것을 세어 보여 주는 대신, 틀린 문제를
 // 다시 한 번 짚어 주고 왜 그렇게 되는지를 알려 줍니다. 수업이 끝나고
 // 나서 아이가 남기고 갈 것은 점수가 아니라 '아, 그렇구나' 하나입니다.
+//
+// 한 아이씩 봅니다. 여럿을 한 화면에 늘어놓으면 전자칠판 앞에 선 아이가
+// 자기 것을 찾기 전에 옆자리 것부터 보게 되고, 틀린 개수가 나란히 놓이면
+// 그 줄이 곧 등수가 됩니다. 인쇄도 한 장에 한 아이씩 나가야 집으로
+// 보낼 수 있습니다.
 // ════════════════════════════════════════════════════════════════════
 
 type Props = {
@@ -22,22 +28,14 @@ type Props = {
   onHome: () => void;
 };
 
-type Standing = {
-  player: Player;
-  total: number;
-  correct: number;
-  wrong: number;
-  averageMs: number;
-};
-
 // 칭찬은 잘한 아이에게만 하는 것이 아닙니다. 한 문제를 맞혔든 열 문제를
 // 맞혔든, 그 아이가 오늘 한 일을 그대로 말해 줍니다.
-const praiseFor = (standing: Standing) => {
-  if (standing.total === 0) return '다음에는 함께 풀어 봐요.';
-  if (standing.wrong === 0) return '푼 문제를 하나도 빠짐없이 맞혔어요. 대단해요!';
-  if (standing.correct === 0) return '끝까지 앉아서 다 풀었어요. 그게 가장 어려운 일이에요.';
-  if (standing.correct >= standing.wrong * 3) return '어려운 문제도 척척 풀어냈어요.';
-  if (standing.correct >= standing.wrong) return '맞힌 문제가 더 많아요. 잘하고 있어요.';
+const praiseFor = (total: number, correct: number, wrong: number) => {
+  if (total === 0) return '다음에는 함께 풀어 봐요.';
+  if (wrong === 0) return '푼 문제를 하나도 빠짐없이 맞혔어요. 대단해요!';
+  if (correct === 0) return '끝까지 앉아서 다 풀었어요. 그게 가장 어려운 일이에요.';
+  if (correct >= wrong * 3) return '어려운 문제도 척척 풀어냈어요.';
+  if (correct >= wrong) return '맞힌 문제가 더 많아요. 잘하고 있어요.';
   return '틀린 문제가 있어도 괜찮아요. 그만큼 배운 거예요.';
 };
 
@@ -51,48 +49,30 @@ export const ResultReport = ({
   onPlayAgain,
   onHome,
 }: Props) => {
-  const standings: Standing[] = players
-    .map((player) => {
-      const mine = records.filter((record) => record.playerId === player.id);
-      const correct = mine.filter((record) => record.correct).length;
-      const spent = mine.reduce((total, record) => total + record.responseMs, 0);
-      return {
-        player,
-        total: mine.length,
-        correct,
-        wrong: mine.length - correct,
-        averageMs: mine.length === 0 ? 0 : Math.round(spent / mine.length),
-      };
-    })
-    // 맞힌 개수가 먼저, 같으면 빨리 푼 쪽이 앞입니다.
-    .sort((a, b) => b.correct - a.correct || a.averageMs - b.averageMs);
+  const [shownId, setShownId] = useState(players[0]?.id ?? 1);
+  const player = players.find((one) => one.id === shownId) ?? players[0];
 
-  const best = standings[0];
-  // 맞힌 개수가 가장 많은 아이가 여럿이면 모두 이름을 부릅니다.
-  const winners = best && best.correct > 0
-    ? standings.filter((one) => one.correct === best.correct)
-    : [];
+  if (!player) return null;
 
-  const totalSolved = records.length;
-  const totalCorrect = records.filter((record) => record.correct).length;
-  const totalWrong = totalSolved - totalCorrect;
+  const mine = records.filter((record) => record.playerId === player.id);
+  const correct = mine.filter((record) => record.correct).length;
+  const wrong = mine.length - correct;
+  const spent = mine.reduce((total, record) => total + record.responseMs, 0);
+  const averageMs = mine.length === 0 ? 0 : Math.round(spent / mine.length);
+
+  // 같은 문제를 두 번 틀렸으면 한 번만 적습니다. 같은 것이 두 번 적혀
+  // 있으면 더 많이 틀린 것처럼 보이고, 읽을 것만 늘어납니다.
+  const seen = new Set<string>();
+  const wrongs = mine
+    .filter((record) => !record.correct)
+    .filter((record) => {
+      if (seen.has(record.questionId)) return false;
+      seen.add(record.questionId);
+      return true;
+    });
+
   // 막대 길이를 잴 기준입니다. 0으로 나누지 않도록 최소 1로 둡니다.
-  const widest = Math.max(1, ...standings.map((one) => one.total));
-
-  // 오답 노트는 아이별로 묶어 보여 줍니다. 같은 문제를 두 번 틀렸으면
-  // 한 번만 적습니다 — 같은 것이 두 번 적혀 있으면 더 많이 틀린 것처럼
-  // 보이고, 읽을 것만 늘어납니다.
-  const wrongByPlayer = players.map((player) => {
-    const seen = new Set<string>();
-    const mine = records
-      .filter((record) => record.playerId === player.id && !record.correct)
-      .filter((record) => {
-        if (seen.has(record.questionId)) return false;
-        seen.add(record.questionId);
-        return true;
-      });
-    return { player, wrongs: mine };
-  }).filter((one) => one.wrongs.length > 0);
+  const widest = Math.max(1, mine.length);
 
   return (
     <div className="report-overlay" role="dialog" aria-modal="true" aria-label="수업 결과">
@@ -108,113 +88,100 @@ export const ResultReport = ({
           </button>
         </header>
 
-        {winners.length > 0 && (
-          <p className="report-winner">
-            <span className="report-winner-avatars" aria-hidden="true">
-              {winners.map((one) => one.player.avatar).join(' ')}
-            </span>
-            {/* 혼자 풀었으면 견줄 사람이 없습니다. '가장 많이 맞힌 친구'는
-                옆에 친구가 있을 때만 뜻이 있는 말입니다. */}
-            <span className="report-winner-label">
-              {players.length > 1
-                ? winners.length > 1 ? '오늘 가장 많이 맞힌 친구들' : '오늘 가장 많이 맞힌 친구'
-                : '오늘 푼 만큼'}
-            </span>
-            <strong>{winners.map((one) => one.player.name).join(', ')}</strong>
-            <span>{best.correct}문제를 맞혔어요!</span>
-          </p>
+        {/* ── 누구 것을 볼지 ───────────────────────────────────── */}
+        {players.length > 1 && (
+          <div className="report-tabs" role="tablist" aria-label="학생 고르기">
+            {players.map((one) => (
+              <button
+                type="button"
+                key={one.id}
+                role="tab"
+                aria-selected={one.id === player.id}
+                className={one.id === player.id ? 'chosen' : ''}
+                onClick={() => setShownId(one.id)}
+              >
+                <span aria-hidden="true">{one.avatar}</span>
+                {one.name}
+              </button>
+            ))}
+          </div>
         )}
 
-        {/* ── 오늘 우리 반이 푼 것 ─────────────────────────────── */}
+        <p className="report-winner">
+          <span className="report-winner-avatars" aria-hidden="true">{player.avatar}</span>
+          <span className="report-winner-label">오늘 푼 만큼</span>
+          <strong>{player.name}</strong>
+          <span>{correct}문제를 맞혔어요!</span>
+        </p>
+
+        {/* ── 이 아이가 푼 것 ──────────────────────────────────── */}
         <section className="report-block">
           <h3>오늘 푼 문제</h3>
           <div className="report-totals">
             <div>
-              <strong>{totalSolved}</strong>
+              <strong>{mine.length}</strong>
               <span>푼 문제</span>
             </div>
             <div className="good">
-              <strong>{totalCorrect}</strong>
+              <strong>{correct}</strong>
               <span>맞힌 문제</span>
             </div>
             <div className="miss">
-              <strong>{totalWrong}</strong>
+              <strong>{wrong}</strong>
               <span>틀린 문제</span>
             </div>
           </div>
-        </section>
 
-        {/* ── 아이별 막대 ──────────────────────────────────────── */}
-        <section className="report-block">
-          <h3>친구들이 푼 만큼</h3>
           <ul className="report-bars">
-            {standings.map((standing) => (
-              <li key={standing.player.id}>
-                <span className="report-bar-name">
-                  <span aria-hidden="true">{standing.player.avatar}</span>
-                  {standing.player.name}
-                </span>
-                <span className="report-bar-track">
-                  {/* 맞힌 만큼 초록, 틀린 만큼 빨강입니다. 한 줄의 길이가
-                      그 아이가 푼 문제 수입니다. */}
-                  <span
-                    className="report-bar-good"
-                    style={{ width: `${(standing.correct / widest) * 100}%` }}
-                  />
-                  <span
-                    className="report-bar-miss"
-                    style={{ width: `${(standing.wrong / widest) * 100}%` }}
-                  />
-                </span>
-                <span className="report-bar-count">
-                  {standing.correct} / {standing.total}
-                </span>
-                <span className="report-bar-time">{seconds(standing.averageMs)}</span>
-              </li>
-            ))}
+            <li>
+              <span className="report-bar-name">
+                <span aria-hidden="true">{player.avatar}</span>
+                {player.name}
+              </span>
+              <span className="report-bar-track">
+                {/* 맞힌 만큼 초록, 틀린 만큼 빨강입니다. */}
+                <span className="report-bar-good" style={{ width: `${(correct / widest) * 100}%` }} />
+                <span className="report-bar-miss" style={{ width: `${(wrong / widest) * 100}%` }} />
+              </span>
+              <span className="report-bar-count">{correct} / {mine.length}</span>
+              <span className="report-bar-time">{seconds(averageMs)}</span>
+            </li>
           </ul>
+
           <ul className="report-praise">
-            {standings.map((standing) => (
-              <li key={standing.player.id}>
-                <span aria-hidden="true">{standing.player.avatar}</span>
-                <strong>{standing.player.name}</strong>
-                {praiseFor(standing)}
-              </li>
-            ))}
+            <li>
+              <span aria-hidden="true">{player.avatar}</span>
+              <strong>{player.name}</strong>
+              {praiseFor(mine.length, correct, wrong)}
+            </li>
           </ul>
         </section>
 
         {/* ── 오답 노트 ────────────────────────────────────────── */}
         <section className="report-block">
           <h3>다시 볼 문제</h3>
-          {totalSolved === 0 ? (
+          {mine.length === 0 ? (
             // 한 문제도 풀지 못한 채 끝났을 때 '틀린 문제가 없어요'라고 하면
             // 칭찬이 아니라 빈말이 됩니다. 아이도 그걸 압니다.
             <p className="report-empty quiet">아직 푼 문제가 없어요. 다음에 다시 해 봐요.</p>
-          ) : wrongByPlayer.length === 0 ? (
+          ) : wrongs.length === 0 ? (
             <p className="report-empty">틀린 문제가 하나도 없어요. 정말 잘했어요!</p>
           ) : (
-            wrongByPlayer.map(({ player, wrongs }) => (
-              <div className="report-notes" key={player.id}>
-                <h4>
-                  <span aria-hidden="true">{player.avatar}</span>
-                  {player.name}
-                </h4>
-                {wrongs.map((record) => (
-                  <article className="report-note" key={record.id}>
-                    <p className="report-note-prompt">{record.prompt}</p>
-                    <p className="report-note-answers">
-                      <span className="picked">내가 고른 답 {record.chosen}</span>
-                      <span className="right">바른 답 {record.answer}</span>
-                    </p>
-                    {record.chosenMeaning && (
-                      <p className="report-note-why">{record.chosenMeaning}</p>
-                    )}
-                    <p className="report-note-help">{record.support.studentHint}</p>
-                  </article>
-                ))}
-              </div>
-            ))
+            <div className="report-notes">
+              {wrongs.map((record) => (
+                <article className="report-note" key={record.id}>
+                  <p className="report-note-prompt">{record.prompt}</p>
+                  <p className="report-note-answers">
+                    <span className="picked">내가 고른 답 {record.chosen}</span>
+                    <span className="right">바른 답 {record.answer}</span>
+                  </p>
+                  {record.chosenMeaning && (
+                    <p className="report-note-why">{record.chosenMeaning}</p>
+                  )}
+                  <p className="report-note-help">{record.support.studentHint}</p>
+                </article>
+              ))}
+            </div>
           )}
         </section>
 
@@ -225,7 +192,7 @@ export const ResultReport = ({
           </button>
           <button className="secondary-button" type="button" onClick={() => window.print()}>
             <Printer size={18} />
-            결과 인쇄
+            {player.name} 결과 인쇄
           </button>
           <button className="primary-button" type="button" onClick={onPlayAgain}>
             <RefreshCcw size={18} />

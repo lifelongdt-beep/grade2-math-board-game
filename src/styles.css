@@ -4875,3 +4875,61 @@ body::before {
 .player-lanes.individual .player-lane:has(.student-feedback) .student-feedback p {
   max-height: none;
 }
+
+/* ── 결과를 볼 학생 고르기 ──────────────────────────────────────────
+   한 화면에 한 아이씩 봅니다. 여럿을 늘어놓으면 전자칠판 앞에 선 아이가
+   자기 것을 찾기 전에 옆자리 것부터 보게 되고, 틀린 개수가 나란히 놓이면
+   그 줄이 곧 등수가 됩니다. */
+.report-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #d7dde8;
+}
+
+.report-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 13px;
+  border: 1px solid #d7dde8;
+  border-radius: 2px;
+  background: #f8fafc;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.report-tabs button span {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.report-tabs button:hover {
+  border-color: #94a3b8;
+}
+
+.report-tabs button.chosen {
+  border-color: #111111;
+  border-width: 2px;
+  background: #ffffff;
+  color: #111111;
+}
+
+@media (max-width: 720px) {
+  .report-tabs button {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+}
+
+/* 인쇄할 때는 고르는 줄이 필요 없습니다. 종이에는 그 아이 것만 나갑니다. */
+@media print {
+  .report-tabs {
+    display: none;
+  }
+}
