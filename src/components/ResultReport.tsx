@@ -26,11 +26,40 @@ type Props = {
   onClose: () => void;
   onPlayAgain: () => void;
   onHome: () => void;
+  // 자리에서 눌러 열면 그 아이부터 보입니다.
+  startWith?: number;
+};
+
+// 한 아이가 오늘 푼 것입니다. 자리 안에 펼쳐 보이는 곳과 인쇄용 리포트가
+// 같은 값을 써야, 두 곳에 적힌 수가 어긋나지 않습니다.
+export const resultOf = (records: AnswerRecord[], playerId: number) => {
+  const mine = records.filter((record) => record.playerId === playerId);
+  const correct = mine.filter((record) => record.correct).length;
+  const spent = mine.reduce((total, record) => total + record.responseMs, 0);
+
+  // 같은 문제를 두 번 틀렸으면 한 번만 적습니다. 같은 것이 두 번 적혀
+  // 있으면 더 많이 틀린 것처럼 보이고, 읽을 것만 늘어납니다.
+  const seen = new Set<string>();
+  const wrongs = mine
+    .filter((record) => !record.correct)
+    .filter((record) => {
+      if (seen.has(record.questionId)) return false;
+      seen.add(record.questionId);
+      return true;
+    });
+
+  return {
+    total: mine.length,
+    correct,
+    wrong: mine.length - correct,
+    averageMs: mine.length === 0 ? 0 : Math.round(spent / mine.length),
+    wrongs,
+  };
 };
 
 // 칭찬은 잘한 아이에게만 하는 것이 아닙니다. 한 문제를 맞혔든 열 문제를
 // 맞혔든, 그 아이가 오늘 한 일을 그대로 말해 줍니다.
-const praiseFor = (total: number, correct: number, wrong: number) => {
+export const praiseFor = (total: number, correct: number, wrong: number) => {
   if (total === 0) return '다음에는 함께 풀어 봐요.';
   if (wrong === 0) return '푼 문제를 하나도 빠짐없이 맞혔어요. 대단해요!';
   if (correct === 0) return '끝까지 앉아서 다 풀었어요. 그게 가장 어려운 일이에요.';
@@ -48,31 +77,17 @@ export const ResultReport = ({
   onClose,
   onPlayAgain,
   onHome,
+  startWith,
 }: Props) => {
-  const [shownId, setShownId] = useState(players[0]?.id ?? 1);
+  const [shownId, setShownId] = useState(startWith ?? players[0]?.id ?? 1);
   const player = players.find((one) => one.id === shownId) ?? players[0];
 
   if (!player) return null;
 
-  const mine = records.filter((record) => record.playerId === player.id);
-  const correct = mine.filter((record) => record.correct).length;
-  const wrong = mine.length - correct;
-  const spent = mine.reduce((total, record) => total + record.responseMs, 0);
-  const averageMs = mine.length === 0 ? 0 : Math.round(spent / mine.length);
-
-  // 같은 문제를 두 번 틀렸으면 한 번만 적습니다. 같은 것이 두 번 적혀
-  // 있으면 더 많이 틀린 것처럼 보이고, 읽을 것만 늘어납니다.
-  const seen = new Set<string>();
-  const wrongs = mine
-    .filter((record) => !record.correct)
-    .filter((record) => {
-      if (seen.has(record.questionId)) return false;
-      seen.add(record.questionId);
-      return true;
-    });
+  const { total, correct, wrong, averageMs, wrongs } = resultOf(records, player.id);
 
   // 막대 길이를 잴 기준입니다. 0으로 나누지 않도록 최소 1로 둡니다.
-  const widest = Math.max(1, mine.length);
+  const widest = Math.max(1, total);
 
   return (
     <div className="report-overlay" role="dialog" aria-modal="true" aria-label="수업 결과">
@@ -117,8 +132,8 @@ export const ResultReport = ({
           <span>
             {correct > 0
               ? `${correct}문제를 맞혔어요!`
-              : mine.length > 0
-                ? `${mine.length}문제를 끝까지 풀었어요!`
+              : total > 0
+                ? `${total}문제를 끝까지 풀었어요!`
                 : '오늘은 아직 풀지 못했어요.'}
           </span>
         </p>
@@ -128,7 +143,7 @@ export const ResultReport = ({
           <h3>오늘 푼 문제</h3>
           <div className="report-totals">
             <div>
-              <strong>{mine.length}</strong>
+              <strong>{total}</strong>
               <span>푼 문제</span>
             </div>
             <div className="good">
@@ -152,7 +167,7 @@ export const ResultReport = ({
                 <span className="report-bar-good" style={{ width: `${(correct / widest) * 100}%` }} />
                 <span className="report-bar-miss" style={{ width: `${(wrong / widest) * 100}%` }} />
               </span>
-              <span className="report-bar-count">{correct} / {mine.length}</span>
+              <span className="report-bar-count">{correct} / {total}</span>
               <span className="report-bar-time">{seconds(averageMs)}</span>
             </li>
           </ul>
@@ -161,7 +176,7 @@ export const ResultReport = ({
             <li>
               <span aria-hidden="true">{player.avatar}</span>
               <strong>{player.name}</strong>
-              {praiseFor(mine.length, correct, wrong)}
+              {praiseFor(total, correct, wrong)}
             </li>
           </ul>
         </section>
@@ -169,7 +184,7 @@ export const ResultReport = ({
         {/* ── 오답 노트 ────────────────────────────────────────── */}
         <section className="report-block">
           <h3>다시 볼 문제</h3>
-          {mine.length === 0 ? (
+          {total === 0 ? (
             // 한 문제도 풀지 못한 채 끝났을 때 '틀린 문제가 없어요'라고 하면
             // 칭찬이 아니라 빈말이 됩니다. 아이도 그걸 압니다.
             <p className="report-empty quiet">아직 푼 문제가 없어요. 다음에 다시 해 봐요.</p>

@@ -10,6 +10,7 @@ import {
   Maximize2,
   Minimize2,
   MonitorUp,
+  Printer,
   QrCode,
   RefreshCcw,
   Smartphone,
@@ -34,7 +35,7 @@ import {
   watchMuted,
 } from './sound';
 import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
-import { ResultReport } from './components/ResultReport';
+import { praiseFor, ResultReport, resultOf } from './components/ResultReport';
 import { TeacherPanel } from './components/TeacherPanel';
 import { curriculum } from './data/curriculum';
 import { generateQuestions } from './data/questionFactory';
@@ -653,6 +654,8 @@ function App() {
   const [sessionDuration, setSessionDuration] = useState<SessionDuration>(initialRoute.duration);
   const [muted, setMutedState] = useState(isMuted);
   const [reportOpen, setReportOpen] = useState(false);
+  const [reportPlayerId, setReportPlayerId] = useState<number | null>(null);
+  const [openResults, setOpenResults] = useState<Record<number, boolean>>({});
   const players = useMemo(() => createPlayers(playerCount, studentConfigs), [playerCount, studentConfigs]);
   const [bankSeed, setBankSeed] = useState(0);
   const questionBanks = useMemo<Record<Difficulty, Question[]>>(
@@ -921,6 +924,7 @@ function App() {
     setMode('setup');
     setTeacherOpen(false);
     setReportOpen(false);
+    setOpenResults({});
     setRecords([]);
     setSuccessSignals({});
     setPlayerStates(createQuestionState(players));
@@ -933,6 +937,7 @@ function App() {
     // 다시 풀 때도 모두 하에서 출발해, 그날 컨디션에 맞게 다시 올라갑니다.
     setTeacherOpen(false);
     setReportOpen(false);
+    setOpenResults({});
     setRecords([]);
     setSuccessSignals({});
     setWrongSignals({});
@@ -1382,12 +1387,7 @@ function App() {
           <span>{sessionDuration}초 수업</span>
           <span>{mode === 'finished' ? '시간 종료' : '진행 중'}</span>
         </div>
-        {mode === 'finished' && (
-          <button className="secondary-button" type="button" onClick={() => setReportOpen(true)}>
-            <BarChart3 size={18} />
-            결과 보기
-          </button>
-        )}
+
         <button className="primary-button" type="button" onClick={resetSession}>
           <RefreshCcw size={18} />
           {mode === 'finished' ? '다시 풀기' : '다시 시작'}
@@ -1456,6 +1456,63 @@ function App() {
                           <strong>{result.wrong}개</strong>
                         </div>
                       </div>
+
+                      {/* 자기 자리에서 자기 것을 엽니다. 한가운데 뜨는 창
+                          하나에 다 같이 모이면, 자기 것을 보기 전에 옆자리
+                          것부터 보게 됩니다. */}
+                      <button
+                        className="lane-result-toggle"
+                        type="button"
+                        aria-expanded={Boolean(openResults[player.id])}
+                        onClick={() => {
+                          playTapSound();
+                          setOpenResults((prev) => ({ ...prev, [player.id]: !prev[player.id] }));
+                        }}
+                      >
+                        <BarChart3 size={16} />
+                        {openResults[player.id] ? '결과 접기' : '결과 자세히 보기'}
+                      </button>
+
+                      {openResults[player.id] && (() => {
+                        const mine = resultOf(sessionRecords, player.id);
+                        return (
+                          <div className="lane-result-detail">
+                            <p className="lane-result-praise">
+                              {praiseFor(mine.total, mine.correct, mine.wrong)}
+                            </p>
+
+                            <h4>다시 볼 문제</h4>
+                            {mine.total === 0 ? (
+                              <p className="lane-result-empty">아직 푼 문제가 없어요.</p>
+                            ) : mine.wrongs.length === 0 ? (
+                              <p className="lane-result-empty good">틀린 문제가 하나도 없어요!</p>
+                            ) : (
+                              mine.wrongs.map((record) => (
+                                <article className="lane-result-note" key={record.id}>
+                                  <p className="lane-note-prompt">{record.prompt}</p>
+                                  <p className="lane-note-answers">
+                                    <span className="picked">내 답 {record.chosen}</span>
+                                    <span className="right">바른 답 {record.answer}</span>
+                                  </p>
+                                  <p className="lane-note-help">{record.support.studentHint}</p>
+                                </article>
+                              ))
+                            )}
+
+                            <button
+                              className="lane-result-print"
+                              type="button"
+                              onClick={() => {
+                                setReportPlayerId(player.id);
+                                setReportOpen(true);
+                              }}
+                            >
+                              <Printer size={15} />
+                              인쇄용으로 보기
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </div>
                   ) : (
                     <>
@@ -1554,6 +1611,7 @@ function App() {
           players={players}
           records={sessionRecords}
           lesson={lesson}
+          startWith={reportPlayerId ?? undefined}
           onClose={() => setReportOpen(false)}
           onPlayAgain={resetSession}
           onHome={goSetup}

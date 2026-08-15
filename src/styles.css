@@ -4933,3 +4933,141 @@ body::before {
     display: none;
   }
 }
+
+/* ── 자리 안에서 보는 내 결과 ───────────────────────────────────────
+   전자칠판 한가운데 창 하나가 뜨면 아이들이 그 앞에 모이고, 자기 것을
+   찾기 전에 옆자리 것부터 봅니다. 자기 자리에서 자기 것만 열면 그럴
+   일이 없습니다. */
+.lane-result-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 10px;
+  border: 1px solid var(--player-color);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--player-color);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lane-result-toggle:hover {
+  background: #ffffff;
+}
+
+.lane-result-detail {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.16);
+  text-align: left;
+}
+
+.lane-result-praise {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--player-color);
+  background: rgba(0, 0, 0, 0.03);
+  color: #1f2937;
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.lane-result-detail h4 {
+  margin: 0 0 7px;
+  color: #374151;
+  font-size: 13px;
+}
+
+.lane-result-empty {
+  margin: 0;
+  padding: 10px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 2px;
+  color: #4a5568;
+  font-size: 12px;
+  text-align: center;
+}
+
+.lane-result-empty.good {
+  border-color: #9fd6ae;
+  background: #f2fbf5;
+  color: #16663a;
+}
+
+/* 오답 하나. 무엇을 물었는지, 내가 뭘 골랐는지, 바른 답이 무엇인지가
+   한 덩어리로 붙어 있어야 견주어 볼 수 있습니다. */
+.lane-result-note {
+  margin-bottom: 8px;
+  padding: 9px 10px;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #e5484d;
+  border-radius: 2px;
+  background: #ffffff;
+}
+
+.lane-note-prompt {
+  margin: 0 0 6px;
+  color: #111827;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.lane-note-answers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0 0 5px;
+  font-size: 12px;
+}
+
+.lane-note-answers .picked,
+.lane-note-answers .right {
+  padding: 2px 7px;
+  border-radius: 2px;
+  font-weight: 700;
+}
+
+.lane-note-answers .picked {
+  background: #fdecec;
+  color: #a4262c;
+}
+
+.lane-note-answers .right {
+  background: #e9f7ee;
+  color: #16663a;
+}
+
+.lane-note-help {
+  margin: 0;
+  color: #1f3a8a;
+  font-size: 12px;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.lane-result-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  padding: 7px 11px;
+  border: 1px solid #cbd5e1;
+  border-radius: 2px;
+  background: #f8fafc;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* 결과를 펼치면 길어집니다. 자리 안에서 넘겨 볼 수 있어야 합니다. */
+.player-lane.finished-result {
+  overflow-y: auto;
+}
