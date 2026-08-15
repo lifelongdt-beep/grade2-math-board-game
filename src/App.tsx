@@ -10,7 +10,6 @@ import {
   Maximize2,
   Minimize2,
   MonitorUp,
-  Printer,
   QrCode,
   RefreshCcw,
   Smartphone,
@@ -35,7 +34,7 @@ import {
   watchMuted,
 } from './sound';
 import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
-import { praiseFor, ResultReport, resultOf } from './components/ResultReport';
+import { studyGuideFor } from './data/studyGuide';
 import { TeacherPanel } from './components/TeacherPanel';
 import { curriculum } from './data/curriculum';
 import { generateQuestions } from './data/questionFactory';
@@ -653,8 +652,6 @@ function App() {
   const [studentSetupSteps, setStudentSetupSteps] = useState<Record<number, SetupStep>>(() => createStudentSetupSteps(isMobileEntry ? 1 : 3));
   const [sessionDuration, setSessionDuration] = useState<SessionDuration>(initialRoute.duration);
   const [muted, setMutedState] = useState(isMuted);
-  const [reportOpen, setReportOpen] = useState(false);
-  const [reportPlayerId, setReportPlayerId] = useState<number | null>(null);
   const [openResults, setOpenResults] = useState<Record<number, boolean>>({});
   const players = useMemo(() => createPlayers(playerCount, studentConfigs), [playerCount, studentConfigs]);
   const [bankSeed, setBankSeed] = useState(0);
@@ -923,7 +920,6 @@ function App() {
   const goSetup = () => {
     setMode('setup');
     setTeacherOpen(false);
-    setReportOpen(false);
     setOpenResults({});
     setRecords([]);
     setSuccessSignals({});
@@ -936,7 +932,6 @@ function App() {
     // 수준을 고르는 단계가 없어졌으므로 곧바로 다시 시작합니다.
     // 다시 풀 때도 모두 하에서 출발해, 그날 컨디션에 맞게 다시 올라갑니다.
     setTeacherOpen(false);
-    setReportOpen(false);
     setOpenResults({});
     setRecords([]);
     setSuccessSignals({});
@@ -1442,20 +1437,25 @@ function App() {
                     <div className="student-result-summary">
                       <span className="result-kicker">시간 종료</span>
                       <strong>{player.name} 결과</strong>
-                      <div className="student-result-list">
-                        <div>
-                          <span>푼 문제</span>
-                          <strong>{result.total}개</strong>
+                      {/* 개수는 접혀 있을 때만 보여 줍니다. 펼치면 그 자리는
+                          '무엇을 더 공부할까'가 씁니다. 몇 개 맞혔는지는
+                          아이가 이미 압니다 — 풀 때마다 보았으니까요. */}
+                      {!openResults[player.id] && (
+                        <div className="student-result-list">
+                          <div>
+                            <span>푼 문제</span>
+                            <strong>{result.total}개</strong>
+                          </div>
+                          <div className="correct-result">
+                            <span>정답</span>
+                            <strong>{result.correct}개</strong>
+                          </div>
+                          <div className="wrong-result">
+                            <span>오답</span>
+                            <strong>{result.wrong}개</strong>
+                          </div>
                         </div>
-                        <div className="correct-result">
-                          <span>정답</span>
-                          <strong>{result.correct}개</strong>
-                        </div>
-                        <div className="wrong-result">
-                          <span>오답</span>
-                          <strong>{result.wrong}개</strong>
-                        </div>
-                      </div>
+                      )}
 
                       {/* 자기 자리에서 자기 것을 엽니다. 한가운데 뜨는 창
                           하나에 다 같이 모이면, 자기 것을 보기 전에 옆자리
@@ -1474,42 +1474,52 @@ function App() {
                       </button>
 
                       {openResults[player.id] && (() => {
-                        const mine = resultOf(sessionRecords, player.id);
+                        const guide = studyGuideFor(sessionRecords, player.id);
+                        if (guide.answered === 0) {
+                          return (
+                            <div className="lane-result-detail">
+                              <p className="lane-result-empty">아직 푼 문제가 없어요. 다음에 함께 해 봐요.</p>
+                            </div>
+                          );
+                        }
+
                         return (
                           <div className="lane-result-detail">
-                            <p className="lane-result-praise">
-                              {praiseFor(mine.total, mine.correct, mine.wrong)}
-                            </p>
-
-                            <h4>다시 볼 문제</h4>
-                            {mine.total === 0 ? (
-                              <p className="lane-result-empty">아직 푼 문제가 없어요.</p>
-                            ) : mine.wrongs.length === 0 ? (
-                              <p className="lane-result-empty good">틀린 문제가 하나도 없어요!</p>
-                            ) : (
-                              mine.wrongs.map((record) => (
-                                <article className="lane-result-note" key={record.id}>
-                                  <p className="lane-note-prompt">{record.prompt}</p>
-                                  <p className="lane-note-answers">
-                                    <span className="picked">내 답 {record.chosen}</span>
-                                    <span className="right">바른 답 {record.answer}</span>
-                                  </p>
-                                  <p className="lane-note-help">{record.support.studentHint}</p>
-                                </article>
-                              ))
+                            {guide.strong.length > 0 && (
+                              <section className="lane-guide-block good">
+                                <h4>잘한 문제</h4>
+                                <ul className="lane-guide-kinds">
+                                  {guide.strong.map((one) => (
+                                    <li key={one.kind}>
+                                      <strong>{one.kind}</strong>
+                                      <span>{one.total}번 만나 모두 맞혔어요</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </section>
                             )}
 
-                            <button
-                              className="lane-result-print"
-                              type="button"
-                              onClick={() => {
-                                setReportPlayerId(player.id);
-                                setReportOpen(true);
-                              }}
-                            >
-                              <Printer size={15} />
-                              인쇄용으로 보기
-                            </button>
+                            {guide.weak.length === 0 ? (
+                              <p className="lane-result-empty good">
+                                걸린 곳이 없었어요. 다음에는 조금 더 어려운 문제도 해 볼까요?
+                              </p>
+                            ) : (
+                              <section className="lane-guide-block">
+                                <h4>더 공부하면 좋은 것</h4>
+                                {guide.weak.map((one) => (
+                                  <article className="lane-guide-weak" key={one.kind}>
+                                    <p className="lane-guide-kind">
+                                      <strong>{one.kind}</strong>
+                                      <span>{one.total}번 중 {one.wrong}번 걸렸어요</span>
+                                    </p>
+                                    <p className="lane-guide-line"><span>이건 이런 거예요</span>{one.concept}</p>
+                                    <p className="lane-guide-line"><span>조심할 곳</span>{one.watchOut}</p>
+                                    <p className="lane-guide-line how"><span>이렇게 해 봐요</span>{one.how}</p>
+                                    <p className="lane-guide-line check"><span>다 풀고 나서</span>{one.selfCheck}</p>
+                                  </article>
+                                ))}
+                              </section>
+                            )}
                           </div>
                         );
                       })()}
@@ -1606,17 +1616,6 @@ function App() {
         currentQuestion={sampleQuestion}
       />
 
-      {reportOpen && (
-        <ResultReport
-          players={players}
-          records={sessionRecords}
-          lesson={lesson}
-          startWith={reportPlayerId ?? undefined}
-          onClose={() => setReportOpen(false)}
-          onPlayAgain={resetSession}
-          onHome={goSetup}
-        />
-      )}
     </main>
   );
 }
