@@ -107,11 +107,20 @@ export const ResultReport = ({
           </div>
         )}
 
+        {/* 하나도 맞히지 못한 아이에게 '0문제를 맞혔어요!'라고 느낌표를
+            붙이면 놀리는 말이 됩니다. 그 아이가 오늘 한 일은 맞힌 것이
+            아니라 끝까지 앉아 푼 것이므로, 그것을 말해 줍니다. */}
         <p className="report-winner">
           <span className="report-winner-avatars" aria-hidden="true">{player.avatar}</span>
           <span className="report-winner-label">오늘 푼 만큼</span>
           <strong>{player.name}</strong>
-          <span>{correct}문제를 맞혔어요!</span>
+          <span>
+            {correct > 0
+              ? `${correct}문제를 맞혔어요!`
+              : mine.length > 0
+                ? `${mine.length}문제를 끝까지 풀었어요!`
+                : '오늘은 아직 풀지 못했어요.'}
+          </span>
         </p>
 
         {/* ── 이 아이가 푼 것 ──────────────────────────────────── */}
