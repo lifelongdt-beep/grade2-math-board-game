@@ -35,6 +35,7 @@ import {
 } from './sound';
 import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
 import { studyGuideFor } from './data/studyGuide';
+import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
 import { TeacherPanel } from './components/TeacherPanel';
 import { curriculum } from './data/curriculum';
 import { generateQuestions } from './data/questionFactory';
@@ -186,110 +187,7 @@ const createPlayers = (count: number, configs: Record<number, StudentConfig>): P
     avatar: configs[index + 1]?.avatar ?? avatarChoices[index % avatarChoices.length],
   }));
 
-const createQuestionState = (players: Player[], now = Date.now()): Record<number, PlayerQuestionState> =>
-  Object.fromEntries(
-    players.map((player, index) => [
-      player.id,
-      {
-        questionIndex: index * 4,
-        selected: null,
-        correct: null,
-        locked: false,
-        feedback: 'idle',
-        questionStartedAt: now,
-        answered: 0,
-        retries: [],
-        activeRetry: null,
-        // 모두 하에서 시작합니다. 어디까지 갈 수 있는지는 풀면서 정해집니다.
-        level: '하',
-        streak: 0,
-        missStreak: 0,
-      },
-    ]),
-  );
-
 const formatMs = (ms?: number) => (ms ? `${(ms / 1000).toFixed(1)}초` : '-');
-
-
-// 수준이 오르내리는 규칙입니다.
-// 아이를 미리 상·중·하로 나누어 두면 한번 정해진 자리에 갇힙니다.
-// 대신 하에서 시작해 잘 풀면 올리고 틀리면 내려서, 그 아이가 지금 풀 수
-// 있는 자리를 계속 따라갑니다.
-const LEVEL_LADDER: Difficulty[] = ['하', '중', '상'];
-const STEP_UP_AFTER = 3;
-// 내려갈 때는 두 번 연속 틀려야 합니다. 2학년은 아는 문제도 잘못 누르는
-// 일이 있어서, 한 번의 실수로 수준을 내리면 실제 실력보다 아래에 머뭅니다.
-const STEP_DOWN_AFTER = 2;
-
-const levelUp = (level: Difficulty): Difficulty =>
-  LEVEL_LADDER[Math.min(LEVEL_LADDER.length - 1, LEVEL_LADDER.indexOf(level) + 1)];
-
-const levelDown = (level: Difficulty): Difficulty =>
-  LEVEL_LADDER[Math.max(0, LEVEL_LADDER.indexOf(level) - 1)];
-
-// 되돌아온 문제가 있으면 그때 그 수준의 문제집에서, 없으면 지금 수준에서 냅니다.
-const getPlayerQuestion = (banks: Record<Difficulty, Question[]>, state: PlayerQuestionState) => {
-  const bank = banks[state.activeRetry?.level ?? state.level];
-  return bank[(state.activeRetry?.index ?? state.questionIndex) % bank.length];
-};
-
-// 틀린 문제는 세 문제 뒤에 다시 옵니다. 바로 다시 내면 답을 외워서 맞히고,
-// 너무 멀면 다시 만나기 전에 수업이 끝납니다.
-const RETRY_AFTER = 3;
-
-// 한 문제를 끝내고 다음으로 넘어갈 때의 상태를 만듭니다.
-// wasWrong이면 방금 문제를 다시 낼 줄에 넣고, 맞혔으면 넣지 않습니다.
-const advancePlayerState = (
-  state: PlayerQuestionState,
-  playerCount: number,
-  wasWrong: boolean,
-): PlayerQuestionState => {
-  const answered = state.answered + 1;
-  const shown = state.activeRetry ?? { index: state.questionIndex, level: state.level };
-  const queued = wasWrong
-    ? [...state.retries, { ...shown, dueAt: answered + RETRY_AFTER }]
-    : state.retries;
-
-  // 연속 정답 3번이면 올라가고, 연속 오답 2번이면 내려옵니다.
-  // 되돌아온 문제도 똑같이 셈에 넣습니다.
-  const streak = wasWrong ? 0 : state.streak + 1;
-  const missStreak = wasWrong ? state.missStreak + 1 : 0;
-  const level = missStreak >= STEP_DOWN_AFTER
-    ? levelDown(state.level)
-    : streak >= STEP_UP_AFTER
-      ? levelUp(state.level)
-      : state.level;
-  // 수준이 바뀌면 두 셈 모두 0부터 다시 셉니다.
-  const moved = level !== state.level;
-  const nextStreak = moved ? 0 : streak;
-  const nextMiss = moved ? 0 : missStreak;
-
-  // 낼 때가 된 것 중 가장 오래 기다린 것부터 냅니다.
-  const dueAt = queued.findIndex((item) => item.dueAt <= answered);
-  const servingRetry = dueAt !== -1;
-  const nextRetries = servingRetry ? queued.filter((_, at) => at !== dueAt) : queued;
-
-  return {
-    // 새 문제를 하나 썼을 때만 새 문제 차례를 앞당깁니다. 방금 푼 것이
-    // 되돌아온 문제였다면 새 문제는 아직 하나도 안 썼으므로 그대로 둡니다.
-    // (다음에 낼 것이 되돌아온 문제인지와는 상관없습니다. 그걸로 판단하면
-    //  방금 푼 새 문제를 나중에 또 내게 됩니다.)
-    questionIndex: state.activeRetry !== null
-      ? state.questionIndex
-      : state.questionIndex + playerCount,
-    selected: null,
-    correct: null,
-    locked: false,
-    feedback: 'idle',
-    questionStartedAt: Date.now(),
-    answered,
-    retries: nextRetries,
-    activeRetry: servingRetry ? { index: queued[dueAt].index, level: queued[dueAt].level } : null,
-    level,
-    streak: nextStreak,
-    missStreak: nextMiss,
-  };
-};
 
 const unitReviewIdFor = (semester: Unit['semester'], unitNo: number) => `${semester}-u${unitNo}-review`;
 
