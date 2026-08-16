@@ -7323,17 +7323,21 @@ const rulerVisualFor = (start: number, end: number, label = '자 눈금 자료')
   highlightEnd: end,
 });
 
+// 이 단원의 문항은 모두 '아래에서부터 한 칸에 하나씩'을 가르칩니다.
+// '어디부터 그려야 할까요?'의 답도 '맨 아래 칸부터 위로'입니다. 그런데
+// 그림은 옆으로 눕혀 그리고 있어, 배우는 말과 보이는 그림이 어긋났습니다.
+// 세우는 쪽을 기본으로 둡니다. 눕혀 그릴 곳에서만 'right'라고 적습니다.
 const pictographVisualFor = (
   items: Array<{ label: string; count: number }>,
   unit = 1,
   label = '그림그래프 자료',
-  orientation?: 'up' | 'right',
+  orientation: 'up' | 'right' = 'up',
 ): QuestionVisual => ({
   kind: 'pictograph',
   label,
   unit,
   items,
-  ...(orientation ? { orientation } : {}),
+  orientation,
 });
 
 const arrayVisualFor = (rows: number, columns: number, label = '배열 자료', fadedRows?: number): QuestionVisual => ({
@@ -9575,11 +9579,7 @@ const visualForGeneratedQuestion = (
       );
     }
 
-    // 그래프를 그리는 이야기를 하는 문제는 교과서와 같이 아래에서부터
-    // 위로 쌓아 보여 줍니다. 자료를 읽기만 하는 문제는 옆으로 눕힌 쪽이
-    // 이름과 수를 견주기 좋습니다.
-    const standing = /아래에서부터|그래프로 나타내|그래프를 그리|세로/.test(question.prompt);
-    return pictographVisualFor(shown, 1, '자료 조사 그림그래프', standing ? 'up' : undefined);
+    return pictographVisualFor(shown, 1, '자료 조사 그림그래프');
   }
 
   if (question.type === 'multiplication') {
@@ -13779,7 +13779,7 @@ const drawTemplateVisual = (drawn: DrawnVisual, lesson: Lesson): QuestionVisual 
     drawn.items,
     drawn.unit ?? 1,
     drawn.label ?? '그림그래프 자료',
-    drawn.orientation,
+    drawn.orientation ?? 'up',
   );
 };
 
