@@ -275,11 +275,23 @@ const animalCalls: Record<string, Blip[]> = {
       glide: [170, 130, 95, 80], vibrato: { rate: 17, depth: 10 },
     },
   ],
-  // 개구리 — 개굴, 개굴, 개굴. 한 번마다 목이 부풀었다 꺼집니다.
+  // 개구리 — '개굴'은 두 음절입니다. '개'가 높고 짧게, '굴'이 조금
+  // 낮게 이어집니다. 170Hz로 잡았더니 소 우는 자리라 으르렁거렸습니다.
+  // 개구리는 그보다 두 옥타브 가까이 위에서 웁니다.
   '🐸': [
-    { frequency: 170, at: 0, length: 0.16, volume: 0.1, type: 'square', attack: 0.03, glide: [230, 170, 150], vibrato: { rate: 26, depth: 18 } },
-    { frequency: 170, at: 0.24, length: 0.16, volume: 0.1, type: 'square', attack: 0.03, glide: [235, 175, 152], vibrato: { rate: 26, depth: 18 } },
-    { frequency: 165, at: 0.48, length: 0.2, volume: 0.095, type: 'square', attack: 0.03, glide: [225, 170, 145], vibrato: { rate: 24, depth: 16 } },
+    // 개굴 ①
+    { frequency: 470, at: 0, length: 0.07, volume: 0.085, type: 'square', attack: 0.012, glide: [560, 500], vibrato: { rate: 34, depth: 26 } },
+    { frequency: 380, at: 0.07, length: 0.13, volume: 0.09, type: 'square', attack: 0.012, glide: [340, 300], vibrato: { rate: 30, depth: 22 } },
+    // 개굴 ②
+    { frequency: 480, at: 0.28, length: 0.07, volume: 0.085, type: 'square', attack: 0.012, glide: [570, 505], vibrato: { rate: 34, depth: 26 } },
+    { frequency: 385, at: 0.35, length: 0.13, volume: 0.09, type: 'square', attack: 0.012, glide: [345, 300], vibrato: { rate: 30, depth: 22 } },
+    // 개굴 ③ — 끝은 조금 길게 끕니다.
+    { frequency: 465, at: 0.56, length: 0.07, volume: 0.08, type: 'square', attack: 0.012, glide: [550, 495], vibrato: { rate: 34, depth: 26 } },
+    { frequency: 375, at: 0.63, length: 0.17, volume: 0.085, type: 'square', attack: 0.012, glide: [335, 290, 275], vibrato: { rate: 28, depth: 20 } },
+    // 목이 부푸는 낮은 울림은 받쳐 주는 정도로만 깔아 둡니다.
+    { frequency: 190, at: 0.02, length: 0.16, volume: 0.028, type: 'triangle', glide: [175, 160] },
+    { frequency: 192, at: 0.3, length: 0.16, volume: 0.028, type: 'triangle', glide: [176, 160] },
+    { frequency: 188, at: 0.58, length: 0.2, volume: 0.026, type: 'triangle', glide: [172, 155] },
   ],
   // 펭귄 — 나팔처럼 빼액, 두 번째는 길게 끕니다.
   '🐧': [
