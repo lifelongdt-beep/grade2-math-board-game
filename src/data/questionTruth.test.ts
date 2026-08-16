@@ -189,6 +189,30 @@ describe('the maths in each question is true', () => {
     expect([...new Set(mismatched)]).toEqual([]);
   });
 
+  it('does not print the answer inside the question', () => {
+    // '7000을 숫자로 바르게 쓴 것은?' 하고 보기에 7000을 두면 물음이
+    // 되지 않습니다. 숫자로 쓰라고 하려면 숫자가 아닌 것을 보여 주어야
+    // 합니다. 이 문항은 실제로 나가고 있었습니다.
+    //
+    // 답이 수 하나일 때만 봅니다. '63-15=48'처럼 식이 답인 문항은 문제에
+    // 그 수들이 적혀 있는 것이 마땅하고, 그것을 옮겨 적는 것이 곧 푸는
+    // 것도 아닙니다.
+    const givenAway: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      if (!/^\d+$/.test(question.answer)) continue;
+      // 풀이 과정 문항은 앞 단계의 결과가 적혀 있는 것이 정상입니다.
+      if (question.prompt.includes('①')) continue;
+
+      const standsAlone = new RegExp(`(?:^|[^\\d])${question.answer}(?:[^\\d]|$)`);
+      if (standsAlone.test(question.prompt)) {
+        givenAway.push(`${lessonId} ${level} ${question.id}: 답 ${question.answer}이 문제에 그대로 — ${question.prompt.slice(0, 44)}`);
+      }
+    }
+
+    expect(givenAway).toEqual([]);
+  });
+
   it('offers four choices that are all different', () => {
     const thin: string[] = [];
 

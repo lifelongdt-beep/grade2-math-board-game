@@ -1043,12 +1043,17 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       );
     }
     if (variant === 2) {
+      // 숫자로 쓰라고 하려면 숫자가 아닌 것을 보여 주어야 합니다. 예전에는
+      // '7000을 숫자로 바르게 쓴 것은?' 하고 보기에 7000을 두었습니다.
+      // 물음에 답이 이미 적혀 있으니 물음이 되지 않습니다.
+      const said = readKoreanNumber(value);
       return makeQuestion(
         lesson, difficulty, index,
-        `${value}을 숫자로 바르게 쓴 것은?`,
+        `${said}을 숫자로 바르게 쓴 것은?`,
         `${value}`,
-        [`${count}`, `${unitBase}${count}`, `${count}${unitBase}`],
-        `${unitBase}이 ${count}개이므로 ${value}이라고 씁니다.`,
+        // 0을 하나 덜 쓴 것, 자릿수를 아주 빼먹은 것, 다음 몇천을 쓴 것.
+        [`${count * (unitBase / 10)}`, `${count}`, `${unitBase * (count + 1)}`],
+        `${said}은 ${unitBase}이 ${count}개인 수이므로 ${value}이라고 씁니다.`,
         'placeValue', `몇${unitName}을 숫자로 쓰기`,
       );
     }
