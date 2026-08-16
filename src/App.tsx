@@ -1150,7 +1150,7 @@ function App() {
       <section
         className="setup-playfield playfield"
         style={{
-          backgroundImage: `linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(${import.meta.env.BASE_URL}assets/math-adventure-bg.png)`,
+          backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(./assets/math-adventure-bg.png)',
         }}
       >
         <div className="setup-progress">
@@ -1395,7 +1395,7 @@ function App() {
       </div>
 
       <section className={`game-layout individual players-${playerCount}`}>
-        <section className="playfield" style={{ backgroundImage: `linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(${import.meta.env.BASE_URL}assets/math-adventure-bg.png)` }}>
+        <section className="playfield" style={{ backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(./assets/math-adventure-bg.png)' }}>
           <div
             className="player-lanes individual"
             style={{ gridTemplateColumns: `repeat(${Math.min(playerCount, 5)}, minmax(${playerCount >= 5 ? 180 : playerCount >= 4 ? 210 : 260}px, 1fr))` }}
