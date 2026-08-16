@@ -6313,7 +6313,7 @@ const surveyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
     `조사한 친구는 모두 ${total}명입니다. 표에서 ${survey.items.filter((one) => one.name !== target.name).map((one) => `${one.name} ${one.count}명`).join(', ')}일 때 ${target.name} 칸에 쓸 수는?`,
     target.count,
     [total, target.count + 2, Math.max(1, target.count - 1)],
-    `모두 ${total}명에서 나머지를 빼면 ${josa(target.name, '은', '는')} ${target.count}명입니다.`,
+    `모두 ${total}명에서 다른 칸의 수를 빼면 ${josa(target.name, '은', '는')} ${target.count}명입니다.`,
     'data',
     '조사 결과를 표에 옮기기',
     surveyTable(survey, { blankIndex: (index + 1) % survey.items.length }),
