@@ -13845,7 +13845,10 @@ const questionsFor = (
       }
 
       // 겹치는 것을 피하는 일보다 그 자리의 몫을 지키는 일이 먼저입니다.
-      question = sameKind ?? (seen.has(first.prompt) ? anyFresh ?? first : first);
+      // 자료를 읽는 자리인데 같은 갈래가 없으면, 다른 갈래로 바꾸느니
+      // 겹치더라도 그대로 둡니다 — 겹친 것은 눈에 보이지만 수준이 무너진
+      // 것은 눈에 보이지 않습니다.
+      question = sameKind ?? (wantsRich ? first : anyFresh ?? first);
     }
 
     seen.add(question.prompt);
