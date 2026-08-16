@@ -13805,6 +13805,10 @@ const spreadRepeats = (questions: Question[]): Question[] => {
   return spread;
 };
 
+// 자료를 읽고 조건을 함께 보는 문항인지입니다. 수준마다 몇 자리씩
+// 있어야 하는 몫이라, 겹친다고 다시 만들 때도 이것은 지켜야 합니다.
+const isRichQuestion = (question: Question) => /자료 해석|조건 함께 보기/.test(question.strategy);
+
 // 수만 다른 같은 문항인지 보려고 수를 지우고 견줍니다.
 const shapeOfPrompt = (prompt: string) => prompt.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
 
@@ -13817,20 +13821,33 @@ const questionsFor = (
   const made: Question[] = [];
 
   for (let slot = 0; slot < 30; slot += 1) {
-    let question = buildQuestionAt(lesson, difficulty, slot);
+    const first = buildQuestionAt(lesson, difficulty, slot);
+    // 그 자리가 맡고 있던 몫입니다. 자료를 읽고 조건을 함께 보는 문항이
+    // 수준마다 몇 자리씩 있어야 하는데, 겹친다고 아무것으로나 바꾸면
+    // 그 몫이 무너집니다.
+    const wantsRich = isRichQuestion(first);
+    const avoided = avoidShapes?.has(shapeOfPrompt(first.prompt)) ?? false;
 
-    // 상은 중이 이미 내는 모양을 피해서 고릅니다. 두 수준이 같은 문항을
-    // 나눠 가지면 난이도가 이름뿐인 것이 됩니다.
-    if (avoidShapes) {
+    let question = first;
+    if (seen.has(first.prompt) || avoided) {
+      let sameKind: Question | null = null;
+      let anyFresh: Question | null = null;
+
       for (let again = 1; again <= 8; again += 1) {
-        if (!seen.has(question.prompt) && !avoidShapes.has(shapeOfPrompt(question.prompt))) break;
-        question = buildQuestionAt(lesson, difficulty, slot + again * 30);
+        const other = buildQuestionAt(lesson, difficulty, slot + again * 30);
+        if (seen.has(other.prompt)) continue;
+        if (avoidShapes?.has(shapeOfPrompt(other.prompt))) continue;
+        if (!anyFresh) anyFresh = other;
+        if (isRichQuestion(other) === wantsRich) {
+          sameKind = other;
+          break;
+        }
       }
+
+      // 겹치는 것을 피하는 일보다 그 자리의 몫을 지키는 일이 먼저입니다.
+      question = sameKind ?? (seen.has(first.prompt) ? anyFresh ?? first : first);
     }
 
-    for (let again = 1; again <= 8 && seen.has(question.prompt); again += 1) {
-      question = buildQuestionAt(lesson, difficulty, slot + again * 30);
-    }
     seen.add(question.prompt);
     made.push(question);
   }
