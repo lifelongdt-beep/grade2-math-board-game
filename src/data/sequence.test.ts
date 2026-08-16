@@ -74,7 +74,7 @@ const notBefore: Array<{
     semester: '2-1',
     unit: '분류하기',
     rules: [
-      { pattern: /가장 많은|가장 적은|합계|모두 몇/, from: 4, note: '분류하고 세기는 4차시' },
+      { pattern: /가장 많은|가장 적은|합계|모두 몇|몇 개 더|몇 명 더/, from: 4, note: '분류하고 세기는 4차시' },
     ],
   },
   {

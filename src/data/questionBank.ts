@@ -2096,15 +2096,15 @@ export const questionBank: Template[] = [
     when: /기준에 따라 분류/,
     demand: 'connect',
     tag: 'classification',
-    strategy: '조건 함께 보기 · 나눈 두 자리의 차를 구하는 상황',
-    vars: {
-      big: { from: 5, to: 9 },
-      small: { from: 2, to: 4 },
-    },
-    prompt: '블록을 크기에 따라 나누었더니 큰 것 {big}개, 작은 것 {small}개였습니다. 큰 것은 작은 것보다 몇 개 더 많을까요?',
-    answer: '{big - small}개',
-    wrongs: ['{big + small}개', '{small}개', '{big}개'],
-    solution: '{big}-{small}={big - small}이므로 {big - small}개 더 많습니다.',
+    // 세어서 견주는 것은 4차시(분류하고 세어)입니다. 이 차시는 기준에
+    // 맞게 갈라 놓는 데까지이고, 문제풀도 잘못 나눈 것을 찾게 합니다.
+    strategy: '조건 함께 보기 · 잘못 나눈 것을 찾는 상황',
+    vars: {},
+    words: { item: ['단추', '블록', '색연필'] },
+    prompt: '{item:을} 색깔에 따라 나누었습니다. 빨강 자리에 잘못 들어간 것은 어느 것일까요?',
+    answer: '파란 {item}',
+    wrongs: ['빨간 {item}', '큰 빨간 {item}', '작은 빨간 {item}'],
+    solution: '색깔을 기준으로 나누었으므로 빨강 자리에는 빨간 {item}만 있어야 합니다.',
   },
   {
     id: 'sort-by-standard-claims',
