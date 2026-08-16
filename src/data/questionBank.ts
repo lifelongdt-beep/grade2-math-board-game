@@ -2677,7 +2677,15 @@ export const questionBank: Template[] = [
       third: { calc: 'start + step + step' },
       next: { calc: 'start + step + step + step' },
     },
-    prompt: '쌓기나무를 {start}개, {second}개, {third}개…로 쌓았습니다. 다음에는 몇 개를 쌓아야 할까요?',
+    // 쌓은 모양을 보고 찾는 차시입니다. 낱개 수를 글로 적어 두면 쌓기나무는
+    // 한 번도 나오지 않고 수의 규칙만 남습니다.
+    visual: {
+      kind: 'cube-pattern',
+      steps: ['start', 'second', 'third', 'next'],
+      unknownIndex: 3,
+      label: '차례로 쌓은 모양',
+    },
+    prompt: '쌓은 모양을 보고 넷째에는 몇 개를 쌓아야 하는지 구해 보세요.',
     answer: '{next}개',
     wrongs: ['{third}개', '{next + step}개', '{start}개'],
     solution: '{step}개씩 늘어나는 규칙이므로 다음은 {next}개입니다.',
@@ -2688,13 +2696,19 @@ export const questionBank: Template[] = [
     demand: 'connect',
     tag: 'pattern',
     strategy: '조건 함께 보기 · 늘어난 만큼을 찾는 상황',
+    // 셋째까지 그려야 하므로 열두 개를 넘지 않게 폭을 잡습니다.
     vars: {
-      start: { from: 2, to: 6 },
-      step: { from: 2, to: 4 },
+      start: { from: 2, to: 4 },
+      step: { from: 2, to: 3 },
       second: { calc: 'start + step' },
       third: { calc: 'start + step + step' },
     },
-    prompt: '쌓기나무를 {start}개, {second}개, {third}개로 쌓았습니다. 몇 개씩 늘어나는 규칙일까요?',
+    visual: {
+      kind: 'cube-pattern',
+      steps: ['start', 'second', 'third'],
+      label: '차례로 쌓은 모양',
+    },
+    prompt: '쌓은 모양을 보고 몇 개씩 늘어나는 규칙인지 구해 보세요.',
     answer: '{step}개',
     wrongs: ['{start}개', '{second}개', '{step + 1}개'],
     solution: '{second}-{start}={step}이므로 {step}개씩 늘어납니다.',
@@ -2712,7 +2726,12 @@ export const questionBank: Template[] = [
       third: { calc: 'start + step + step' },
       next: { calc: 'start + step + step + step' },
     },
-    prompt: '쌓기나무를 {start}개, {second}개, {third}개로 쌓았습니다.',
+    visual: {
+      kind: 'cube-pattern',
+      steps: ['start', 'second', 'third'],
+      label: '차례로 쌓은 모양',
+    },
+    prompt: '쌓은 모양을 보고 알맞은 설명을 고르세요.',
     claims: [
       { text: '{step}개씩 늘어나는 규칙입니다.', ok: true },
       { text: '다음에는 {next}개를 쌓습니다.', ok: true },

@@ -316,7 +316,6 @@ const duplicatePromptAngles = [
   '핵심 조건을 표시해 보세요.',
   '답을 고른 까닭까지 생각해요.',
   '틀리기 쉬운 보기를 먼저 지워요.',
-  '실제 장면으로 떠올려요.',
   '차근차근 확인하며 풀어요.',
   '그림이나 표의 기준을 먼저 찾아요.',
   '말로 설명할 수 있는 답을 골라요.',
@@ -695,6 +694,16 @@ const cubeStackVisual = (prompt: string, index: number, countOverride?: number):
     cubes: buildCubeStack(count, index),
   };
 };
+
+// 쌓은 모양의 규칙 차시입니다. 낱개 수만 글로 적어 두면 아이는 쌓기나무를
+// 보지 않고 수만 봅니다. 차례대로 쌓은 모양을 그려 주고, 모르는 자리는
+// 물음표로 비워 둡니다.
+const cubePatternVisualFor = (steps: number[], unknownIndex?: number): QuestionVisual => ({
+  kind: 'cube-pattern',
+  label: '차례로 쌓은 모양',
+  steps,
+  ...(unknownIndex === undefined ? {} : { unknownIndex }),
+});
 
 const solidQuestionVisual = (prompt: string, index: number): QuestionVisual => {
   const visibleOnlyMatch = prompt.match(/쌓기나무\s*(\d+)개 중\s*(\d+)개만 보인/);
@@ -6902,22 +6911,28 @@ const ruleUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
     const start = 1 + (index % 3);
     const step = 1 + (index % 3);
     const third = start + step * 2;
+    // 이 차시는 '쌓은 모양에서' 규칙을 찾습니다. 낱개 수만 글로 적어 두면
+    // 쌓기나무는 한 번도 나오지 않고 수의 규칙만 남습니다 — 그림도 무늬
+    // 문항의 ○△□가 붙어 나와 문제와 아무 상관이 없었습니다.
+    const sequence = [start, start + step, third];
     if (variant === 0) {
       return makeQuestion(
         lesson, difficulty, index,
-        `쌓기나무를 ${start}개, ${start + step}개, ${third}개로 늘어놓았습니다. 몇 개씩 늘어나는 규칙일까요?`,
+        '쌓은 모양을 보고 몇 개씩 늘어나는 규칙인지 구해 보세요.',
         `${step}개씩`, [`${step + 1}개씩`, '1개씩', `${start}개씩`],
-        `앞의 수와 뒤의 수의 차를 보면 ${step}개씩 늘어나는 규칙입니다.`,
+        `쌓기나무가 ${start}개, ${start + step}개, ${third}개이므로 ${step}개씩 늘어나는 규칙입니다.`,
         'pattern', '쌓은 모양이 늘어나는 규칙 찾기',
+        cubePatternVisualFor(sequence),
       );
     }
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        `쌓기나무가 ${start}개, ${start + step}개, ${third}개로 놓였습니다. 다음에 놓을 쌓기나무는 몇 개일까요?`,
+        '쌓은 모양을 보고 넷째에 놓을 쌓기나무는 몇 개인지 구해 보세요.',
         `${third + step}개`, [`${third}개`, `${third + step + 1}개`, `${start}개`],
         `${step}개씩 늘어나므로 ${third}에 ${step}을 더한 ${third + step}개입니다.`,
         'pattern', '다음에 놓을 쌓기나무 수 구하기',
+        cubePatternVisualFor([...sequence, third + step], 3),
       );
     }
     if (variant === 2) {
@@ -6928,15 +6943,17 @@ const ruleUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
         ['쌓기나무의 색깔', '쌓기나무를 만든 사람', '쌓은 곳의 위치'],
         `쌓은 모양의 규칙은 개수가 얼마씩 변하는지를 보고 찾습니다.`,
         'pattern', '쌓은 모양에서 볼 곳 알기',
+        cubePatternVisualFor(sequence),
       );
     }
     if (variant === 3) {
       return makeQuestion(
         lesson, difficulty, index,
-        `쌓기나무를 ${start}개, ${start + step}개, □개, ${third + step}개로 놓았습니다. □는 몇 개일까요?`,
+        '쌓은 모양을 보고 셋째에 놓을 쌓기나무는 몇 개인지 구해 보세요.',
         `${third}개`, [`${third + step}개`, `${start}개`, `${third + 1}개`],
-        `${step}개씩 늘어나는 규칙이므로 □는 ${third}개입니다.`,
+        `${step}개씩 늘어나는 규칙이므로 셋째는 ${third}개입니다.`,
         'pattern', '쌓은 모양의 빈칸 채우기',
+        cubePatternVisualFor([start, start + step, third, third + step], 2),
       );
     }
     return makeQuestion(
@@ -6945,6 +6962,7 @@ const ruleUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
       `${step * 2}개`, [`${step}개`, `${step * 3}개`, '1개'],
       `한 번에 ${step}개씩 늘어나므로 두 번이면 ${step}+${step}=${step * 2}개입니다.`,
       'pattern', '규칙을 여러 번 적용하기',
+      cubePatternVisualFor(sequence),
     );
   }
 
@@ -13602,6 +13620,9 @@ const drawTemplateVisual = (drawn: DrawnVisual, lesson: Lesson): QuestionVisual 
   }
   if (drawn.kind === 'bar-model') {
     return barModelVisualFor(drawn.bars, drawn.label ?? '막대모델 자료');
+  }
+  if (drawn.kind === 'cube-pattern') {
+    return cubePatternVisualFor(drawn.steps, drawn.unknownIndex);
   }
   if (drawn.kind === 'table') {
     return tableVisualFor(drawn.columns, drawn.label ?? '조사한 자료', {

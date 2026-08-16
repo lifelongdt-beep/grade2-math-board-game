@@ -123,6 +123,17 @@ export interface CubeStackVisual {
   }>;
 }
 
+// 쌓은 모양이 차례로 늘어나는 규칙을 보여 줍니다. 낱개 수만 글로 적어
+// 두면 아이는 쌓기나무가 아니라 수만 봅니다 — 이 차시는 '쌓은 모양에서'
+// 규칙을 찾는 차시입니다.
+export interface CubePatternVisual {
+  kind: 'cube-pattern';
+  label: string;
+  steps: number[];
+  // 물음표로 비워 둘 자리입니다(다음에 놓을 모양, 가운데 빈 자리).
+  unknownIndex?: number;
+}
+
 export interface CubeViewPattern {
   label: '앞' | '옆' | '위' | '보임';
   cells: boolean[][];
@@ -271,6 +282,7 @@ export interface PatternVisual {
 export type QuestionVisual =
   | PlaneShapesVisual
   | CubeStackVisual
+  | CubePatternVisual
   | CubeViewsVisual
   | TangramVisual
   | NumberLineVisual

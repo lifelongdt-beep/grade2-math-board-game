@@ -71,6 +71,7 @@ export type VisualSpec =
       valueLabel?: string;
       label?: string;
     }
+  | { kind: 'cube-pattern'; steps: string[]; unknownIndex?: number; label?: string }
   | { kind: 'pictograph'; items: Array<{ label: string; count: string }>; unit?: number; label?: string };
 
 // 식을 모두 수로 바꾼 그림입니다. 실제 그림은 questionFactory가 그립니다 —
@@ -91,6 +92,7 @@ export type DrawnVisual =
       valueLabel: string;
       label?: string;
     }
+  | { kind: 'cube-pattern'; steps: number[]; unknownIndex?: number; label?: string }
   | { kind: 'pictograph'; items: Array<{ label: string; count: number }>; unit?: number; label?: string };
 
 export type Claim = { text: string; ok: boolean };
@@ -337,6 +339,16 @@ const resolveVisual = (
       bars.push({ label, value });
     }
     return { kind: 'bar-model', bars, label: text(spec.label) };
+  }
+
+  if (spec.kind === 'cube-pattern') {
+    const steps: number[] = [];
+    for (const one of spec.steps) {
+      const value = at(one);
+      if (value === null || value <= 0) return null;
+      steps.push(value);
+    }
+    return { kind: 'cube-pattern', steps, unknownIndex: spec.unknownIndex, label: text(spec.label) };
   }
 
   if (spec.kind === 'table') {

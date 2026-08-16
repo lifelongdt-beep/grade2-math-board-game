@@ -4749,11 +4749,18 @@ body::before {
 
 /* 그림은 칸 너비를 다 씁니다. 작게 그려 두면 무엇이 다른지 견줄 수가
    없는데, 견주는 것이 이 문항이 시키는 일입니다. */
+/* 그림에 정해진 키를 주면 남는 만큼이 위아래 빈자리로 남습니다. 그림이
+   제 비율대로 서게 두면 빈자리가 아예 생기지 않습니다. */
 .choice-grid.picture-choices button .choice-picture .question-visual-figure {
   flex: 1;
   min-width: 0;
   width: auto;
-  --visual-height: clamp(78px, 10vh, 116px);
+  height: auto;
+  max-height: 22vh;
+}
+
+.choice-grid.picture-choices button .choice-picture .question-visual-figure svg {
+  height: auto;
 }
 
 /* 이름표는 그림 왼쪽에 섭니다. 색을 --ink로 두었더니 어두운 자리 위에

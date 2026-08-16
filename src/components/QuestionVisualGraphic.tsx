@@ -88,6 +88,79 @@ const renderCube = (cube: { x: number; y: number; z: number }, index: number) =>
   );
 };
 
+// 쌓은 모양 차례를 그립니다. 한 칸은 등각으로 그린 쌓기나무이고, 모두
+// 같은 면에 세워 어느 것도 뒤에 숨지 않습니다 — 아이가 세어야 하니까요.
+const ORDINALS = ['첫째', '둘째', '셋째', '넷째', '다섯째'];
+
+const smallCube = (x: number, z: number, originX: number, baseY: number, key: string) => {
+  const w = 11;
+  const h = 5.5;
+  const v = 13;
+  const sx = originX + x * w * 2;
+  const sy = baseY - z * (v + h);
+  const top = `${sx},${sy} ${sx + w},${sy + h} ${sx},${sy + h * 2} ${sx - w},${sy + h}`;
+  const left = `${sx - w},${sy + h} ${sx},${sy + h * 2} ${sx},${sy + h * 2 + v} ${sx - w},${sy + h + v}`;
+  const right = `${sx + w},${sy + h} ${sx},${sy + h * 2} ${sx},${sy + h * 2 + v} ${sx + w},${sy + h + v}`;
+
+  return (
+    <g key={key}>
+      <polygon points={left} fill="#c5eef3" stroke="#4f8f9a" strokeWidth="1.6" />
+      <polygon points={right} fill="#9edce8" stroke="#4f8f9a" strokeWidth="1.6" />
+      <polygon points={top} fill="#effcff" stroke="#4f8f9a" strokeWidth="1.6" />
+    </g>
+  );
+};
+
+function CubePatternGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'cube-pattern' }> }) {
+  const steps = visual.steps.slice(0, 4);
+  const slot = 376 / Math.max(steps.length, 1);
+  const baseY = 96;
+
+  return (
+    <svg viewBox="0 0 376 132" role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width="368" height="124" rx="12" fill="#f6fcff" stroke="#d7edf2" />
+      {steps.map((count, stepIndex) => {
+        const middle = slot * stepIndex + slot / 2;
+        const unknown = visual.unknownIndex === stepIndex;
+        // 한 줄에 셋까지 놓고 위로 올립니다. 앞뒤로 겹치지 않으니
+        // 그린 것이 곧 센 것이 됩니다.
+        const wide = Math.min(3, Math.max(1, count));
+        const originX = middle - ((wide - 1) * 11 * 2) / 2;
+
+        return (
+          <g key={`step-${stepIndex}`}>
+            {unknown ? (
+              <>
+                <rect
+                  x={middle - 26}
+                  y={baseY - 44}
+                  width="52"
+                  height="60"
+                  rx="10"
+                  fill="#fff8dc"
+                  stroke="#d9a521"
+                  strokeWidth="2.5"
+                  strokeDasharray="7 5"
+                />
+                <text x={middle} y={baseY - 4} textAnchor="middle" fill="#a2760f" fontSize="30" fontWeight="900">
+                  ?
+                </text>
+              </>
+            ) : (
+              Array.from({ length: Math.min(count, 12) }).map((_, cubeIndex) =>
+                smallCube(cubeIndex % 3, Math.floor(cubeIndex / 3), originX, baseY, `c-${stepIndex}-${cubeIndex}`),
+              )
+            )}
+            <text x={middle} y="120" textAnchor="middle" fill="#0f7175" fontSize="14" fontWeight="900">
+              {ORDINALS[stepIndex]}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 // 연필 하나를 그리고, 그 길이에 딱 맞게 클립을 이어 놓습니다.
 // 자는 그리지 않습니다. 이 차시는 자를 배우기 전이기 때문입니다.
 function UnitMeasureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'unit-measure' }> }) {
@@ -517,63 +590,66 @@ function TableGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'tab
   const cells = [...visual.columns.map((column) => ({ name: column.name, value: column.value }))];
   if (visual.totalLabel) cells.push({ name: visual.totalLabel, value: visual.total ?? null });
 
+  // 흰 카드 위에 표를 얹으면 카드의 둥근 모서리와 안쪽 여백이 세로의
+  // 3분의 1을 먹습니다. 표는 선과 글자만 있으면 표이므로, 자리의 검은
+  // 바탕에 그대로 긋습니다.
   const labelWidth = 96;
   const cellWidth = Math.max(58, Math.min(84, Math.round(320 / Math.max(cells.length, 1))));
-  const width = 24 + labelWidth + cellWidth * cells.length;
-  const rowHeight = 40;
-  const top = 26;
-  const height = top + rowHeight * 2 + 22;
+  const rowHeight = 38;
+  const edge = 4;
+  const width = edge * 2 + labelWidth + cellWidth * cells.length;
+  const height = edge * 2 + rowHeight * 2;
+  const gridWidth = labelWidth + cellWidth * cells.length;
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
-      <rect x="3" y="3" width={width - 6} height={height - 6} rx="14" fill="#f6fcff" stroke="#d7edf2" />
       {[0, 1].map((row) => (
         <rect
           key={row}
-          x="12"
-          y={top + row * rowHeight}
-          width={labelWidth + cellWidth * cells.length}
+          x={edge}
+          y={edge + row * rowHeight}
+          width={gridWidth}
           height={rowHeight}
-          fill={row === 0 ? '#e6f7f7' : '#ffffff'}
-          stroke="#7fb9bb"
+          fill={row === 0 ? 'rgba(126, 226, 255, 0.14)' : 'transparent'}
+          stroke="#6fd3ea"
           strokeWidth="2"
         />
       ))}
       {[visual.categoryLabel, visual.valueLabel].map((text, row) => (
         <text
           key={text}
-          x={12 + labelWidth / 2}
-          y={top + row * rowHeight + rowHeight / 2 + 6}
+          x={edge + labelWidth / 2}
+          y={edge + row * rowHeight + rowHeight / 2 + 6}
           textAnchor="middle"
-          fill="#0f6f70"
-          fontSize="15"
+          fill="#8ee9ff"
+          fontSize="16"
           fontWeight="900"
         >
           {text}
         </text>
       ))}
       {cells.map((cell, index) => {
-        const x = 12 + labelWidth + index * cellWidth;
+        const x = edge + labelWidth + index * cellWidth;
         const isTotal = Boolean(visual.totalLabel) && index === cells.length - 1;
         return (
           <g key={`${cell.name}-${index}`}>
-            <line x1={x} y1={top} x2={x} y2={top + rowHeight * 2} stroke="#7fb9bb" strokeWidth="2" />
+            <line x1={x} y1={edge} x2={x} y2={edge + rowHeight * 2} stroke="#6fd3ea" strokeWidth="2" />
             <text
               x={x + cellWidth / 2}
-              y={top + rowHeight / 2 + 6}
+              y={edge + rowHeight / 2 + 6}
               textAnchor="middle"
-              fill={isTotal ? '#9a6b12' : '#24364a'}
-              fontSize="15"
+              fill={isTotal ? '#ffd479' : '#ffffff'}
+              fontSize="16"
               fontWeight="900"
             >
               {cell.name}
             </text>
             <text
               x={x + cellWidth / 2}
-              y={top + rowHeight + rowHeight / 2 + 7}
+              y={edge + rowHeight + rowHeight / 2 + 7}
               textAnchor="middle"
-              fill={cell.value === null ? '#c2454f' : '#182433'}
-              fontSize="17"
+              fill={cell.value === null ? '#ff9aa2' : '#ffffff'}
+              fontSize="19"
               fontWeight="900"
             >
               {cell.value === null ? '?' : cell.value}
@@ -644,14 +720,21 @@ function CalendarGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: '
 }
 
 function PictographGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'pictograph' }> }) {
+  // 줄이 셋이든 넷이든 한 크기로 그려서, 셋일 때는 아래가 34px 비었습니다.
+  // 보기 넷이 세로로 서는 자리에서는 그 여백이 네 번 쌓입니다.
+  const rows = Math.min(visual.items.length, 4);
+  const firstRow = 26;
+  const bottom = firstRow + (rows - 1) * 24 + 16;
+  const height = bottom + 8;
+
   return (
-    <svg viewBox="0 0 376 150" role="img" aria-label={visual.label}>
-      <rect x="4" y="6" width="368" height="138" rx="14" fill="#f6fcff" stroke="#d7edf2" />
-      <text x="188" y="30" textAnchor="middle" fill="#0f7175" fontSize="14" fontWeight="900">
+    <svg viewBox={`0 0 376 ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="3" width="368" height={height - 6} rx="12" fill="#f6fcff" stroke="#d7edf2" />
+      <text x="188" y="18" textAnchor="middle" fill="#0f7175" fontSize="13" fontWeight="900">
         한 칸 = {visual.unit}
       </text>
       {visual.items.slice(0, 4).map((item, index) => {
-        const y = 46 + index * 24;
+        const y = firstRow + index * 24;
         const units = Math.ceil(item.count / visual.unit);
         return (
           <g key={`${item.label}-${index}`}>
@@ -813,14 +896,22 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
   if (!visual) return null;
 
   return (
+    // 표는 두 줄이라 옆으로 넓고 세로로 낮습니다. 다른 그림과 같은 키를
+    // 주면 위아래가 빈 채로 자리만 차지합니다.
     <figure
-      className={['question-visual-figure', visual.kind === 'clock' ? 'is-clock' : '', className]
+      className={[
+        'question-visual-figure',
+        visual.kind === 'clock' ? 'is-clock' : '',
+        visual.kind === 'table' ? 'is-table' : '',
+        className,
+      ]
         .filter(Boolean)
         .join(' ')}
       aria-label={visual.label}
     >
       {visual.kind === 'plane-shapes' && <PlaneShapesGraphic visual={visual} />}
       {visual.kind === 'cube-stack' && <CubeStackGraphic visual={visual} />}
+      {visual.kind === 'cube-pattern' && <CubePatternGraphic visual={visual} />}
       {visual.kind === 'cube-views' && <CubeViewsGraphic visual={visual} />}
       {visual.kind === 'tangram' && <TangramGraphic visual={visual} />}
       {visual.kind === 'number-line' && <NumberLineGraphic visual={visual} />}
