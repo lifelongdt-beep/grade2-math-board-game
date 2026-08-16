@@ -1306,18 +1306,6 @@ function App() {
               {bonusFlash > 0 && <span className="timer-bonus" key={bonusFlash}>+{BONUS_SECONDS}초</span>}
             </div>
           </div>
-          {/* 교실에서 소리를 꺼야 할 때가 있습니다. 옆 반이 시험을 보거나
-              선생님이 설명하는 동안입니다. 끈 것은 다음 수업에도 남습니다. */}
-          <button
-            className={`sound-toggle ${muted ? 'off' : ''}`}
-            type="button"
-            onClick={() => setMuted(!muted)}
-            aria-pressed={muted}
-            title={muted ? '소리 켜기' : '소리 끄기'}
-          >
-            {muted ? <VolumeX size={19} /> : <Volume2 size={19} />}
-            <span>{muted ? '소리 꺼짐' : '소리 켜짐'}</span>
-          </button>
           {!isMobileEntry && (
             <button className="teacher-button" type="button" onClick={() => setTeacherOpen(true)}>
               <MonitorUp size={19} />
@@ -1631,6 +1619,20 @@ function App() {
         </div>
         {mode !== 'setup' && renderLessonBar()}
         <div className="header-actions">
+          {/* 교실에서 소리를 꺼야 할 때가 있습니다. 옆 반이 시험을 보거나
+              선생님이 설명하는 동안입니다. 수업이 시작된 뒤에야 끌 수
+              있으면 이미 한 번은 울린 뒤입니다 — 첫 화면부터 둡니다.
+              끈 것은 다음 수업에도 남습니다. */}
+          <button
+            className={`sound-toggle ${muted ? 'off' : ''}`}
+            type="button"
+            onClick={() => setMuted(!muted)}
+            aria-pressed={muted}
+            title={muted ? '소리 켜기' : '소리 끄기'}
+          >
+            {muted ? <VolumeX size={19} /> : <Volume2 size={19} />}
+            <span>{muted ? '소리 꺼짐' : '소리 켜짐'}</span>
+          </button>
           <button className="secondary-button fullscreen-button" type="button" onClick={toggleFullscreen}>
             {fullscreenActive ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
             {fullscreenActive ? '전체화면 나가기' : '전체화면'}

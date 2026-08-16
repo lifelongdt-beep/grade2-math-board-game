@@ -728,7 +728,69 @@ function CalendarGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: '
   );
 }
 
+// 교과서의 그래프는 항목을 아래 가로줄에 두고 ○를 아래에서 위로 쌓습니다.
+// '아래에서부터 한 칸에 하나씩 그립니다'라고 가르쳐 놓고 옆으로 눕힌
+// 그림만 보여 주면, 배우는 그림과 보는 그림이 다릅니다.
+function StandingPictograph({ visual }: { visual: Extract<QuestionVisual, { kind: 'pictograph' }> }) {
+  const items = visual.items.slice(0, 4);
+  const tallest = Math.max(1, ...items.map((item) => Math.ceil(item.count / visual.unit)));
+  const rows = Math.min(Math.max(tallest, 3), 10);
+  const cell = 20;
+  const left = 70;
+  const columnWidth = 62;
+  const bottom = 20 + rows * cell;
+  const width = left + items.length * columnWidth + 16;
+  const height = bottom + 28;
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="3" y="3" width={width - 6} height={height - 6} rx="12" fill="#f6fcff" stroke="#d7edf2" />
+      {/* 세로 눈금입니다. 몇 칸째인지 세지 않아도 되도록 수를 적습니다. */}
+      {Array.from({ length: rows }).map((_, row) => {
+        const y = bottom - row * cell;
+        return (
+          <g key={`rule-${row}`}>
+            <line x1={left - 6} y1={y} x2={width - 16} y2={y} stroke="#dbeef3" strokeWidth="1" />
+            <text x={left - 12} y={y - cell / 2 + 5} textAnchor="end" fill="#5b7c8a" fontSize="12" fontWeight="800">
+              {row + 1}
+            </text>
+          </g>
+        );
+      })}
+      <line x1={left - 6} y1={bottom} x2={width - 16} y2={bottom} stroke="#7fb9bb" strokeWidth="2.5" />
+      <line x1={left - 6} y1="16" x2={left - 6} y2={bottom} stroke="#7fb9bb" strokeWidth="2.5" />
+      {items.map((item, index) => {
+        const x = left + index * columnWidth + columnWidth / 2;
+        const units = Math.min(Math.ceil(item.count / visual.unit), rows);
+        return (
+          <g key={`${item.label}-${index}`}>
+            {Array.from({ length: units }).map((_, at) => (
+              <circle
+                key={at}
+                cx={x}
+                cy={bottom - at * cell - cell / 2}
+                r="7.5"
+                fill="#dffafa"
+                stroke="#0f9f9f"
+                strokeWidth="2"
+              />
+            ))}
+            <text x={x} y={bottom + 18} textAnchor="middle" fill="#24364a" fontSize="13" fontWeight="900">
+              {item.label}
+            </text>
+          </g>
+        );
+      })}
+      <text x={left - 12} y="13" textAnchor="end" fill="#0f7175" fontSize="12" fontWeight="900">
+        수
+      </text>
+    </svg>
+  );
+}
+
 function PictographGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'pictograph' }> }) {
+  if (visual.orientation === 'up') return <StandingPictograph visual={visual} />;
+
   // 줄이 셋이든 넷이든 한 크기로 그려서, 셋일 때는 아래가 34px 비었습니다.
   // 보기 넷이 세로로 서는 자리에서는 그 여백이 네 번 쌓입니다.
   const rows = Math.min(visual.items.length, 4);

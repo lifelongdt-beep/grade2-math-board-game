@@ -7323,11 +7323,17 @@ const rulerVisualFor = (start: number, end: number, label = '자 눈금 자료')
   highlightEnd: end,
 });
 
-const pictographVisualFor = (items: Array<{ label: string; count: number }>, unit = 1, label = '그림그래프 자료'): QuestionVisual => ({
+const pictographVisualFor = (
+  items: Array<{ label: string; count: number }>,
+  unit = 1,
+  label = '그림그래프 자료',
+  orientation?: 'up' | 'right',
+): QuestionVisual => ({
   kind: 'pictograph',
   label,
   unit,
   items,
+  ...(orientation ? { orientation } : {}),
 });
 
 const arrayVisualFor = (rows: number, columns: number, label = '배열 자료', fadedRows?: number): QuestionVisual => ({
@@ -8035,6 +8041,9 @@ const pickTheGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: num
       ],
       1,
       '',
+      // 교과서의 그래프는 아래에서부터 위로 쌓습니다. 옆으로 눕혀 놓으면
+      // '바르게 그린 그래프'를 고르는 문항인데 바른 모양이 아닙니다.
+      'up',
     );
 
   // 잘못 그린 것들 — 한 칸씩 밀려 그린 것, 두 줄을 바꾸어 그린 것,
@@ -9566,7 +9575,11 @@ const visualForGeneratedQuestion = (
       );
     }
 
-    return pictographVisualFor(shown, 1, '자료 조사 그림그래프');
+    // 그래프를 그리는 이야기를 하는 문제는 교과서와 같이 아래에서부터
+    // 위로 쌓아 보여 줍니다. 자료를 읽기만 하는 문제는 옆으로 눕힌 쪽이
+    // 이름과 수를 견주기 좋습니다.
+    const standing = /아래에서부터|그래프로 나타내|그래프를 그리|세로/.test(question.prompt);
+    return pictographVisualFor(shown, 1, '자료 조사 그림그래프', standing ? 'up' : undefined);
   }
 
   if (question.type === 'multiplication') {
@@ -13762,7 +13775,12 @@ const drawTemplateVisual = (drawn: DrawnVisual, lesson: Lesson): QuestionVisual 
       valueLabel: drawn.valueLabel,
     });
   }
-  return pictographVisualFor(drawn.items, drawn.unit ?? 1, drawn.label ?? '그림그래프 자료');
+  return pictographVisualFor(
+    drawn.items,
+    drawn.unit ?? 1,
+    drawn.label ?? '그림그래프 자료',
+    drawn.orientation,
+  );
 };
 
 const templateTools = {

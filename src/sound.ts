@@ -265,17 +265,24 @@ const animalCalls: Record<string, Blip[]> = {
     { frequency: 600, at: 0.04, length: 0.4, volume: 0.03, type: 'sine', glide: [740, 640, 560] },
     { frequency: 280, at: 0.56, length: 0.3, volume: 0.07, type: 'triangle', attack: 0.05, glide: [340, 290, 250], vibrato: { rate: 12, depth: 20 } },
   ],
-  // 호랑이 — 목 안에서 구르는 으르렁 뒤에 짧게 어흥.
+  // 호랑이 — 100Hz 언저리는 교실 스피커가 거의 내지 못해, 웅장한 대신
+  // 웅얼거림으로 들렸습니다. 울림의 자리를 한 옥타브 올리고 배음을
+  // 층층이 쌓습니다. 낮은 힘은 밑에서 받치고, 들리는 것은 그 위입니다.
   '🐯': [
+    // 어— 하고 배에서 올라옵니다.
     {
-      frequency: 130, at: 0, length: 0.46, volume: 0.12, type: 'sawtooth', attack: 0.08,
-      glide: [150, 135, 120, 105], vibrato: { rate: 22, depth: 14 },
+      frequency: 230, at: 0, length: 0.5, volume: 0.11, type: 'sawtooth', attack: 0.1,
+      glide: [290, 260, 235, 210], vibrato: { rate: 19, depth: 16 },
     },
-    { frequency: 260, at: 0.02, length: 0.42, volume: 0.045, type: 'triangle', glide: [300, 250, 210] },
+    { frequency: 460, at: 0.02, length: 0.46, volume: 0.05, type: 'triangle', glide: [560, 500, 440] },
+    { frequency: 115, at: 0, length: 0.5, volume: 0.05, type: 'sine', glide: [140, 125, 105] },
+    // 흥— 하고 크게 벌어졌다 닫힙니다.
     {
-      frequency: 110, at: 0.5, length: 0.42, volume: 0.13, type: 'sawtooth', attack: 0.05,
-      glide: [170, 130, 95, 80], vibrato: { rate: 17, depth: 10 },
+      frequency: 260, at: 0.54, length: 0.56, volume: 0.13, type: 'sawtooth', attack: 0.06,
+      glide: [360, 320, 260, 205], vibrato: { rate: 15, depth: 14 },
     },
+    { frequency: 520, at: 0.56, length: 0.5, volume: 0.055, type: 'triangle', glide: [700, 620, 500, 420] },
+    { frequency: 130, at: 0.54, length: 0.56, volume: 0.055, type: 'sine', glide: [175, 155, 125] },
   ],
   // 개구리 — '개굴'은 두 음절입니다. '개'가 높고 짧게, '굴'이 조금
   // 낮게 이어집니다. 170Hz로 잡았더니 소 우는 자리라 으르렁거렸습니다.
@@ -295,22 +302,32 @@ const animalCalls: Record<string, Blip[]> = {
     { frequency: 192, at: 0.3, length: 0.16, volume: 0.028, type: 'triangle', glide: [176, 160] },
     { frequency: 188, at: 0.58, length: 0.2, volume: 0.026, type: 'triangle', glide: [172, 155] },
   ],
-  // 펭귄 — 나팔처럼 빼액, 두 번째는 길게 끕니다.
+  // 펭귄 — 모난 소리로 빼액 하니 비명 같았습니다. 새끼 펭귄이 어미를
+  // 부르듯 동글동글한 소리로 짧게 세 번 삐약이고, 끝만 살짝 올립니다.
   '🐧': [
-    { frequency: 620, at: 0, length: 0.16, volume: 0.085, type: 'square', attack: 0.03, glide: [880, 700, 620], vibrato: { rate: 15, depth: 20 } },
+    { frequency: 620, at: 0, length: 0.11, volume: 0.075, type: 'triangle', attack: 0.03, glide: [760, 700], vibrato: { rate: 9, depth: 12 } },
+    { frequency: 650, at: 0.17, length: 0.11, volume: 0.075, type: 'triangle', attack: 0.03, glide: [800, 730], vibrato: { rate: 9, depth: 12 } },
     {
-      frequency: 640, at: 0.24, length: 0.4, volume: 0.09, type: 'square', attack: 0.04,
-      glide: [900, 980, 820, 660], vibrato: { rate: 13, depth: 24 },
+      frequency: 680, at: 0.34, length: 0.3, volume: 0.08, type: 'triangle', attack: 0.04,
+      glide: [850, 960, 880], vibrato: { rate: 8, depth: 16 },
     },
+    // 둥글게 받쳐 주는 배음입니다. 모난 결을 덮어 줍니다.
+    { frequency: 1300, at: 0.02, length: 0.6, volume: 0.014, type: 'sine', glide: [1500, 1700, 1560] },
   ],
-  // 사자 — 배에서 올라오는 긴 울음입니다. 호랑이보다 낮고 오래 갑니다.
+  // 사자 — 호랑이보다 조금 낮되, 들리는 자리에 둡니다. 짧게 두 번
+  // 그르렁거린 뒤 길게 포효합니다. 배음을 세 층으로 쌓아야 작은
+  // 스피커에서도 크게 들립니다.
   '🦁': [
+    { frequency: 190, at: 0, length: 0.16, volume: 0.075, type: 'sawtooth', attack: 0.05, glide: [210, 185], vibrato: { rate: 24, depth: 12 } },
+    { frequency: 195, at: 0.2, length: 0.16, volume: 0.08, type: 'sawtooth', attack: 0.05, glide: [220, 190], vibrato: { rate: 24, depth: 12 } },
+    // 크게 벌어지는 포효입니다.
     {
-      frequency: 95, at: 0, length: 0.86, volume: 0.13, type: 'sawtooth', attack: 0.12,
-      glide: [120, 105, 90, 78, 68], vibrato: { rate: 16, depth: 9 },
+      frequency: 205, at: 0.42, length: 0.86, volume: 0.135, type: 'sawtooth', attack: 0.13,
+      glide: [300, 340, 290, 235, 185], vibrato: { rate: 13, depth: 15 },
     },
-    { frequency: 190, at: 0.05, length: 0.72, volume: 0.05, type: 'triangle', glide: [240, 200, 165, 140] },
-    { frequency: 380, at: 0.08, length: 0.5, volume: 0.02, type: 'sine', glide: [430, 360, 300] },
+    { frequency: 410, at: 0.45, length: 0.8, volume: 0.06, type: 'triangle', glide: [600, 680, 560, 450, 370] },
+    { frequency: 820, at: 0.5, length: 0.66, volume: 0.022, type: 'sine', glide: [1180, 1320, 1000, 760] },
+    { frequency: 103, at: 0.42, length: 0.86, volume: 0.06, type: 'sine', glide: [150, 170, 145, 118, 92] },
   ],
   // 거북 — 낮게 깔면 교실에서는 들리지 않습니다. 사람이 듣기 좋은 자리로
   // 올리되, 느릿느릿한 걸음이 소리에 남아 있어야 합니다. 길게 두 번,

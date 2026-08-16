@@ -72,7 +72,7 @@ export type VisualSpec =
       label?: string;
     }
   | { kind: 'cube-pattern'; steps: string[]; unknownIndex?: number; label?: string }
-  | { kind: 'pictograph'; items: Array<{ label: string; count: string }>; unit?: number; label?: string };
+  | { kind: 'pictograph'; items: Array<{ label: string; count: string }>; unit?: number; orientation?: 'up' | 'right'; label?: string };
 
 // 식을 모두 수로 바꾼 그림입니다. 실제 그림은 questionFactory가 그립니다 —
 // 눈금 여백이나 수직선 시작점 같은 규칙이 이미 그쪽에 있고, 그것을 여기에
@@ -93,7 +93,7 @@ export type DrawnVisual =
       label?: string;
     }
   | { kind: 'cube-pattern'; steps: number[]; unknownIndex?: number; label?: string }
-  | { kind: 'pictograph'; items: Array<{ label: string; count: number }>; unit?: number; label?: string };
+  | { kind: 'pictograph'; items: Array<{ label: string; count: number }>; unit?: number; orientation?: 'up' | 'right'; label?: string };
 
 export type Claim = { text: string; ok: boolean };
 
@@ -376,7 +376,7 @@ const resolveVisual = (
     if (count === null || count < 0 || !label) return null;
     items.push({ label, count });
   }
-  return { kind: 'pictograph', items, unit: spec.unit, label: text(spec.label) };
+  return { kind: 'pictograph', items, unit: spec.unit, orientation: spec.orientation, label: text(spec.label) };
 };
 
 // 데이터로 적힌 문항을 실제 문항으로 만듭니다.

@@ -269,6 +269,13 @@ export interface PictographVisual {
     label: string;
     count: number;
   }>;
+  /**
+   * 그래프를 세우는 방향입니다. 교과서의 그래프는 항목을 가로줄에 두고
+   * ○를 아래에서 위로 쌓습니다. '아래에서부터 한 칸에 하나씩 그립니다'
+   * 라고 말해 놓고 옆으로 눕혀 그리면, 아이가 배우는 그림과 보는 그림이
+   * 다릅니다. 적지 않으면 옆으로 눕혀 그립니다.
+   */
+  orientation?: 'up' | 'right';
 }
 
 export interface ArrayVisual {
