@@ -4782,8 +4782,20 @@ body::before {
   overflow-y: auto;
 }
 
+/* 그림 보기 문항은 문제의 표와 보기의 그래프를 번갈아 보아야 풉니다.
+   자리가 모자라 보기 판이 표 위를 덮으면 읽을 것이 사라집니다 — 표의
+   '학생 수(명)' 줄이 반쯤 잘린 채로 나왔습니다. 문제를 위에 붙여 두어
+   보기가 그 아래로 지나가게 합니다. 문제칸은 제 바탕이 있어 가려집니다. */
 .player-lane:has(.choice-grid.picture-choices) .student-question-body {
   overflow: visible;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* 보기가 넷이나 아래에 서므로 문제의 표는 제 몫만 씁니다. */
+.player-lane:has(.choice-grid.picture-choices) .student-question-body .question-visual-figure {
+  --visual-height: clamp(72px, 9vh, 112px);
 }
 
 /* ── 맞혀서 늘어난 시간 ─────────────────────────────────────────────
