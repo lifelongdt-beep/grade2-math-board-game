@@ -6113,6 +6113,24 @@ const surveyFor = (index: number): SurveySet => {
 
 const totalOf = (items: Array<{ count: number }>) => items.reduce((sum, item) => sum + item.count, 0);
 
+// 조사한 것을 센 수가 아니라 있는 그대로 늘어놓습니다. '공기놀이 10명'
+// 하고 적어 주면 세는 일이 없어지고 옮겨 적기만 남습니다.
+// 차례는 자리마다 바꾸되 늘 같은 자리에는 같게 둡니다.
+const tallyLine = (survey: SurveySet, index: number) => {
+  const spread: string[] = [];
+  survey.items.forEach((item) => {
+    for (let at = 0; at < item.count; at += 1) spread.push(item.name);
+  });
+  // 이름이 뭉쳐 있으면 세지 않고 짐작하게 됩니다. 자리를 고르게 섞습니다.
+  const mixed: string[] = [];
+  let step = index % survey.items.length + 2;
+  for (let taken = 0; spread.length > 0; taken += 1) {
+    step += 1;
+    mixed.push(spread.splice((taken * step) % spread.length, 1)[0]);
+  }
+  return mixed.join(', ') + '.';
+};
+
 const mostOf = (items: Array<{ name: string; count: number }>) =>
   items.reduce((best, item) => (item.count > best.count ? item : best));
 
@@ -6164,10 +6182,10 @@ const classifyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: 
   if (variant === 0) {
     return makeQuestion(
       lesson, difficulty, index,
-      `${josa(survey.subject, '을', '를')} 조사한 자료를 분류했더니 ${survey.items.map((item) => `${item.name} ${item.count}명`).join(', ')}이었습니다. 표의 ${target.name} 칸에 알맞은 수는?`,
+      `친구들이 고른 것을 그대로 적었습니다. ${tallyLine(survey, index)} 표의 ${target.name} 칸에 알맞은 수는?`,
       target.count,
       [total, target.count + 1, Math.max(1, target.count - 1)],
-      `분류한 ${target.name}의 학생 수를 세어 표의 같은 칸에 그대로 씁니다. ${josa(target.name, '은', '는')} ${target.count}명입니다.`,
+      `적어 놓은 것에서 ${josa(target.name, '을', '를')} 하나씩 세면 ${target.count}명입니다.`,
       'data',
       '분류한 수를 표에 옮겨 쓰기',
       surveyTable(survey, { blankIndex: index % survey.items.length }),
@@ -6330,10 +6348,10 @@ const classifyToGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: 
   if (variant === 0) {
     return makeQuestion(
       lesson, difficulty, index,
-      `표에서 ${josa(target.name, '이', '가')} ${target.count}명입니다. 그래프에 ◯를 몇 개 그려야 할까요?`,
+      `표를 보고 ${target.name} 칸에 ◯를 몇 개 그려야 할까요?`,
       `${target.count}개`,
       [`${target.count + 1}개`, `${Math.max(1, target.count - 1)}개`, '1개'],
-      `그래프는 학생 수만큼 ◯를 그립니다. ${target.count}명이므로 ◯를 ${target.count}개 그립니다.`,
+      `그래프는 학생 수만큼 ◯를 그립니다. ${josa(target.name, '은', '는')} ${target.count}명이므로 ◯를 ${target.count}개 그립니다.`,
       'data',
       '표의 수만큼 그래프에 나타내기',
       surveyTable(survey),
@@ -6516,7 +6534,7 @@ const tableAndGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
   if (variant === 1) {
     return makeQuestion(
       lesson, difficulty, index,
-      `표에서 ${josa(target.name, '이', '가')} ${target.count}명입니다. 그래프의 ${target.name} 칸에 ◯를 몇 개 그릴까요?`,
+      `표를 보고 그래프의 ${target.name} 칸에 ◯를 몇 개 그릴까요?`,
       `${target.count}개`,
       [`${target.count + 1}개`, `${Math.max(1, target.count - 1)}개`, `${total}개`],
       `표의 수만큼 ◯를 그립니다. ${josa(target.name, '은', '는')} ${target.count}명이므로 ◯를 ${target.count}개 그립니다.`,
