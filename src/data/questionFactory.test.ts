@@ -110,15 +110,22 @@ describe('questionFactory', () => {
   });
 
   it('does not repeat the same prompt within a lesson and difficulty', () => {
+    // 예전에는 겹치는 문제글 뒤에 안내 문구를 붙여 달라 보이게 했습니다.
+    // 그 문구를 걷어 내니, 어떤 차시는 서로 다른 문제를 서른 개 만들지
+    // 못한다는 것이 드러났습니다. 감추는 대신 몇 개까지 되는지 적어 둡니다.
+    const short: string[] = [];
+
     for (const lesson of lessons) {
       for (const level of levels) {
         const questions = generateQuestions(lesson, level);
-        const prompts = questions.map((question) => question.prompt);
-        const uniquePrompts = new Set(prompts);
-
-        expect(uniquePrompts.size, `${lesson.id} ${level} repeated prompts`).toBe(questions.length);
+        const uniquePrompts = new Set(questions.map((question) => question.prompt));
+        if (uniquePrompts.size !== questions.length) {
+          short.push(`${lesson.id} ${level}: ${uniquePrompts.size}`);
+        }
       }
     }
+
+    expect(short).toEqual([]);
   });
 
   it('creates answer choices and answer indices for generated questions', () => {
