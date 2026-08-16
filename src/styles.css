@@ -4715,7 +4715,7 @@ body::before {
      칸이 내용 크기로 쪼그라들어, 그림이 28px짜리로 그려졌습니다. */
   display: block;
   min-height: 0;
-  padding: 6px;
+  padding: 3px 5px;
   text-align: center;
 }
 
@@ -4729,9 +4729,15 @@ body::before {
    정해져 있습니다(.choice-grid button span). 그림을 감싼 span과 이름표도
    그 규칙에 걸려 28px로 오그라들어, 그래프가 손톱만 하게 그려졌습니다.
    여기서는 그 규칙보다 좁게 짚어 되돌립니다. */
+/* 이름표(㉠)를 그림 아래 제 줄에 두면 보기 네 개가 네 줄을 더 먹고,
+   그만큼 문제가 위로 밀려 화면 밖으로 나갔습니다. 옆에 세우면 줄이
+   사라지고, 이름표는 여전히 붙어 있습니다 — 오답 풀이가 이 이름으로
+   어느 그래프인지 짚어 주기 때문에 지울 수는 없습니다. */
 .player-lanes.individual .choice-grid.picture-choices button .choice-picture,
 .choice-grid.picture-choices button .choice-picture {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   width: 100%;
   height: auto;
   background: none;
@@ -4741,21 +4747,27 @@ body::before {
 /* 그림은 칸 너비를 다 씁니다. 작게 그려 두면 무엇이 다른지 견줄 수가
    없는데, 견주는 것이 이 문항이 시키는 일입니다. */
 .choice-grid.picture-choices button .choice-picture .question-visual-figure {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
+  width: auto;
   --visual-height: clamp(78px, 10vh, 116px);
 }
 
+/* 이름표는 그림 왼쪽에 섭니다. 색을 --ink로 두었더니 어두운 자리 위에
+   어두운 글자가 되어 무엇을 부르는 이름인지 읽을 수가 없었습니다. */
 .player-lanes.individual .choice-grid.picture-choices button .choice-caption,
 .choice-grid.picture-choices button .choice-caption {
+  order: -1;
+  flex: 0 0 auto;
   display: block;
   width: auto;
   height: auto;
-  margin-top: 2px;
+  margin: 0;
   background: none;
   border-radius: 0;
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 800;
+  color: inherit;
+  font-size: 16px;
+  font-weight: 900;
   line-height: 1;
 }
 

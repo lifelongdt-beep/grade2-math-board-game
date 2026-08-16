@@ -64,6 +64,13 @@ export type VisualSpec =
   | { kind: 'unit-measure'; object: string; unit: string; count: string }
   | { kind: 'ruler'; start: string; end: string; label?: string }
   | { kind: 'bar-model'; bars: Array<{ label: string; value: string }>; label?: string }
+  | {
+      kind: 'table';
+      columns: Array<{ name: string; value: string }>;
+      categoryLabel?: string;
+      valueLabel?: string;
+      label?: string;
+    }
   | { kind: 'pictograph'; items: Array<{ label: string; count: string }>; unit?: number; label?: string };
 
 // 식을 모두 수로 바꾼 그림입니다. 실제 그림은 questionFactory가 그립니다 —
@@ -77,6 +84,13 @@ export type DrawnVisual =
   | { kind: 'unit-measure'; object: string; unit: string; count: number }
   | { kind: 'ruler'; start: number; end: number; label?: string }
   | { kind: 'bar-model'; bars: Array<{ label: string; value: number }>; label?: string }
+  | {
+      kind: 'table';
+      columns: Array<{ name: string; value: number }>;
+      categoryLabel: string;
+      valueLabel: string;
+      label?: string;
+    }
   | { kind: 'pictograph'; items: Array<{ label: string; count: number }>; unit?: number; label?: string };
 
 export type Claim = { text: string; ok: boolean };
@@ -323,6 +337,23 @@ const resolveVisual = (
       bars.push({ label, value });
     }
     return { kind: 'bar-model', bars, label: text(spec.label) };
+  }
+
+  if (spec.kind === 'table') {
+    const columns: Array<{ name: string; value: number }> = [];
+    for (const column of spec.columns) {
+      const value = at(column.value);
+      const name = text(column.name);
+      if (value === null || value < 0 || !name) return null;
+      columns.push({ name, value });
+    }
+    return {
+      kind: 'table',
+      columns,
+      categoryLabel: text(spec.categoryLabel) ?? '항목',
+      valueLabel: text(spec.valueLabel) ?? '학생 수(명)',
+      label: text(spec.label),
+    };
   }
 
   const items: Array<{ label: string; count: number }> = [];

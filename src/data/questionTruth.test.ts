@@ -249,6 +249,32 @@ describe('the maths in each question is true', () => {
     expect(thin).toEqual([]);
   });
 
+  it('never tells the child the number it is about to ask for', () => {
+    // 자료를 읽는 문항에서 되풀이해 나온 잘못입니다. 표나 그래프를 보여
+    // 주면서 문제글에 그 수를 또 적으면, 읽을 것이 없어지고 아이는 옮겨
+    // 적기만 합니다 — '○가 7개 그려져 있습니다. 몇 명일까요?'
+    //
+    // 견주는 문항(더 많다, 모두, 남은)은 견줄 수를 문제글에 적어야 하므로
+    // 여기서 뺍니다. 넓게 걸었더니 멀쩡한 문항을 스무 개씩 물어 왔고,
+    // 물어 오기만 하는 검사는 아무도 읽지 않습니다.
+    const compares = /더|모두|합계|남|덜|많|적|차이|사이|바르게|어느 것/;
+    const giveaways: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      if (!/표|그래프|분류|세어|나누었|조사/.test(question.prompt)) continue;
+      if (compares.test(question.prompt)) continue;
+
+      const asked = question.answer.match(/^(\d+)/);
+      if (!asked) continue;
+      const already = new RegExp(`(?:^|[^0-9])${asked[1]}(?:[^0-9]|$)`);
+      if (already.test(question.prompt)) {
+        giveaways.push(`${lessonId} ${level} ${question.id}: 답 ${question.answer} — ${question.prompt.slice(0, 52)}`);
+      }
+    }
+
+    expect(giveaways).toEqual([]);
+  });
+
   it('never leaves a blank where a number should be', () => {
     // 채워지지 않은 자리는 'undefined'나 'NaN'으로 나옵니다. 아이에게는
     // 읽을 수 없는 글자입니다.

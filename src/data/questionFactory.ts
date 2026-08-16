@@ -13573,6 +13573,12 @@ const drawTemplateVisual = (drawn: DrawnVisual, lesson: Lesson): QuestionVisual 
   if (drawn.kind === 'bar-model') {
     return barModelVisualFor(drawn.bars, drawn.label ?? '막대모델 자료');
   }
+  if (drawn.kind === 'table') {
+    return tableVisualFor(drawn.columns, drawn.label ?? '조사한 자료', {
+      categoryLabel: drawn.categoryLabel,
+      valueLabel: drawn.valueLabel,
+    });
+  }
   return pictographVisualFor(drawn.items, drawn.unit ?? 1, drawn.label ?? '그림그래프 자료');
 };
 

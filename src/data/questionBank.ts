@@ -1880,7 +1880,8 @@ export const questionBank: Template[] = [
     tag: 'number',
     strategy: '조건 함께 보기 · 1000을 채우는 상황',
     vars: {
-      boxes: { from: 5, to: 9 },
+      // 5상자에서 5상자 더는 문제글의 수와 답이 같아 보입니다.
+      boxes: { from: 6, to: 9 },
       more: { calc: '10 - boxes' },
     },
     words: { item: ['색종이', '구슬', '단추'] },
@@ -2081,15 +2082,16 @@ export const questionBank: Template[] = [
     when: /기준에 따라 분류/,
     demand: 'recall',
     tag: 'classification',
-    strategy: '나눈 자리에서 하나를 읽기',
-    vars: {
-      a: { from: 3, to: 9 },
-      b: { from: 2, to: 8 },
-    },
-    prompt: '단추를 색깔에 따라 나누었더니 빨강 {a}개, 파랑 {b}개였습니다. 빨강 단추는 몇 개일까요?',
-    answer: '{a}개',
-    wrongs: ['{b}개', '{a + b}개', '{a + 1}개'],
-    solution: '빨강으로 나눈 자리에 {a}개가 있습니다.',
+    // 세는 것은 4차시(분류하고 세어)입니다. 이 차시는 기준에 맞게 갈라
+    // 놓는 데까지이므로, 어느 자리에 놓을지를 묻습니다. 예전에는 빨강 몇 개
+    // 파랑 몇 개를 문제글에 적어 놓고 빨강이 몇 개냐고 되물었습니다.
+    strategy: '기준에 맞는 자리 고르기',
+    vars: {},
+    words: { item: ['단추', '블록', '색연필'], color: ['노란', '초록', '검은'] },
+    prompt: '{item:을} 색깔에 따라 나누고 있습니다. {color} {item:은} 어느 자리에 놓아야 할까요?',
+    answer: '{color}색 자리',
+    wrongs: ['빨간색 자리', '파란색 자리', '아무 자리에나 놓아도 됩니다'],
+    solution: '색깔을 기준으로 나누었으므로 {color} {item:은} {color}색 자리에 놓습니다.',
   },
   {
     id: 'sort-by-standard-word',
@@ -2146,15 +2148,17 @@ export const questionBank: Template[] = [
     demand: 'connect',
     tag: 'classification',
     strategy: '조건 함께 보기 · 가장 많은 것과 적은 것의 차를 구하는 상황',
+    // 차가 늘 5였습니다. 몇 번만 풀어 보면 세지 않고도 5라고 적게 됩니다.
     vars: {
-      few: { from: 1, to: 4 },
-      mid: { calc: 'few + 2' },
-      many: { calc: 'few + 5' },
+      few: { from: 1, to: 2 },
+      gap: { from: 4, to: 6 },
+      mid: { calc: 'few + 1' },
+      many: { calc: 'few + gap' },
     },
     prompt: '빨강 {many}개, 파랑 {mid}개, 노랑 {few}개로 나누었습니다. 가장 많은 색은 가장 적은 색보다 몇 개 더 많을까요?',
-    answer: '5개',
-    wrongs: ['{many}개', '{few}개', '2개'],
-    solution: '{many}-{few}=5이므로 5개 더 많습니다.',
+    answer: '{gap}개',
+    wrongs: ['{many}개', '{few}개', '{mid}개'],
+    solution: '가장 많은 빨강이 {many}개, 가장 적은 노랑이 {few}개이므로 {many}-{few}={gap}, {gap}개 더 많습니다.',
   },
   {
     id: 'sort-tell-claims',
@@ -2187,12 +2191,25 @@ export const questionBank: Template[] = [
     tag: 'data',
     strategy: '그래프의 한 줄을 읽기',
     vars: {
-      a: { from: 3, to: 9 },
+      a: { from: 5, to: 9 },
+      b: { from: 3, to: 4 },
+      c: { from: 1, to: 2 },
     },
-    prompt: '그래프에서 사과를 좋아하는 학생 자리에 ○가 {a}개 그려져 있습니다. 사과를 좋아하는 학생은 몇 명일까요?',
-    answer: '{a}명',
-    wrongs: ['1명', '{a + 1}명', '{a - 1}명'],
-    solution: '○ 하나가 학생 한 명이므로 {a}명입니다.',
+    // 그래프를 보여 주고 묻습니다. 문제글에 ○가 몇 개인지 적어 두면
+    // 그래프를 볼 까닭이 없어지고, 아이는 그 수를 옮겨 적기만 합니다.
+    visual: {
+      kind: 'pictograph',
+      items: [
+        { label: '사과', count: 'a' },
+        { label: '귤', count: 'b' },
+        { label: '딸기', count: 'c' },
+      ],
+      label: '좋아하는 과일별 학생 수',
+    },
+    prompt: '그래프를 보고 귤을 좋아하는 학생은 몇 명인지 구해 보세요.',
+    answer: '{b}명',
+    wrongs: ['{a}명', '{c}명', '{a + b}명'],
+    solution: '귤 줄에 그려진 ○가 {b}개이고, ○ 하나가 학생 한 명이므로 {b}명입니다.',
   },
   {
     id: 'graph-draw-word',
@@ -3525,14 +3542,25 @@ export const questionBank: Template[] = [
     tag: 'classification',
     strategy: '센 결과에서 한 자리 읽기',
     vars: {
-      a: { from: 3, to: 9 },
-      b: { from: 2, to: 8 },
-      c: { from: 1, to: 6 },
+      a: { from: 5, to: 9 },
+      b: { from: 3, to: 4 },
+      c: { from: 1, to: 2 },
     },
-    prompt: '단추를 세어 빨강 {a}개, 파랑 {b}개, 노랑 {c}개라고 적었습니다. 파랑 단추는 몇 개일까요?',
+    // 센 결과를 문제글에 적어 놓고 그중 하나를 되묻던 문항이었습니다.
+    // 나눈 자리를 보여 주고, 세어서 읽게 합니다.
+    visual: {
+      kind: 'pictograph',
+      items: [
+        { label: '빨강', count: 'a' },
+        { label: '파랑', count: 'b' },
+        { label: '노랑', count: 'c' },
+      ],
+      label: '색깔에 따라 나눈 단추',
+    },
+    prompt: '단추를 색깔에 따라 나누었습니다. 파랑 단추는 몇 개일까요?',
     answer: '{b}개',
-    wrongs: ['{a}개', '{c}개', '{b + 1}개'],
-    solution: '파랑이라고 적은 자리에 {b}개가 있습니다.',
+    wrongs: ['{a}개', '{c}개', '{a + b}개'],
+    solution: '파랑 줄을 세면 {b}개입니다.',
   },
   {
     id: 'sort-count-claims',
@@ -3977,14 +4005,27 @@ export const questionBank: Template[] = [
     tag: 'data',
     strategy: '표에서 한 칸 읽기',
     vars: {
-      a: { from: 3, to: 9 },
-      b: { from: 2, to: 8 },
-      c: { from: 1, to: 6 },
+      a: { from: 5, to: 9 },
+      b: { from: 3, to: 4 },
+      c: { from: 1, to: 2 },
     },
-    prompt: '표에 사과 {a}명, 귤 {b}명, 딸기 {c}명이라고 적혀 있습니다. 귤을 좋아하는 학생은 몇 명일까요?',
+    // 표를 보여 주면서 문제글에 그 수를 또 적으면, 읽을 것이 없어집니다.
+    // 표는 눈앞에 있으므로 문제는 어느 칸인지만 말합니다.
+    visual: {
+      kind: 'table',
+      columns: [
+        { name: '사과', value: 'a' },
+        { name: '귤', value: 'b' },
+        { name: '딸기', value: 'c' },
+      ],
+      categoryLabel: '과일',
+      valueLabel: '학생 수(명)',
+      label: '좋아하는 과일별 학생 수',
+    },
+    prompt: '표를 보고 귤을 좋아하는 학생은 몇 명인지 구해 보세요.',
     answer: '{b}명',
-    wrongs: ['{a}명', '{c}명', '{b + 1}명'],
-    solution: '귤 자리에 적힌 수가 {b}이므로 {b}명입니다.',
+    wrongs: ['{a}명', '{c}명', '{a + b}명'],
+    solution: '표에서 귤 칸에 적힌 수가 {b}이므로 {b}명입니다.',
   },
   {
     id: 'table-read-claims',
