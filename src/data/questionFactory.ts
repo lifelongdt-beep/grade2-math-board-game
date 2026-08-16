@@ -9679,9 +9679,24 @@ const addAssessmentLayer = (question: Question, index: number): Question => {
 //
 // 이제는 자리보다 넉넉히 만들어 두고, 겹치지 않는 것부터 차례로
 // 골라 서른 자리를 채웁니다. 수가 다르면 다른 문제입니다.
-const pickDistinct = (pool: Question[], want: number): Question[] => {
+// 수만 다른 같은 문항인지 보려고 수를 지우고 견줍니다.
+const shapeOfPrompt = (prompt: string) => prompt.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
+
+const pickDistinct = (pool: Question[], want: number, avoidShapes?: Set<string>): Question[] => {
   const seen = new Set<string>();
   const chosen: Question[] = [];
+
+  // 상은 중이 이미 내는 모양보다 제 모양을 먼저 고릅니다. 두 수준이 같은
+  // 문항을 나눠 가지면 난이도가 이름뿐인 것이 됩니다.
+  if (avoidShapes) {
+    for (const question of pool) {
+      if (chosen.length === want) break;
+      if (seen.has(question.prompt)) continue;
+      if (avoidShapes.has(shapeOfPrompt(question.prompt))) continue;
+      seen.add(question.prompt);
+      chosen.push(question);
+    }
+  }
 
   for (const question of pool) {
     if (chosen.length === want) break;
@@ -13734,7 +13749,11 @@ const variedQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): 
   }
 };
 
-export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] =>
+const questionsFor = (
+  lesson: Lesson,
+  difficulty: Difficulty,
+  avoidShapes?: Set<string>,
+): Question[] =>
   pickDistinct(
     generateRawQuestions(lesson, difficulty, 90)
       .map((question, index) =>
@@ -13784,7 +13803,17 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
       .map((question, index) => withRichVisual(question, index, lesson))
       .map(addAssessmentLayer),
     30,
+    avoidShapes,
   );
+
+export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] => {
+  if (difficulty !== '상') return questionsFor(lesson, difficulty);
+
+  // 상은 중이 내는 모양을 피해서 고릅니다. 피할 모양이 없으면 그대로
+  // 고르므로, 상에만 있는 문항이 모자란 차시라도 문항 수는 줄지 않습니다.
+  const middleShapes = new Set(questionsFor(lesson, '중').map((question) => shapeOfPrompt(question.prompt)));
+  return questionsFor(lesson, '상', middleShapes);
+};
 
 export const generateLessonBank = (lesson: Lesson): Record<Difficulty, Question[]> => ({
   하: generateQuestions(lesson, '하'),
