@@ -4693,6 +4693,23 @@ body::before {
 
    자리 번호(1~4)는 감춥니다. 그림 아래에 ㉠㉡㉢㉣이 이미 있어서 두 벌을
    두면 아이가 무엇을 부르는 이름인지 헷갈립니다. */
+/* 그래프 보기는 넓이가 있어야 합니다. 두 칸으로 나누면 자리 너비의
+   절반이 되고, 좁은 화면이나 아이가 여럿인 화면에서는 손톱만 해져
+   무엇이 다른지 견줄 수가 없습니다 — 견주는 것이 이 문항이 시키는
+   일이므로, 기본은 한 줄에 하나씩 놓습니다.
+   자리가 넉넉할 때만 두 칸으로 접습니다. */
+.player-lanes.individual .choice-grid.picture-choices,
+.choice-grid.picture-choices {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .game-layout.players-1 .player-lanes.individual .choice-grid.picture-choices,
+  .game-layout.players-2 .player-lanes.individual .choice-grid.picture-choices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .choice-grid.picture-choices button {
   /* 격자 대신 그냥 블록으로 둡니다. 격자에 justify-items: center를 걸면
      칸이 내용 크기로 쪼그라들어, 그림이 28px짜리로 그려졌습니다. */
@@ -4725,7 +4742,7 @@ body::before {
    없는데, 견주는 것이 이 문항이 시키는 일입니다. */
 .choice-grid.picture-choices button .choice-picture .question-visual-figure {
   width: 100%;
-  --visual-height: clamp(66px, 8.5vh, 100px);
+  --visual-height: clamp(78px, 10vh, 116px);
 }
 
 .player-lanes.individual .choice-grid.picture-choices button .choice-caption,
