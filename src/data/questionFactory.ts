@@ -11806,6 +11806,14 @@ const wordStepQuestion = (
       || lesson.semester === '2-2'
       || /1cm를 알아|자로 길이|어림/.test(lesson.title);
     if (!cmKnown) return null;
+
+    // 두 길이를 이어 더하는 것은 2학기 길이 재기 4차시(길이의 합)입니다.
+    // 1학기에는 합을 다루는 차시가 따로 없어 1cm 차시에서 막대를 이어
+    // 세는 것이 맞지만(문제풀도 그렇습니다), 2학기에는 앞 차시에서
+    // 내면 미리 내는 것이 됩니다.
+    if (lesson.unitTitle === '길이 재기' && lesson.semester === '2-2' && lesson.lessonNo < 4) {
+      return null;
+    }
     const a = 6 + (seed % 12);
     const b = 3 + ((seed + 4) % 9);
     if (a + b > limit) return null;
