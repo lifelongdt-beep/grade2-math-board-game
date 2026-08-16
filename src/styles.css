@@ -4788,6 +4788,11 @@ body::before {
 }
 
 .player-lane:has(.choice-grid.picture-choices) .student-answer-dock {
+  /* 판이 제 줄보다 커지면 가운데 맞춤 때문에 위아래로 똑같이 삐져나와,
+     위쪽이 문제 글과 표를 덮었습니다. 줄에 맞춰 세우면 넘치는 만큼은
+     판 안에서 구르게 됩니다. */
+  align-self: stretch;
+  height: 100%;
   min-height: 0;
   overflow-y: auto;
   /* 넷 중 넷째가 아래에 숨을 수 있으니, 구를 수 있다는 것이 보여야 합니다. */
