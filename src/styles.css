@@ -5029,3 +5029,17 @@ body::before {
 .command-bar .command-status {
   flex: none;
 }
+
+/* 차시 목표 문장은 교사가 보는 말입니다. 접히면 제목 줄이 두 줄이 되어
+   줄을 줄인 뜻이 없어지므로, 한 줄로 묶고 좁은 화면에서는 감춥니다. */
+.app-header.with-lesson .lesson-objective-inline {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 1200px) {
+  .app-header.with-lesson .lesson-objective-inline {
+    display: none;
+  }
+}
