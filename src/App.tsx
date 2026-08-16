@@ -551,6 +551,7 @@ function App() {
   const [sessionDuration, setSessionDuration] = useState<SessionDuration>(initialRoute.duration);
   const [muted, setMutedState] = useState(isMuted);
   const [openResults, setOpenResults] = useState<Record<number, boolean>>({});
+  const [round, setRound] = useState(1);
   const players = useMemo(() => createPlayers(playerCount, studentConfigs), [playerCount, studentConfigs]);
   const [bankSeed, setBankSeed] = useState(0);
   const questionBanks = useMemo<Record<Difficulty, Question[]>>(
@@ -816,9 +817,12 @@ function App() {
   }, [mode, players, studentSetupSteps]);
 
   const goSetup = () => {
+    // 설정으로 돌아가는 것은 다른 아이들, 다른 차시로 간다는 뜻이므로
+    // 그때는 기록을 비웁니다.
     setMode('setup');
     setTeacherOpen(false);
     setOpenResults({});
+    setRound(1);
     setRecords([]);
     setSuccessSignals({});
     setPlayerStates(createQuestionState(players));
@@ -829,9 +833,14 @@ function App() {
   const resetSession = () => {
     // 수준을 고르는 단계가 없어졌으므로 곧바로 다시 시작합니다.
     // 다시 풀 때도 모두 하에서 출발해, 그날 컨디션에 맞게 다시 올라갑니다.
+    //
+    // 푼 기록은 지우지 않습니다. 같은 아이들이 같은 차시를 한 번 더 푸는
+    // 것이므로, 두 번을 합쳐 보아야 그 아이가 무엇에서 거듭 걸리는지
+    // 보입니다. 한 판만 보면 열 문제 남짓이라 실수인지 모르는 것인지
+    // 가릴 수 없습니다.
     setTeacherOpen(false);
     setOpenResults({});
-    setRecords([]);
+    setRound((value) => value + 1);
     setSuccessSignals({});
     setWrongSignals({});
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
@@ -1277,6 +1286,7 @@ function App() {
         </button>
         <div className="command-status">
           <span>풀이 기록 {records.length}개</span>
+          {round > 1 && <span>{round}판째 · 기록 이어짐</span>}
           <span>{sessionDuration}초 수업</span>
           <span>{mode === 'finished' ? '시간 종료' : '진행 중'}</span>
         </div>
