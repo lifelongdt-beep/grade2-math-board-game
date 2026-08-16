@@ -255,7 +255,7 @@ const promptNotes: Record<ConceptTag, string[]> = {
     '식과 이야기 상황을 연결해요.',
   ],
   shape: [
-    '변과 꼭짓점을 손가락으로 짚어 보세요.',
+    '둘러싼 선을 하나씩 손가락으로 짚어 보세요.',
     '돌려진 도형도 같은 성질인지 확인해요.',
     '생활 물건의 모양과 연결해요.',
     '아닌 까닭을 성질로 말해요.',
@@ -8769,18 +8769,18 @@ const blockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        '창문이나 책처럼 곧은 변 4개로 둘러싸인 모양은?',
+        '창문이나 책처럼 곧은 선 4개로 둘러싸인 모양은?',
         '사각형', ['원', '삼각형', '굽은 선'],
-        '곧은 변 4개로 둘러싸인 모양을 사각형이라고 합니다.',
+        '곧은 선 4개로 둘러싸인 모양을 사각형이라고 합니다.',
         'shape', '생활 물건에서 사각형 찾기',
       );
     }
     if (variant === 2) {
       return makeQuestion(
         lesson, difficulty, index,
-        '교통 표지판처럼 곧은 변 3개로 둘러싸인 모양은?',
+        '교통 표지판처럼 곧은 선 3개로 둘러싸인 모양은?',
         '삼각형', ['원', '사각형', '둥근 모양'],
-        '곧은 변 3개로 둘러싸인 모양을 삼각형이라고 합니다.',
+        '곧은 선 3개로 둘러싸인 모양을 삼각형이라고 합니다.',
         'shape', '생활 물건에서 삼각형 찾기',
       );
     }
@@ -8788,9 +8788,9 @@ const blockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       return makeQuestion(
         lesson, difficulty, index,
         '도형의 이름을 정할 때 무엇을 보아야 할까요?',
-        '변과 꼭짓점의 수, 굽은 선인지 곧은 선인지',
+        '둘러싼 선의 수와 곧은 선인지 둥근 선인지',
         ['색깔과 크기', '만든 재료', '놓인 자리'],
-        '도형은 크기나 색깔이 아니라 변과 꼭짓점 같은 성질로 구별합니다.',
+        '도형은 크기나 색깔이 아니라 어떤 선으로 몇 군데가 둘러싸였는지로 구별합니다.',
         'shape', '도형을 구별하는 기준 알기',
       );
     }
