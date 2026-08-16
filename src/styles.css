@@ -5178,3 +5178,37 @@ body::before {
     display: none;
   }
 }
+
+/* ── 보기 칸은 늘 같은 자리에서 끝납니다 ────────────────────────────
+   저학년은 키가 작습니다. 보기 칸의 아랫변이 문제마다 오르내리면 어떤
+   아이는 발끝을 들어야 하고, 그 몇 센티미터가 답을 고르는 일을 막습니다.
+   자리의 칸을 이름으로 못 박습니다 — 레벨업 띠가 뜨든 풀이가 뜨든 보기는
+   늘 마지막 칸에 서고, 남는 자리는 문제 칸이 받습니다.
+   빈 칸이 사이 여백까지 먹지 않도록 gap 대신 각자 아래 여백을 씁니다. */
+.player-lane.student-question:not(.finished-result) {
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  gap: 0;
+}
+
+.player-lane.student-question:not(.finished-result) > header {
+  grid-row: 1;
+  margin-bottom: 7px;
+}
+
+.player-lane.student-question:not(.finished-result) > .level-up {
+  grid-row: 2;
+}
+
+.player-lane.student-question:not(.finished-result) > .student-question-body {
+  grid-row: 3;
+  margin-bottom: 7px;
+}
+
+.player-lane.student-question:not(.finished-result) > .student-feedback {
+  grid-row: 4;
+  margin-bottom: 7px;
+}
+
+.player-lane.student-question:not(.finished-result) > .student-answer-dock {
+  grid-row: 5;
+}
