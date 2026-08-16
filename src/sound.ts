@@ -19,6 +19,14 @@ export type Blip = {
   volume?: number;
   type?: OscillatorType;
   slideTo?: number;
+  // 여러 점을 지나며 음이 오르내립니다. 울음소리는 한 방향으로만
+  // 미끄러지지 않습니다 — '야옹'은 올라갔다가 내려옵니다.
+  glide?: number[];
+  // 떨림입니다. 사자의 으르렁, 판다의 웅얼거림처럼 살아 있는 소리에는
+  // 늘 떨림이 있습니다. 없으면 기계에서 나는 삑 소리가 됩니다.
+  vibrato?: { rate: number; depth: number };
+  // 소리가 붙는 속도입니다. 짐승 소리는 목에서 열리듯 천천히 붙습니다.
+  attack?: number;
 };
 
 // ── 음소거 ──────────────────────────────────────────────────────────
@@ -105,12 +113,39 @@ export const playBlips = (blips: Blip[], fallback?: () => void) => {
 
       oscillator.type = blip.type ?? 'sine';
       oscillator.frequency.setValueAtTime(blip.frequency, startAt);
-      if (blip.slideTo) {
+      if (blip.glide?.length) {
+        // 점과 점 사이를 고르게 나누어 지나갑니다.
+        const step = blip.length / blip.glide.length;
+        blip.glide.forEach((point, at) => {
+          oscillator.frequency.exponentialRampToValueAtTime(
+            Math.max(30, point),
+            startAt + step * (at + 1),
+          );
+        });
+      } else if (blip.slideTo) {
         oscillator.frequency.exponentialRampToValueAtTime(blip.slideTo, stopAt);
       }
 
+      let wobble: OscillatorNode | null = null;
+      let wobbleDepth: GainNode | null = null;
+      if (blip.vibrato) {
+        wobble = ready.createOscillator();
+        wobbleDepth = ready.createGain();
+        wobble.frequency.setValueAtTime(blip.vibrato.rate, startAt);
+        wobbleDepth.gain.setValueAtTime(blip.vibrato.depth, startAt);
+        wobble.connect(wobbleDepth);
+        wobbleDepth.connect(oscillator.frequency);
+        wobble.start(startAt);
+        wobble.stop(stopAt);
+      }
+
+      // 붙을 때도 잦아들 때도 모서리가 없어야 합니다. 딱 끊기면 '삑'이
+      // 되고, 그 소리는 짐승이 아니라 기계 소리로 들립니다.
+      const attack = blip.attack ?? 0.015;
+      const release = Math.min(0.12, blip.length * 0.45);
       gain.gain.setValueAtTime(0.0001, startAt);
-      gain.gain.exponentialRampToValueAtTime(peak, startAt + 0.015);
+      gain.gain.exponentialRampToValueAtTime(peak, startAt + attack);
+      gain.gain.setValueAtTime(peak, Math.max(startAt + attack, stopAt - release));
       gain.gain.exponentialRampToValueAtTime(0.0001, stopAt);
 
       oscillator.connect(gain);
@@ -122,6 +157,8 @@ export const playBlips = (blips: Blip[], fallback?: () => void) => {
       oscillator.onended = () => {
         oscillator.disconnect();
         gain.disconnect();
+        wobble?.disconnect();
+        wobbleDepth?.disconnect();
       };
     });
   } catch {
@@ -181,55 +218,93 @@ export const playTapSound = () => {
 // 앉는 일도 즐겁습니다. 다만 스무 명이 한꺼번에 누를 수 있으므로 모두
 // 짧고(0.5초 안쪽) 작게 울립니다.
 const animalCalls: Record<string, Blip[]> = {
-  // 멍멍 — 짧게 두 번, 끝을 살짝 내립니다.
+  // 멍! 멍! — 목이 열리며 '머'가 붙고 '엉'으로 닫힙니다. 두 번 짖고
+  // 두 번째는 조금 낮게, 끝에 꼬리를 답니다.
   '🐶': [
-    { frequency: 420, at: 0, length: 0.11, volume: 0.12, type: 'square', slideTo: 300 },
-    { frequency: 400, at: 0.16, length: 0.12, volume: 0.11, type: 'square', slideTo: 280 },
+    { frequency: 300, at: 0, length: 0.2, volume: 0.12, type: 'square', attack: 0.03, glide: [560, 420, 300] },
+    { frequency: 200, at: 0.02, length: 0.16, volume: 0.05, type: 'triangle', glide: [340, 240] },
+    { frequency: 280, at: 0.3, length: 0.22, volume: 0.11, type: 'square', attack: 0.03, glide: [500, 380, 270] },
+    { frequency: 190, at: 0.32, length: 0.18, volume: 0.045, type: 'triangle', glide: [320, 220] },
+    { frequency: 260, at: 0.56, length: 0.24, volume: 0.06, type: 'triangle', glide: [300, 230, 200], vibrato: { rate: 12, depth: 14 } },
   ],
-  // 야옹 — 올라갔다 내려옵니다.
+  // 야~옹 — 올라갔다가 길게 내려옵니다. 고양이 소리의 표는 이 오르내림입니다.
   '🐱': [
-    { frequency: 520, at: 0, length: 0.16, volume: 0.1, type: 'sine', slideTo: 760 },
-    { frequency: 760, at: 0.15, length: 0.22, volume: 0.1, type: 'sine', slideTo: 430 },
+    {
+      frequency: 430, at: 0, length: 0.62, volume: 0.1, type: 'sine', attack: 0.05,
+      glide: [620, 780, 820, 700, 520, 430], vibrato: { rate: 6.5, depth: 12 },
+    },
+    { frequency: 860, at: 0.03, length: 0.5, volume: 0.03, type: 'triangle', glide: [1240, 1560, 1050, 860] },
   ],
-  // 여우는 높고 짧게 깽깽.
+  // 여우 — 높고 가는 소리로 깽, 깽, 깨앵.
   '🦊': [
-    { frequency: 900, at: 0, length: 0.09, volume: 0.09, type: 'triangle', slideTo: 1250 },
-    { frequency: 950, at: 0.13, length: 0.09, volume: 0.09, type: 'triangle', slideTo: 1350 },
+    { frequency: 780, at: 0, length: 0.14, volume: 0.075, type: 'triangle', attack: 0.02, glide: [1180, 900] },
+    { frequency: 800, at: 0.2, length: 0.14, volume: 0.075, type: 'triangle', attack: 0.02, glide: [1250, 940] },
+    {
+      frequency: 820, at: 0.4, length: 0.34, volume: 0.08, type: 'triangle', attack: 0.03,
+      glide: [1320, 1150, 880, 700], vibrato: { rate: 9, depth: 22 },
+    },
   ],
-  // 토끼는 소리가 거의 없는 동물이라 코 찡긋하는 느낌으로 아주 짧게.
+  // 토끼 — 우는 대신 코를 찡긋거리며 킁킁, 끝에 짧게 뽀.
   '🐰': [
-    { frequency: 1200, at: 0, length: 0.05, volume: 0.07, type: 'sine' },
-    { frequency: 1500, at: 0.07, length: 0.05, volume: 0.07, type: 'sine' },
-    { frequency: 1800, at: 0.14, length: 0.06, volume: 0.06, type: 'sine' },
+    { frequency: 900, at: 0, length: 0.09, volume: 0.055, type: 'sine', glide: [1150, 950] },
+    { frequency: 950, at: 0.13, length: 0.09, volume: 0.055, type: 'sine', glide: [1220, 1000] },
+    { frequency: 980, at: 0.26, length: 0.1, volume: 0.05, type: 'sine', glide: [1280, 1040] },
+    {
+      frequency: 1100, at: 0.42, length: 0.26, volume: 0.06, type: 'sine', attack: 0.04,
+      glide: [1500, 1320, 1100], vibrato: { rate: 11, depth: 18 },
+    },
   ],
-  // 판다는 낮고 둥글게 웅.
+  // 판다 — 새끼 판다는 양처럼 웁니다. 낮고 둥글게 떨리는 소리입니다.
   '🐼': [
-    { frequency: 220, at: 0, length: 0.3, volume: 0.11, type: 'sine', slideTo: 180 },
-    { frequency: 330, at: 0.05, length: 0.2, volume: 0.05, type: 'sine' },
+    {
+      frequency: 300, at: 0, length: 0.5, volume: 0.1, type: 'triangle', attack: 0.06,
+      glide: [380, 350, 320, 280], vibrato: { rate: 13, depth: 26 },
+    },
+    { frequency: 600, at: 0.04, length: 0.4, volume: 0.03, type: 'sine', glide: [740, 640, 560] },
+    { frequency: 280, at: 0.56, length: 0.3, volume: 0.07, type: 'triangle', attack: 0.05, glide: [340, 290, 250], vibrato: { rate: 12, depth: 20 } },
   ],
-  // 호랑이 — 낮게 으르렁.
+  // 호랑이 — 목 안에서 구르는 으르렁 뒤에 짧게 어흥.
   '🐯': [
-    { frequency: 150, at: 0, length: 0.42, volume: 0.13, type: 'sawtooth', slideTo: 95 },
-    { frequency: 90, at: 0.02, length: 0.4, volume: 0.07, type: 'square' },
+    {
+      frequency: 130, at: 0, length: 0.46, volume: 0.12, type: 'sawtooth', attack: 0.08,
+      glide: [150, 135, 120, 105], vibrato: { rate: 22, depth: 14 },
+    },
+    { frequency: 260, at: 0.02, length: 0.42, volume: 0.045, type: 'triangle', glide: [300, 250, 210] },
+    {
+      frequency: 110, at: 0.5, length: 0.42, volume: 0.13, type: 'sawtooth', attack: 0.05,
+      glide: [170, 130, 95, 80], vibrato: { rate: 17, depth: 10 },
+    },
   ],
-  // 개구리 — 개굴개굴, 두 번 낮게.
+  // 개구리 — 개굴, 개굴, 개굴. 한 번마다 목이 부풀었다 꺼집니다.
   '🐸': [
-    { frequency: 190, at: 0, length: 0.1, volume: 0.11, type: 'square', slideTo: 150 },
-    { frequency: 200, at: 0.15, length: 0.11, volume: 0.11, type: 'square', slideTo: 155 },
+    { frequency: 170, at: 0, length: 0.16, volume: 0.1, type: 'square', attack: 0.03, glide: [230, 170, 150], vibrato: { rate: 26, depth: 18 } },
+    { frequency: 170, at: 0.24, length: 0.16, volume: 0.1, type: 'square', attack: 0.03, glide: [235, 175, 152], vibrato: { rate: 26, depth: 18 } },
+    { frequency: 165, at: 0.48, length: 0.2, volume: 0.095, type: 'square', attack: 0.03, glide: [225, 170, 145], vibrato: { rate: 24, depth: 16 } },
   ],
-  // 펭귄 — 짧게 빽빽.
+  // 펭귄 — 나팔처럼 빼액, 두 번째는 길게 끕니다.
   '🐧': [
-    { frequency: 700, at: 0, length: 0.08, volume: 0.1, type: 'square', slideTo: 900 },
-    { frequency: 720, at: 0.12, length: 0.1, volume: 0.1, type: 'square', slideTo: 950 },
+    { frequency: 620, at: 0, length: 0.16, volume: 0.085, type: 'square', attack: 0.03, glide: [880, 700, 620], vibrato: { rate: 15, depth: 20 } },
+    {
+      frequency: 640, at: 0.24, length: 0.4, volume: 0.09, type: 'square', attack: 0.04,
+      glide: [900, 980, 820, 660], vibrato: { rate: 13, depth: 24 },
+    },
   ],
-  // 사자 — 호랑이보다 더 낮고 길게.
+  // 사자 — 배에서 올라오는 긴 울음입니다. 호랑이보다 낮고 오래 갑니다.
   '🦁': [
-    { frequency: 120, at: 0, length: 0.5, volume: 0.14, type: 'sawtooth', slideTo: 70 },
-    { frequency: 240, at: 0.03, length: 0.42, volume: 0.06, type: 'sawtooth', slideTo: 140 },
+    {
+      frequency: 95, at: 0, length: 0.86, volume: 0.13, type: 'sawtooth', attack: 0.12,
+      glide: [120, 105, 90, 78, 68], vibrato: { rate: 16, depth: 9 },
+    },
+    { frequency: 190, at: 0.05, length: 0.72, volume: 0.05, type: 'triangle', glide: [240, 200, 165, 140] },
+    { frequency: 380, at: 0.08, length: 0.5, volume: 0.02, type: 'sine', glide: [430, 360, 300] },
   ],
-  // 거북 — 느리게 한 번.
+  // 거북 — 아주 느리게 한 번 숨을 내쉽니다.
   '🐢': [
-    { frequency: 260, at: 0, length: 0.36, volume: 0.09, type: 'triangle', slideTo: 210 },
+    {
+      frequency: 230, at: 0, length: 0.62, volume: 0.08, type: 'triangle', attack: 0.1,
+      glide: [260, 240, 215, 190], vibrato: { rate: 7, depth: 8 },
+    },
+    { frequency: 460, at: 0.06, length: 0.44, volume: 0.02, type: 'sine', glide: [500, 430, 380] },
   ],
 };
 
