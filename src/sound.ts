@@ -228,12 +228,14 @@ const animalCalls: Record<string, Blip[]> = {
     { frequency: 260, at: 0.56, length: 0.24, volume: 0.06, type: 'triangle', glide: [300, 230, 200], vibrato: { rate: 12, depth: 14 } },
   ],
   // 야~옹 — 올라갔다가 길게 내려옵니다. 고양이 소리의 표는 이 오르내림입니다.
+  // 430에서 시작했더니 목이 굵은 고양이가 되었습니다. 한 옥타브 가까이
+  // 올려 새끼 고양이가 우는 자리에 둡니다.
   '🐱': [
     {
-      frequency: 430, at: 0, length: 0.62, volume: 0.1, type: 'sine', attack: 0.05,
-      glide: [620, 780, 820, 700, 520, 430], vibrato: { rate: 6.5, depth: 12 },
+      frequency: 720, at: 0, length: 0.6, volume: 0.085, type: 'sine', attack: 0.04,
+      glide: [1000, 1240, 1300, 1120, 860, 700], vibrato: { rate: 7, depth: 18 },
     },
-    { frequency: 860, at: 0.03, length: 0.5, volume: 0.03, type: 'triangle', glide: [1240, 1560, 1050, 860] },
+    { frequency: 1440, at: 0.03, length: 0.48, volume: 0.022, type: 'triangle', glide: [2000, 2480, 1720, 1400] },
   ],
   // 여우 — 높고 가는 소리로 깽, 깽, 깨앵.
   '🦊': [
@@ -310,13 +312,20 @@ const animalCalls: Record<string, Blip[]> = {
     { frequency: 190, at: 0.05, length: 0.72, volume: 0.05, type: 'triangle', glide: [240, 200, 165, 140] },
     { frequency: 380, at: 0.08, length: 0.5, volume: 0.02, type: 'sine', glide: [430, 360, 300] },
   ],
-  // 거북 — 아주 느리게 한 번 숨을 내쉽니다.
+  // 거북 — 낮게 깔면 교실에서는 들리지 않습니다. 사람이 듣기 좋은 자리로
+  // 올리되, 느릿느릿한 걸음이 소리에 남아 있어야 합니다. 길게 두 번,
+  // 두 번째가 더 높고 오래갑니다 — 느리게 기지개를 켜는 소리입니다.
   '🐢': [
     {
-      frequency: 230, at: 0, length: 0.62, volume: 0.08, type: 'triangle', attack: 0.1,
-      glide: [260, 240, 215, 190], vibrato: { rate: 7, depth: 8 },
+      frequency: 420, at: 0, length: 0.66, volume: 0.1, type: 'triangle', attack: 0.16,
+      glide: [500, 560, 520, 460], vibrato: { rate: 5, depth: 14 },
     },
-    { frequency: 460, at: 0.06, length: 0.44, volume: 0.02, type: 'sine', glide: [500, 430, 380] },
+    { frequency: 840, at: 0.05, length: 0.5, volume: 0.026, type: 'sine', glide: [1000, 1080, 940] },
+    {
+      frequency: 470, at: 0.72, length: 0.8, volume: 0.095, type: 'triangle', attack: 0.2,
+      glide: [560, 640, 600, 520, 470], vibrato: { rate: 4.5, depth: 16 },
+    },
+    { frequency: 940, at: 0.78, length: 0.62, volume: 0.024, type: 'sine', glide: [1120, 1240, 1080, 960] },
   ],
 };
 
