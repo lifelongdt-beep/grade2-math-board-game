@@ -13805,12 +13805,29 @@ const spreadRepeats = (questions: Question[]): Question[] => {
   return spread;
 };
 
-const questionsFor = (lesson: Lesson, difficulty: Difficulty): Question[] => {
+// 수만 다른 같은 문항인지 보려고 수를 지우고 견줍니다.
+const shapeOfPrompt = (prompt: string) => prompt.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
+
+const questionsFor = (
+  lesson: Lesson,
+  difficulty: Difficulty,
+  avoidShapes?: Set<string>,
+): Question[] => {
   const seen = new Set<string>();
   const made: Question[] = [];
 
   for (let slot = 0; slot < 30; slot += 1) {
     let question = buildQuestionAt(lesson, difficulty, slot);
+
+    // 상은 중이 이미 내는 모양을 피해서 고릅니다. 두 수준이 같은 문항을
+    // 나눠 가지면 난이도가 이름뿐인 것이 됩니다.
+    if (avoidShapes) {
+      for (let again = 1; again <= 8; again += 1) {
+        if (!seen.has(question.prompt) && !avoidShapes.has(shapeOfPrompt(question.prompt))) break;
+        question = buildQuestionAt(lesson, difficulty, slot + again * 30);
+      }
+    }
+
     for (let again = 1; again <= 8 && seen.has(question.prompt); again += 1) {
       question = buildQuestionAt(lesson, difficulty, slot + again * 30);
     }
@@ -13827,8 +13844,14 @@ const questionsFor = (lesson: Lesson, difficulty: Difficulty): Question[] => {
   }));
 };
 
-export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] =>
-  questionsFor(lesson, difficulty);
+export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] => {
+  if (difficulty !== '상') return questionsFor(lesson, difficulty);
+
+  // 피할 모양이 없으면 그대로 고르므로, 상에만 있는 문항이 모자란
+  // 차시라도 문항 수는 줄지 않습니다.
+  const middleShapes = new Set(questionsFor(lesson, '중').map((question) => shapeOfPrompt(question.prompt)));
+  return questionsFor(lesson, '상', middleShapes);
+};
 
 export const generateLessonBank = (lesson: Lesson): Record<Difficulty, Question[]> => ({
   하: generateQuestions(lesson, '하'),
