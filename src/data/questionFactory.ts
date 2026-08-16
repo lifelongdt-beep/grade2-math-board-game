@@ -5049,7 +5049,7 @@ const multiplyUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: num
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${total}개를 ${groups}묶음으로 똑같이 나누면 한 묶음에 몇 개일까요?`,
+        `${each}씩 뛰어 세어 ${total}까지 가려면 몇 번 뛰어 세어야 할까요?`,
         `${each}개`, [`${groups}개`, `${each + 1}개`, `${total}개`],
         `${each}개씩 ${groups}묶음이면 ${total}개이므로 한 묶음은 ${each}개입니다.`,
         'multiplication', '한 묶음의 수 구하기',
@@ -7645,7 +7645,27 @@ const richTimeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
     );
   }
 
-  // 1~2차시: 5분 단위 읽기까지만 다룹니다.
+  // 단원 도입: 1학년에 배운 몇 시와 몇 시 30분까지입니다. 5분 단위로
+  // 읽는 것은 2차시에서 처음 배우므로 여기서 내면 미리 내는 것입니다.
+  if (lesson.lessonNo <= 1) {
+    const half = index % 2 === 0;
+    return makeQuestion(
+      lesson, difficulty, index,
+      '시계를 보고 몇 시인지 읽어 보세요.',
+      half ? `${hour}시 30분` : `${hour}시`,
+      half
+        ? [`${hour}시`, `${hour + 1}시 30분`, `${hour}시 6분`]
+        : [`${hour}시 30분`, `${hour + 1}시`, `12시`],
+      half
+        ? `긴바늘이 6을 가리키면 30분이므로 ${hour}시 30분입니다.`
+        : `긴바늘이 12를 가리키면 ${hour}시 정각입니다.`,
+      'time',
+      '자료 해석 · 몇 시와 몇 시 30분 읽기',
+      clockVisualFor(hour, half ? 30 : 0, '시각 자료'),
+    );
+  }
+
+  // 2차시: 5분 단위 읽기입니다.
   const five = 5 * (1 + (index % 11));
   return makeQuestion(
     lesson, difficulty, index,
