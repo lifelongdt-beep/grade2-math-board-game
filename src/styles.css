@@ -4793,9 +4793,11 @@ body::before {
   z-index: 2;
 }
 
-/* 보기가 넷이나 아래에 서므로 문제의 표는 제 몫만 씁니다. */
+/* 표는 그림 372×128로 그려집니다. 너비를 다 쓸 때 제 키가 110쯤이라,
+   그보다 낮추면 글자가 눌립니다 — 72px에서는 12px 글자가 되어 2학년이
+   읽기 어렵습니다. 붙여 두었으니 자리가 모자라면 보기 쪽이 밀립니다. */
 .player-lane:has(.choice-grid.picture-choices) .student-question-body .question-visual-figure {
-  --visual-height: clamp(72px, 9vh, 112px);
+  --visual-height: clamp(100px, 13vh, 130px);
 }
 
 /* ── 맞혀서 늘어난 시간 ─────────────────────────────────────────────
