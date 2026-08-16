@@ -13777,6 +13777,34 @@ const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number):
 // 이제는 겹치면 그 자리를 다른 수로 다시 만듭니다. 자리의 갈래는 그대로
 // 두어야 하므로(중은 풀이 과정 문항 5자리, 상은 20자리) 번호에 30을
 // 더합니다 — 30은 갈래를 정하는 6과 3과 5로 모두 나누어떨어집니다.
+// 아무리 다시 만들어도 서로 다른 문제가 서른 개가 안 되는 차시가 있습니다
+// (단원 도입의 하 수준은 세 가지뿐입니다). 그럴 때 같은 문제가 잇달아
+// 나오면 아이는 두 번째를 읽지 않고 누릅니다. 같은 문제끼리 최대한 멀리
+// 떨어뜨려 놓으면, 적어도 사이에 다른 문제가 들어갑니다.
+const spreadRepeats = (questions: Question[]): Question[] => {
+  const byPrompt = new Map<string, Question[]>();
+  for (const question of questions) {
+    const same = byPrompt.get(question.prompt);
+    if (same) same.push(question);
+    else byPrompt.set(question.prompt, [question]);
+  }
+
+  // 많이 겹치는 것부터 한 바퀴씩 돌아가며 내려놓습니다.
+  const piles = [...byPrompt.values()].sort((a, b) => b.length - a.length);
+  const spread: Question[] = [];
+  let left = questions.length;
+  while (left > 0) {
+    for (const pile of piles) {
+      const next = pile.shift();
+      if (!next) continue;
+      spread.push(next);
+      left -= 1;
+    }
+  }
+
+  return spread;
+};
+
 const questionsFor = (lesson: Lesson, difficulty: Difficulty): Question[] => {
   const seen = new Set<string>();
   const made: Question[] = [];
@@ -13787,16 +13815,16 @@ const questionsFor = (lesson: Lesson, difficulty: Difficulty): Question[] => {
       question = buildQuestionAt(lesson, difficulty, slot + again * 30);
     }
     seen.add(question.prompt);
-    made.push({
-      ...question,
-      // 다른 번호로 다시 만들었어도 자리 번호로 매겨 두어야 기록과 다시
-      // 풀기가 자리를 제대로 찾습니다.
-      id: `${lesson.id}-${difficulty}-${slot}`,
-      basePrompt: question.prompt,
-    });
+    made.push(question);
   }
 
-  return made;
+  return spreadRepeats(made).map((question, slot) => ({
+    ...question,
+    // 다른 번호로 다시 만들었어도 자리 번호로 매겨 두어야 기록과 다시
+    // 풀기가 자리를 제대로 찾습니다.
+    id: `${lesson.id}-${difficulty}-${slot}`,
+    basePrompt: question.prompt,
+  }));
 };
 
 export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] =>

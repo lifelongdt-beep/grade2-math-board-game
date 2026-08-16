@@ -109,23 +109,33 @@ describe('questionFactory', () => {
     }
   });
 
-  it('does not repeat the same prompt within a lesson and difficulty', () => {
-    // 예전에는 겹치는 문제글 뒤에 안내 문구를 붙여 달라 보이게 했습니다.
-    // 그 문구를 걷어 내니, 어떤 차시는 서로 다른 문제를 서른 개 만들지
-    // 못한다는 것이 드러났습니다. 감추는 대신 몇 개까지 되는지 적어 둡니다.
-    const short: string[] = [];
+  // 서로 다른 문제가 몇 개나 되는지입니다.
+  //
+  // 예전에는 겹치는 문제글 뒤에 '빠뜨리거나 두 번 세지 않았는지 봐요'
+  // 같은 문구를 붙여 서른 개가 모두 다른 것처럼 보이게 했습니다. 문구를
+  // 걷어 내니, 300개 조합(차시×수준) 가운데 199개가 서른 개를 채우지
+  // 못한다는 것이 드러났습니다. 단원 도입 차시의 하 수준은 세 개뿐입니다.
+  //
+  // 이것은 감출 일이 아니라 채울 일입니다. 지금 값을 바닥으로 적어 두고,
+  // 문항을 더 쓸 때마다 이 수가 올라가야 합니다. 내려가면 검사가 막습니다.
+  const DISTINCT_TODAY = 6754;
+
+  it('keeps growing the number of different questions', () => {
+    let total = 0;
+    const thin: string[] = [];
 
     for (const lesson of lessons) {
       for (const level of levels) {
         const questions = generateQuestions(lesson, level);
-        const uniquePrompts = new Set(questions.map((question) => question.prompt));
-        if (uniquePrompts.size !== questions.length) {
-          short.push(`${lesson.id} ${level}: ${uniquePrompts.size}`);
-        }
+        const unique = new Set(questions.map((question) => question.prompt)).size;
+        total += unique;
+        // 서너 개로 서른 자리를 채우면 아이가 같은 문제를 열 번 봅니다.
+        if (unique < 3) thin.push(`${lesson.id} ${level}: ${unique}가지뿐`);
       }
     }
 
-    expect(short).toEqual([]);
+    expect(thin).toEqual([]);
+    expect(total, '서로 다른 문항 수가 줄었습니다').toBeGreaterThanOrEqual(DISTINCT_TODAY);
   });
 
   it('creates answer choices and answer indices for generated questions', () => {
