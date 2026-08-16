@@ -4777,20 +4777,41 @@ body::before {
 /* 그림 보기가 뜨면 아래가 두툼해져 문제가 눌립니다. 문제를 못 읽으면
    보기를 견줄 수도 없으므로, 이때는 자리 전체가 한 덩어리로 넘어가고
    문제는 제 키를 지킵니다. */
+/* 문제는 제 키를 다 쓰고, 남는 자리를 보기 판이 받습니다. 자리 전체를
+   굴리면 문제가 위로 밀려 나가고, 문제를 붙여 두면 보기 위에 겹칩니다.
+   둘 다 겪었습니다 — 겹치는 것보다 보기 판 안에서 구르는 편이 낫습니다. */
 .player-lane:has(.choice-grid.picture-choices) {
-  grid-template-rows: auto auto auto auto;
-  overflow-y: auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
 }
 
-/* 그림 보기 문항은 문제의 표와 보기의 그래프를 번갈아 보아야 풉니다.
-   자리가 모자라 보기 판이 표 위를 덮으면 읽을 것이 사라집니다 — 표의
-   '학생 수(명)' 줄이 반쯤 잘린 채로 나왔습니다. 문제를 위에 붙여 두어
-   보기가 그 아래로 지나가게 합니다. 문제칸은 제 바탕이 있어 가려집니다. */
+.player-lane:has(.choice-grid.picture-choices) .student-answer-dock {
+  min-height: 0;
+  overflow-y: auto;
+  /* 넷 중 넷째가 아래에 숨을 수 있으니, 구를 수 있다는 것이 보여야 합니다. */
+  scrollbar-width: thin;
+  scrollbar-color: #4fd2ff rgba(255, 255, 255, 0.08);
+}
+
+.player-lane:has(.choice-grid.picture-choices) .student-answer-dock::-webkit-scrollbar {
+  width: 10px;
+}
+
+.player-lane:has(.choice-grid.picture-choices) .student-answer-dock::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  background: #4fd2ff;
+}
+
+.player-lane:has(.choice-grid.picture-choices) .student-answer-dock::-webkit-scrollbar-track {
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* 문제칸을 붙여 두었더니 이번에는 문제 글과 표가 보기 그림 위에 겹쳐
+   찍혔습니다. 겹치면 둘 다 못 읽습니다. 문제는 제자리에 두고, 넘치는
+   쪽은 보기 판이 제 안에서 굴립니다. */
 .player-lane:has(.choice-grid.picture-choices) .student-question-body {
   overflow: visible;
-  position: sticky;
-  top: 0;
-  z-index: 2;
 }
 
 /* 표는 그림 372×128로 그려집니다. 너비를 다 쓸 때 제 키가 110쯤이라,
