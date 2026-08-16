@@ -230,6 +230,25 @@ describe('the maths in each question is true', () => {
     expect([...new Set(unrelated)]).toEqual([]);
   });
 
+  it('does not draw the hands when the hands are the answer', () => {
+    // '11시 15분일 때 긴바늘은 어느 수를 가리킬까요?' 옆에 11시 15분을
+    // 가리키는 시계가 그려져 있었습니다. 답이 그림 안에 있으면 아이는
+    // 5씩 세어 볼 까닭이 없습니다.
+    const shown: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      const visual = question.visual;
+      if (!visual || visual.kind !== 'clock' || visual.blank) continue;
+
+      const asked = question.basePrompt ?? question.prompt;
+      if (!/바늘은? (?:어느|몇)|가리킬까요/.test(asked)) continue;
+
+      shown.push(`${lessonId} ${level} ${question.id}: 바늘 자리를 묻는데 바늘을 그림 — ${asked.slice(0, 46)}`);
+    }
+
+    expect([...new Set(shown)]).toEqual([]);
+  });
+
   it('does not decorate a question with a shape pattern it never mentions', () => {
     // '버스가 10분마다 옵니다. 여기에서 찾을 수 있는 규칙은?' 옆에 ○△□가
     // 놓여 있었습니다. 규칙 찾기 단원의 문제에는 모두 '규칙'이라는 말이

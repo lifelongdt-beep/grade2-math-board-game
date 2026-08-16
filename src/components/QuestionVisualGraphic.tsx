@@ -503,12 +503,14 @@ function ClockFace({
   x,
   label,
   example = false,
+  blank = false,
 }: {
   hour: number;
   minute: number;
   x: number;
   label: string;
   example?: boolean;
+  blank?: boolean;
 }) {
   const hourAngle = (((hour % 12) + minute / 60) / 12) * Math.PI * 2;
   const minuteAngle = (minute / 60) * Math.PI * 2;
@@ -531,27 +533,33 @@ function ClockFace({
           </text>
         );
       })}
-      <line
-        x1={x}
-        y1={CLOCK_CENTER_Y}
-        x2={hourHand.x}
-        y2={hourHand.y}
-        stroke="#182433"
-        strokeWidth="6"
-        strokeLinecap="round"
-        {...handStyle}
-      />
-      <line
-        x1={x}
-        y1={CLOCK_CENTER_Y}
-        x2={minuteHand.x}
-        y2={minuteHand.y}
-        stroke="#0f9f9f"
-        strokeWidth="5"
-        strokeLinecap="round"
-        {...handStyle}
-      />
-      <circle cx={x} cy={CLOCK_CENTER_Y} r="5" fill="#182433" opacity={example ? 0.55 : 1} />
+      {/* 바늘 자리가 곧 답인 문제에서는 바늘을 그리지 않습니다. 판만
+          있어도 5씩 세어 볼 수 있어 도움이 되고, 답은 가려집니다. */}
+      {!blank && (
+        <>
+          <line
+            x1={x}
+            y1={CLOCK_CENTER_Y}
+            x2={hourHand.x}
+            y2={hourHand.y}
+            stroke="#182433"
+            strokeWidth="6"
+            strokeLinecap="round"
+            {...handStyle}
+          />
+          <line
+            x1={x}
+            y1={CLOCK_CENTER_Y}
+            x2={minuteHand.x}
+            y2={minuteHand.y}
+            stroke="#0f9f9f"
+            strokeWidth="5"
+            strokeLinecap="round"
+            {...handStyle}
+          />
+        </>
+      )}
+      <circle cx={x} cy={CLOCK_CENTER_Y} r="5" fill="#182433" opacity={blank ? 0.35 : example ? 0.55 : 1} />
       <text
         x={x}
         y="160"
@@ -578,8 +586,9 @@ function ClockGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'clo
         hour={visual.hour}
         minute={visual.minute}
         x={hasEnd ? 80 : frameWidth / 2}
-        label={example ? '바늘 위치는 바뀔 수 있어요' : '시작'}
+        label={visual.blank ? '어느 수를 가리킬까요' : example ? '바늘 위치는 바뀔 수 있어요' : '시작'}
         example={example}
+        blank={visual.blank === true}
       />
       {hasEnd && <ClockFace hour={visual.endHour ?? visual.hour} minute={visual.endMinute ?? visual.minute} x={230} label="끝" />}
     </svg>

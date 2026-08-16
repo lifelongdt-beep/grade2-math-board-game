@@ -226,6 +226,13 @@ export interface ClockVisual {
   endMinute?: number;
   /** 바늘이 실제 정답 시각이 아니라 시계 모양을 보여 주는 예시일 때 true */
   example?: boolean;
+  /**
+   * 바늘 없이 시계판만 그립니다. '11시 15분일 때 긴바늘은 어느 수를
+   * 가리킬까요?'처럼 바늘 자리가 곧 답인 문제에서는 바늘을 그리면
+   * 답을 그려 주는 셈입니다. 판만 있으면 5씩 세어 볼 수 있어 도움이
+   * 되면서 답은 가려집니다.
+   */
+  blank?: boolean;
 }
 
 export interface TableVisual {

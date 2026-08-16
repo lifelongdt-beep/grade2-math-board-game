@@ -7345,6 +7345,7 @@ const clockVisualFor = (
   endHour?: number,
   endMinute?: number,
   example = false,
+  blank = false,
 ): QuestionVisual => ({
   kind: 'clock',
   label,
@@ -7353,6 +7354,7 @@ const clockVisualFor = (
   ...(endHour != null ? { endHour } : {}),
   ...(endMinute != null ? { endMinute } : {}),
   ...(example ? { example: true } : {}),
+  ...(blank ? { blank: true } : {}),
 });
 
 // 1일을 일요일에 두면 같은 세로줄이 곧 같은 요일이 되어 "7일마다 반복"이 눈에 보입니다.
@@ -9594,13 +9596,17 @@ const visualForGeneratedQuestion = (
     // 그래서 시계 모양을 보여 주는 예시로만 표시하고 바늘은 점선으로 그립니다.
     const hour = promptNumbers[0] ?? 3;
     const minute = promptNumbers[1] ?? 0;
+    // 바늘이 어느 수를 가리키느냐가 곧 답인 문제에는 판만 그립니다.
+    // 바늘을 그리면 답을 그려 주는 셈입니다.
+    const asksWhereHandsPoint = /바늘은? (?:어느|몇)|가리킬까요/.test(question.prompt);
     return clockVisualFor(
       Math.max(1, Math.min(hour, 12)),
       Math.max(0, Math.min(minute, 55)),
-      '시계 모양 예시',
+      asksWhereHandsPoint ? '시계판' : '시계 모양 예시',
       undefined,
       undefined,
-      true,
+      !asksWhereHandsPoint,
+      asksWhereHandsPoint,
     );
   }
 
@@ -13721,7 +13727,15 @@ const drawTemplateVisual = (drawn: DrawnVisual, lesson: Lesson): QuestionVisual 
     );
   }
   if (drawn.kind === 'clock') {
-    return clockVisualFor(drawn.hour, drawn.minute, drawn.label ?? '시계 자료');
+    return clockVisualFor(
+      drawn.hour,
+      drawn.minute,
+      drawn.label ?? '시계 자료',
+      drawn.endHour,
+      drawn.endMinute,
+      false,
+      drawn.blank === true,
+    );
   }
   if (drawn.kind === 'unit-measure') {
     return unitMeasureVisualFor(drawn.object, drawn.unit, drawn.count);

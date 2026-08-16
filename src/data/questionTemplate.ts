@@ -60,7 +60,7 @@ export type VisualSpec =
   | { kind: 'array'; rows: string; columns: string; label?: string }
   | { kind: 'place-value'; value: string; places?: number; label?: string }
   | { kind: 'number-line'; values: string[]; step: string; active?: number; label?: string }
-  | { kind: 'clock'; hour: string; minute: string; endHour?: string; endMinute?: string; label?: string }
+  | { kind: 'clock'; hour: string; minute: string; endHour?: string; endMinute?: string; blank?: boolean; label?: string }
   | { kind: 'unit-measure'; object: string; unit: string; count: string }
   | { kind: 'ruler'; start: string; end: string; label?: string }
   | { kind: 'bar-model'; bars: Array<{ label: string; value: string }>; label?: string }
@@ -81,7 +81,7 @@ export type DrawnVisual =
   | { kind: 'array'; rows: number; columns: number; label?: string }
   | { kind: 'place-value'; value: number; places?: number; label?: string }
   | { kind: 'number-line'; values: number[]; step: number; active?: number; label?: string }
-  | { kind: 'clock'; hour: number; minute: number; endHour?: number; endMinute?: number; label?: string }
+  | { kind: 'clock'; hour: number; minute: number; endHour?: number; endMinute?: number; blank?: boolean; label?: string }
   | { kind: 'unit-measure'; object: string; unit: string; count: number }
   | { kind: 'ruler'; start: number; end: number; label?: string }
   | { kind: 'bar-model'; bars: Array<{ label: string; value: number }>; label?: string }
@@ -311,6 +311,7 @@ const resolveVisual = (
       minute,
       ...(endHour === null ? {} : { endHour }),
       ...(endMinute === null ? {} : { endMinute }),
+      ...(spec.blank ? { blank: true } : {}),
       label: text(spec.label),
     };
   }

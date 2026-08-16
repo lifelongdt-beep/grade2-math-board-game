@@ -3892,7 +3892,9 @@ export const questionBank: Template[] = [
       point: { from: 2, to: 10 },
       minute: { calc: 'point * 5' },
     },
-    visual: { kind: 'clock', hour: 'hour', minute: 'minute', label: '시계' },
+    // 바늘 자리가 곧 답이라 바늘을 그리면 답을 그려 주는 셈입니다.
+    // 판만 두면 5씩 세어 볼 수 있어 도움이 되면서 답은 가려집니다.
+    visual: { kind: 'clock', hour: 'hour', minute: 'minute', blank: true, label: '시계판' },
     prompt: '수영이는 {hour}시 {minute}분에 집을 나섰습니다. 이때 시계의 긴바늘은 어느 수를 가리킬까요?',
     answer: '{point}',
     wrongs: ['{minute}', '{hour}', '{point + 1}'],
