@@ -9679,48 +9679,6 @@ const addAssessmentLayer = (question: Question, index: number): Question => {
 //
 // 이제는 자리보다 넉넉히 만들어 두고, 겹치지 않는 것부터 차례로
 // 골라 서른 자리를 채웁니다. 수가 다르면 다른 문제입니다.
-// 수만 다른 같은 문항인지 보려고 수를 지우고 견줍니다.
-const shapeOfPrompt = (prompt: string) => prompt.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
-
-const pickDistinct = (pool: Question[], want: number, avoidShapes?: Set<string>): Question[] => {
-  const seen = new Set<string>();
-  const chosen: Question[] = [];
-
-  // 상은 중이 이미 내는 모양보다 제 모양을 먼저 고릅니다. 두 수준이 같은
-  // 문항을 나눠 가지면 난이도가 이름뿐인 것이 됩니다.
-  if (avoidShapes) {
-    for (const question of pool) {
-      if (chosen.length === want) break;
-      if (seen.has(question.prompt)) continue;
-      if (avoidShapes.has(shapeOfPrompt(question.prompt))) continue;
-      seen.add(question.prompt);
-      chosen.push(question);
-    }
-  }
-
-  for (const question of pool) {
-    if (chosen.length === want) break;
-    if (seen.has(question.prompt)) continue;
-    seen.add(question.prompt);
-    chosen.push(question);
-  }
-
-  // 서로 다른 문제가 자리 수만큼 나오지 않는 차시도 있습니다(고를 것이
-  // 정해진 개념 문항). 남는 자리는 있는 것으로 채웁니다.
-  for (const question of pool) {
-    if (chosen.length === want) break;
-    chosen.push(question);
-  }
-
-  return chosen.map((question, at) => ({
-    ...question,
-    // 아흔 개 가운데 골라 오므로 원래 번호는 띄엄띄엄합니다. 자리 번호로
-    // 다시 매겨 두어야 기록과 다시 풀기가 자리를 제대로 찾습니다.
-    id: `${question.lessonId}-${question.difficulty}-${at}`,
-    basePrompt: question.prompt,
-  }));
-};
-
 // ── 풀이 과정 빈칸 문항 ────────────────────────────────────────────────────
 // 답만 묻는 문제는 학생이 어떻게 풀었는지 알기 어렵습니다. 교육부·시도교육청
 // 평가지에서 쓰는 방식대로 풀이 과정을 단계로 보여 주고 그중 한 곳을 □로
@@ -11741,8 +11699,8 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
   return null;
 };
 
-const generateRawQuestions = (lesson: Lesson, difficulty: Difficulty, count = 30): Question[] =>
-  Array.from({ length: count }, (_, index) => {
+const rawQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  {
     const tag = primaryTag(lesson);
     if (tag === 'addition') return operationQuestion(lesson, difficulty, index, 'addition');
     if (tag === 'subtraction') return operationQuestion(lesson, difficulty, index, 'subtraction');
@@ -11754,7 +11712,8 @@ const generateRawQuestions = (lesson: Lesson, difficulty: Difficulty, count = 30
     if (tag === 'data') return dataQuestion(lesson, difficulty, index);
     if (tag === 'pattern') return patternQuestion(lesson, difficulty, index);
     return numberQuestion(lesson, difficulty, index);
-  });
+  }
+};
 
 // 풀이 과정 문항(① ② 로 나눠 빈칸을 채우는 문항)은 읽을 것이 많고 단계를
 // 따라가야 해서 어렵습니다. 30문항 중 몇 자리를 이 문항에 줄지 난이도마다
@@ -13749,14 +13708,12 @@ const variedQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): 
   }
 };
 
-const questionsFor = (
-  lesson: Lesson,
-  difficulty: Difficulty,
-  avoidShapes?: Set<string>,
-): Question[] =>
-  pickDistinct(
-    generateRawQuestions(lesson, difficulty, 90)
-      .map((question, index) =>
+// 자리 하나를 만듭니다. 자리마다 어떤 갈래를 받을지는 번호가 정합니다 —
+// 풀이 과정 문항이 놓일 자리, 그림으로 고르는 자리처럼요. 그래서 겹치는
+// 문제를 다시 만들 때도 번호에 30을 더해 같은 갈래를 지킵니다.
+const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  const question = rawQuestionAt(lesson, difficulty, index);
+  const chosen =
         isStepSlot(difficulty, index)
           // 상은 문장 상황을 읽고 그 풀이의 한 곳을 짚는 문항이 우선입니다.
           // 중의 풀이 과정 문항은 지금처럼 맨 계산의 단계를 짚습니다 —
@@ -13806,21 +13763,44 @@ const questionsFor = (
             ?? (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
             ?? challengeQuestion(lesson, difficulty, index)
             ?? richQuestionFor(lesson, difficulty, index)
-            ?? question)
-      .map((question, index) => withRichVisual(question, index, lesson))
-      .map(addAssessmentLayer),
-    30,
-    avoidShapes,
-  );
-
-export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] => {
-  if (difficulty !== '상') return questionsFor(lesson, difficulty);
-
-  // 상은 중이 내는 모양을 피해서 고릅니다. 피할 모양이 없으면 그대로
-  // 고르므로, 상에만 있는 문항이 모자란 차시라도 문항 수는 줄지 않습니다.
-  const middleShapes = new Set(questionsFor(lesson, '중').map((question) => shapeOfPrompt(question.prompt)));
-  return questionsFor(lesson, '상', middleShapes);
+            ?? question;
+  return addAssessmentLayer(withRichVisual(chosen, index, lesson), index);
 };
+
+// 같은 문제가 두 번 나오지 않게 고릅니다.
+//
+// 예전에는 겹치면 문제글 뒤에 '빠뜨리거나 두 번 세지 않았는지 봐요.'
+// 같은 문구를 붙여 달라 보이게 했습니다. 그런데 그것은 문제를 다르게
+// 만든 것이 아니라 같은 문제에 다른 옷을 입힌 것이고, 문제글에는 문제만
+// 있어야 합니다. 그런 말은 해설이 할 말입니다.
+//
+// 이제는 겹치면 그 자리를 다른 수로 다시 만듭니다. 자리의 갈래는 그대로
+// 두어야 하므로(중은 풀이 과정 문항 5자리, 상은 20자리) 번호에 30을
+// 더합니다 — 30은 갈래를 정하는 6과 3과 5로 모두 나누어떨어집니다.
+const questionsFor = (lesson: Lesson, difficulty: Difficulty): Question[] => {
+  const seen = new Set<string>();
+  const made: Question[] = [];
+
+  for (let slot = 0; slot < 30; slot += 1) {
+    let question = buildQuestionAt(lesson, difficulty, slot);
+    for (let again = 1; again <= 8 && seen.has(question.prompt); again += 1) {
+      question = buildQuestionAt(lesson, difficulty, slot + again * 30);
+    }
+    seen.add(question.prompt);
+    made.push({
+      ...question,
+      // 다른 번호로 다시 만들었어도 자리 번호로 매겨 두어야 기록과 다시
+      // 풀기가 자리를 제대로 찾습니다.
+      id: `${lesson.id}-${difficulty}-${slot}`,
+      basePrompt: question.prompt,
+    });
+  }
+
+  return made;
+};
+
+export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] =>
+  questionsFor(lesson, difficulty);
 
 export const generateLessonBank = (lesson: Lesson): Record<Difficulty, Question[]> => ({
   하: generateQuestions(lesson, '하'),
