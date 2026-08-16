@@ -566,15 +566,28 @@ const tuneWrongsForDifficulty = (
   if (/[+\-=×÷]/.test(suffix)) return wrongs;
   const step = value >= 1000 ? 100 : value >= 100 ? 10 : 1;
   // 위로 올리면 범위를 넘는 경우에는 아래로 내려 잡습니다.
-  const up = (gap: number) => (value + gap <= limit ? value + gap : value - gap);
+  const up = (gap: number) => {
+    if (value + gap <= limit) return value + gap;
+    return value - gap > 0 ? value - gap : value;
+  };
+  // 내려서 0이 되면 위로 올립니다. '몇 명일까요?'에 0명은 아무도 고르지
+  // 않는 보기라, 넷 중 하나를 버리고 셋 중에서 고르게 하는 셈이 됩니다.
+  const down = (gap: number) => {
+    if (value - gap > 0) return value - gap;
+    return value + gap <= limit ? value + gap : value;
+  };
   const format = (next: number) => `${Math.max(0, next)}${suffix}`;
 
   if (difficulty === '하') {
-    return [wrongs[0], format(up(step * 3)), format(value - step * 3), ...wrongs.slice(1)];
+    // 지어 준 오답은 대개 그 문항에서 아이가 실제로 헷갈리는 수입니다
+    // — 표의 다른 줄, 더해 버린 수. 둘은 남기고 하나만 멀리 둡니다.
+    // 예전에는 하나만 남기고 둘을 ±3으로 바꾸어, 표를 잘못 읽은 아이가
+    // 고를 만한 보기가 사라졌습니다.
+    return [wrongs[0], wrongs[1] ?? format(up(step * 3)), format(down(step * 3)), ...wrongs.slice(2)];
   }
 
   if (difficulty === '상') {
-    return [format(up(step)), format(value - step), wrongs[0], ...wrongs.slice(1)];
+    return [format(up(step)), format(down(step)), wrongs[0], ...wrongs.slice(1)];
   }
 
   return wrongs;
