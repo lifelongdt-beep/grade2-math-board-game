@@ -13767,9 +13767,12 @@ const questionsFor = (
           // 보였을 뿐, 문구를 걷어 내니 상과 중이 같은 모양을 나눠 갖고
           // 있었습니다. 상에서는 상황이 있으면 늘 상황으로 냅니다.
           ? (difficulty === '상' ? wordStepQuestion(lesson, difficulty, index) : null)
-            // 풀이 과정 문항의 일부는 빈칸 대신 차례를 묻습니다. 차시마다
-            // 상황을 손으로 늘리지 않고도 문항의 모양이 갈라집니다.
-            ?? (Math.floor(index / 3) % 3 === 2
+            // 뒤섞인 풀이를 차례대로 놓는 문항은 상만 받습니다. 빈칸을
+            // 채우는 일과 차례를 잡는 일은 다른 일입니다 — 채우기는 남의
+            // 풀이를 따라가면 되지만, 차례를 잡으려면 그 풀이가 왜 그
+            // 순서인지 알아야 합니다. 두 수준이 같은 문항을 나눠 갖지
+            // 않게 하는 것이기도 합니다.
+            ?? (difficulty === '상' && Math.floor(index / 3) % 3 === 2
               ? (() => {
                   const base = stepBlankQuestion(lesson, difficulty, index);
                   return base ? asOrderQuestion(base, lesson, difficulty, index) : null;
