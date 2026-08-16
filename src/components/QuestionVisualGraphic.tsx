@@ -874,15 +874,26 @@ function GridTableGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
 }
 
 function PatternGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'pattern' }> }) {
+  const items = visual.items.slice(0, 9);
+  // 칸을 28px로 못박아 두었더니 ○△□ 말고는 다 넘쳤습니다 — '초록',
+  // '10분'처럼 글자로 늘어놓는 되풀이도 이 그림으로 보여 줍니다.
+  const longest = items.reduce((max, item) => Math.max(max, [...item].length), 1);
+  const cell = Math.max(30, longest * 16 + 12);
+  const gap = 8;
+  const edge = 18;
+  const width = edge * 2 + items.length * cell + Math.max(0, items.length - 1) * gap;
+  const height = 62;
+
   return (
-    <svg viewBox="0 0 376 126" role="img" aria-label={visual.label}>
-      <rect x="4" y="6" width="368" height="114" rx="14" fill="#f6fcff" stroke="#d7edf2" />
-      {visual.items.slice(0, 9).map((item, index) => {
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="2" y="2" width={width - 4} height={height - 4} rx="12" fill="#f6fcff" stroke="#d7edf2" />
+      {items.map((item, index) => {
         const isMissing = visual.missingIndex === index;
+        const x = edge + index * (cell + gap);
         return (
           <g key={`${item}-${index}`}>
-            <rect x={30 + index * 36} y="40" width="28" height="28" rx="8" fill={isMissing ? '#fff4bd' : '#dffafa'} stroke="#0f9f9f" strokeWidth="2" />
-            <text x={44 + index * 36} y="60" textAnchor="middle" fill="#182433" fontSize="17" fontWeight="900">
+            <rect x={x} y="14" width={cell} height="34" rx="8" fill={isMissing ? '#fff4bd' : '#dffafa'} stroke="#0f9f9f" strokeWidth="2" />
+            <text x={x + cell / 2} y="38" textAnchor="middle" fill="#182433" fontSize="19" fontWeight="900">
               {isMissing ? '?' : item}
             </text>
           </g>

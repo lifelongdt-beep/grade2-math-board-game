@@ -230,6 +230,27 @@ describe('the maths in each question is true', () => {
     expect([...new Set(unrelated)]).toEqual([]);
   });
 
+  it('does not decorate a question with a shape pattern it never mentions', () => {
+    // '버스가 10분마다 옵니다. 여기에서 찾을 수 있는 규칙은?' 옆에 ○△□가
+    // 놓여 있었습니다. 규칙 찾기 단원의 문제에는 모두 '규칙'이라는 말이
+    // 들어 있어서, 그 말만 보고 무늬를 붙이면 어떤 문제에나 붙습니다.
+    const decorated: string[] = [];
+    const shapes = /^[○△□◇☆●▲■]$/;
+
+    for (const { lessonId, level, question } of all) {
+      const visual = question.visual;
+      if (!visual || visual.kind !== 'pattern') continue;
+      if (!visual.items.every((item) => shapes.test(item) || item === '?')) continue;
+
+      const asked = question.basePrompt ?? question.prompt;
+      if (/무늬|도형|모양/.test(asked)) continue;
+
+      decorated.push(`${lessonId} ${level} ${question.id}: 무늬를 말하지 않는데 ○△□ — ${asked.slice(0, 46)}`);
+    }
+
+    expect([...new Set(decorated)]).toEqual([]);
+  });
+
   it('does not already show the figures when it asks for the figures', () => {
     // '7000을 숫자로 바르게 쓴 것은?' 하고 보기에 7000을 두면 물음이
     // 되지 않습니다. 숫자로 쓰라고 하려면 숫자가 아닌 것 — 우리말로 읽은

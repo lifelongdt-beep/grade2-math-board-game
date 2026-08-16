@@ -1336,27 +1336,13 @@ function App() {
           <span>{mode === 'finished' ? '시간 종료' : '진행 중'}</span>
         </div>
 
-        {/* 맞힌 수와 우리 반 막대도 이 줄에 함께 섭니다. 따로 한 줄을
-            쓰면 그만큼 아래 문제 자리가 줄어듭니다. */}
+        {/* 맞힌 수는 이 줄에 함께 섭니다. 따로 한 줄을 쓰면 그만큼 아래
+            문제 자리가 줄어듭니다. */}
         <div className="round-status">
           <span><BarChart3 size={16} /> 정답률 {accuracy}%</span>
           <span>정답 {correctCount}개</span>
           <span>오답 {wrongCount}개</span>
           {reviewScope !== 'lesson' && <span>{scopedLessons.length}개 차시 랜덤</span>}
-
-          {/* 우리 반이 함께 채우는 막대입니다. 아이는 자기 칸만 보게 되어
-              있어서, 서른 문제가 '혼자 푸는 서른 개'로 끝납니다. 등수가
-              아니라 합계라 늦게 푸는 아이도 채우는 데 낍니다.
-              다 채우면 다음 목표가 열려 끝이 나지 않습니다. */}
-          <div className="class-goal" aria-live="polite">
-            <strong>우리 반 {correctCount}개</strong>
-            <div className="class-goal-track">
-              <div className="class-goal-fill" style={{ width: `${goalPercent}%` }} />
-            </div>
-            <small>
-              {goalJustReached ? '목표 달성! 다음 목표로' : `${goalStage}단계 · 다음 목표 ${goalTarget}개`}
-            </small>
-          </div>
         </div>
 
         <button className="primary-button" type="button" onClick={resetSession}>
@@ -1364,6 +1350,45 @@ function App() {
           {mode === 'finished' ? '다시 풀기' : '다시 시작'}
         </button>
       </footer>
+
+      {/* 우리 반이 함께 채우는 길입니다. 아이는 자기 칸만 보게 되어 있어서,
+          서른 문제가 '혼자 푸는 서른 개'로 끝납니다. 등수가 아니라 합계라
+          늦게 푸는 아이도 채우는 데 낍니다.
+          교실 뒤에서도 보여야 함께 채우는 맛이 나므로 제 줄을 씁니다.
+          로켓이 나아가고 별에 불이 들어옵니다 — 얼마나 왔는지가 수보다
+          그림으로 먼저 읽혀야 2학년이 다음 문제를 풀고 싶어집니다. */}
+      <div className={`class-goal ${goalJustReached ? 'reached' : ''}`} aria-live="polite">
+        <strong className="class-goal-count">
+          <span className="class-goal-badge">🏁</span>
+          우리 반 {correctCount}개
+        </strong>
+        <div className="class-goal-track">
+          <div className="class-goal-fill" style={{ width: `${goalPercent}%` }}>
+            <span className="class-goal-sparks" aria-hidden="true">
+              <i /><i /><i />
+            </span>
+          </div>
+          {[25, 50, 75].map((mark) => (
+            <span
+              key={mark}
+              className={`class-goal-mark ${goalPercent >= mark ? 'lit' : ''}`}
+              style={{ left: `${mark}%` }}
+              aria-hidden="true"
+            >
+              ⭐
+            </span>
+          ))}
+          <span className="class-goal-runner" style={{ left: `${goalPercent}%` }} aria-hidden="true">
+            🚀
+          </span>
+          <span className={`class-goal-prize ${goalPercent >= 92 ? 'near' : ''}`} aria-hidden="true">
+            🎁
+          </span>
+        </div>
+        <small>
+          {goalJustReached ? '목표 달성! 다음 목표로 🎉' : `${goalStage}단계 · 다음 목표 ${goalTarget}개`}
+        </small>
+      </div>
 
       <section className={`game-layout individual players-${playerCount}`}>
         <section className="playfield" style={{ backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(/assets/math-adventure-bg.png)' }}>

@@ -9664,12 +9664,35 @@ const visualForGeneratedQuestion = (
       return patternVisualFor([...drawn, '?'], '수 규칙 자료', drawn.length);
     }
 
-    // ④ 늘어놓은 것이 문제에 적혀 있지 않은 규칙 문제입니다.
-    //    '무늬에서 ?에 들어갈 모양은?'처럼 그림이 곧 자료인 문제와,
-    //    '생활에서 규칙을 찾는 방법은?'처럼 되풀이 자체를 묻는 문제입니다.
-    //    여기서는 되풀이의 본보기로 무늬 한 줄을 보여 줍니다.
+    // ④ '버스가 10분마다 옵니다'처럼 되풀이하는 사이가 적혀 있으면 그
+    //    되풀이를 그대로 늘어놓습니다. 무늬 그림을 붙여 두었더니 버스
+    //    문제 옆에 ○△□가 놓였습니다.
+    const every = question.prompt.match(/(\d+)\s*(분|일|주|시간|개|번)\s*마다/);
+    if (every) {
+      const step = Number(every[1]);
+      const unit = every[2];
+      if (step > 0 && step <= 60) {
+        const run = [1, 2, 3].map((times) => `${step * times}${unit}`);
+        return patternVisualFor([...run, '?'], '되풀이하는 차례', run.length);
+      }
+    }
+
+    // ⑤ '초록, 노랑, 빨강 순서로'처럼 되풀이하는 것을 이름으로 적어 둔
+    //    문제입니다. 적힌 그대로 늘어놓아야 되풀이가 눈에 보입니다.
+    const named = question.prompt.match(/([가-힣]{1,4}(?:,\s*[가-힣]{1,4}){1,3})\s*(?:순서로|차례로)/);
+    if (named) {
+      const cycle = named[1].split(/,\s*/);
+      if (cycle.length >= 2) {
+        const run = [...cycle, ...cycle].slice(0, 6);
+        return patternVisualFor([...run, '?'], '되풀이하는 차례', run.length);
+      }
+    }
+
+    // ⑥ 무늬 한 줄은 무늬를 말하는 문제에만 붙입니다. 예전에는 '규칙'이라는
+    //    말만 있으면 어떤 문제에나 ○△□를 붙였는데, 규칙 찾기 단원의 모든
+    //    문제에는 '규칙'이 들어 있습니다.
     //    곱셈표·덧셈표는 위(②)에서 이미 자기 표를 받았으므로 여기 오지 않습니다.
-    if (/무늬|모양|색|되풀이|반복|규칙/.test(question.prompt)) {
+    if (/무늬|도형|모양/.test(question.prompt)) {
       return patternVisualFor(['○', '△', '□', '○', '△', '□', '○'], '무늬 규칙 자료', 6);
     }
 

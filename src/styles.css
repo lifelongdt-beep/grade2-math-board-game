@@ -4886,13 +4886,12 @@ body::before {
 .class-goal {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex: 1 1 260px;
+  gap: 12px;
   min-width: 0;
-  padding: 7px 12px;
+  padding: 8px 16px;
   border: 1px solid rgba(120, 170, 255, 0.34);
   border-radius: var(--radius);
-  background: rgba(10, 18, 40, 0.62);
+  background: linear-gradient(90deg, rgba(10, 18, 40, 0.86), rgba(16, 30, 66, 0.7));
 }
 
 /* 이 줄은 검은 바탕 위에 놓입니다. --muted는 밝은 화면에 맞춘 진한
@@ -4916,21 +4915,141 @@ body::before {
 
 /* 빈 막대도 보여야 '여기까지 채우는 것'이라는 게 읽힙니다. 흰색 12%로는
    검은 바탕에서 자국조차 보이지 않았습니다. */
+/* 로켓이 지나갈 길입니다. 12px짜리 실선으로는 교실 뒤에서 얼마나 왔는지
+   보이지 않아, 아이가 자기 반이 어디까지 왔는지 알 수가 없었습니다. */
 .class-goal-track {
+  position: relative;
   flex: 1 1 auto;
-  min-width: 60px;
-  height: 12px;
+  min-width: 120px;
+  height: 26px;
   border-radius: 999px;
   border: 1px solid rgba(120, 170, 255, 0.4);
-  background: rgba(255, 255, 255, 0.16);
-  overflow: hidden;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0 2px, transparent 2px 26px),
+    rgba(255, 255, 255, 0.13);
 }
 
 .class-goal-fill {
+  position: relative;
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(90deg, #45d6ff, #6ef0a8);
+  box-shadow: 0 0 14px rgba(110, 240, 168, 0.55);
   transition: width 0.4s ease;
+}
+
+/* 채워진 길 위로 빛이 한 번씩 흘러갑니다. 멈춰 있는 막대는 이미 끝난
+   것처럼 보이지만, 흐르면 아직 가는 중이라는 것이 읽힙니다. */
+.class-goal-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.55) 50%, transparent 80%);
+  background-size: 200% 100%;
+  animation: goal-shine 2.6s linear infinite;
+}
+
+/* 앞머리에서 튀는 불꽃입니다. */
+.class-goal-sparks {
+  position: absolute;
+  right: 2px;
+  top: 0;
+  height: 100%;
+  width: 18px;
+}
+
+.class-goal-sparks i {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff6a8;
+  box-shadow: 0 0 8px #ffe066;
+  animation: goal-spark 1.5s ease-out infinite;
+}
+
+.class-goal-sparks i:nth-child(2) { animation-delay: 0.5s; }
+.class-goal-sparks i:nth-child(3) { animation-delay: 1s; }
+
+/* 가는 길에 놓인 별입니다. 지나가면 불이 들어옵니다 — 서른 개는 2학년에게
+   먼 수라, 중간에 닿을 곳이 있어야 계속 갑니다. */
+.class-goal-mark {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 15px;
+  filter: grayscale(1) brightness(0.6);
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.class-goal-mark.lit {
+  filter: none;
+  transform: translate(-50%, -50%) scale(1.25);
+}
+
+.class-goal-runner {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 22px;
+  transition: left 0.4s ease;
+  animation: goal-bob 1.4s ease-in-out infinite;
+}
+
+.class-goal-prize {
+  position: absolute;
+  right: -4px;
+  top: 50%;
+  transform: translate(0, -50%);
+  font-size: 20px;
+}
+
+.class-goal-prize.near {
+  animation: goal-wiggle 0.7s ease-in-out infinite;
+}
+
+/* 목표에 닿은 순간입니다. 길 전체가 한 번 빛납니다. */
+.class-goal.reached .class-goal-track {
+  border-color: #ffe066;
+  box-shadow: 0 0 0 3px rgba(255, 224, 102, 0.35);
+}
+
+.class-goal.reached .class-goal-prize {
+  animation: goal-pop 0.6s ease-out 3;
+}
+
+.class-goal-badge {
+  margin-right: 4px;
+  font-size: 17px;
+}
+
+@keyframes goal-shine {
+  from { background-position: 120% 0; }
+  to { background-position: -60% 0; }
+}
+
+@keyframes goal-spark {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.9; }
+  100% { transform: translate(8px, -14px) scale(0.2); opacity: 0; }
+}
+
+@keyframes goal-bob {
+  0%, 100% { transform: translate(-50%, -50%) rotate(-6deg); }
+  50% { transform: translate(-50%, -62%) rotate(4deg); }
+}
+
+@keyframes goal-wiggle {
+  0%, 100% { transform: translate(0, -50%) rotate(-8deg); }
+  50% { transform: translate(0, -50%) rotate(8deg); }
+}
+
+@keyframes goal-pop {
+  0% { transform: translate(0, -50%) scale(1); }
+  40% { transform: translate(0, -60%) scale(1.5); }
+  100% { transform: translate(0, -50%) scale(1); }
 }
 
 /* 좁은 화면에서는 남는 자리가 없으니 한 줄을 씁니다. */
@@ -4976,6 +5095,14 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   .level-up { animation: none; }
   .class-goal-fill { transition: none; }
+  .class-goal-fill::after,
+  .class-goal-sparks i,
+  .class-goal-runner,
+  .class-goal-prize.near,
+  .class-goal.reached .class-goal-prize {
+    animation: none;
+  }
+  .class-goal-runner { transition: none; }
 }
 
 /* ── 줄 줄이기 ──────────────────────────────────────────────────────
@@ -5024,6 +5151,14 @@ body::before {
   flex: 1 1 300px;
   min-width: 0;
   justify-content: flex-end;
+}
+
+/* 우리 반 길은 제 줄을 씁니다. 도구 줄 한쪽에 끼워 두었더니 좁아서
+   교실 뒤에서는 얼마나 왔는지 보이지 않았습니다. 함께 채우는 것이니
+   모두에게 보이는 편이 맞습니다. */
+.app-shell.playing .class-goal,
+.app-shell.finished .class-goal {
+  margin: 0 2px 6px;
 }
 
 .command-bar .command-status {
