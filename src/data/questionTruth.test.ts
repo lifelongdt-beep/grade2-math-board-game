@@ -189,6 +189,41 @@ describe('the maths in each question is true', () => {
     expect([...new Set(mismatched)]).toEqual([]);
   });
 
+  it('draws the thing the question names', () => {
+    // '쌓은 모양에서 규칙을 찾아볼까요' 차시에 무늬 문항의 ○△□가 붙어
+    // 나왔습니다. 쌓기나무를 말하는 문제 옆에 도형 무늬가 있으면 아이는
+    // 그림을 아무리 들여다봐도 물음과 이어 붙일 수가 없습니다.
+    //
+    // 문제가 이름을 대는 물건만 봅니다 — 쌓기나무, 시계, 달력처럼 무엇을
+    // 그려야 하는지가 하나로 정해지는 말들입니다. 그 가운데 하나라도
+    // 그릴 수 있는 그림이면 넘어갑니다.
+    const subjects: Array<{ name: string; says: RegExp; drawnBy: string[] }> = [
+      { name: '쌓기나무', says: /쌓기나무|쌓은 모양|쌓아 올린/, drawnBy: ['cube-stack', 'cube-pattern', 'cube-views'] },
+      { name: '시계', says: /시계|몇 시 몇 분|짧은바늘|긴바늘/, drawnBy: ['clock'] },
+      { name: '달력', says: /달력|며칠|무슨 요일/, drawnBy: ['calendar'] },
+      { name: '수직선', says: /수직선/, drawnBy: ['number-line'] },
+      { name: '자', says: /자로 재|자의 눈금/, drawnBy: ['ruler'] },
+      { name: '표', says: /표를 보고|표에서|표의/, drawnBy: ['table', 'grid-table'] },
+      { name: '그래프', says: /그래프를 보고|그래프에서|그래프의/, drawnBy: ['pictograph'] },
+    ];
+    const unrelated: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      const visual = question.visual;
+      if (!visual) continue;
+
+      const named = subjects.filter((subject) => subject.says.test(question.prompt));
+      if (named.length === 0) continue;
+      if (named.some((subject) => subject.drawnBy.includes(visual.kind))) continue;
+
+      unrelated.push(
+        `${lessonId} ${level} ${question.id}: ${named.map((s) => s.name).join('·')}를 말하는데 그림은 ${visual.kind} — ${question.prompt.slice(0, 46)}`,
+      );
+    }
+
+    expect([...new Set(unrelated)]).toEqual([]);
+  });
+
   it('does not already show the figures when it asks for the figures', () => {
     // '7000을 숫자로 바르게 쓴 것은?' 하고 보기에 7000을 두면 물음이
     // 되지 않습니다. 숫자로 쓰라고 하려면 숫자가 아닌 것 — 우리말로 읽은
