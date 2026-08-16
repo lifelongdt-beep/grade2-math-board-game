@@ -13742,9 +13742,12 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
           // 상은 문장 상황을 읽고 그 풀이의 한 곳을 짚는 문항이 우선입니다.
           // 중의 풀이 과정 문항은 지금처럼 맨 계산의 단계를 짚습니다 —
           // 중은 아직 상황과 절차를 한꺼번에 다루는 단계가 아닙니다.
-          ? (difficulty === '상' && Math.floor(index / 3) % 2 === 0
-              ? wordStepQuestion(lesson, difficulty, index)
-              : null)
+          //
+          // 예전에는 상의 절반만 문장 상황으로 냈습니다. 문제글 뒤에 붙던
+          // 안내 문구가 두 수준을 달라 보이게 하고 있어서 그것으로 충분해
+          // 보였을 뿐, 문구를 걷어 내니 상과 중이 같은 모양을 나눠 갖고
+          // 있었습니다. 상에서는 상황이 있으면 늘 상황으로 냅니다.
+          ? (difficulty === '상' ? wordStepQuestion(lesson, difficulty, index) : null)
             // 풀이 과정 문항의 일부는 빈칸 대신 차례를 묻습니다. 차시마다
             // 상황을 손으로 늘리지 않고도 문항의 모양이 갈라집니다.
             ?? (Math.floor(index / 3) % 3 === 2
