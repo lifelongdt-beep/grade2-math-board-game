@@ -4796,11 +4796,20 @@ body::before {
   min-width: 0;
   width: auto;
   height: auto;
-  max-height: 22vh;
+  max-height: 21vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
+/* 세로 그래프는 가로 그래프보다 훨씬 정사각형에 가깝습니다. 너비만 맞추면
+   키가 그만큼 따라 커져, 보기 하나가 637px이 되고 넷이면 화면을 넘습니다.
+   너비와 키 가운데 먼저 닿는 쪽에 맞춰 줄어들게 둡니다. */
 .choice-grid.picture-choices button .choice-picture .question-visual-figure svg {
+  width: auto;
   height: auto;
+  max-width: 100%;
+  max-height: 21vh;
 }
 
 /* 이름표는 그림 왼쪽에 섭니다. 색을 --ink로 두었더니 어두운 자리 위에
