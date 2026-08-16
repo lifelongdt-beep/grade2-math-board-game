@@ -9314,6 +9314,70 @@ const richQuestionFor = (lesson: Lesson, difficulty: Difficulty, index: number):
 // 하고 보기 하나를 지울 수 있게 되므로, 답이 아니라 단원을 봅니다.
 const placesForUnit = (lesson: Lesson) => (lesson.unitTitle.includes('네 자리 수') ? 4 : 3);
 
+// 문제가 이름을 대며 '보라'고 하는 것들입니다. 무엇을 그려야 하는지가
+// 하나로 정해지므로, 문항의 갈래보다 이 말이 먼저입니다.
+const namedSubjectVisual = (question: Question, index: number): QuestionVisual | undefined => {
+  const asked = question.basePrompt ?? question.prompt;
+
+  // 곱셈표·덧셈표: 표의 한 부분을 그려 줍니다. 묻는 칸은 비웁니다.
+  const table = asked.match(/(곱셈표|덧셈표)/);
+  if (table) {
+    const operation: '×' | '+' = table[1] === '곱셈표' ? '×' : '+';
+    const span = (centre: number, count: number) => {
+      const from = Math.max(1, Math.min(9 - count + 1, centre - Math.floor(count / 2)));
+      return Array.from({ length: count }, (_, at) => from + at);
+    };
+    const meeting = asked.match(/(\d+)\s*(?:과|와)\s*(\d+)\s*이?\s*만나는/);
+    if (meeting) {
+      const row = Number(meeting[1]);
+      const column = Number(meeting[2]);
+      if (row >= 1 && row <= 9 && column >= 1 && column <= 9) {
+        return {
+          kind: 'grid-table',
+          label: `${table[1]}의 한 부분`,
+          operation,
+          rows: span(row, 4),
+          columns: span(column, 5),
+          blank: { row, column },
+        };
+      }
+    }
+    const dan = asked.match(/(\d+)단/);
+    const centre = dan ? Number(dan[1]) : 3;
+    return {
+      kind: 'grid-table',
+      label: `${table[1]}의 한 부분`,
+      operation,
+      rows: span(centre, 4),
+      columns: span(3, 5),
+      ...(dan ? { highlightRow: centre } : {}),
+    };
+  }
+
+  // 쌓기나무가 차례로 늘어나는 문제입니다. 적힌 수를 그대로 쌓아 줍니다.
+  if (/쌓기나무|쌓은 모양/.test(asked) && /규칙|늘어|줄어|다음/.test(asked)) {
+    const run = asked.match(/(\d+)개,\s*(\d+)개,\s*(\d+)개/);
+    if (run) {
+      const steps = [Number(run[1]), Number(run[2]), Number(run[3])];
+      if (steps.every((count) => count > 0 && count <= 12)) return cubePatternVisualFor(steps);
+    }
+    const first = asked.match(/(\d+)개씩 늘어/);
+    if (first) {
+      const step = Number(first[1]);
+      if (step > 0 && step <= 4) return cubePatternVisualFor([step, step * 2, step * 3]);
+    }
+    return undefined;
+  }
+
+  // 달력을 보라는 문제에 무늬가 붙어 나왔습니다. 같은 요일이 어디에
+  // 오는지는 달력을 봐야 세어집니다. 답이 되는 날은 표시하지 않습니다.
+  if (/달력/.test(asked)) {
+    return calendarVisualFor([], '달력');
+  }
+
+  return undefined;
+};
+
 const visualForGeneratedQuestion = (
   question: Question,
   index: number,
@@ -9324,6 +9388,12 @@ const visualForGeneratedQuestion = (
 
   const answerNumber = numberFromAnswer(question.answer);
   const promptNumbers = question.prompt.match(/\d+/g)?.map(Number) ?? [];
+
+  // 문제가 무엇을 보라고 이름을 대면, 문항의 갈래보다 그 말이 먼저입니다.
+  // 곱셈표를 보라는 문제에 점 배열이, 쌓기나무를 보라는 문제에 ○△□ 무늬가
+  // 붙어 나왔습니다. 갈래로만 그림을 고르면 이런 일이 계속 생깁니다.
+  const named = namedSubjectVisual(question, index);
+  if (named) return named;
 
   if (question.type === 'placeValue') {
     // '6000은 1000이 몇 개인 수일까요?' 같은 문제는 자리값 표에 답이 그대로
@@ -9472,7 +9542,18 @@ const visualForGeneratedQuestion = (
     // 훨씬 나쁩니다.
     if (!labeledCounts || labeledCounts.length < 2) return undefined;
 
-    return pictographVisualFor(labeledCounts.slice(0, 3), 1, '자료 조사 그림그래프');
+    // '표에서 강아지는 4명…'이라고 해 놓고 그래프를 그려 주면, 아이가
+    // 보라는 것과 보이는 것이 다릅니다. 문제가 부르는 이름대로 그립니다.
+    const shown = labeledCounts.slice(0, 3);
+    if (/표에서|표를 보고|표의 /.test(question.prompt) && !/그래프/.test(question.prompt)) {
+      return tableVisualFor(
+        shown.map((item) => ({ name: item.label, value: item.count })),
+        '조사한 자료를 나타낸 표',
+        { categoryLabel: '항목', valueLabel: '학생 수(명)' },
+      );
+    }
+
+    return pictographVisualFor(shown, 1, '자료 조사 그림그래프');
   }
 
   if (question.type === 'multiplication') {
