@@ -513,12 +513,16 @@ export const questionBank: Template[] = [
       total: { from: 18, to: 26 },
       c: { calc: 'total - a - b' },
     },
+    // 표라고 말해 놓고 그래프를 그려 주고 있었습니다. 부르는 이름과 보이는
+    // 것이 다르면, 이 단원에서 갈라 가르치는 둘이 아이 머릿속에서 섞입니다.
     visual: {
-      kind: 'pictograph',
-      items: [{ label: '강아지', count: 'a' }, { label: '고양이', count: 'b' }],
+      kind: 'table',
+      columns: [{ name: '강아지', value: 'a' }, { name: '고양이', value: 'b' }],
+      categoryLabel: '동물',
+      valueLabel: '학생 수(명)',
       label: '좋아하는 동물 (토끼는 아직 세지 않았습니다)',
     },
-    prompt: '좋아하는 동물을 조사한 표에서 강아지는 {a}명, 고양이는 {b}명입니다. 조사한 학생이 모두 {total}명이면 토끼를 좋아하는 학생은 몇 명일까요?',
+    prompt: '좋아하는 동물을 조사한 표입니다. 조사한 학생이 모두 {total}명이면 토끼를 좋아하는 학생은 몇 명일까요?',
     answer: '{c}명',
     wrongs: ['{total}명', '{a + b}명', '{c + 1}명'],
     solution: '합계에서 아는 수를 빼면 {total}-{a}-{b}={c}명입니다.',
