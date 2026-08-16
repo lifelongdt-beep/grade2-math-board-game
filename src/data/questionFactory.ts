@@ -6310,10 +6310,10 @@ const surveyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
   const target = survey.items[(index + 1) % survey.items.length];
   return makeQuestion(
     lesson, difficulty, index,
-    `${survey.subject} 조사에서 ${josa(target.name, '을', '를')} 고른 친구가 ${target.count}명입니다. 표의 ${target.name} 칸에 쓸 수는?`,
+    `조사한 친구는 모두 ${total}명입니다. 표에서 ${survey.items.filter((one) => one.name !== target.name).map((one) => `${one.name} ${one.count}명`).join(', ')}일 때 ${target.name} 칸에 쓸 수는?`,
     target.count,
     [total, target.count + 2, Math.max(1, target.count - 1)],
-    `조사에서 센 수를 표의 같은 칸에 그대로 씁니다. ${josa(target.name, '은', '는')} ${target.count}명입니다.`,
+    `모두 ${total}명에서 나머지를 빼면 ${josa(target.name, '은', '는')} ${target.count}명입니다.`,
     'data',
     '조사 결과를 표에 옮기기',
     surveyTable(survey, { blankIndex: (index + 1) % survey.items.length }),
@@ -6529,10 +6529,13 @@ const tableAndGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
   if (variant === 2) {
     return makeQuestion(
       lesson, difficulty, index,
-      `그래프에서 ${target.name} 칸에 ◯가 ${target.count}개 있습니다. 표의 ${target.name} 칸에 쓸 수는?`,
+      // 그래프를 세어 표에 옮기는 것이 할 일인데, 문제가 '◯가 5개
+      // 있습니다' 하고 세어 준 수를 적어 두면 옮겨 적기만 하면 됩니다.
+      // 세는 일은 그래프에 맡깁니다.
+      `그래프를 보고 표의 ${target.name} 칸에 쓸 수를 구하세요.`,
       target.count,
       [target.count + 1, Math.max(1, target.count - 1), total],
-      `◯ 한 개는 학생 1명입니다. ◯가 ${target.count}개이므로 표에는 ${target.count}을 씁니다.`,
+      `◯ 한 개는 학생 1명입니다. ${josa(target.name, '은', '는')} ◯가 ${target.count}개이므로 표에는 ${target.count}을 씁니다.`,
       'data',
       '그래프를 보고 표 완성하기',
       surveyGraph(survey),

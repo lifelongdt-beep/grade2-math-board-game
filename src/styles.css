@@ -4782,3 +4782,106 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   .timer-bonus { animation: none; opacity: 1; }
 }
+
+/* ── 우리 반이 함께 채우는 막대 ─────────────────────────────────────
+   아이는 자기 칸만 보게 되어 있어서, 서른 문제가 '혼자 푸는 서른 개'로
+   끝납니다. 반 전체가 채우는 것이 하나 있으면 같은 서른 문제가 '같이
+   채우는 하나'가 됩니다. 등수가 아니라 합계라, 늦게 푸는 아이도 자기가
+   채운 칸이 거기 남습니다.
+
+   줄을 따로 쓰지 않고 정답률·정답·오답이 놓인 줄의 남는 자리를 씁니다.
+   전자칠판에서는 한 줄이 곧 문제가 놓일 자리라 아까운 자리입니다. */
+.class-goal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 260px;
+  min-width: 0;
+  padding: 7px 12px;
+  border: 1px solid rgba(120, 170, 255, 0.34);
+  border-radius: var(--radius);
+  background: rgba(10, 18, 40, 0.62);
+}
+
+/* 이 줄은 검은 바탕 위에 놓입니다. --muted는 밝은 화면에 맞춘 진한
+   회색이라 여기서는 거의 보이지 않아, 글자 색을 이 자리에 맞게 직접
+   정합니다. 반이 함께 채우는 것이니 무엇보다 눈에 띄어야 합니다. */
+.class-goal strong {
+  flex: none;
+  color: #eaf4ff;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.class-goal small {
+  flex: none;
+  color: #9fd0ff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 빈 막대도 보여야 '여기까지 채우는 것'이라는 게 읽힙니다. 흰색 12%로는
+   검은 바탕에서 자국조차 보이지 않았습니다. */
+.class-goal-track {
+  flex: 1 1 auto;
+  min-width: 60px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 170, 255, 0.4);
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+}
+
+.class-goal-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #45d6ff, #6ef0a8);
+  transition: width 0.4s ease;
+}
+
+/* 좁은 화면에서는 남는 자리가 없으니 한 줄을 씁니다. */
+@media (max-width: 720px) {
+  .class-goal {
+    flex-basis: 100%;
+  }
+}
+
+/* ── 수준이 오른 순간 ───────────────────────────────────────────────
+   하에서 중으로 올라가도 아무 말이 없어서 아이는 자기가 올라간 것을
+   몰랐습니다. 게임에서 레벨업이라고 부르는 순간이 여기입니다. */
+.level-up {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 7px;
+  padding: 9px 12px;
+  border-radius: 3px;
+  border: 2px solid #ffd86b;
+  background: linear-gradient(90deg, rgba(255, 216, 107, 0.22), rgba(255, 216, 107, 0.06));
+  color: #7b5a00;
+  animation: level-up-pop 0.45s ease;
+}
+
+.level-up strong {
+  font-size: 16px;
+  color: #7b5a00;
+}
+
+.level-up span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8a6a10;
+}
+
+@keyframes level-up-pop {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .level-up { animation: none; }
+  .class-goal-fill { transition: none; }
+}
