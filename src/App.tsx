@@ -65,7 +65,9 @@ let successSoundUrl: string | null = null;
 const durations: SessionDuration[] = [30, 60, 120];
 // 한 문제를 맞힐 때마다 붙는 시간입니다.
 const BONUS_SECONDS = 2;
-const attendanceNumbers = Array.from({ length: 30 }, (_, index) => index + 1);
+// 서른까지만 두었더니 번호가 더 큰 반에서는 그 아이들이 자기 번호를
+// 누를 수가 없었습니다.
+const attendanceNumbers = Array.from({ length: 38 }, (_, index) => index + 1);
 
 type StudentConfig = {
   attendanceNo: number;

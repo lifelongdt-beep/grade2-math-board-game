@@ -369,9 +369,20 @@ export const difficultyBlips: Record<Difficulty, Blip[]> = {
   ],
 };
 
-// 번호를 누르고 준비가 끝났을 때 나는 소리입니다.
+// 번호를 누르고 준비가 끝났을 때 나는 소리입니다. 난이도 소리를 빌려
+// 쓰고 있었는데, 그 소리는 낮은 데서 시작해 무겁습니다. 자기 번호를
+// 누르는 것은 수업에 들어서는 첫걸음이니 맑게 올라가야 합니다.
+// 도–미–솔–도로 올라가 종소리 하나로 마칩니다.
 export const playReadySound = () => {
-  playBlips(difficultyBlips.중);
+  playBlips([
+    { frequency: 523.25, at: 0, length: 0.11, volume: 0.09, type: 'triangle' },
+    { frequency: 659.25, at: 0.07, length: 0.11, volume: 0.095, type: 'triangle' },
+    { frequency: 783.99, at: 0.14, length: 0.12, volume: 0.1, type: 'triangle' },
+    { frequency: 1046.5, at: 0.21, length: 0.26, volume: 0.105, type: 'triangle' },
+    // 위에서 반짝 하고 얹히는 종소리입니다.
+    { frequency: 2093, at: 0.24, length: 0.34, volume: 0.035, type: 'sine' },
+    { frequency: 3135.96, at: 0.3, length: 0.26, volume: 0.02, type: 'sine' },
+  ]);
 };
 
 export const playDifficultySound = (difficulty: Difficulty) => {

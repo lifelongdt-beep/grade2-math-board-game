@@ -993,7 +993,9 @@ button:disabled {
 .attendance-number-pad {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  grid-template-rows: repeat(6, minmax(30px, 1fr));
+  /* 줄 수를 여섯으로 못박아 두면 번호가 서른을 넘는 순간 넘칩니다.
+     번호 수에 맞게 줄이 늘어나게 둡니다. */
+  grid-auto-rows: minmax(28px, 1fr);
   gap: 3px;
   max-height: none;
   overflow: visible;
