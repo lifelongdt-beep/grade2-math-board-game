@@ -3739,17 +3739,20 @@ export const questionBank: Template[] = [
     when: /더 큰 단위/,
     demand: 'connect',
     tag: 'measurement',
-    strategy: '조건 함께 보기 · m와 cm가 섞인 길이를 구하는 상황',
+    // 길이를 더하는 것은 이 단원 4차시(길이의 합)에서 배웁니다. 여기서는
+    // m와 cm를 서로 바꾸어 견주는 데까지입니다.
+    strategy: '조건 함께 보기 · 단위를 맞추어 더 긴 것을 고르는 상황',
     vars: {
       m: { from: 1, to: 3 },
-      cm: { from: 20, to: 70 },
-      more: { from: 10, to: 25 },
-      total: { calc: 'm * 100 + cm + more' },
+      cm: { from: 30, to: 80 },
+      gap: { from: 10, to: 25 },
+      mine: { calc: 'm * 100 + cm' },
+      other: { calc: 'm * 100 + cm - gap' },
     },
-    prompt: '{m}m {cm}cm인 끈에 {more}cm를 더 이었습니다. 이은 끈은 몇 cm일까요?',
-    answer: '{total}cm',
-    wrongs: ['{m * 100 + cm}cm', '{cm + more}cm', '{total + 10}cm'],
-    solution: '{m}m는 {m * 100}cm이므로 모두 {total}cm입니다.',
+    prompt: '노란 줄은 {m}m {cm}cm이고 파란 줄은 {other}cm입니다. 더 긴 줄은 어느 것일까요?',
+    answer: '노란 줄',
+    wrongs: ['파란 줄', '두 줄의 길이가 같습니다', '알 수 없습니다'],
+    solution: '{m}m {cm}cm는 {mine}cm이고 {other}cm보다 기므로 노란 줄이 더 깁니다.',
   },
   {
     id: 'length-sum-calc',
