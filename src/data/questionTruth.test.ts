@@ -197,14 +197,17 @@ describe('the maths in each question is true', () => {
     // 문제가 이름을 대는 물건만 봅니다 — 쌓기나무, 시계, 달력처럼 무엇을
     // 그려야 하는지가 하나로 정해지는 말들입니다. 그 가운데 하나라도
     // 그릴 수 있는 그림이면 넘어갑니다.
+    // 물건 이름을 대기만 한 것은 세지 않습니다. '동전이나 시계처럼 둥근
+    // 모양은?'은 시계를 그리라는 말이 아니라 둥근 것의 예를 든 말입니다.
+    // 보라고 시키는 말만 봅니다.
     const subjects: Array<{ name: string; says: RegExp; drawnBy: string[] }> = [
       { name: '쌓기나무', says: /쌓기나무|쌓은 모양|쌓아 올린/, drawnBy: ['cube-stack', 'cube-pattern', 'cube-views'] },
-      { name: '시계', says: /시계|몇 시 몇 분|짧은바늘|긴바늘/, drawnBy: ['clock'] },
-      { name: '달력', says: /달력|며칠|무슨 요일/, drawnBy: ['calendar'] },
+      { name: '시계', says: /시계를 보고|시계가 나타내|몇 시 몇 분|짧은바늘|긴바늘/, drawnBy: ['clock'] },
+      { name: '달력', says: /달력을 보고|달력에서/, drawnBy: ['calendar'] },
       { name: '수직선', says: /수직선/, drawnBy: ['number-line'] },
       { name: '자', says: /자로 재|자의 눈금/, drawnBy: ['ruler'] },
-      { name: '표', says: /표를 보고|표에서|표의/, drawnBy: ['table', 'grid-table'] },
-      { name: '그래프', says: /그래프를 보고|그래프에서|그래프의/, drawnBy: ['pictograph'] },
+      { name: '표', says: /표를 보고|표에서|표의 /, drawnBy: ['table', 'grid-table'] },
+      { name: '그래프', says: /그래프를 보고|그래프에서|그래프의 /, drawnBy: ['pictograph'] },
     ];
     const unrelated: string[] = [];
 
@@ -212,12 +215,15 @@ describe('the maths in each question is true', () => {
       const visual = question.visual;
       if (!visual) continue;
 
-      const named = subjects.filter((subject) => subject.says.test(question.prompt));
+      // 뒤에 붙는 안내 문구('그림이나 표의 기준을 먼저 찾아요')는 문제가
+      // 아닙니다. 붙이기 전의 문장만 봅니다.
+      const asked = question.basePrompt ?? question.prompt;
+      const named = subjects.filter((subject) => subject.says.test(asked));
       if (named.length === 0) continue;
       if (named.some((subject) => subject.drawnBy.includes(visual.kind))) continue;
 
       unrelated.push(
-        `${lessonId} ${level} ${question.id}: ${named.map((s) => s.name).join('·')}를 말하는데 그림은 ${visual.kind} — ${question.prompt.slice(0, 46)}`,
+        `${lessonId} ${level} ${question.id}: ${named.map((s) => s.name).join('·')}를 말하는데 그림은 ${visual.kind} — ${asked.slice(0, 46)}`,
       );
     }
 

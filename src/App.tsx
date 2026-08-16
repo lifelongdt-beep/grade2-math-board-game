@@ -1280,15 +1280,16 @@ function App() {
     </section>
   );
 
-  const renderGame = () => (
-    <>
-      <section className="game-topbar">
-        <div>
-          <p className="eyebrow">{lessonContextLabel}</p>
-          <h2>{lessonHeading}</h2>
-          <p className="lesson-objective-inline">{lesson.objective}</p>
-        </div>
-        <div className="game-topbar-actions">
+  // 차시 정보와 도구는 제목 줄 안으로 들어갑니다. 따로 한 줄을 쓰면
+  // 그만큼 아래 문제 자리가 줄어듭니다.
+  const renderLessonBar = () => (
+    <section className="game-topbar">
+      <div>
+        <p className="eyebrow">{lessonContextLabel}</p>
+        <h2>{lessonHeading}</h2>
+        <p className="lesson-objective-inline">{lesson.objective}</p>
+      </div>
+      <div className="game-topbar-actions">
           <div className={`timer-cluster ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}>
             <SandTimer remaining={remainingSeconds} total={sessionDuration + bonusCap} />
             <div className={`timer-card ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}>
@@ -1318,8 +1319,11 @@ function App() {
             </button>
           )}
         </div>
-      </section>
+    </section>
+  );
 
+  const renderGame = () => (
+    <>
       <footer className={`command-bar ${mode === 'finished' ? 'finished-actions' : ''}`}>
         <button className="secondary-button" type="button" onClick={goSetup}>
           <Home size={18} />
@@ -1332,6 +1336,29 @@ function App() {
           <span>{mode === 'finished' ? '시간 종료' : '진행 중'}</span>
         </div>
 
+        {/* 맞힌 수와 우리 반 막대도 이 줄에 함께 섭니다. 따로 한 줄을
+            쓰면 그만큼 아래 문제 자리가 줄어듭니다. */}
+        <div className="round-status">
+          <span><BarChart3 size={16} /> 정답률 {accuracy}%</span>
+          <span>정답 {correctCount}개</span>
+          <span>오답 {wrongCount}개</span>
+          {reviewScope !== 'lesson' && <span>{scopedLessons.length}개 차시 랜덤</span>}
+
+          {/* 우리 반이 함께 채우는 막대입니다. 아이는 자기 칸만 보게 되어
+              있어서, 서른 문제가 '혼자 푸는 서른 개'로 끝납니다. 등수가
+              아니라 합계라 늦게 푸는 아이도 채우는 데 낍니다.
+              다 채우면 다음 목표가 열려 끝이 나지 않습니다. */}
+          <div className="class-goal" aria-live="polite">
+            <strong>우리 반 {correctCount}개</strong>
+            <div className="class-goal-track">
+              <div className="class-goal-fill" style={{ width: `${goalPercent}%` }} />
+            </div>
+            <small>
+              {goalJustReached ? '목표 달성! 다음 목표로' : `${goalStage}단계 · 다음 목표 ${goalTarget}개`}
+            </small>
+          </div>
+        </div>
+
         <button className="primary-button" type="button" onClick={resetSession}>
           <RefreshCcw size={18} />
           {mode === 'finished' ? '다시 풀기' : '다시 시작'}
@@ -1340,29 +1367,6 @@ function App() {
 
       <section className={`game-layout individual players-${playerCount}`}>
         <section className="playfield" style={{ backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(/assets/math-adventure-bg.png)' }}>
-          <div className="round-status">
-            <span><BarChart3 size={16} /> 정답률 {accuracy}%</span>
-            <span>정답 {correctCount}개</span>
-            <span>오답 {wrongCount}개</span>
-            {reviewScope !== 'lesson' && <span>{scopedLessons.length}개 차시 랜덤</span>}
-
-            {/* 우리 반이 함께 채우는 막대입니다. 아이는 자기 칸만 보게 되어
-                있어서, 서른 문제가 '혼자 푸는 서른 개'로 끝납니다. 등수가
-                아니라 합계라 늦게 푸는 아이도 채우는 데 낍니다.
-                다 채우면 다음 목표가 열려 끝이 나지 않습니다.
-                한 줄을 따로 쓰지 않고 이 줄의 남는 자리를 씁니다 — 문제가
-                놓일 자리를 한 줄이라도 더 남겨 두는 편이 낫습니다. */}
-            <div className="class-goal" aria-live="polite">
-              <strong>우리 반 {correctCount}개</strong>
-              <div className="class-goal-track">
-                <div className="class-goal-fill" style={{ width: `${goalPercent}%` }} />
-              </div>
-              <small>
-                {goalJustReached ? '목표 달성! 다음 목표로' : `${goalStage}단계 · 다음 목표 ${goalTarget}개`}
-              </small>
-            </div>
-          </div>
-
           <div
             className="player-lanes individual"
             style={{ gridTemplateColumns: `repeat(${Math.min(playerCount, 5)}, minmax(${playerCount >= 5 ? 180 : playerCount >= 4 ? 210 : 260}px, 1fr))` }}
@@ -1586,14 +1590,15 @@ function App() {
 
   return (
     <main className={`app-shell ${mode} ${isMobileEntry ? 'mobile-entry' : ''} ${fullscreenActive ? 'fullscreen-mode' : ''}`}>
-      <header className="app-header">
+      <header className={`app-header ${mode === 'setup' ? '' : 'with-lesson'}`}>
         <div className="brand">
           <span className="brand-mark"><GraduationCap size={24} /></span>
           <div>
             <h1>보조개샘ai클래스 수학 게임</h1>
-            <p>{mode === 'setup' ? (isMobileEntry ? '모바일 1인 참여' : '수업 설정') : reviewScope === 'lesson' ? `${semester} · ${selectedUnit.title} · ${lesson.lessonNo}차시` : lessonContextLabel}</p>
+            {mode === 'setup' && <p>{isMobileEntry ? '모바일 1인 참여' : '수업 설정'}</p>}
           </div>
         </div>
+        {mode !== 'setup' && renderLessonBar()}
         <div className="header-actions">
           <button className="secondary-button fullscreen-button" type="button" onClick={toggleFullscreen}>
             {fullscreenActive ? <Minimize2 size={18} /> : <Maximize2 size={18} />}

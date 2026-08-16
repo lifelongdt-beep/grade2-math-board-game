@@ -4977,3 +4977,55 @@ body::before {
   .level-up { animation: none; }
   .class-goal-fill { transition: none; }
 }
+
+/* ── 줄 줄이기 ──────────────────────────────────────────────────────
+   네 줄이던 위쪽을 두 줄로 줄입니다. 차시 정보와 도구는 제목 줄 안으로,
+   맞힌 수와 우리 반 막대는 아래 도구 줄 안으로 들어갑니다. 위에서 한 줄이
+   줄 때마다 아래 문제 자리가 그만큼 커집니다 — 교실 화면에서 문제가 크게
+   보이는 것이 무엇보다 낫습니다. */
+.app-header.with-lesson {
+  gap: 14px;
+  flex-wrap: nowrap;
+}
+
+.app-header.with-lesson .brand {
+  flex: none;
+}
+
+/* 줄 안으로 들어왔으니 제 판과 여백은 벗습니다. 판 안에 판이 겹쳐 보이면
+   무엇이 한 덩어리인지 읽히지 않습니다. */
+.app-shell.playing .app-header.with-lesson .game-topbar,
+.app-shell.finished .app-header.with-lesson .game-topbar,
+.app-header.with-lesson .game-topbar {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* 제목은 차시 이름에 자리를 내줍니다. 늘 같은 글자라 크게 둘 까닭이
+   없고, 아이가 보아야 하는 것은 지금 배우는 차시입니다. */
+.app-shell.playing .app-header.with-lesson .brand h1,
+.app-shell.finished .app-header.with-lesson .brand h1 {
+  font-size: clamp(14px, 1.35vw, 19px);
+}
+
+.app-header.with-lesson .lesson-objective-inline {
+  max-width: min(560px, 40vw);
+  margin-top: 2px;
+}
+
+/* 맞힌 수와 막대는 남는 자리를 씁니다. */
+.command-bar .round-status {
+  flex: 1 1 300px;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.command-bar .command-status {
+  flex: none;
+}
