@@ -4802,3 +4802,32 @@ body::before {
   .level-up { animation: none; }
   .class-goal-fill { transition: none; }
 }
+
+/* ── 맞혀서 늘어난 시간 ─────────────────────────────────────────────
+   줄어들기만 하는 시계는 2학년에게 재미보다 불안입니다. 맞힐 때마다
+   조금씩 붙으면 같은 시계가 상이 됩니다. 붙는 순간이 보여야 아이가
+   '내가 맞혀서 늘었구나'를 압니다. */
+.timer-bonus {
+  position: absolute;
+  top: -14px;
+  right: 6px;
+  color: #6ef0a8;
+  font-size: 15px;
+  font-weight: 800;
+  pointer-events: none;
+  animation: timer-bonus-rise 1s ease forwards;
+}
+
+.timer-card {
+  position: relative;
+}
+
+@keyframes timer-bonus-rise {
+  0% { transform: translateY(6px); opacity: 0; }
+  25% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-16px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timer-bonus { animation: none; opacity: 1; }
+}

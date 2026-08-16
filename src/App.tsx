@@ -62,6 +62,8 @@ const laneStyleFor = (playerId: number) => {
 const avatarChoices = ['🦊', '🐰', '🐶', '🐱', '🐼', '🐯', '🐸', '🐧', '🦁', '🐢'] as const;
 let successSoundUrl: string | null = null;
 const durations: SessionDuration[] = [30, 60, 120];
+// 한 문제를 맞힐 때마다 붙는 시간입니다.
+const BONUS_SECONDS = 2;
 const attendanceNumbers = Array.from({ length: 30 }, (_, index) => index + 1);
 
 type StudentConfig = {
@@ -553,6 +555,14 @@ function App() {
   const [muted, setMutedState] = useState(isMuted);
   const [openResults, setOpenResults] = useState<Record<number, boolean>>({});
   const [round, setRound] = useState(1);
+  // 맞힐 때마다 시간이 조금씩 늘어납니다. 줄어들기만 하는 시계는 2학년에게
+  // 재미보다 불안이라, 잘 풀수록 더 오래 놀 수 있게 합니다.
+  //
+  // 다만 끝이 나긴 해야 합니다. 아이 셋이 5초에 한 문제씩 맞히면 1초에
+  // 1.2초씩 붙어 시계가 영영 멈추지 않습니다. 그래서 처음 시간의 절반까지만
+  // 늘려 줍니다 — 60초 수업이면 최대 30초입니다.
+  const [bonusUsed, setBonusUsed] = useState(0);
+  const [bonusFlash, setBonusFlash] = useState(0);
   const players = useMemo(() => createPlayers(playerCount, studentConfigs), [playerCount, studentConfigs]);
   const [bankSeed, setBankSeed] = useState(0);
   const questionBanks = useMemo<Record<Difficulty, Question[]>>(
@@ -805,6 +815,8 @@ function App() {
 
   const startGame = () => {
     const now = Date.now();
+    setBonusUsed(0);
+    setBonusFlash(0);
     setRecords([]);
     setSuccessSignals({});
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
@@ -833,6 +845,8 @@ function App() {
     setTeacherOpen(false);
     setOpenResults({});
     setRound(1);
+    setBonusUsed(0);
+    setBonusFlash(0);
     setRecords([]);
     setSuccessSignals({});
     setPlayerStates(createQuestionState(players));
@@ -851,6 +865,8 @@ function App() {
     setTeacherOpen(false);
     setOpenResults({});
     setRound((value) => value + 1);
+    setBonusUsed(0);
+    setBonusFlash(0);
     setSuccessSignals({});
     setWrongSignals({});
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
@@ -876,6 +892,16 @@ function App() {
       setIsFullscreen(Boolean(document.fullscreenElement));
       setFullscreenFallback(true);
     }
+  };
+
+  const bonusCap = Math.floor(sessionDuration / 2);
+
+  const addBonusTime = () => {
+    if (bonusUsed >= bonusCap) return;
+    const giving = Math.min(BONUS_SECONDS, bonusCap - bonusUsed);
+    setBonusUsed((value) => value + giving);
+    setRemainingSeconds((value) => value + giving);
+    setBonusFlash(Date.now());
   };
 
   const nextForPlayer = (player: Player) => {
@@ -962,6 +988,7 @@ function App() {
 
     if (isCorrect) {
       triggerSuccessSignal(player.id, question.difficulty);
+      addBonusTime();
     } else {
       triggerWrongSignal(player.id);
     }
@@ -1263,10 +1290,13 @@ function App() {
         </div>
         <div className="game-topbar-actions">
           <div className={`timer-cluster ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}>
-            <SandTimer remaining={remainingSeconds} total={sessionDuration} />
+            <SandTimer remaining={remainingSeconds} total={sessionDuration + bonusCap} />
             <div className={`timer-card ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}>
               <Timer size={22} />
               <strong>{remainingSeconds}초</strong>
+              {/* 방금 붙은 시간입니다. 맞혀서 늘어났다는 것이 보여야
+                  시계가 상으로 읽힙니다. */}
+              {bonusFlash > 0 && <span className="timer-bonus" key={bonusFlash}>+{BONUS_SECONDS}초</span>}
             </div>
           </div>
           {/* 교실에서 소리를 꺼야 할 때가 있습니다. 옆 반이 시험을 보거나
