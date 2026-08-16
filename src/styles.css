@@ -976,6 +976,9 @@ button:disabled {
   min-height: 0;
   display: grid;
   align-content: end;
+  /* 아래쪽에 붙여 두므로, 내용이 길어지면 위로 넘칩니다. 넘친 것이
+     자리 이름 위에 겹쳐 찍혔습니다. */
+  overflow: hidden;
   gap: 12px;
   border: 1px solid #ccefee;
   border-radius: var(--radius);
@@ -997,9 +1000,22 @@ button:disabled {
      번호 수에 맞게 줄이 늘어나게 둡니다. */
   grid-auto-rows: minmax(28px, 1fr);
   gap: 3px;
-  max-height: none;
-  overflow: visible;
-  padding: 0;
+  /* 서른한 번부터는 굴려서 봅니다. 번호 칸이 카드보다 길어지면 카드가
+     위로 넘쳐 자리 이름 위에 겹쳐 찍혔습니다. */
+  max-height: min(34vh, 232px);
+  overflow-y: auto;
+  padding: 0 4px 0 0;
+  scrollbar-width: thin;
+  scrollbar-color: #4fd2ff rgba(120, 170, 255, 0.18);
+}
+
+.attendance-number-pad::-webkit-scrollbar {
+  width: 8px;
+}
+
+.attendance-number-pad::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  background: #4fd2ff;
 }
 
 .attendance-number-pad button {
@@ -1083,7 +1099,7 @@ button:disabled {
 }
 
 .app-shell.setup.fullscreen-mode .attendance-number-pad {
-  max-height: none;
+  max-height: min(30vh, 210px);
   gap: 2px;
 }
 
