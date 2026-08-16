@@ -225,113 +225,7 @@ const assessmentLayers: Record<Difficulty, Array<{ label: string; note: string }
   ],
 };
 
-const promptNotes: Record<ConceptTag, string[]> = {
-  number: [
-    '수 모형을 떠올려 보세요.',
-    '수의 길 그림에서 움직인다고 생각해요.',
-    '자릿값 표에 놓아 보세요.',
-    '앞뒤 수의 차이를 확인해요.',
-    '생활 속 번호표처럼 읽어 보세요.',
-  ],
-  placeValue: [
-    '백, 십, 일의 자리를 나누어 보세요.',
-    '같은 숫자라도 자리를 먼저 확인해요.',
-    '모형의 묶음 수를 세어 보세요.',
-    '수 카드의 위치를 바꾸지 말고 읽어요.',
-    '값과 숫자를 구별해요.',
-  ],
-  addition: [
-    '일의 자리부터 차례대로 계산해요.',
-    '어느 자리부터 더하는지 확인해요.',
-    '수 모형으로 더해 보세요.',
-    '식과 이야기 상황을 연결해요.',
-    '잘못된 계산을 고쳐 보세요.',
-  ],
-  subtraction: [
-    '무엇에서 무엇을 빼는지 먼저 읽어요.',
-    '어느 자리부터 빼는지 확인해요.',
-    '남은 양을 묻는지 차이를 묻는지 살펴요.',
-    '덧셈으로 다시 확인해요.',
-    '식과 이야기 상황을 연결해요.',
-  ],
-  shape: [
-    '둘러싼 선을 하나씩 손가락으로 짚어 보세요.',
-    '돌려진 도형도 같은 성질인지 확인해요.',
-    '생활 물건의 모양과 연결해요.',
-    '아닌 까닭을 성질로 말해요.',
-    '곧은 선과 굽은 선을 구별해요.',
-  ],
-  solid: [
-    '위, 앞, 옆에서 본 모양을 함께 생각해요.',
-    '보이지 않는 아래층을 놓치지 마세요.',
-    '같은 개수라도 모양이 달라질 수 있어요.',
-    '보기와 같은 위치인지 확인해요.',
-    '층별로 나누어 세어 보세요.',
-  ],
-  measurement: [
-    '어디서 시작해서 어디서 끝나는지 보세요.',
-    '같은 단위끼리 비교해요.',
-    '무엇의 길이를 묻는지 다시 읽어요.',
-    '두 길이를 나란히 놓고 생각해요.',
-    '문제에서 묻는 것을 다시 확인해요.',
-  ],
-  classification: [
-    '분류 기준을 하나만 정해요.',
-    '빠지거나 겹치는 것이 없는지 보세요.',
-    '같은 기준에 맞는 것끼리 모아요.',
-    '기준이 분명한지 다시 확인해요.',
-    '기준을 바꾸면 묶음도 바뀌는지 생각해요.',
-  ],
-  multiplication: [
-    '한 묶음의 수와 묶음 수를 나누어 봐요.',
-    '같은 수가 몇 번 있는지 세어 봐요.',
-    '그림을 묶어서 살펴봐요.',
-    '무엇을 묻는지 다시 읽어요.',
-    '수를 하나씩 짚어 가며 확인해요.',
-  ],
-  time: [
-    '긴바늘과 짧은바늘의 역할을 나누어 봐요.',
-    '짧은바늘이 지나온 숫자를 먼저 봐요.',
-    '긴바늘이 어디를 가리키는지 봐요.',
-    '문제에서 묻는 것을 다시 읽어요.',
-    '숫자와 눈금을 다시 한 번 확인해요.',
-  ],
-  data: [
-    '표의 항목 이름을 먼저 읽어요.',
-    '가장 큰 수와 작은 수를 비교해요.',
-    '전체 수인지 차이인지 확인해요.',
-    '빠뜨리거나 두 번 세지 않았는지 봐요.',
-    '결과를 근거와 함께 말해요.',
-  ],
-  pattern: [
-    '반복되는 한 묶음을 찾아요.',
-    '얼마씩 변하는지 확인해요.',
-    '처음부터 같은 규칙인지 살펴요.',
-    '다음 자리에도 같은 규칙을 적용해요.',
-    '규칙을 말로 설명해요.',
-  ],
-};
 
-const duplicatePromptAngles = [
-  '핵심 조건을 표시해 보세요.',
-  '답을 고른 까닭까지 생각해요.',
-  '틀리기 쉬운 보기를 먼저 지워요.',
-  '차근차근 확인하며 풀어요.',
-  '그림이나 표의 기준을 먼저 찾아요.',
-  '말로 설명할 수 있는 답을 골라요.',
-  '비슷한 보기끼리 비교해요.',
-  '문제에서 묻는 말을 다시 확인해요.',
-  '한 단계 더 필요한지 살펴요.',
-  '답을 넣어 보며 맞는지 확인해요.',
-  '친구에게 설명한다고 생각해요.',
-  '생활 속 예와 연결해요.',
-  '배운 것을 떠올리며 근거를 찾아요.',
-  '보기의 차이를 하나씩 비교해요.',
-  '처음 조건과 마지막 질문을 연결해요.',
-  '계산이나 판단 순서를 정해요.',
-  '핵심 낱말을 떠올려요.',
-  '마지막에 스스로 검산해요.',
-];
 
 const grade2LanguageReplacements: Array<[RegExp, string]> = [
   [/평면도형/g, '도형'],
@@ -9774,53 +9668,42 @@ const addAssessmentLayer = (question: Question, index: number): Question => {
   };
 };
 
-// time 태그에는 시계 차시와 달력 차시가 함께 있습니다.
-// 달력 문제에 '긴바늘' 같은 시계 힌트가 붙지 않도록 문제에 맞는 힌트를 고릅니다.
-const calendarPromptNotes = [
-  '달력에서 같은 줄과 같은 칸을 살펴봐요.',
-  '날짜를 하나씩 짚으며 세어 봐요.',
-  '한 주가 며칠인지 떠올려요.',
-  '문제에서 묻는 것을 다시 읽어요.',
-  '달력의 요일 이름을 먼저 봐요.',
-];
 
-const notesForQuestion = (question: Question) => {
-  if (question.type === 'time' && /달력|요일|며칠|날짜/.test(question.prompt)) {
-    return calendarPromptNotes;
+
+// 같은 문제가 두 번 나오지 않게 고릅니다.
+//
+// 예전에는 겹치면 문제글 뒤에 '빠뜨리거나 두 번 세지 않았는지 봐요.'
+// 같은 문구를 붙여 달라 보이게 했습니다. 그런데 그것은 문제를 다르게
+// 만든 것이 아니라 같은 문제에 다른 옷을 입힌 것이고, 문제글에는 문제만
+// 있어야 합니다. 그런 말은 해설이 할 말입니다.
+//
+// 이제는 자리보다 넉넉히 만들어 두고, 겹치지 않는 것부터 차례로
+// 골라 서른 자리를 채웁니다. 수가 다르면 다른 문제입니다.
+const pickDistinct = (pool: Question[], want: number): Question[] => {
+  const seen = new Set<string>();
+  const chosen: Question[] = [];
+
+  for (const question of pool) {
+    if (chosen.length === want) break;
+    if (seen.has(question.prompt)) continue;
+    seen.add(question.prompt);
+    chosen.push(question);
   }
-  return promptNotes[question.type];
-};
 
-const makePromptsUnique = (questions: Question[]): Question[] => {
-  const seenBasePrompts = new Map<string, number>();
-  const usedPrompts = new Set<string>();
+  // 서로 다른 문제가 자리 수만큼 나오지 않는 차시도 있습니다(고를 것이
+  // 정해진 개념 문항). 남는 자리는 있는 것으로 채웁니다.
+  for (const question of pool) {
+    if (chosen.length === want) break;
+    chosen.push(question);
+  }
 
-  return questions.map((question, index) => {
-    const count = seenBasePrompts.get(question.prompt) ?? 0;
-    seenBasePrompts.set(question.prompt, count + 1);
-
-    if (count === 0 && !usedPrompts.has(question.prompt)) {
-      usedPrompts.add(question.prompt);
-      return { ...question, basePrompt: question.prompt };
-    }
-
-    const notes = notesForQuestion(question);
-    const note = notes[(index + count) % notes.length];
-    const angle = duplicatePromptAngles[index % duplicatePromptAngles.length];
-    let prompt = `${question.prompt} ${note} ${angle}`;
-    let guard = 0;
-    while (usedPrompts.has(prompt)) {
-      prompt = `${question.prompt} ${note} ${duplicatePromptAngles[(index + guard + 1) % duplicatePromptAngles.length]}`;
-      guard += 1;
-    }
-    usedPrompts.add(prompt);
-
-    return {
-      ...question,
-      prompt,
-      basePrompt: question.prompt,
-    };
-  });
+  return chosen.map((question, at) => ({
+    ...question,
+    // 아흔 개 가운데 골라 오므로 원래 번호는 띄엄띄엄합니다. 자리 번호로
+    // 다시 매겨 두어야 기록과 다시 풀기가 자리를 제대로 찾습니다.
+    id: `${question.lessonId}-${question.difficulty}-${at}`,
+    basePrompt: question.prompt,
+  }));
 };
 
 // ── 풀이 과정 빈칸 문항 ────────────────────────────────────────────────────
@@ -11843,8 +11726,8 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
   return null;
 };
 
-const generateRawQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] =>
-  Array.from({ length: 30 }, (_, index) => {
+const generateRawQuestions = (lesson: Lesson, difficulty: Difficulty, count = 30): Question[] =>
+  Array.from({ length: count }, (_, index) => {
     const tag = primaryTag(lesson);
     if (tag === 'addition') return operationQuestion(lesson, difficulty, index, 'addition');
     if (tag === 'subtraction') return operationQuestion(lesson, difficulty, index, 'subtraction');
@@ -13852,8 +13735,8 @@ const variedQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): 
 };
 
 export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] =>
-  makePromptsUnique(
-    generateRawQuestions(lesson, difficulty)
+  pickDistinct(
+    generateRawQuestions(lesson, difficulty, 90)
       .map((question, index) =>
         isStepSlot(difficulty, index)
           // 상은 문장 상황을 읽고 그 풀이의 한 곳을 짚는 문항이 우선입니다.
@@ -13897,6 +13780,7 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
             ?? question)
       .map((question, index) => withRichVisual(question, index, lesson))
       .map(addAssessmentLayer),
+    30,
   );
 
 export const generateLessonBank = (lesson: Lesson): Record<Difficulty, Question[]> => ({
