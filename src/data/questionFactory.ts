@@ -13781,6 +13781,10 @@ const questionsFor = (
             // 데이터로 적은 풀이 과정 문항이 있으면 그것을 씁니다.
             ?? bankStepQuestion(lesson, difficulty, index)
             ?? stepBlankQuestion(lesson, difficulty, index)
+            // 풀이 과정 문항이 없는 차시(도형, 규칙 찾기)에서는 상이
+            // 받을 것이 없어 중과 같은 문항을 그대로 받았습니다. 데이터로
+            // 적어 둔 판단 문항(ㄱㄴㄷㄹ)이 있으면 그것을 씁니다.
+            ?? (difficulty === '상' ? bankQuestion(lesson, difficulty, index) : null)
             ?? question
           // 응용 문항을 먼저 쓰고, 남은 자리의 절반만 새 모양에 내줍니다.
           // 전부 새 모양으로 채우면 이번에는 그 모양 하나가 차시를 덮어
