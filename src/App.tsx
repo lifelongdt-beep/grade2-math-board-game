@@ -26,6 +26,7 @@ import {
   playFinishSound,
   playReadySound,
   playSuccessSound,
+  playDifficultySound,
   playTapSound,
   playWrongSound,
   setMuted,
@@ -720,6 +721,15 @@ function App() {
   const correctCount = sessionRecords.filter((record) => record.correct).length;
   const wrongCount = sessionRecords.filter((record) => !record.correct).length;
   const accuracy = sessionRecords.length === 0 ? 0 : Math.round((correctCount / sessionRecords.length) * 100);
+
+  // 한 단계는 아이 한 명당 여섯 문제입니다. 한 판에 한두 단계를 채울
+  // 만한 크기라, 채우는 맛도 있고 손에 닿지 않지도 않습니다.
+  const goalStep = Math.max(6, playerCount * 6);
+  const goalStage = Math.floor(correctCount / goalStep) + 1;
+  const goalTarget = goalStage * goalStep;
+  const goalPercent = Math.round(((correctCount % goalStep) / goalStep) * 100);
+  // 방금 딱 채운 순간입니다.
+  const goalJustReached = correctCount > 0 && correctCount % goalStep === 0;
   const getQuestionForPlayer = (_player: Player, state: PlayerQuestionState) =>
     getPlayerQuestion(questionBanks, state);
   const fallbackStates = createQuestionState(players);
@@ -872,12 +882,13 @@ function App() {
     setPlayerStates((prev) => {
       const current = prev[player.id];
       if (!current) return prev;
+      // 올라갔으면 그 수준의 소리를 들려 줍니다. 소리만으로도 옆자리
+      // 친구가 올라간 것을 압니다.
+      const moved = advancePlayerState(current, players.length, current.correct === false);
+      if (moved.justMoved === 'up') playDifficultySound(moved.level);
       // '다음 문제'를 누르는 자리는 정답을 맞힌 뒤와 오답 도움말을 본 뒤,
       // 두 곳입니다. 오답이었으면 그 문제를 다시 낼 줄에 넣습니다.
-      return {
-        ...prev,
-        [player.id]: advancePlayerState(current, players.length, current.correct === false),
-      };
+      return { ...prev, [player.id]: moved };
     });
   };
 
@@ -1306,6 +1317,21 @@ function App() {
           <span>{reviewScope === 'lesson' ? '유형 다양화 문항' : `${scopedLessons.length}개 차시 랜덤`}</span>
           </div>
 
+          {/* 우리 반이 함께 채우는 막대입니다. 아이는 자기 칸만 보게 되어
+              있어서, 서른 문제가 '혼자 푸는 서른 개'로 끝납니다. 등수가
+              아니라 합계라 늦게 푸는 아이도 채우는 데 낍니다.
+              다 채우면 다음 목표가 열려 끝이 나지 않습니다. */}
+          <div className="class-goal" aria-live="polite">
+            <div className="class-goal-head">
+              <strong>우리 반이 모은 정답 {correctCount}개</strong>
+              <span>{goalStage}단계 · 다음 목표 {goalTarget}개</span>
+            </div>
+            <div className="class-goal-track">
+              <div className="class-goal-fill" style={{ width: `${goalPercent}%` }} />
+            </div>
+            {goalJustReached && <p className="class-goal-cheer">목표를 채웠어요! 다음 목표로!</p>}
+          </div>
+
           <div
             className="player-lanes individual"
             style={{ gridTemplateColumns: `repeat(${Math.min(playerCount, 5)}, minmax(${playerCount >= 5 ? 180 : playerCount >= 4 ? 210 : 260}px, 1fr))` }}
@@ -1328,6 +1354,16 @@ function App() {
                     <strong>{player.name}</strong>
                     <small>{state.level} · {formatMs(state.responseMs)}</small>
                   </header>
+                  {/* 하에서 중으로 올라간 그 순간입니다. 지금까지는 조용히
+                      바뀌어서 아이가 자기가 올라간 것을 몰랐습니다. */}
+                  {state.justMoved === 'up' && mode === 'playing' && (
+                    <div className="level-up" aria-live="polite">
+                      <Sparkles size={20} />
+                      <strong>{state.level} 단계로!</strong>
+                      <span>세 문제를 이어서 맞혔어요</span>
+                    </div>
+                  )}
+
                   {successActive && (
                     <div className="success-burst" aria-live="polite">
                       <CheckCircle2 size={30} />

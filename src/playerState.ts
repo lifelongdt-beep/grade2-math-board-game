@@ -104,6 +104,7 @@ export const advancePlayerState = (
       ? { index: queued[dueAt].index, level: queued[dueAt].level, tries: queued[dueAt].tries }
       : null,
     level,
+    justMoved: moved ? (LEVEL_LADDER.indexOf(level) > LEVEL_LADDER.indexOf(state.level) ? 'up' : 'down') : null,
     streak: nextStreak,
     missStreak: nextMiss,
   };
@@ -126,6 +127,7 @@ export const createQuestionState = (players: Player[], now = Date.now()): Record
         activeRetry: null,
         // 모두 하에서 시작합니다. 어디까지 갈 수 있는지는 풀면서 정해집니다.
         level: '하',
+        justMoved: null,
         streak: 0,
         missStreak: 0,
       },
@@ -145,6 +147,7 @@ export const createInitialPlayerState = (startAt = 0, now = 0): PlayerQuestionSt
   retries: [],
   activeRetry: null,
   level: '하',
+  justMoved: null,
   streak: 0,
   missStreak: 0,
 });
