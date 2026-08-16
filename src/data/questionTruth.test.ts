@@ -230,6 +230,36 @@ describe('the maths in each question is true', () => {
     expect([...new Set(unrelated)]).toEqual([]);
   });
 
+  it('draws every row the question lists', () => {
+    // '축구 10명, 줄넘기 3명, 책읽기 6명, 그림그리기 5명입니다. 4명보다
+    // 많은 활동은 몇 가지일까요?' 옆에 세 줄짜리 그래프가 놓여 있었습니다.
+    // 아이가 그래프를 세면 2가지인데 정답은 3가지입니다 — 그래프에 없는
+    // 줄이 답에 들어 있으니 바르게 센 아이가 틀립니다.
+    const missing: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      const visual = question.visual;
+      if (!visual || (visual.kind !== 'pictograph' && visual.kind !== 'table')) continue;
+
+      const drawn = visual.kind === 'pictograph'
+        ? visual.items.map((item) => item.label)
+        : visual.columns.map((column) => column.name);
+
+      const listed = [...(question.basePrompt ?? question.prompt).matchAll(/([가-힣]{2,5})\s*(\d+)\s*(?:명|개)/g)]
+        .map((found) => found[1].replace(/(?:은|는|이|가|을|를|에)$/, ''))
+        .filter((name) => name.length >= 2 && !/모두|학생|사람|기준/.test(name));
+      if (listed.length < 2) continue;
+
+      for (const name of new Set(listed)) {
+        if (!drawn.some((row) => row.includes(name) || name.includes(row))) {
+          missing.push(`${lessonId} ${level} ${question.id}: 문제에 "${name}"이 있는데 그림에는 ${drawn.join('·')}뿐`);
+        }
+      }
+    }
+
+    expect([...new Set(missing)]).toEqual([]);
+  });
+
   it('does not draw the hands when the hands are the answer', () => {
     // '11시 15분일 때 긴바늘은 어느 수를 가리킬까요?' 옆에 11시 15분을
     // 가리키는 시계가 그려져 있었습니다. 답이 그림 안에 있으면 아이는

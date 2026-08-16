@@ -9548,9 +9548,16 @@ const visualForGeneratedQuestion = (
     // 훨씬 나쁩니다.
     if (!labeledCounts || labeledCounts.length < 2) return undefined;
 
+    // 문제에 적힌 자료를 하나라도 빠뜨리면 그림과 답이 어긋납니다.
+    // 넷을 적어 놓고 셋만 그린 탓에, 그래프에 없는 '그림그리기'가 풀이에
+    // 나왔습니다. 아이가 그래프를 세어 낸 답과 정답이 달라집니다.
+    // 다 그릴 수 없으면 아예 그리지 않습니다 — 없는 그림보다 반만 그린
+    // 그림이 훨씬 나쁩니다.
+    if (labeledCounts.length > 4) return undefined;
+
     // '표에서 강아지는 4명…'이라고 해 놓고 그래프를 그려 주면, 아이가
     // 보라는 것과 보이는 것이 다릅니다. 문제가 부르는 이름대로 그립니다.
-    const shown = labeledCounts.slice(0, 3);
+    const shown = labeledCounts;
     if (/표에서|표를 보고|표의 /.test(question.prompt) && !/그래프/.test(question.prompt)) {
       return tableVisualFor(
         shown.map((item) => ({ name: item.label, value: item.count })),
