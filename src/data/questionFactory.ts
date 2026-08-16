@@ -852,6 +852,10 @@ const makeQuestion = (
   tag: ConceptTag,
   strategy: string,
   visual = inferQuestionVisual(tag, prompt, answer, strategy, index),
+  // 보기가 그림일 때, 보기 글자마다 어떤 그림을 붙일지입니다.
+  // 보기 차례는 섞이므로 자리가 아니라 글자에 매답니다 — 그러지 않으면
+  // 섞인 뒤에 ㉠ 자리에 ㉢의 그림이 놓입니다.
+  choicePictures?: Record<string, QuestionVisual>,
 ): Question => {
   const leveledStrategy = `${difficultyDesign[difficulty].label} · ${strategy}`;
   const leveledSolution = `${difficultyDesign[difficulty].solutionLead} ${solution}`;
@@ -875,6 +879,9 @@ const makeQuestion = (
     strategy: leveledStrategy,
     support,
     ...(visual ? { visual } : {}),
+    ...(choicePictures
+      ? { choiceVisuals: madeChoices.options.map((option) => choicePictures[option]) }
+      : {}),
   });
 };
 
@@ -7880,6 +7887,106 @@ const shapeVisualForTargets = (label: string, targets: PlaneTarget[], index: num
     targets.map((target, targetIndex) => itemForShape(target, true, '', index + targetIndex)),
   );
 
+// ── 그림으로 고르는 문항 ─────────────────────────────────────────
+// 도형과 그래프는 글로 물을 수가 없습니다. '삼각형은 어느 것일까요?'
+// 하고 보기에 '삼각형'이라고 적어 놓으면, 도형을 알아보는지가 아니라
+// 낱말을 아는지 묻게 됩니다. 학교 평가지는 네 그림 중에서 고르게 하는데,
+// 여기서는 그럴 수가 없어 그 갈래가 통째로 빠져 있었습니다.
+//
+// 보기 하나하나를 그림으로 두면 4지선다 그대로 담을 수 있습니다.
+const pickTheShapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  const target: PlaneTarget | null = /△을 알아보고/.test(lesson.title)
+    ? '삼각형'
+    : /□을 알아보고/.test(lesson.title)
+      ? '사각형'
+      : /○을 알아보고/.test(lesson.title)
+        ? '원'
+        : null;
+  if (!target) return null;
+
+  const labels = ['㉠', '㉡', '㉢', '㉣'];
+  const others: PlaneTarget[] = (['삼각형', '사각형', '원'] as PlaneTarget[]).filter((one) => one !== target);
+  // 정답 자리를 문항마다 옮깁니다. 나머지 셋은 다른 도형으로 채우되,
+  // 하나는 같은 도형을 돌려 놓아 방향이 달라도 같은 도형임을 함께 봅니다.
+  const at = index % 4;
+  const shown: PlaneTarget[] = labels.map((_, spot) =>
+    spot === at ? target : others[spot % others.length]);
+
+  const pictures: Record<string, QuestionVisual> = {};
+  labels.forEach((label, spot) => {
+    pictures[label] = planeShapesVisual('', [itemForShape(shown[spot], false, '', index + spot * 3)]);
+  });
+
+  return makeQuestion(
+    lesson, difficulty, index,
+    `${topic(target)} 어느 것일까요?`,
+    labels[at],
+    labels.filter((_, spot) => spot !== at),
+    `${planeShapeFacts[target].feature} 그런 모양을 ${target}이라고 합니다.`,
+    'shape',
+    shapeStrategy(difficulty, `자료 해석 · 그림에서 ${target} 찾기`, `${target} 찾기`),
+    undefined,
+    pictures,
+  );
+};
+
+// 그래프도 마찬가지입니다. 학교 평가지는 '조사 결과를 보고 ○를 그려
+// 그래프로 나타내시오'라고 하는데, 여기서는 그릴 수가 없습니다. 대신
+// 바르게 그린 것 하나와 잘못 그린 셋을 나란히 놓고 고르게 합니다.
+// 잘못 그린 것도 아무렇게나가 아니라 아이가 실제로 하는 실수입니다.
+const pickTheGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (!/그래프로 나타내/.test(lesson.title)) return null;
+
+  const seed = n(lesson, index);
+  const apple = 4 + (seed % 4);
+  const orange = 2 + ((seed + 1) % 3);
+  const berry = 1 + ((seed + 2) % 2);
+  const labels = ['㉠', '㉡', '㉢', '㉣'];
+  const at = index % 4;
+
+  const graphOf = (counts: number[]): QuestionVisual =>
+    pictographVisualFor(
+      [
+        { label: '사과', count: counts[0] },
+        { label: '귤', count: counts[1] },
+        { label: '딸기', count: counts[2] },
+      ],
+      1,
+      '',
+    );
+
+  // 잘못 그린 것들 — 한 칸씩 밀려 그린 것, 두 줄을 바꾸어 그린 것,
+  // 가장 많은 것만 맞게 그린 것.
+  const wrongWays = [
+    [apple + 1, orange, berry],
+    [orange, apple, berry],
+    [apple, berry, orange],
+  ];
+
+  const pictures: Record<string, QuestionVisual> = {};
+  let wrongAt = 0;
+  labels.forEach((label, spot) => {
+    if (spot === at) {
+      pictures[label] = graphOf([apple, orange, berry]);
+    } else {
+      pictures[label] = graphOf(wrongWays[wrongAt % wrongWays.length]);
+      wrongAt += 1;
+    }
+  });
+
+  return makeQuestion(
+    lesson, difficulty, index,
+    `사과 ${apple}명, 귤 ${orange}명, 딸기 ${berry}명을 조사했습니다. 이것을 그래프로 바르게 나타낸 것은 어느 것일까요?`,
+    labels[at],
+    labels.filter((_, spot) => spot !== at),
+    `사과 ${apple}명, 귤 ${orange}명, 딸기 ${berry}명이므로 ○를 각각 ${apple}개, ${orange}개, ${berry}개 그려야 합니다.`,
+    'data',
+    shapeStrategy(difficulty, '자료 해석 · 바르게 그린 그래프 고르기', '바르게 그린 그래프 고르기'),
+    undefined,
+    pictures,
+  );
+};
+
 const countWrongs = (answer: number, unit = '개') =>
   [answer + 1, Math.max(0, answer - 1), answer + 2, Math.max(0, answer - 2), answer + 3]
     .filter((value, position, values) => value !== answer && values.indexOf(value) === position)
@@ -13513,7 +13620,13 @@ export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Quest
           // 3칸 간격이라 늘 같은 나머지만 나오기 때문입니다.
           // 데이터로 적힌 문항을 먼저 봅니다. 없으면 코드로 쓴 문항이
           // 그대로 이어받습니다.
-          : (Math.floor(index / 3) % 4 === 3 ? bankQuestion(lesson, difficulty, index) : null)
+          // 그림으로 고르는 문항입니다. 도형과 그래프는 글로 물으면
+          // 낱말을 아는지 묻게 되므로, 자리를 얼마간 내어 줍니다.
+          : (index % 5 === 2
+              ? pickTheShapeQuestion(lesson, difficulty, index)
+                ?? pickTheGraphQuestion(lesson, difficulty, index)
+              : null)
+            ?? (Math.floor(index / 3) % 4 === 3 ? bankQuestion(lesson, difficulty, index) : null)
             ?? (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
             ?? challengeQuestion(lesson, difficulty, index)
             ?? richQuestionFor(lesson, difficulty, index)

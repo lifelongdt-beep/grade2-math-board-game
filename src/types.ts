@@ -72,6 +72,11 @@ export interface Question {
   // 전의 문장이 필요합니다.
   basePrompt?: string;
   choices: string[];
+  // 보기가 그림일 때 씁니다. 도형을 고르거나 그래프를 고르는 문항은
+  // 글로는 물을 수가 없습니다 — '삼각형'이라고 적어 놓고 고르게 하면
+  // 도형을 알아보는지가 아니라 낱말을 아는지 묻게 됩니다.
+  // choices와 자리를 맞춘 배열이고, 글 대신 이 그림을 보여 줍니다.
+  choiceVisuals?: QuestionVisual[];
   answerIndex: number;
   answer: string;
   explanation: string;

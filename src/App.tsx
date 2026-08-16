@@ -1482,7 +1482,7 @@ function App() {
                       )}
 
                       <div className="student-answer-dock">
-                        <div className="choice-grid">
+                        <div className={`choice-grid ${question.choiceVisuals ? 'picture-choices' : ''}`}>
                           {question.choices.map((choice, index) => (
                             <button
                               type="button"
@@ -1492,7 +1492,15 @@ function App() {
                               disabled={state.locked}
                             >
                               <span>{index + 1}</span>
-                              {choice}
+                              {/* 그림 보기입니다. 글은 읽어 주는 이름으로만 남깁니다. */}
+                              {question.choiceVisuals?.[index] ? (
+                                <>
+                                  <QuestionVisualGraphic visual={question.choiceVisuals[index]} />
+                                  <span className="choice-caption">{choice}</span>
+                                </>
+                              ) : (
+                                choice
+                              )}
                             </button>
                           ))}
                         </div>
