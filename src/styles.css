@@ -4715,37 +4715,42 @@ body::before {
    아이는 자기 칸만 보게 되어 있어서, 서른 문제가 '혼자 푸는 서른 개'로
    끝납니다. 반 전체가 채우는 것이 하나 있으면 같은 서른 문제가 '같이
    채우는 하나'가 됩니다. 등수가 아니라 합계라, 늦게 푸는 아이도 자기가
-   채운 칸이 거기 남습니다. */
+   채운 칸이 거기 남습니다.
+
+   줄을 따로 쓰지 않고 정답률·정답·오답이 놓인 줄의 남는 자리를 씁니다.
+   전자칠판에서는 한 줄이 곧 문제가 놓일 자리라 아까운 자리입니다. */
 .class-goal {
-  margin: 8px 0 10px;
-  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 260px;
+  min-width: 0;
+  padding: 7px 12px;
   border: 1px solid rgba(120, 170, 255, 0.34);
-  border-radius: 3px;
+  border-radius: var(--radius);
   background: rgba(10, 18, 40, 0.62);
 }
 
-.class-goal-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.class-goal-head strong {
+.class-goal strong {
+  flex: none;
   color: var(--space-ink);
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
-.class-goal-head span {
+.class-goal small {
+  flex: none;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .class-goal-track {
-  height: 12px;
+  flex: 1 1 auto;
+  min-width: 40px;
+  height: 10px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.12);
   overflow: hidden;
@@ -4758,11 +4763,11 @@ body::before {
   transition: width 0.4s ease;
 }
 
-.class-goal-cheer {
-  margin: 6px 0 0;
-  color: #6ef0a8;
-  font-size: 13px;
-  font-weight: 800;
+/* 좁은 화면에서는 남는 자리가 없으니 한 줄을 씁니다. */
+@media (max-width: 720px) {
+  .class-goal {
+    flex-basis: 100%;
+  }
 }
 
 /* ── 수준이 오른 순간 ───────────────────────────────────────────────

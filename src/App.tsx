@@ -1344,22 +1344,23 @@ function App() {
             <span><BarChart3 size={16} /> 정답률 {accuracy}%</span>
             <span>정답 {correctCount}개</span>
             <span>오답 {wrongCount}개</span>
-          <span>{reviewScope === 'lesson' ? '유형 다양화 문항' : `${scopedLessons.length}개 차시 랜덤`}</span>
-          </div>
+            {reviewScope !== 'lesson' && <span>{scopedLessons.length}개 차시 랜덤</span>}
 
-          {/* 우리 반이 함께 채우는 막대입니다. 아이는 자기 칸만 보게 되어
-              있어서, 서른 문제가 '혼자 푸는 서른 개'로 끝납니다. 등수가
-              아니라 합계라 늦게 푸는 아이도 채우는 데 낍니다.
-              다 채우면 다음 목표가 열려 끝이 나지 않습니다. */}
-          <div className="class-goal" aria-live="polite">
-            <div className="class-goal-head">
-              <strong>우리 반이 모은 정답 {correctCount}개</strong>
-              <span>{goalStage}단계 · 다음 목표 {goalTarget}개</span>
+            {/* 우리 반이 함께 채우는 막대입니다. 아이는 자기 칸만 보게 되어
+                있어서, 서른 문제가 '혼자 푸는 서른 개'로 끝납니다. 등수가
+                아니라 합계라 늦게 푸는 아이도 채우는 데 낍니다.
+                다 채우면 다음 목표가 열려 끝이 나지 않습니다.
+                한 줄을 따로 쓰지 않고 이 줄의 남는 자리를 씁니다 — 문제가
+                놓일 자리를 한 줄이라도 더 남겨 두는 편이 낫습니다. */}
+            <div className="class-goal" aria-live="polite">
+              <strong>우리 반 {correctCount}개</strong>
+              <div className="class-goal-track">
+                <div className="class-goal-fill" style={{ width: `${goalPercent}%` }} />
+              </div>
+              <small>
+                {goalJustReached ? '목표 달성! 다음 목표로' : `${goalStage}단계 · 다음 목표 ${goalTarget}개`}
+              </small>
             </div>
-            <div className="class-goal-track">
-              <div className="class-goal-fill" style={{ width: `${goalPercent}%` }} />
-            </div>
-            {goalJustReached && <p className="class-goal-cheer">목표를 채웠어요! 다음 목표로!</p>}
           </div>
 
           <div
