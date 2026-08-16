@@ -1,4 +1,4 @@
-import type { ConceptTag, Difficulty, LearningSupport, Lesson, PlaneShapeVisualItem, Question, QuestionVisual } from '../types';
+import type { ConceptTag, Difficulty, LearningSupport, Lesson, PlaneShapeKind, PlaneShapeVisualItem, Question, QuestionVisual } from '../types';
 import { questionBank } from './questionBank';
 import { buildFromTemplate, templateFits } from './questionTemplate';
 import type { DrawnVisual } from './questionTemplate';
@@ -7904,17 +7904,40 @@ const pickTheShapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: num
         : null;
   if (!target) return null;
 
+  // 네 그림이 모두 서로 달라야 합니다. 같은 그림이 두 자리에 있으면
+  // 둘 다 정답이거나 둘 다 오답이 되어 물음이 되지 않습니다.
+  //
+  // 사각형을 묻는 문항에서는 오답으로 쓸 수 있는 갈래가 원과 삼각형뿐이라
+  // (직사각형도 사각형이므로 오답이 될 수 없습니다) 삼각형 하나를 돌려
+  // 놓습니다. 돌려 놓아도 삼각형이라는 것을 함께 보게 되니 그편이 낫습니다.
+  const chart: Record<PlaneTarget, { right: PlaneShapeKind; wrong: PlaneShapeVisualItem[] }> = {
+    삼각형: {
+      right: 'triangle',
+      wrong: [{ kind: 'circle' }, { kind: 'square' }, { kind: 'rectangle', rotate: 8 }],
+    },
+    사각형: {
+      right: 'square',
+      wrong: [{ kind: 'circle' }, { kind: 'triangle' }, { kind: 'triangle', rotate: 28 }],
+    },
+    원: {
+      right: 'circle',
+      wrong: [{ kind: 'triangle' }, { kind: 'square' }, { kind: 'rectangle', rotate: 8 }],
+    },
+  };
+
   const labels = ['㉠', '㉡', '㉢', '㉣'];
-  const others: PlaneTarget[] = (['삼각형', '사각형', '원'] as PlaneTarget[]).filter((one) => one !== target);
-  // 정답 자리를 문항마다 옮깁니다. 나머지 셋은 다른 도형으로 채우되,
-  // 하나는 같은 도형을 돌려 놓아 방향이 달라도 같은 도형임을 함께 봅니다.
   const at = index % 4;
-  const shown: PlaneTarget[] = labels.map((_, spot) =>
-    spot === at ? target : others[spot % others.length]);
+  const plan = chart[target];
+  // 정답도 이따금 돌려 놓습니다. 반듯하게 놓인 것만 정답이라고 여기는
+  // 아이가 많습니다.
+  const rightItem: PlaneShapeVisualItem = { kind: plan.right, ...(index % 3 === 0 ? { rotate: 14 } : {}) };
 
   const pictures: Record<string, QuestionVisual> = {};
+  let wrongAt = 0;
   labels.forEach((label, spot) => {
-    pictures[label] = planeShapesVisual('', [itemForShape(shown[spot], false, '', index + spot * 3)]);
+    const item = spot === at ? rightItem : plan.wrong[wrongAt];
+    if (spot !== at) wrongAt += 1;
+    pictures[label] = planeShapesVisual('', [item]);
   });
 
   return makeQuestion(
