@@ -4694,38 +4694,35 @@ body::before {
    자리 번호(1~4)는 감춥니다. 그림 아래에 ㉠㉡㉢㉣이 이미 있어서 두 벌을
    두면 아이가 무엇을 부르는 이름인지 헷갈립니다. */
 .choice-grid.picture-choices button {
-  display: grid;
-  grid-template-columns: 1fr;
-  justify-items: center;
-  align-content: center;
-  gap: 3px;
-  /* 그림이 자리를 정하게 둡니다. 억지로 키를 잡아 두면 남는 자리가
-     그대로 빈칸이 되고, 그만큼 문제가 눌립니다. */
+  /* 격자 대신 그냥 블록으로 둡니다. 격자에 justify-items: center를 걸면
+     칸이 내용 크기로 쪼그라들어, 그림이 28px짜리로 그려졌습니다. */
+  display: block;
   min-height: 0;
   padding: 6px;
+  text-align: center;
 }
 
+/* 자리 번호(1~4)는 감춥니다. 그림 아래에 ㉠㉡㉢㉣이 이미 있어서, 두 벌을
+   두면 아이가 무엇을 부르는 이름인지 헷갈립니다. */
 .choice-grid.picture-choices button > span:first-child {
   display: none;
 }
 
 .choice-picture {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
+  display: block;
   width: 100%;
-  min-width: 0;
 }
 
 /* 그림은 칸 너비를 다 씁니다. 작게 그려 두면 무엇이 다른지 견줄 수가
-   없습니다 — 견주는 것이 이 문항이 시키는 일입니다. */
-.choice-picture svg {
+   없는데, 견주는 것이 이 문항이 시키는 일입니다. */
+.choice-picture .question-visual-figure {
   width: 100%;
-  height: auto;
-  max-height: 92px;
+  --visual-height: clamp(66px, 8.5vh, 100px);
 }
 
 .choice-caption {
+  display: block;
+  margin-top: 2px;
   font-size: 15px;
   font-weight: 800;
   line-height: 1;
