@@ -4708,21 +4708,35 @@ body::before {
   display: none;
 }
 
-.choice-picture {
+/* 보기 버튼 안의 span은 자리 번호 뱃지로 쓰려고 28px 동그라미로
+   정해져 있습니다(.choice-grid button span). 그림을 감싼 span과 이름표도
+   그 규칙에 걸려 28px로 오그라들어, 그래프가 손톱만 하게 그려졌습니다.
+   여기서는 그 규칙보다 좁게 짚어 되돌립니다. */
+.player-lanes.individual .choice-grid.picture-choices button .choice-picture,
+.choice-grid.picture-choices button .choice-picture {
   display: block;
   width: 100%;
+  height: auto;
+  background: none;
+  border-radius: 0;
 }
 
 /* 그림은 칸 너비를 다 씁니다. 작게 그려 두면 무엇이 다른지 견줄 수가
    없는데, 견주는 것이 이 문항이 시키는 일입니다. */
-.choice-picture .question-visual-figure {
+.choice-grid.picture-choices button .choice-picture .question-visual-figure {
   width: 100%;
   --visual-height: clamp(66px, 8.5vh, 100px);
 }
 
-.choice-caption {
+.player-lanes.individual .choice-grid.picture-choices button .choice-caption,
+.choice-grid.picture-choices button .choice-caption {
   display: block;
+  width: auto;
+  height: auto;
   margin-top: 2px;
+  background: none;
+  border-radius: 0;
+  color: var(--ink);
   font-size: 15px;
   font-weight: 800;
   line-height: 1;
