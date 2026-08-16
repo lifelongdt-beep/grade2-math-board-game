@@ -467,6 +467,7 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'clock' ||
     visual.kind === 'calendar' ||
     visual.kind === 'pictograph' ||
+    visual.kind === 'cube-pattern' ||
     visual.kind === 'array'
   ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };
