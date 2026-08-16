@@ -230,6 +230,47 @@ describe('the maths in each question is true', () => {
     expect([...new Set(unrelated)]).toEqual([]);
   });
 
+  it('names the biggest row when it asks for the biggest', () => {
+    // '사과 5명, 귤 6명을 그래프로 나타내려면 세로 칸은 적어도 몇 칸?'의
+    // 답이 5칸이었습니다. 답을 '사과의 수'로 적어 두고 사과가 늘 많다고
+    // 여겼는데, 뽑는 범위가 겹쳐 있었습니다. 가장 많은 것을 묻는 문제는
+    // 실제로 가장 많은 것이 답이어야 합니다.
+    const wrong: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      const asked = question.basePrompt ?? question.prompt;
+      // 견주는 문제(…보다 몇 개 더)는 큰 값 자체가 답이 아닙니다.
+      if (/더 많|더 적|차이|모두|합/.test(asked)) continue;
+
+      const listed = [...asked.matchAll(/([가-힣]{2,5})\s*(\d+)\s*(?:명|개)/g)]
+        .map((found) => ({ name: found[1].replace(/(?:은|는|이|가|을|를|에)$/, ''), count: Number(found[2]) }))
+        .filter((one) => one.name.length >= 2 && !/모두|학생|사람|기준/.test(one.name));
+      if (listed.length < 2) continue;
+
+      const most = listed.reduce((best, one) => (one.count > best.count ? one : best));
+      const least = listed.reduce((best, one) => (one.count < best.count ? one : best));
+      const answerNumber = Number(question.answer.match(/^(\d+)/)?.[1]);
+
+      // ① 칸 수를 묻는 문제 — 가장 많은 수만큼 칸이 있어야 합니다.
+      if (/적어도 몇 칸|세로 칸/.test(asked) && Number.isFinite(answerNumber) && answerNumber !== most.count) {
+        wrong.push(`${lessonId} ${level} ${question.id}: 가장 많은 것이 ${most.count}인데 답은 ${question.answer} — ${asked.slice(0, 44)}`);
+      }
+
+      // ② 가장 많은/적은 것의 이름을 묻는 문제.
+      const namesMost = /가장 많은/.test(asked) && !/가장 적은/.test(asked);
+      const namesLeast = /가장 적은/.test(asked) && !/가장 많은/.test(asked);
+      const answersAName = listed.some((one) => question.answer.includes(one.name));
+      if (answersAName && namesMost && !question.answer.includes(most.name)) {
+        wrong.push(`${lessonId} ${level} ${question.id}: 가장 많은 것은 ${most.name}인데 답은 ${question.answer}`);
+      }
+      if (answersAName && namesLeast && !question.answer.includes(least.name)) {
+        wrong.push(`${lessonId} ${level} ${question.id}: 가장 적은 것은 ${least.name}인데 답은 ${question.answer}`);
+      }
+    }
+
+    expect([...new Set(wrong)]).toEqual([]);
+  });
+
   it('draws every row the question lists', () => {
     // '축구 10명, 줄넘기 3명, 책읽기 6명, 그림그리기 5명입니다. 4명보다
     // 많은 활동은 몇 가지일까요?' 옆에 세 줄짜리 그래프가 놓여 있었습니다.

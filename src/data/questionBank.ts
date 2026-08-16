@@ -2221,13 +2221,19 @@ export const questionBank: Template[] = [
     demand: 'connect',
     tag: 'data',
     strategy: '조건 함께 보기 · 그래프를 그릴 칸 수를 정하는 상황',
+    // 답을 '{a}칸'으로 적어 두었으니 a가 늘 커야 하는데, 두 범위가 겹쳐
+    // 있었습니다. 사과 5명, 귤 6명이 뽑히면 6칸이 답인데 5칸이라고
+    // 풀이했습니다. 큰 쪽을 먼저 정하고 작은 쪽을 그 아래에서 고릅니다.
     vars: {
-      a: { from: 4, to: 9 },
-      b: { from: 2, to: 7 },
+      b: { from: 2, to: 5 },
+      gap: { from: 1, to: 4 },
+      a: { calc: 'b + gap' },
     },
+    // 세로 칸을 묻는 문제이므로 그래프도 세워서 보여 줍니다.
     visual: {
       kind: 'pictograph',
       items: [{ label: '사과', count: 'a' }, { label: '귤', count: 'b' }],
+      orientation: 'up',
       label: '좋아하는 과일',
     },
     prompt: '사과 {a}명, 귤 {b}명을 그래프로 나타내려고 합니다. 그래프의 세로 칸은 적어도 몇 칸까지 있어야 할까요?',
