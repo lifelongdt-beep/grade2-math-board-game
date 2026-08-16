@@ -4493,7 +4493,9 @@ body::before {
 /* 자리 전체를 굴리게 두었더니 보기 칸이 함께 움직여, 아이가 손을
    뻗는 자리가 문제마다 달라졌습니다. 이제 칸이 이름으로 정해져 있으니
    자리는 가만히 두고, 눌리는 쪽 — 문제 칸 — 이 제 안에서 굴러갑니다.
-   도움말이 문제를 덮어 '…수 모형을 떠올려 보세'에서 잘려 있었습니다. */
+   도움말이 없을 때도 마찬가지입니다. 보기 그림이 커지면 문제 글이
+   두 줄에서 잘렸습니다. 잘리면 읽을 방법이 없지만, 굴러가면 있습니다. */
+.player-lane .student-question-body,
 .player-lane:has(.student-feedback) .student-question-body {
   overflow-y: auto;
   min-height: 0;
@@ -4501,11 +4503,11 @@ body::before {
   scrollbar-color: #4fd2ff rgba(120, 170, 255, 0.18);
 }
 
-.player-lane:has(.student-feedback) .student-question-body::-webkit-scrollbar {
+.player-lane .student-question-body::-webkit-scrollbar {
   width: 8px;
 }
 
-.player-lane:has(.student-feedback) .student-question-body::-webkit-scrollbar-thumb {
+.player-lane .student-question-body::-webkit-scrollbar-thumb {
   border-radius: 6px;
   background: #4fd2ff;
 }
@@ -4796,7 +4798,7 @@ body::before {
   min-width: 0;
   width: auto;
   height: auto;
-  max-height: 21vh;
+  max-height: 15vh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -4809,7 +4811,7 @@ body::before {
   width: auto;
   height: auto;
   max-width: 100%;
-  max-height: 21vh;
+  max-height: 15vh;
 }
 
 /* 이름표는 그림 왼쪽에 섭니다. 색을 --ink로 두었더니 어두운 자리 위에
