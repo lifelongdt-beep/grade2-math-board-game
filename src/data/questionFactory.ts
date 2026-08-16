@@ -8914,6 +8914,31 @@ const shapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Q
 };
 
 const richShapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  // 단원 도입은 '생활 주변에서 여러 가지 도형을 찾는다'까지입니다.
+  // 변과 꼭짓점이라는 말은 2차시 삼각형에서 처음 배우므로, 도입에서
+  // 그것을 세게 하면 아직 배우지 않은 말로 묻는 셈이 됩니다.
+  if (lesson.unitTitle === '여러 가지 도형' && lesson.lessonNo <= 1) {
+    const around = [
+      { thing: '동전', shape: '원' },
+      { thing: '시계', shape: '원' },
+      { thing: '삼각김밥', shape: '삼각형' },
+      { thing: '교통 표지판', shape: '삼각형' },
+      { thing: '창문', shape: '사각형' },
+      { thing: '책', shape: '사각형' },
+    ][index % 6];
+    const others = ['원', '삼각형', '사각형'].filter((one) => one !== around.shape);
+
+    return makeQuestion(
+      lesson, difficulty, index,
+      `${around.thing}의 테두리를 본떠 그리면 어떤 모양이 될까요?`,
+      around.shape,
+      [...others, '곧은 선'],
+      `${around.thing}을 본떠 그리면 ${around.shape} 모양이 나옵니다.`,
+      'shape',
+      shapeStrategy(difficulty, '조건 함께 보기 · 생활 속 물건에서 도형 찾기', '생활 속 물건에서 도형 찾기'),
+    );
+  }
+
   if (shouldUseSolidQuestion(lesson, index + 1)) {
     const scene = stackSceneFor(lesson, index + 3);
     const stats = stackStats(scene);

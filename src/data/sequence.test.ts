@@ -39,6 +39,9 @@ const notBefore: Array<{
     semester: '2-1',
     unit: '여러 가지 도형',
     rules: [
+      // 변과 꼭짓점은 2차시 삼각형에서 처음 배웁니다. 단원 도입은
+      // '생활 주변에서 여러 가지 도형을 찾는다'까지입니다.
+      { pattern: /변|꼭짓점/, from: 2, note: '변과 꼭짓점은 2차시' },
       { pattern: /칠교/, from: 5, note: '칠교판은 5차시' },
       { pattern: /쌓기나무|쌓은 모양|몇 층/, from: 6, note: '쌓기나무는 6차시' },
     ],
