@@ -1590,7 +1590,7 @@ function App() {
         <div className="brand">
           <span className="brand-mark"><GraduationCap size={24} /></span>
           <div>
-            <h1>{isMobileEntry ? '개인 모바일 수학게임' : '2학년 수학 보드게임'}</h1>
+            <h1>보조개샘ai클래스 수학 게임</h1>
             <p>{mode === 'setup' ? (isMobileEntry ? '모바일 1인 참여' : '수업 설정') : reviewScope === 'lesson' ? `${semester} · ${selectedUnit.title} · ${lesson.lessonNo}차시` : lessonContextLabel}</p>
           </div>
         </div>
