@@ -1561,10 +1561,10 @@ function App() {
                               <span>{index + 1}</span>
                               {/* 그림 보기입니다. 글은 읽어 주는 이름으로만 남깁니다. */}
                               {question.choiceVisuals?.[index] ? (
-                                <>
+                                <span className="choice-picture">
                                   <QuestionVisualGraphic visual={question.choiceVisuals[index]} />
                                   <span className="choice-caption">{choice}</span>
-                                </>
+                                </span>
                               ) : (
                                 choice
                               )}

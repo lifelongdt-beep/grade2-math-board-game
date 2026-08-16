@@ -8001,13 +8001,24 @@ const pickTheGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: num
 
   return makeQuestion(
     lesson, difficulty, index,
-    `사과 ${apple}명, 귤 ${orange}명, 딸기 ${berry}명을 조사했습니다. 이것을 그래프로 바르게 나타낸 것은 어느 것일까요?`,
+    '표를 보고 그래프로 바르게 나타낸 것은 어느 것일까요?',
     labels[at],
     labels.filter((_, spot) => spot !== at),
     `사과 ${apple}명, 귤 ${orange}명, 딸기 ${berry}명이므로 각각 ${apple}칸, ${orange}칸, ${berry}칸을 채워야 합니다.`,
     'data',
     shapeStrategy(difficulty, '자료 해석 · 바르게 그린 그래프 고르기', '바르게 그린 그래프 고르기'),
-    undefined,
+    // 문제에는 표를 두고 보기에 그래프를 둡니다. 문제에까지 그래프를
+    // 그려 주면 그중 하나와 같은 것을 찾는 일이 되어, 표를 그래프로
+    // 옮기는 일 — 이 차시가 가르치려는 것 — 을 건너뜁니다.
+    tableVisualFor(
+      [
+        { name: '사과', value: apple },
+        { name: '귤', value: orange },
+        { name: '딸기', value: berry },
+      ],
+      '좋아하는 과일',
+      { categoryLabel: '과일', valueLabel: '학생 수(명)' },
+    ),
     pictures,
   );
 };
