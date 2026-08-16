@@ -5056,10 +5056,12 @@ const multiplyUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: num
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
+        // 묻는 것과 답이 어긋나 있었습니다. '몇 번'을 묻고는 한 번에 뛰는
+        // 수(${each}개)를 답으로 두어, 바르게 센 아이가 틀리게 됩니다.
         `${each}씩 뛰어 세어 ${total}까지 가려면 몇 번 뛰어 세어야 할까요?`,
-        `${each}개`, [`${groups}개`, `${each + 1}개`, `${total}개`],
-        `${each}개씩 ${groups}묶음이면 ${total}개이므로 한 묶음은 ${each}개입니다.`,
-        'multiplication', '한 묶음의 수 구하기',
+        `${groups}번`, [`${each}번`, `${groups + 1}번`, `${total}번`],
+        `${each}씩 ${groups}번 뛰어 세면 ${total}이 되므로 ${groups}번입니다.`,
+        'multiplication', '뛰어 센 횟수 구하기',
       );
     }
     if (variant === 2) {
@@ -10380,11 +10382,19 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('분류하여 표로')) {
       // 셀 자료를 문제 안에 적어 둡니다. 예전에는 '축구를 고른 사람을
       // 셉니다'라고만 하고 셀 것을 주지 않아, 답을 찍는 수밖에 없었습니다.
+      // 그 뒤에는 '축구 5명, 줄넘기 3명'처럼 이미 센 결과를 적어 두어,
+      // 이번에는 셀 것이 없어졌습니다. 대답한 것을 그대로 늘어놓습니다.
+      const answers = tallyLine(
+        { subject: '좋아하는 운동', categoryLabel: '운동', items: [
+          { name: '축구', count: a }, { name: '줄넘기', count: b }, { name: '술래잡기', count: c },
+        ] },
+        index,
+      );
       return makeQuestion(
         lesson, difficulty, index,
-        `좋아하는 운동을 조사했더니 축구 ${a}명, 줄넘기 ${b}명, 술래잡기 ${c}명이었습니다. 이것을 표로 옮기는 과정입니다. □에 알맞은 수는? ① 축구를 고른 사람을 셉니다. ② 센 것에 표시하며 빠뜨리지 않습니다. ③ 표의 축구 칸에 □을 씁니다.`,
+        `좋아하는 운동을 조사한 대답입니다. ${answers} 이것을 표로 옮기는 과정입니다. □에 알맞은 수는? ① 축구를 고른 사람을 셉니다. ② 센 것에 표시하며 빠뜨리지 않습니다. ③ 표의 축구 칸에 □을 씁니다.`,
         `${a}`, [`${b}`, `${c}`, `${a + b}`],
-        `축구를 고른 사람이 ${a}명이므로 표의 축구 칸에는 ${a}을 씁니다.`,
+        `축구를 고른 사람을 세면 ${a}명이므로 표의 축구 칸에는 ${a}을 씁니다.`,
         'data', '세어서 표의 칸을 채우는 과정',
       );
     }
@@ -10400,10 +10410,17 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('분류하여 그래프로')) {
       return makeQuestion(
         lesson, difficulty, index,
-        `그래프를 그리는 과정입니다. □에 알맞은 수는? ① 표에서 축구는 ${a}명입니다. ② 아래에서부터 한 칸에 하나씩 ◯를 □개 그립니다.`,
+        // 단계에 '축구는 5명입니다'라고 적어 두면 표를 볼 까닭이 없습니다.
+        // 표는 옆에 있으므로, 단계는 어디를 보라고만 합니다.
+        `표를 보고 그래프를 그리는 과정입니다. □에 알맞은 수는? ① 표에서 축구 칸의 수를 읽습니다. ② 아래에서부터 한 칸에 하나씩 ◯를 □개 그립니다.`,
         `${a}개`, [`${a + 1}개`, '1개', `${a - 1}개`],
-        `${a}명이므로 ◯를 ${a}개 그립니다.`,
+        `표에서 축구가 ${a}명이므로 ◯를 ${a}개 그립니다.`,
         'data', '그래프에 표시하는 과정',
+        tableVisualFor(
+          [{ name: '축구', value: a }, { name: '줄넘기', value: b }, { name: '술래잡기', value: c }],
+          '좋아하는 운동별 학생 수',
+          { categoryLabel: '운동', valueLabel: '학생 수(명)' },
+        ),
       );
     }
     if (title.includes('표와 그래프로 나타내')) {

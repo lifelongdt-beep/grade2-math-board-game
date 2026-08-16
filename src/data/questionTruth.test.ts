@@ -257,11 +257,13 @@ describe('the maths in each question is true', () => {
     // 견주는 문항(더 많다, 모두, 남은)은 견줄 수를 문제글에 적어야 하므로
     // 여기서 뺍니다. 넓게 걸었더니 멀쩡한 문항을 스무 개씩 물어 왔고,
     // 물어 오기만 하는 검사는 아무도 읽지 않습니다.
+    // 자료를 읽는 문항으로만 겁니다. 글에 나온 낱말로 고르려 했더니
+    // '3씩 뛰어 세어'의 세어까지 걸려 곱셈 문항을 스무 개씩 물어 왔습니다.
     const compares = /더|모두|합계|남|덜|많|적|차이|사이|바르게|어느 것/;
     const giveaways: string[] = [];
 
     for (const { lessonId, level, question } of all) {
-      if (!/표|그래프|분류|세어|나누었|조사/.test(question.prompt)) continue;
+      if (question.type !== 'data' && question.type !== 'classification') continue;
       if (compares.test(question.prompt)) continue;
 
       const asked = question.answer.match(/^(\d+)/);
