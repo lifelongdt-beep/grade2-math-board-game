@@ -4742,6 +4742,9 @@ body::before {
   height: auto;
   background: none;
   border-radius: 0;
+  /* 뱃지 규칙이 span에 어두운 글자색을 걸어 둡니다. 자리는 짙은 남색이라
+     그대로 두면 이름표가 바탕에 묻힙니다. */
+  color: inherit;
 }
 
 /* 그림은 칸 너비를 다 씁니다. 작게 그려 두면 무엇이 다른지 견줄 수가
