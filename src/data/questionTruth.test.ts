@@ -215,6 +215,24 @@ describe('the maths in each question is true', () => {
     expect(givenAway).toEqual([]);
   });
 
+  it('never draws the same picture for two choices', () => {
+    // 보기가 그림일 때는 글자가 달라도 그림이 같으면 답이 둘입니다.
+    // 실제로 '사과 4명, 귤 4명'이 뽑히자 '두 줄을 바꾸어 그린' 오답이
+    // 정답과 글자 하나 다르지 않은 같은 그림이 되었습니다.
+    const doubled: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      if (!question.choiceVisuals) continue;
+
+      const drawn = question.choiceVisuals.map((visual) => JSON.stringify(visual));
+      if (new Set(drawn).size !== drawn.length) {
+        doubled.push(`${lessonId} ${level} ${question.id}: 같은 그림이 두 보기에 — ${question.prompt.slice(0, 44)}`);
+      }
+    }
+
+    expect(doubled).toEqual([]);
+  });
+
   it('offers four choices that are all different', () => {
     const thin: string[] = [];
 

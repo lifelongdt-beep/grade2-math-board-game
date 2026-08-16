@@ -7938,8 +7938,10 @@ const pickTheGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: num
   if (!/그래프로 나타내/.test(lesson.title)) return null;
 
   const seed = n(lesson, index);
-  const apple = 4 + (seed % 4);
-  const orange = 2 + ((seed + 1) % 3);
+  // 세 수가 서로 달라야 합니다. 사과와 귤이 같은 수로 뽑히면 '두 줄을
+  // 바꾸어 그린' 오답이 정답과 똑같은 그림이 되어 답이 둘이 됩니다.
+  const apple = 7 + (seed % 3);
+  const orange = 4 + ((seed + 1) % 2);
   const berry = 1 + ((seed + 2) % 2);
   const labels = ['㉠', '㉡', '㉢', '㉣'];
   const at = index % 4;
@@ -7979,7 +7981,7 @@ const pickTheGraphQuestion = (lesson: Lesson, difficulty: Difficulty, index: num
     `사과 ${apple}명, 귤 ${orange}명, 딸기 ${berry}명을 조사했습니다. 이것을 그래프로 바르게 나타낸 것은 어느 것일까요?`,
     labels[at],
     labels.filter((_, spot) => spot !== at),
-    `사과 ${apple}명, 귤 ${orange}명, 딸기 ${berry}명이므로 ○를 각각 ${apple}개, ${orange}개, ${berry}개 그려야 합니다.`,
+    `사과 ${apple}명, 귤 ${orange}명, 딸기 ${berry}명이므로 각각 ${apple}칸, ${orange}칸, ${berry}칸을 채워야 합니다.`,
     'data',
     shapeStrategy(difficulty, '자료 해석 · 바르게 그린 그래프 고르기', '바르게 그린 그래프 고르기'),
     undefined,
