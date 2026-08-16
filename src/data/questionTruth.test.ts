@@ -189,24 +189,26 @@ describe('the maths in each question is true', () => {
     expect([...new Set(mismatched)]).toEqual([]);
   });
 
-  it('does not print the answer inside the question', () => {
+  it('does not already show the figures when it asks for the figures', () => {
     // '7000을 숫자로 바르게 쓴 것은?' 하고 보기에 7000을 두면 물음이
-    // 되지 않습니다. 숫자로 쓰라고 하려면 숫자가 아닌 것을 보여 주어야
-    // 합니다. 이 문항은 실제로 나가고 있었습니다.
+    // 되지 않습니다. 숫자로 쓰라고 하려면 숫자가 아닌 것 — 우리말로 읽은
+    // 것 — 을 보여 주어야 합니다. 이 문항은 실제로 나가고 있었습니다.
     //
-    // 답이 수 하나일 때만 봅니다. '63-15=48'처럼 식이 답인 문항은 문제에
-    // 그 수들이 적혀 있는 것이 마땅하고, 그것을 옮겨 적는 것이 곧 푸는
-    // 것도 아닙니다.
+    // 이 검사는 '숫자로 쓰라'고 하는 문항만 봅니다. 한때 '답이 문제에
+    // 적혀 있으면 안 된다'로 넓게 잡아 보았는데, 걸린 것이 거의 다
+    // 멀쩡한 문항이었습니다 — 0×3의 답은 0이고, 21+33=54를 주고 54-33을
+    // 묻는 것은 그 차시가 가르치려는 바로 그것이며, '166과 232 중 더 큰
+    // 수'의 답은 둘 중 하나일 수밖에 없습니다. 수학에서 답이 문제에
+    // 보이는 것은 흔한 일이라 그것만으로는 아무것도 가릴 수 없습니다.
     const givenAway: string[] = [];
 
     for (const { lessonId, level, question } of all) {
+      if (!/숫자로 (?:바르게 )?쓴|숫자로 나타낸/.test(question.prompt)) continue;
       if (!/^\d+$/.test(question.answer)) continue;
-      // 풀이 과정 문항은 앞 단계의 결과가 적혀 있는 것이 정상입니다.
-      if (question.prompt.includes('①')) continue;
 
       const standsAlone = new RegExp(`(?:^|[^\\d])${question.answer}(?:[^\\d]|$)`);
       if (standsAlone.test(question.prompt)) {
-        givenAway.push(`${lessonId} ${level} ${question.id}: 답 ${question.answer}이 문제에 그대로 — ${question.prompt.slice(0, 44)}`);
+        givenAway.push(`${lessonId} ${level} ${question.id}: 숫자로 쓰라면서 ${question.answer}을 이미 보여 줌 — ${question.prompt.slice(0, 44)}`);
       }
     }
 
