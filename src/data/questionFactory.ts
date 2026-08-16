@@ -9314,6 +9314,10 @@ const richQuestionFor = (lesson: Lesson, difficulty: Difficulty, index: number):
 // 하고 보기 하나를 지울 수 있게 되므로, 답이 아니라 단원을 봅니다.
 const placesForUnit = (lesson: Lesson) => (lesson.unitTitle.includes('네 자리 수') ? 4 : 3);
 
+// 문제가 이름을 대어 말하는 생활 속 물건들입니다. 이런 문제에 무늬 한
+// 줄(○△□)을 붙이면 아이가 보는 것과 읽는 것이 어긋납니다.
+const OTHER_SUBJECTS = /버스|신호등|달력|사물함|쌓기나무|시계|계단|엘리베이터|번호표|표에서|그래프/;
+
 // 문제가 이름을 대며 '보라'고 하는 것들입니다. 무엇을 그려야 하는지가
 // 하나로 정해지므로, 문항의 갈래보다 이 말이 먼저입니다.
 const namedSubjectVisual = (question: Question, index: number): QuestionVisual | undefined => {
@@ -9688,11 +9692,13 @@ const visualForGeneratedQuestion = (
       }
     }
 
-    // ⑥ 무늬 한 줄은 무늬를 말하는 문제에만 붙입니다. 예전에는 '규칙'이라는
-    //    말만 있으면 어떤 문제에나 ○△□를 붙였는데, 규칙 찾기 단원의 모든
-    //    문제에는 '규칙'이 들어 있습니다.
+    // ⑥ 무늬 한 줄은 되풀이의 본보기입니다. 다만 문제가 다른 것을 이름
+    //    대어 말하고 있으면 붙이지 않습니다 — '버스가 10분마다 옵니다'
+    //    옆에 ○△□가, '신호등이 초록·노랑·빨강 순서로' 옆에도 ○△□가
+    //    놓여 있었습니다. '규칙'이라는 말만 보고 붙였는데, 규칙 찾기
+    //    단원의 모든 문제에 그 말이 있습니다.
     //    곱셈표·덧셈표는 위(②)에서 이미 자기 표를 받았으므로 여기 오지 않습니다.
-    if (/무늬|도형|모양/.test(question.prompt)) {
+    if (!OTHER_SUBJECTS.test(question.prompt) && /무늬|도형|모양|규칙|되풀이|반복/.test(question.prompt)) {
       return patternVisualFor(['○', '△', '□', '○', '△', '□', '○'], '무늬 규칙 자료', 6);
     }
 

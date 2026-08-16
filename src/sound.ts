@@ -176,6 +176,72 @@ export const playTapSound = () => {
   playBlips([{ frequency: 880, at: 0, length: 0.05, volume: 0.07, type: 'triangle' }]);
 };
 
+// ── 동물 소리 ───────────────────────────────────────────────────────
+// 자기 캐릭터를 누르면 그 동물이 웁니다. 고르는 일이 즐거워야 자리에
+// 앉는 일도 즐겁습니다. 다만 스무 명이 한꺼번에 누를 수 있으므로 모두
+// 짧고(0.5초 안쪽) 작게 울립니다.
+const animalCalls: Record<string, Blip[]> = {
+  // 멍멍 — 짧게 두 번, 끝을 살짝 내립니다.
+  '🐶': [
+    { frequency: 420, at: 0, length: 0.11, volume: 0.12, type: 'square', slideTo: 300 },
+    { frequency: 400, at: 0.16, length: 0.12, volume: 0.11, type: 'square', slideTo: 280 },
+  ],
+  // 야옹 — 올라갔다 내려옵니다.
+  '🐱': [
+    { frequency: 520, at: 0, length: 0.16, volume: 0.1, type: 'sine', slideTo: 760 },
+    { frequency: 760, at: 0.15, length: 0.22, volume: 0.1, type: 'sine', slideTo: 430 },
+  ],
+  // 여우는 높고 짧게 깽깽.
+  '🦊': [
+    { frequency: 900, at: 0, length: 0.09, volume: 0.09, type: 'triangle', slideTo: 1250 },
+    { frequency: 950, at: 0.13, length: 0.09, volume: 0.09, type: 'triangle', slideTo: 1350 },
+  ],
+  // 토끼는 소리가 거의 없는 동물이라 코 찡긋하는 느낌으로 아주 짧게.
+  '🐰': [
+    { frequency: 1200, at: 0, length: 0.05, volume: 0.07, type: 'sine' },
+    { frequency: 1500, at: 0.07, length: 0.05, volume: 0.07, type: 'sine' },
+    { frequency: 1800, at: 0.14, length: 0.06, volume: 0.06, type: 'sine' },
+  ],
+  // 판다는 낮고 둥글게 웅.
+  '🐼': [
+    { frequency: 220, at: 0, length: 0.3, volume: 0.11, type: 'sine', slideTo: 180 },
+    { frequency: 330, at: 0.05, length: 0.2, volume: 0.05, type: 'sine' },
+  ],
+  // 호랑이 — 낮게 으르렁.
+  '🐯': [
+    { frequency: 150, at: 0, length: 0.42, volume: 0.13, type: 'sawtooth', slideTo: 95 },
+    { frequency: 90, at: 0.02, length: 0.4, volume: 0.07, type: 'square' },
+  ],
+  // 개구리 — 개굴개굴, 두 번 낮게.
+  '🐸': [
+    { frequency: 190, at: 0, length: 0.1, volume: 0.11, type: 'square', slideTo: 150 },
+    { frequency: 200, at: 0.15, length: 0.11, volume: 0.11, type: 'square', slideTo: 155 },
+  ],
+  // 펭귄 — 짧게 빽빽.
+  '🐧': [
+    { frequency: 700, at: 0, length: 0.08, volume: 0.1, type: 'square', slideTo: 900 },
+    { frequency: 720, at: 0.12, length: 0.1, volume: 0.1, type: 'square', slideTo: 950 },
+  ],
+  // 사자 — 호랑이보다 더 낮고 길게.
+  '🦁': [
+    { frequency: 120, at: 0, length: 0.5, volume: 0.14, type: 'sawtooth', slideTo: 70 },
+    { frequency: 240, at: 0.03, length: 0.42, volume: 0.06, type: 'sawtooth', slideTo: 140 },
+  ],
+  // 거북 — 느리게 한 번.
+  '🐢': [
+    { frequency: 260, at: 0, length: 0.36, volume: 0.09, type: 'triangle', slideTo: 210 },
+  ],
+};
+
+export const playAnimalSound = (avatar: string) => {
+  const call = animalCalls[avatar];
+  if (call) {
+    playBlips(call);
+    return;
+  }
+  playTapSound();
+};
+
 // 수업이 끝났을 때 울리는 팡파레입니다. 한 번만 울리므로 길어도 됩니다.
 export const playFinishSound = () => {
   playBlips([

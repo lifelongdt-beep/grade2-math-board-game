@@ -23,6 +23,7 @@ import {
 import { meaningOfChoice } from './data/choiceMeaning';
 import {
   isMuted,
+  playAnimalSound,
   playFinishSound,
   playReadySound,
   playSuccessSound,
@@ -796,8 +797,10 @@ function App() {
   // 캐릭터를 고릅니다. 남이 이미 고른 것은 누를 수 없게 해 두었으므로
   // 여기서는 그대로 받습니다. 같은 동물이 둘이면 아이들이 자기 자리를
   // 헷갈립니다.
+  // 누르면 그 동물이 웁니다. '톡' 소리보다 이쪽이 아이에게는 훨씬
+  // 신나고, 어떤 동물을 골랐는지 소리로도 남습니다.
   const selectAvatar = (studentId: number, avatar: string) => {
-    playTapSound();
+    playAnimalSound(avatar);
     updateStudentConfig(studentId, { avatar });
   };
 
@@ -1178,8 +1181,9 @@ function App() {
                 {step === 'attendance' && (
                   <div className="setup-step-card">
                     {/* 캐릭터를 먼저 고릅니다. 번호를 누르면 바로 시작되므로
-                        캐릭터가 번호보다 앞에 있어야 고를 틈이 있습니다. */}
-                    <span className="result-kicker">캐릭터</span>
+                        캐릭터가 번호보다 앞에 있어야 고를 틈이 있습니다.
+                        '캐릭터'라는 딱지는 붙이지 않습니다 — 자리 이름과
+                        겹쳐 찍혔고, 무엇을 고르는 자리인지는 그림이 말합니다. */}
                     <div className="avatar-pad" role="group" aria-label={`${player.id}번 자리 캐릭터 선택`}>
                       {avatarChoices.map((avatar) => {
                         const takenByOther = players.some(

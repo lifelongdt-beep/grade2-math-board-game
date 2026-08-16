@@ -236,6 +236,9 @@ describe('the maths in each question is true', () => {
     // 들어 있어서, 그 말만 보고 무늬를 붙이면 어떤 문제에나 붙습니다.
     const decorated: string[] = [];
     const shapes = /^[○△□◇☆●▲■]$/;
+    // 되풀이 자체를 묻는 문제에는 무늬 한 줄이 본보기가 됩니다. 문제가
+    // 다른 것을 이름 대어 말할 때만 어긋납니다.
+    const namesSomethingElse = /버스|신호등|달력|사물함|쌓기나무|시계|계단|엘리베이터|번호표|표에서|그래프/;
 
     for (const { lessonId, level, question } of all) {
       const visual = question.visual;
@@ -243,9 +246,9 @@ describe('the maths in each question is true', () => {
       if (!visual.items.every((item) => shapes.test(item) || item === '?')) continue;
 
       const asked = question.basePrompt ?? question.prompt;
-      if (/무늬|도형|모양/.test(asked)) continue;
+      if (!namesSomethingElse.test(asked)) continue;
 
-      decorated.push(`${lessonId} ${level} ${question.id}: 무늬를 말하지 않는데 ○△□ — ${asked.slice(0, 46)}`);
+      decorated.push(`${lessonId} ${level} ${question.id}: 다른 것을 말하는데 ○△□ — ${asked.slice(0, 46)}`);
     }
 
     expect([...new Set(decorated)]).toEqual([]);
