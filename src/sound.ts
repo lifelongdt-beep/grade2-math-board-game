@@ -171,11 +171,24 @@ export const playBlips = (blips: Blip[], fallback?: () => void) => {
 // 다릅니다. 달라진 것이 음높이 하나뿐이라, 소리를 견주어 듣지 않아도
 // 어느 수준을 맞혔는지 바로 알 수 있습니다.
 const successTune: Blip[] = [
-  { frequency: 523.25, at: 0, length: 0.1, type: 'triangle' },
-  { frequency: 659.25, at: 0.075, length: 0.1, type: 'triangle' },
-  { frequency: 783.99, at: 0.15, length: 0.11, type: 'triangle' },
-  { frequency: 1046.5, at: 0.23, length: 0.2, volume: 0.19, type: 'triangle' },
-  { frequency: 1568, at: 0.3, length: 0.16, volume: 0.08 },
+  // ① 나무 실로폰처럼 통통 튀어 오르는 가락 — 도 미 솔 도
+  { frequency: 523.25, at: 0, length: 0.11, volume: 0.14, type: 'triangle' },
+  { frequency: 659.25, at: 0.08, length: 0.11, volume: 0.145, type: 'triangle' },
+  { frequency: 783.99, at: 0.16, length: 0.12, volume: 0.15, type: 'triangle' },
+  { frequency: 1046.5, at: 0.25, length: 0.3, volume: 0.16, type: 'triangle' },
+
+  // ② 그 위에 얹히는 종소리. 한 박 늦게 들어와 여운을 만듭니다.
+  { frequency: 1568, at: 0.27, length: 0.42, volume: 0.055, type: 'sine' },
+  { frequency: 2093, at: 0.32, length: 0.4, volume: 0.032, type: 'sine' },
+
+  // ③ 아래에서 받쳐 주는 화음 — 도와 솔이 함께 울립니다.
+  { frequency: 261.63, at: 0.25, length: 0.44, volume: 0.05, type: 'sine' },
+  { frequency: 392, at: 0.27, length: 0.42, volume: 0.04, type: 'sine' },
+
+  // ④ 마지막에 한 번 더 올라가 반짝하고 끝납니다.
+  { frequency: 1318.51, at: 0.6, length: 0.12, volume: 0.09, type: 'triangle' },
+  { frequency: 1568, at: 0.7, length: 0.34, volume: 0.1, type: 'triangle' },
+  { frequency: 2637.02, at: 0.72, length: 0.34, volume: 0.026, type: 'sine', glide: [3135.96, 2637.02] },
 ];
 
 // 같은 가락을 통째로 올립니다. 1.5배는 5도 위, 2배는 한 옥타브 위입니다.
@@ -221,11 +234,18 @@ const animalCalls: Record<string, Blip[]> = {
   // 멍! 멍! — 목이 열리며 '머'가 붙고 '엉'으로 닫힙니다. 두 번 짖고
   // 두 번째는 조금 낮게, 끝에 꼬리를 답니다.
   '🐶': [
-    { frequency: 300, at: 0, length: 0.2, volume: 0.12, type: 'square', attack: 0.03, glide: [560, 420, 300] },
-    { frequency: 200, at: 0.02, length: 0.16, volume: 0.05, type: 'triangle', glide: [340, 240] },
-    { frequency: 280, at: 0.3, length: 0.22, volume: 0.11, type: 'square', attack: 0.03, glide: [500, 380, 270] },
-    { frequency: 190, at: 0.32, length: 0.18, volume: 0.045, type: 'triangle', glide: [320, 220] },
-    { frequency: 260, at: 0.56, length: 0.24, volume: 0.06, type: 'triangle', glide: [300, 230, 200], vibrato: { rate: 12, depth: 14 } },
+    // 멍! — 목이 열리는 소리(square) 위에 둥근 몸통(triangle)을 얹고,
+    // 아래에서 가슴 울림(sine)이 받칩니다.
+    { frequency: 300, at: 0, length: 0.2, volume: 0.11, type: 'square', attack: 0.025, glide: [620, 440, 310] },
+    { frequency: 200, at: 0.01, length: 0.19, volume: 0.06, type: 'triangle', glide: [400, 280, 210] },
+    { frequency: 150, at: 0, length: 0.2, volume: 0.04, type: 'sine', glide: [190, 150] },
+    // 멍! (한 음 낮게)
+    { frequency: 280, at: 0.3, length: 0.22, volume: 0.105, type: 'square', attack: 0.025, glide: [560, 400, 285] },
+    { frequency: 190, at: 0.31, length: 0.21, volume: 0.055, type: 'triangle', glide: [370, 260, 200] },
+    { frequency: 140, at: 0.3, length: 0.22, volume: 0.038, type: 'sine', glide: [175, 140] },
+    // 끝에 꼬리를 답니다 — 낑, 하고 살짝 올라갑니다.
+    { frequency: 300, at: 0.6, length: 0.3, volume: 0.06, type: 'triangle', glide: [380, 330, 290], vibrato: { rate: 10, depth: 16 } },
+    { frequency: 600, at: 0.62, length: 0.26, volume: 0.018, type: 'sine', glide: [760, 660] },
   ],
   // 야~옹 — 올라갔다가 길게 내려옵니다. 고양이 소리의 표는 이 오르내림입니다.
   // 430에서 시작했더니 목이 굵은 고양이가 되었습니다. 한 옥타브 가까이
@@ -236,15 +256,28 @@ const animalCalls: Record<string, Blip[]> = {
       glide: [1000, 1240, 1300, 1120, 860, 700], vibrato: { rate: 7, depth: 18 },
     },
     { frequency: 1440, at: 0.03, length: 0.48, volume: 0.022, type: 'triangle', glide: [2000, 2480, 1720, 1400] },
+    // 아래에서 받쳐 주는 숨결입니다.
+    { frequency: 360, at: 0.02, length: 0.5, volume: 0.03, type: 'sine', glide: [500, 620, 430] },
+    // 야옹 뒤에 갸르릉 — 목을 고르는 소리로 마칩니다.
+    {
+      frequency: 260, at: 0.66, length: 0.42, volume: 0.055, type: 'triangle', attack: 0.08,
+      glide: [280, 270, 255], vibrato: { rate: 28, depth: 16 },
+    },
+    { frequency: 780, at: 0.7, length: 0.34, volume: 0.014, type: 'sine', glide: [840, 800] },
   ],
   // 여우 — 높고 가는 소리로 깽, 깽, 깨앵.
   '🦊': [
     { frequency: 780, at: 0, length: 0.14, volume: 0.075, type: 'triangle', attack: 0.02, glide: [1180, 900] },
     { frequency: 800, at: 0.2, length: 0.14, volume: 0.075, type: 'triangle', attack: 0.02, glide: [1250, 940] },
     {
-      frequency: 820, at: 0.4, length: 0.34, volume: 0.08, type: 'triangle', attack: 0.03,
+      frequency: 820, at: 0.4, length: 0.38, volume: 0.08, type: 'triangle', attack: 0.03,
       glide: [1320, 1150, 880, 700], vibrato: { rate: 9, depth: 22 },
     },
+    // 위에서 함께 우는 배음과, 아래에서 받치는 숨결입니다.
+    { frequency: 1640, at: 0.42, length: 0.34, volume: 0.016, type: 'sine', glide: [2400, 1760, 1400] },
+    { frequency: 410, at: 0.4, length: 0.36, volume: 0.028, type: 'sine', glide: [640, 470, 360] },
+    // 끝에 짧게 한 번 더 — 꺄웅.
+    { frequency: 900, at: 0.84, length: 0.22, volume: 0.055, type: 'triangle', glide: [1150, 980, 820], vibrato: { rate: 12, depth: 20 } },
   ],
   // 토끼 — 우는 대신 코를 찡긋거리며 킁킁, 끝에 짧게 뽀.
   '🐰': [
@@ -252,9 +285,14 @@ const animalCalls: Record<string, Blip[]> = {
     { frequency: 950, at: 0.13, length: 0.09, volume: 0.055, type: 'sine', glide: [1220, 1000] },
     { frequency: 980, at: 0.26, length: 0.1, volume: 0.05, type: 'sine', glide: [1280, 1040] },
     {
-      frequency: 1100, at: 0.42, length: 0.26, volume: 0.06, type: 'sine', attack: 0.04,
+      frequency: 1100, at: 0.42, length: 0.3, volume: 0.06, type: 'sine', attack: 0.04,
       glide: [1500, 1320, 1100], vibrato: { rate: 11, depth: 18 },
     },
+    // 콩콩 뛰는 발입니다. 낮고 짧게 두 번.
+    { frequency: 300, at: 0.44, length: 0.08, volume: 0.035, type: 'triangle', glide: [240, 200] },
+    { frequency: 320, at: 0.6, length: 0.08, volume: 0.032, type: 'triangle', glide: [255, 210] },
+    // 끝에 방울 하나.
+    { frequency: 1760, at: 0.76, length: 0.3, volume: 0.026, type: 'sine', glide: [2093, 1760] },
   ],
   // 판다 — 새끼 판다는 양처럼 웁니다. 낮고 둥글게 떨리는 소리입니다.
   '🐼': [
@@ -263,7 +301,11 @@ const animalCalls: Record<string, Blip[]> = {
       glide: [380, 350, 320, 280], vibrato: { rate: 13, depth: 26 },
     },
     { frequency: 600, at: 0.04, length: 0.4, volume: 0.03, type: 'sine', glide: [740, 640, 560] },
-    { frequency: 280, at: 0.56, length: 0.3, volume: 0.07, type: 'triangle', attack: 0.05, glide: [340, 290, 250], vibrato: { rate: 12, depth: 20 } },
+    { frequency: 280, at: 0.56, length: 0.34, volume: 0.07, type: 'triangle', attack: 0.05, glide: [340, 290, 250], vibrato: { rate: 12, depth: 20 } },
+    { frequency: 560, at: 0.58, length: 0.3, volume: 0.022, type: 'sine', glide: [680, 580, 500] },
+    // 아래에서 둥글게 받치는 소리입니다.
+    { frequency: 150, at: 0.02, length: 0.46, volume: 0.035, type: 'sine', glide: [180, 165, 145] },
+    { frequency: 145, at: 0.58, length: 0.32, volume: 0.03, type: 'sine', glide: [172, 150] },
   ],
   // 호랑이 — 100Hz 언저리는 교실 스피커가 거의 내지 못해, 웅장한 대신
   // 웅얼거림으로 들렸습니다. 울림의 자리를 한 옥타브 올리고 배음을
@@ -329,20 +371,31 @@ const animalCalls: Record<string, Blip[]> = {
     { frequency: 820, at: 0.5, length: 0.66, volume: 0.022, type: 'sine', glide: [1180, 1320, 1000, 760] },
     { frequency: 103, at: 0.42, length: 0.86, volume: 0.06, type: 'sine', glide: [150, 170, 145, 118, 92] },
   ],
-  // 거북 — 낮게 깔면 교실에서는 들리지 않습니다. 사람이 듣기 좋은 자리로
-  // 올리되, 느릿느릿한 걸음이 소리에 남아 있어야 합니다. 길게 두 번,
-  // 두 번째가 더 높고 오래갑니다 — 느리게 기지개를 켜는 소리입니다.
+  // 거북 — 느린 걸음이 소리에 남아야 하지만, 낮게 깔면 들리지 않습니다.
+  // 악기를 셋 씁니다. 숨을 길게 내쉬는 소리(triangle), 그 위에 얹히는
+  // 맑은 울림(sine), 걸음을 세듯 아래에서 느리게 짚는 소리(sine 저음).
+  // 두 번 늘어지게 하품하고, 끝에 종처럼 한 번 반짝입니다.
   '🐢': [
+    // 하아— (첫 하품)
     {
-      frequency: 420, at: 0, length: 0.66, volume: 0.1, type: 'triangle', attack: 0.16,
-      glide: [500, 560, 520, 460], vibrato: { rate: 5, depth: 14 },
+      frequency: 400, at: 0, length: 0.78, volume: 0.1, type: 'triangle', attack: 0.2,
+      glide: [480, 540, 500, 440], vibrato: { rate: 4.5, depth: 16 },
     },
-    { frequency: 840, at: 0.05, length: 0.5, volume: 0.026, type: 'sine', glide: [1000, 1080, 940] },
+    { frequency: 800, at: 0.06, length: 0.62, volume: 0.03, type: 'sine', glide: [960, 1060, 900] },
+    { frequency: 200, at: 0, length: 0.78, volume: 0.045, type: 'sine', glide: [240, 260, 210] },
+    // 하아아— (두 번째, 더 높고 더 길게)
     {
-      frequency: 470, at: 0.72, length: 0.8, volume: 0.095, type: 'triangle', attack: 0.2,
-      glide: [560, 640, 600, 520, 470], vibrato: { rate: 4.5, depth: 16 },
+      frequency: 460, at: 0.86, length: 0.92, volume: 0.095, type: 'triangle', attack: 0.24,
+      glide: [560, 640, 610, 520, 460], vibrato: { rate: 4, depth: 18 },
     },
-    { frequency: 940, at: 0.78, length: 0.62, volume: 0.024, type: 'sine', glide: [1120, 1240, 1080, 960] },
+    { frequency: 920, at: 0.92, length: 0.76, volume: 0.028, type: 'sine', glide: [1120, 1260, 1080, 940] },
+    { frequency: 230, at: 0.86, length: 0.92, volume: 0.042, type: 'sine', glide: [280, 300, 250, 220] },
+    // 느릿느릿 걸음을 짚습니다.
+    { frequency: 320, at: 0.4, length: 0.14, volume: 0.03, type: 'sine' },
+    { frequency: 300, at: 1.3, length: 0.16, volume: 0.028, type: 'sine' },
+    // 끝에 종 하나.
+    { frequency: 1046.5, at: 1.66, length: 0.5, volume: 0.03, type: 'sine' },
+    { frequency: 1568, at: 1.7, length: 0.44, volume: 0.018, type: 'sine' },
   ],
 };
 
@@ -374,6 +427,34 @@ export const playFinishSound = () => {
 
     { frequency: 2093, at: 0.95, length: 0.5, volume: 0.05, slideTo: 3135.96 },
     { frequency: 2637.02, at: 1.1, length: 0.4, volume: 0.032, slideTo: 4186 },
+  ]);
+};
+
+// 반이 함께 채운 목표에 닿는 순간입니다. 한 아이가 맞힌 소리와는 달라야
+// 합니다 — 서른 개를 같이 채워야 한 번 울리는 소리라, 교실 전체가 고개를
+// 들 만큼 크고 화려해도 됩니다. 나팔 셋이 겹쳐 올라간 뒤 종이 울립니다.
+export const playGoalFanfare = () => {
+  playBlips([
+    // 나팔 신호 — 솔 솔 솔 도
+    { frequency: 783.99, at: 0, length: 0.12, volume: 0.12, type: 'square' },
+    { frequency: 783.99, at: 0.15, length: 0.12, volume: 0.12, type: 'square' },
+    { frequency: 783.99, at: 0.3, length: 0.12, volume: 0.12, type: 'square' },
+    { frequency: 1046.5, at: 0.45, length: 0.34, volume: 0.13, type: 'square' },
+    // 아래에서 받쳐 주는 화음
+    { frequency: 392, at: 0.45, length: 0.36, volume: 0.06, type: 'triangle' },
+    { frequency: 523.25, at: 0.45, length: 0.36, volume: 0.05, type: 'triangle' },
+
+    // 올라가는 계단 — 도 미 솔 도
+    { frequency: 523.25, at: 0.86, length: 0.11, volume: 0.11, type: 'triangle' },
+    { frequency: 659.25, at: 0.97, length: 0.11, volume: 0.115, type: 'triangle' },
+    { frequency: 783.99, at: 1.08, length: 0.11, volume: 0.12, type: 'triangle' },
+    { frequency: 1046.5, at: 1.19, length: 0.5, volume: 0.13, type: 'triangle' },
+    { frequency: 1318.51, at: 1.19, length: 0.5, volume: 0.075, type: 'triangle' },
+    { frequency: 1567.98, at: 1.21, length: 0.48, volume: 0.055, type: 'triangle' },
+
+    // 종처럼 위에서 반짝입니다.
+    { frequency: 2093, at: 1.24, length: 0.6, volume: 0.04, type: 'sine' },
+    { frequency: 2637.02, at: 1.32, length: 0.52, volume: 0.028, type: 'sine', glide: [3135.96, 2637.02] },
   ]);
 };
 
@@ -413,13 +494,20 @@ export const difficultyBlips: Record<Difficulty, Blip[]> = {
 // 도–미–솔–도로 올라가 종소리 하나로 마칩니다.
 export const playReadySound = () => {
   playBlips([
-    { frequency: 523.25, at: 0, length: 0.11, volume: 0.09, type: 'triangle' },
-    { frequency: 659.25, at: 0.07, length: 0.11, volume: 0.095, type: 'triangle' },
-    { frequency: 783.99, at: 0.14, length: 0.12, volume: 0.1, type: 'triangle' },
-    { frequency: 1046.5, at: 0.21, length: 0.26, volume: 0.105, type: 'triangle' },
+    // 물방울처럼 또르르 굴러 올라갑니다 — 도 미 솔 도 미
+    { frequency: 523.25, at: 0, length: 0.09, volume: 0.085, type: 'triangle' },
+    { frequency: 659.25, at: 0.06, length: 0.09, volume: 0.09, type: 'triangle' },
+    { frequency: 783.99, at: 0.12, length: 0.09, volume: 0.095, type: 'triangle' },
+    { frequency: 1046.5, at: 0.18, length: 0.1, volume: 0.1, type: 'triangle' },
+    { frequency: 1318.51, at: 0.25, length: 0.28, volume: 0.1, type: 'triangle' },
+
+    // 그 아래 부드러운 화음 한 겹 — 소리에 두께를 줍니다.
+    { frequency: 523.25, at: 0.25, length: 0.32, volume: 0.045, type: 'sine' },
+    { frequency: 659.25, at: 0.26, length: 0.3, volume: 0.035, type: 'sine' },
+
     // 위에서 반짝 하고 얹히는 종소리입니다.
-    { frequency: 2093, at: 0.24, length: 0.34, volume: 0.035, type: 'sine' },
-    { frequency: 3135.96, at: 0.3, length: 0.26, volume: 0.02, type: 'sine' },
+    { frequency: 2093, at: 0.27, length: 0.4, volume: 0.032, type: 'sine' },
+    { frequency: 2637.02, at: 0.33, length: 0.34, volume: 0.022, type: 'sine', glide: [3135.96, 2793.83] },
   ]);
 };
 

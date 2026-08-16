@@ -25,6 +25,7 @@ import {
   isMuted,
   playAnimalSound,
   playFinishSound,
+  playGoalFanfare,
   playReadySound,
   playSuccessSound,
   playDifficultySound,
@@ -743,6 +744,15 @@ function App() {
   const goalPercent = Math.round(((correctCount % goalStep) / goalStep) * 100);
   // 방금 딱 채운 순간입니다.
   const goalJustReached = correctCount > 0 && correctCount % goalStep === 0;
+  // 그 순간에 딱 한 번 울립니다. 채운 단계를 적어 두어, 같은 단계에서
+  // 두 번 울리거나 다시 그려질 때마다 울리는 일이 없게 합니다.
+  const celebratedStage = useRef(0);
+  useEffect(() => {
+    if (!goalJustReached) return;
+    if (celebratedStage.current === correctCount) return;
+    celebratedStage.current = correctCount;
+    playGoalFanfare();
+  }, [goalJustReached, correctCount]);
   const getQuestionForPlayer = (_player: Player, state: PlayerQuestionState) =>
     getPlayerQuestion(questionBanks, state);
   const fallbackStates = createQuestionState(players);
@@ -1375,9 +1385,15 @@ function App() {
           <span className="class-goal-runner" style={{ left: `${goalPercent}%` }} aria-hidden="true">
             🚀
           </span>
-          <span className={`class-goal-prize ${goalPercent >= 92 ? 'near' : ''}`} aria-hidden="true">
-            🎁
+          {/* 선물은 다 와 가면 흔들리고, 닿으면 열립니다. */}
+          <span className={`class-goal-prize ${goalJustReached ? 'open' : goalPercent >= 92 ? 'near' : ''}`} aria-hidden="true">
+            {goalJustReached ? '🎉' : '🎁'}
           </span>
+          {goalJustReached && (
+            <span className="class-goal-confetti" aria-hidden="true">
+              <i>✨</i><i>🎊</i><i>⭐</i><i>✨</i><i>🎈</i><i>⭐</i>
+            </span>
+          )}
         </div>
         <small>
           {goalJustReached ? '목표 달성! 다음 목표로 🎉' : `${goalStage}단계 · 다음 목표 ${goalTarget}개`}

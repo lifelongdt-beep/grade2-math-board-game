@@ -5050,6 +5050,53 @@ body::before {
   animation: goal-pop 0.6s ease-out 3;
 }
 
+/* 선물이 열리는 순간입니다. 크게 한 번 벌어졌다 자리를 잡고, 그 자리에서
+   종이꽃이 터져 나갑니다. 아이들이 고개를 드는 것은 소리가 아니라 이
+   순간이라, 눈에 보이는 것도 소리만큼 커야 합니다. */
+.class-goal-prize.open {
+  animation: prize-open 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) 1;
+  font-size: 26px;
+}
+
+.class-goal-confetti {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.class-goal-confetti i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 15px;
+  font-style: normal;
+  opacity: 0;
+  animation: confetti-fly 1.5s ease-out 1;
+}
+
+.class-goal-confetti i:nth-child(1) { --fly-x: -70px; --fly-y: -34px; animation-delay: 0s; }
+.class-goal-confetti i:nth-child(2) { --fly-x: -46px; --fly-y: -52px; animation-delay: 0.07s; }
+.class-goal-confetti i:nth-child(3) { --fly-x: -18px; --fly-y: -46px; animation-delay: 0.14s; }
+.class-goal-confetti i:nth-child(4) { --fly-x: -60px; --fly-y: 30px; animation-delay: 0.2s; }
+.class-goal-confetti i:nth-child(5) { --fly-x: -30px; --fly-y: 40px; animation-delay: 0.27s; }
+.class-goal-confetti i:nth-child(6) { --fly-x: -92px; --fly-y: 6px; animation-delay: 0.34s; }
+
+@keyframes prize-open {
+  0% { transform: translate(0, -50%) scale(1) rotate(0deg); }
+  35% { transform: translate(0, -78%) scale(1.9) rotate(-14deg); }
+  60% { transform: translate(0, -44%) scale(1.35) rotate(10deg); }
+  100% { transform: translate(0, -50%) scale(1) rotate(0deg); }
+}
+
+@keyframes confetti-fly {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.4) rotate(0deg); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--fly-x), var(--fly-y)) scale(1.15) rotate(200deg); }
+}
+
 .class-goal-badge {
   margin-right: 4px;
   font-size: 17px;
@@ -5128,6 +5175,8 @@ body::before {
   .class-goal-sparks i,
   .class-goal-runner,
   .class-goal-prize.near,
+  .class-goal-prize.open,
+  .class-goal-confetti i,
   .class-goal.reached .class-goal-prize {
     animation: none;
   }
