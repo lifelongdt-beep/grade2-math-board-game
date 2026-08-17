@@ -203,7 +203,7 @@ export const questionBank: Template[] = [
     units: ['세 자리 수'],
     demand: 'recall',
     tag: 'number',
-    strategy: '거꾸로 뛰어 세기',
+    strategy: '100씩 작아지게 뛰어 세기',
     vars: {
       start: { from: 320, to: 890 },
       before: { calc: 'start - 100' },
