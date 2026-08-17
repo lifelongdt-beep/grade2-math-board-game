@@ -13728,7 +13728,12 @@ const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number):
           // 안내 문구가 두 수준을 달라 보이게 하고 있어서 그것으로 충분해
           // 보였을 뿐, 문구를 걷어 내니 상과 중이 같은 모양을 나눠 갖고
           // 있었습니다. 상에서는 상황이 있으면 늘 상황으로 냅니다.
-          ? (difficulty === '상' ? wordStepQuestion(lesson, difficulty, index) : null)
+          // 문장 상황 생성기는 차시마다 한 모양뿐이라, 상의 스무 자리를
+          // 모두 내주면 그 차시의 상은 늘 같은 모양이 됩니다. 데이터로
+          // 적어 둔 과정 문항과 번갈아 씁니다.
+          ? (difficulty === '상' && Math.floor(index / 3) % 2 === 0
+              ? wordStepQuestion(lesson, difficulty, index)
+              : null)
             // 뒤섞인 풀이를 차례대로 놓는 문항은 상만 받습니다. 빈칸을
             // 채우는 일과 차례를 잡는 일은 다른 일입니다 — 채우기는 남의
             // 풀이를 따라가면 되지만, 차례를 잡으려면 그 풀이가 왜 그
