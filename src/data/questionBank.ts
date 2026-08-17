@@ -5485,6 +5485,25 @@ export const questionBank: Template[] = [
     solution: '{each}씩 {spans}묶음이므로 약 {total}cm입니다.',
   },
   {
+    id: 'guess-pick-tool-claims',
+    when: /길이를 어림해 볼까요 ⑴/,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '자료 해석 · 어림에 쓸 몸의 부분을 하나씩 판단하기',
+    vars: {
+      each: { from: 12, to: 15 },
+      spans: { from: 4, to: 8 },
+      total: { calc: 'each * spans' },
+    },
+    prompt: '책상의 길이를 뼘으로 어림하려고 합니다.',
+    claims: [
+      { text: '한 뼘의 길이를 먼저 알아야 합니다.', ok: true },
+      { text: '뼘이 {spans}번이면 약 {total}cm입니다.', ok: true },
+      { text: '뼘의 길이는 누구나 똑같습니다.', ok: false },
+      { text: '뼘으로 재면 자로 잰 것과 늘 같습니다.', ok: false },
+    ],
+  },
+  {
     id: 'guess-close-claims-two',
     when: /길이를 어림해 볼까요 ⑴/,
     demand: 'reason',
