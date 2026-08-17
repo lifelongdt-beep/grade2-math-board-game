@@ -876,6 +876,23 @@ export const questionBank: Template[] = [
     solution: '10이 {tens}개에서 100개가 되려면 {more}개가 더 있어야 합니다.',
   },
   {
+    id: 'thousand-bundle-count',
+    when: /천을 알아볼까요/,
+    demand: 'recall',
+    tag: 'number',
+    // '100이 10개이면 얼마일까요?'와는 수만 다른 것이 아니라 문장 틀이
+    // 달라야 합니다. 수를 지우면 같은 문장이 되는 문항은 아이에게 같은
+    // 문항입니다.
+    strategy: '1000을 묶음으로 세기',
+    vars: {
+      k: { from: 2, to: 9 },
+    },
+    prompt: '1000을 100씩 묶으면 몇 묶음일까요?',
+    answer: '10묶음',
+    wrongs: ['{k}묶음', '100묶음', '1묶음'],
+    solution: '1000은 100이 10개이므로 10묶음입니다.',
+  },
+  {
     id: 'thousand-after-nine',
     when: /천을 알아볼까요/,
     demand: 'recall',
