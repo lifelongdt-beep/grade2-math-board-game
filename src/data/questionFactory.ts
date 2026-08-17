@@ -13759,7 +13759,11 @@ const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number):
               ? pickTheShapeQuestion(lesson, difficulty, index)
                 ?? pickTheGraphQuestion(lesson, difficulty, index)
               : null)
-            ?? (Math.floor(index / 3) % 4 === 3 ? bankQuestion(lesson, difficulty, index) : null)
+            // 데이터로 적은 문항이 설 자리입니다. 넉 자리에 하나만 내주던
+            // 때에는 차시에 문항을 아무리 더 써도 화면에 나오지 않았습니다
+            // — 서른 자리 가운데 여섯뿐이라, 한 생성기가 스무 자리를
+            // 차지하고 있는 것을 밀어낼 수가 없었습니다.
+            ?? (Math.floor(index / 3) % 2 === 1 ? bankQuestion(lesson, difficulty, index) : null)
             ?? (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
             ?? challengeQuestion(lesson, difficulty, index)
             ?? richQuestionFor(lesson, difficulty, index)
