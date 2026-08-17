@@ -964,7 +964,7 @@ export const questionBank: Template[] = [
     units: ['네 자리 수'],
     demand: 'connect',
     tag: 'placeValue',
-    strategy: '조건 함께 보기 · 두 사람이 모은 수를 견주는 상황',
+    strategy: '조건 함께 보기 · 더 많이 모은 사람을 찾는 상황',
     vars: {
       t: { from: 2, to: 7 },
       low: { from: 1, to: 4 },
