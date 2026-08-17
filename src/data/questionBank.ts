@@ -3202,12 +3202,12 @@ export const questionBank: Template[] = [
     },
     prompt: '{hour}시 {minute}분을 몇 분 전으로 고쳐 말하는 과정입니다. □에 알맞은 수는 얼마일까요?',
     steps: [
-      '{hour + 1}시가 되려면 {minute}분에서 60분까지 남았습니다.',
-      '60-{minute}=□분 전입니다.',
+      '긴바늘이 12까지 가려면 작은 눈금으로 {before}칸 남았습니다.',
+      '한 칸이 1분이므로 {hour + 1}시 □분 전이라고 말합니다.',
     ],
     answer: '{before}',
     wrongs: ['{minute}', '{hour}', '{before + 5}'],
-    solution: '60에서 {minute}을 빼면 {before}이므로 {hour + 1}시 {before}분 전입니다.',
+    solution: '긴바늘이 {before}칸 남았으므로 {hour + 1}시 {before}분 전입니다.',
   },
   {
     id: 'one-hour-step',
