@@ -13848,7 +13848,12 @@ const questionsFor = (
     // 그 몫이 무너집니다.
     const wantsRich = isRichQuestion(first);
     const firstShape = shapeOfPrompt(first.prompt);
-    const crowded = taken(firstShape) >= MOST_PER_SHAPE;
+    // 풀이 과정 자리는 수를 세어 둔 자리입니다(상 20자리, 중 5자리).
+    // 그 자리를 다른 갈래로 바꾸면 수준을 가르는 설계가 무너지므로,
+    // 한 모양이 자리를 다 먹는지는 그 밖의 자리에서만 봅니다. 풀이 과정
+    // 자리의 모양은 그 안에서 늘려야 합니다 — 상황이 여럿인 풀이를
+    // 데이터로 적어 두면 됩니다.
+    const crowded = !isStepSlot(difficulty, slot) && taken(firstShape) >= MOST_PER_SHAPE;
     const avoided = avoidShapes?.has(firstShape) ?? false;
 
     let question = first;
