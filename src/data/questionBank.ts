@@ -4597,6 +4597,37 @@ export const questionBank: Template[] = [
     solution: '{k:을} 한 번 더한 것과 같으므로 {k}입니다.',
   },
   {
+    id: 'times-zero-pick',
+    when: /1단 곱셈구구와 0의 곱/,
+    demand: 'recall',
+    tag: 'multiplication',
+    // '0×{k}는 얼마일까요?'와 '{k}×1은 얼마일까요?'는 수를 지우면 같은
+    // 문장입니다. 아이에게 다른 문항이 되려면 문장 틀이 달라야 합니다.
+    strategy: '곱이 0이 되는 식 찾기',
+    vars: {
+      k: { from: 2, to: 9 },
+      other: { from: 2, to: 9 },
+    },
+    prompt: '곱이 0이 되는 곱셈식은 어느 것일까요?',
+    answer: '0×{k}',
+    wrongs: ['1×{k}', '{k}×1', '{k}×{other}'],
+    solution: '0을 몇 번 더해도 0이므로 0×{k}의 곱이 0입니다.',
+  },
+  {
+    id: 'times-one-keep',
+    when: /1단 곱셈구구와 0의 곱/,
+    demand: 'recall',
+    tag: 'multiplication',
+    strategy: '1을 곱했을 때 달라지는지 알기',
+    vars: {
+      k: { from: 2, to: 9 },
+    },
+    prompt: '어떤 수에 1을 곱하면 그 수는 어떻게 될까요?',
+    answer: '그대로입니다',
+    wrongs: ['0이 됩니다', '1이 됩니다', '{k}배가 됩니다'],
+    solution: '1을 곱하면 그 수가 그대로 나옵니다.',
+  },
+  {
     id: 'times-by-zero-word',
     when: /1단 곱셈구구와 0의 곱/,
     demand: 'connect',
