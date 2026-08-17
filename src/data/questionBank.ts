@@ -5485,6 +5485,26 @@ export const questionBank: Template[] = [
     solution: '{each}씩 {spans}묶음이므로 약 {total}cm입니다.',
   },
   {
+    id: 'guess-gap-step',
+    when: /길이를 어림해 볼까요 ⑴/,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '자료 해석 · 어림한 값과 잰 값의 차를 구하는 과정 판단하기',
+    vars: {
+      guess: { from: 20, to: 60 },
+      gap: { from: 4, to: 9 },
+      real: { calc: 'guess + gap' },
+    },
+    prompt: '어림한 길이와 잰 길이가 얼마나 차이 나는지 구하는 과정입니다. □에 알맞은 수는 얼마일까요?',
+    steps: [
+      '어림한 길이는 약 {guess}cm, 자로 잰 길이는 {real}cm입니다.',
+      '{real}-{guess}=□cm만큼 차이가 납니다.',
+    ],
+    answer: '{gap}',
+    wrongs: ['{guess}', '{real}', '{gap + 1}'],
+    solution: '{real}에서 {guess}를 빼면 {gap}이므로 {gap}cm 차이입니다.',
+  },
+  {
     id: 'guess-pick-tool-claims',
     when: /길이를 어림해 볼까요 ⑴/,
     demand: 'reason',
