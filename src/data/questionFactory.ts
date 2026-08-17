@@ -11176,7 +11176,11 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       );
     }
 
-    if (no >= 6) {
+    // 8차시는 달력입니다. 여기서 만드는 세 문항은 모두 시계로 잰
+    // 시간을 다루므로, 달력 차시에는 걸린 시간(6차시)과 하루의 시간(7차시)
+    // 까지만 냅니다. 달력 차시의 조건 함께 보기 문항은 richQuestionFor의
+    // 달력 갈래가 대신 만듭니다.
+    if (no >= 6 && no <= 7) {
       const startMinute = 10 + (seed % 5) * 5;
       const spent = 20 + (seed % 4) * 10;
       if (pick === 0) {
