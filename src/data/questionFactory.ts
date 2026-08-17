@@ -13828,23 +13828,35 @@ const questionsFor = (
   const seen = new Set<string>();
   const made: Question[] = [];
 
+  // 한 모양이 차지할 수 있는 자리 수입니다. 서른 자리를 여섯 모양이
+  // 나눠 가지려면 한 모양이 다섯 자리를 넘지 않아야 합니다. 예전에는
+  // 풀이 과정 생성기 하나가 스무 자리를 차지해, 그 차시에 문항을 아무리
+  // 더 써도 화면에는 세 가지밖에 나오지 않았습니다.
+  const MOST_PER_SHAPE = 5;
+  const shapeSeen = new Map<string, number>();
+  const taken = (shape: string) => shapeSeen.get(shape) ?? 0;
+
   for (let slot = 0; slot < 30; slot += 1) {
     const first = buildQuestionAt(lesson, difficulty, slot);
     // 그 자리가 맡고 있던 몫입니다. 자료를 읽고 조건을 함께 보는 문항이
     // 수준마다 몇 자리씩 있어야 하는데, 겹친다고 아무것으로나 바꾸면
     // 그 몫이 무너집니다.
     const wantsRich = isRichQuestion(first);
-    const avoided = avoidShapes?.has(shapeOfPrompt(first.prompt)) ?? false;
+    const firstShape = shapeOfPrompt(first.prompt);
+    const crowded = taken(firstShape) >= MOST_PER_SHAPE;
+    const avoided = avoidShapes?.has(firstShape) ?? false;
 
     let question = first;
-    if (seen.has(first.prompt) || avoided) {
+    if (seen.has(first.prompt) || crowded || avoided) {
       let sameKind: Question | null = null;
       let anyFresh: Question | null = null;
 
       for (let again = 1; again <= 8; again += 1) {
         const other = buildQuestionAt(lesson, difficulty, slot + again * 30);
         if (seen.has(other.prompt)) continue;
-        if (avoidShapes?.has(shapeOfPrompt(other.prompt))) continue;
+        const shape = shapeOfPrompt(other.prompt);
+        if (avoidShapes?.has(shape)) continue;
+        if (taken(shape) >= MOST_PER_SHAPE) continue;
         if (!anyFresh) anyFresh = other;
         if (isRichQuestion(other) === wantsRich) {
           sameKind = other;
@@ -13860,6 +13872,8 @@ const questionsFor = (
     }
 
     seen.add(question.prompt);
+    const shape = shapeOfPrompt(question.prompt);
+    shapeSeen.set(shape, taken(shape) + 1);
     made.push(question);
   }
 
