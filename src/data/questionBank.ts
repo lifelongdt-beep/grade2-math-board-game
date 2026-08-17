@@ -484,7 +484,7 @@ export const questionBank: Template[] = [
     units: ['네 자리 수'],
     demand: 'recall',
     tag: 'placeValue',
-    strategy: '천의 자리로 크기 비교하기',
+    strategy: '천의 자리를 보고 더 큰 수 찾기',
     vars: {
       small: { from: 2, to: 7 },
       big: { calc: 'small + 1' },
