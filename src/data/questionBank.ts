@@ -384,7 +384,9 @@ export const questionBank: Template[] = [
     tag: 'number',
     strategy: '1000씩 작아지게 뛰어 세기',
     vars: {
-      t: { from: 3, to: 9 },
+      // 오답으로 두는 {start + 1000}이 이 차시 범위(10000)를 넘지
+      // 않도록 천의 자리를 8까지만 씁니다.
+      t: { from: 3, to: 8 },
       h: { from: 0, to: 9 },
       ten: { from: 0, to: 9 },
       start: { calc: 't * 1000 + h * 100 + ten * 10' },
