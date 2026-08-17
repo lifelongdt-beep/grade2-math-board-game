@@ -9407,6 +9407,11 @@ const visualForGeneratedQuestion = (
       }
     }
 
+    // '10이 10개이면 얼마일까요?'처럼 같은 수만 두 번 나오는 문제가
+    // 있습니다. 그런 수직선은 점이 모두 한자리에 겹쳐 아무것도 보여
+    // 주지 못합니다. 그릴 것이 없으면 그리지 않습니다.
+    if (new Set(values).size < 2) return undefined;
+
     const gap = Math.max(1, values.length >= 2 ? Math.abs(values[1] - values[0]) || 10 : 10);
     // 눈금이 너무 촘촘하지 않도록 간격을 값의 크기에 맞춥니다.
     const span = Math.max(...values) - Math.min(...values);
@@ -13864,11 +13869,26 @@ const questionsFor = (
         }
       }
 
+      // 자리의 갈래를 지키며 찾아도 없으면, 데이터로 적어 둔 문항에서
+      // 가져옵니다. 풀이 과정 생성기는 차시마다 한 모양뿐이라, 번호를
+      // 아무리 바꿔도 같은 모양만 나옵니다 — 그 자리는 데이터 문항이
+      // 채우는 편이 낫습니다.
+      const fromBank = sameKind || anyFresh || !crowded
+        ? null
+        : bankQuestion(lesson, difficulty, slot);
+      const bankShape = fromBank ? shapeOfPrompt(fromBank.prompt) : '';
+      const bankUsable = fromBank
+        && !seen.has(fromBank.prompt)
+        && taken(bankShape) < MOST_PER_SHAPE
+        && !(avoidShapes?.has(bankShape) ?? false);
+
       // 겹치는 것을 피하는 일보다 그 자리의 몫을 지키는 일이 먼저입니다.
       // 자료를 읽는 자리인데 같은 갈래가 없으면, 다른 갈래로 바꾸느니
       // 겹치더라도 그대로 둡니다 — 겹친 것은 눈에 보이지만 수준이 무너진
       // 것은 눈에 보이지 않습니다.
-      question = sameKind ?? (wantsRich ? first : anyFresh ?? first);
+      question = sameKind
+        ?? (bankUsable && fromBank ? fromBank : null)
+        ?? (wantsRich ? first : anyFresh ?? first);
     }
 
     seen.add(question.prompt);
