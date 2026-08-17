@@ -13763,7 +13763,11 @@ const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number):
             // 때에는 차시에 문항을 아무리 더 써도 화면에 나오지 않았습니다
             // — 서른 자리 가운데 여섯뿐이라, 한 생성기가 스무 자리를
             // 차지하고 있는 것을 밀어낼 수가 없었습니다.
-            ?? (Math.floor(index / 3) % 2 === 1 ? bankQuestion(lesson, difficulty, index) : null)
+            //
+            // 그렇다고 절반을 내주면 이번에는 서로 다른 문제가 줄었습니다.
+            // 데이터 문항은 뽑는 수의 폭이 좁아, 자리를 많이 받을수록 같은
+            // 수가 되풀이됩니다. 셋에 하나가 두 가지가 함께 사는 자리입니다.
+            ?? (Math.floor(index / 3) % 3 === 2 ? bankQuestion(lesson, difficulty, index) : null)
             ?? (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
             ?? challengeQuestion(lesson, difficulty, index)
             ?? richQuestionFor(lesson, difficulty, index)
