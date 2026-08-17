@@ -4614,6 +4614,20 @@ export const questionBank: Template[] = [
     solution: '0을 몇 번 더해도 0이므로 0×{k}의 곱이 0입니다.',
   },
   {
+    id: 'times-one-row',
+    when: /1단 곱셈구구와 0의 곱/,
+    demand: 'recall',
+    tag: 'multiplication',
+    strategy: '1단 곱셈구구가 몇씩 커지는지 알기',
+    vars: {
+      k: { from: 2, to: 9 },
+    },
+    prompt: '1단 곱셈구구는 몇씩 커질까요?',
+    answer: '1씩',
+    wrongs: ['0씩', '{k}씩', '2씩'],
+    solution: '1×1, 1×2, 1×3으로 갈수록 1씩 커집니다.',
+  },
+  {
     id: 'times-one-keep',
     when: /1단 곱셈구구와 0의 곱/,
     demand: 'recall',
