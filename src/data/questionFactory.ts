@@ -13669,8 +13669,16 @@ const bankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Qu
   // 자리를 index로 고릅니다. Math.floor(index / 3)으로 고르면 데이터 문항이
   // 들어가는 여섯 자리(9·10·11·21·22·23)가 모두 같은 값이 되어, 문항을
   // 두 개 적어도 한 개만 쓰였습니다.
-  const template = usable[index % usable.length];
-  return buildFromTemplate(template, lesson, difficulty, index, templateTools);
+  // 고른 틀이 이 차시에서 만들어지지 않을 때가 있습니다(2단 차시의 7단
+  // 문항처럼). 예전에는 거기서 그만두어 그 자리가 통째로 비었고, 차시에
+  // 문항을 더 써도 자리에 닿지 못했습니다. 만들어지는 것이 나올 때까지
+  // 차례로 넘어갑니다.
+  for (let step = 0; step < usable.length; step += 1) {
+    const template = usable[(index + step) % usable.length];
+    const made = buildFromTemplate(template, lesson, difficulty, index, templateTools);
+    if (made) return made;
+  }
+  return null;
 };
 
 // 데이터로 적은 풀이 과정 문항입니다. 남의 풀이를 따라가며 한 단계를
