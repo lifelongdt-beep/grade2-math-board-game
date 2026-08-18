@@ -1500,9 +1500,15 @@ button:disabled {
 .choice-grid {
   display: grid;
   gap: 5px;
-  /* 판이 보기보다 높을 때 보기는 아래쪽에 섭니다. 위로 떠 있으면
-     칠판 앞 아이가 팔을 더 뻗어야 합니다. */
+  /* 판이 보기보다 높을 때 보기는 판 아래쪽에 섭니다. 위로 떠 있으면
+     칠판 앞 아이가 팔을 더 뻗어야 합니다. 이것이 없으면 상자가 판을
+     따라 늘어나 글자 한 줄짜리 보기가 280px 상자가 됩니다. */
   align-content: end;
+}
+
+/* 글자 보기 상자는 글에 맞는 키만 씁니다. 그림 보기는 그림이 자리를
+   잡아야 하므로 그대로 둡니다. */
+.choice-grid:not(.picture-choices) {
   grid-auto-rows: min-content;
 }
 
@@ -4740,7 +4746,12 @@ body::before {
    자리가 넉넉할 때만 두 칸으로 접습니다. */
 .player-lanes.individual .choice-grid.picture-choices,
 .choice-grid.picture-choices {
-  grid-template-columns: 1fr;
+  /* 넷을 한 줄에 하나씩 쌓으면 414px이 되어, 첫 보기가 화면 한가운데에
+     섭니다. 칠판 앞 2학년은 그 높이에 손이 닿지 않습니다. 두 칸으로
+     놓으면 절반 키가 되어 보기가 아래로 내려옵니다.
+     45%를 밑으로 두어 세 칸이 되는 일은 없고, 자리가 좁으면(170px보다
+     좁은 칸이 되면) 저절로 한 칸으로 돌아갑니다. */
+  grid-template-columns: repeat(auto-fit, minmax(max(170px, 45%), 1fr));
 }
 
 @media (min-width: 1024px) {
@@ -4854,14 +4865,14 @@ body::before {
 
 .player-lane .student-answer-dock,
 .player-lane:has(.choice-grid.picture-choices) .student-answer-dock {
-  /* 판을 줄에 맞춰 늘이면(stretch) 보기 상자가 함께 부풀어, 글자 한
-     줄짜리 보기가 280px 상자가 되었습니다. 이제 판은 제 키만 쓰고 줄
-     아래쪽에 붙습니다. 남는 자리는 위쪽 빈 줄이 받습니다.
-     키가 지나치게 커지면 화면 가운데 위까지 손을 뻗어야 하므로 한계를
-     두고, 넘치는 만큼은 판 안에서 구르게 합니다. */
-  align-self: end;
-  height: auto;
-  max-height: 46vh;
+  /* 판은 줄에 맞춰 세웁니다. 제 키대로 두고 아래에 붙였더니 그림 보기
+     자리에서 판(414px)이 제 줄(382px)보다 커져 위로 삐져나와, 문제
+     아래쪽을 32px 덮었습니다.
+     보기 상자가 판을 따라 부푸는 일은 .choice-grid에서 막습니다 — 판은
+     줄을 채우되 상자는 제 키만 쓰고 판 아래쪽에 섭니다. 넘치면 판 안에서
+     구릅니다. */
+  align-self: stretch;
+  height: 100%;
   min-height: 0;
   overflow-y: auto;
   /* 넷 중 넷째가 아래에 숨을 수 있으니, 구를 수 있다는 것이 보여야 합니다. */
