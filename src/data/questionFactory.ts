@@ -7800,8 +7800,10 @@ const singleTargetBoard = (target: PlaneTarget, index: number): { visual: Questi
   const labels = ['1', '2', '3', '4'];
   const distractors = rotate(distractorsByTarget[target], index);
   let distractorIndex = 0;
+  // 답이 되는 도형에만 색을 칠하면 번호를 세어 볼 까닭이 없어집니다.
+  // 넷을 모두 같은 색으로 그리고, 아이가 도형을 보고 번호를 고릅니다.
   const items = labels.map((label, slot) => {
-    if (slot === activeSlot) return itemForShape(target, true, label, index + slot);
+    if (slot === activeSlot) return itemForShape(target, false, label, index + slot);
     const shape = distractors[distractorIndex % distractors.length];
     distractorIndex += 1;
     return itemForShape(shape, false, label, index + slot);
@@ -7814,6 +7816,8 @@ const singleTargetBoard = (target: PlaneTarget, index: number): { visual: Questi
   };
 };
 
+// 두 자리를 고르는 판도 마찬가지입니다 — 답이 되는 자리에 색을 칠하면
+// 세어 보지 않고 색만 보고 고릅니다.
 const twoTargetBoard = (target: PlaneTarget, index: number): { visual: QuestionVisual; answer: string; wrongs: string[] } => {
   const labels = ['1', '2', '3', '4'];
   const activeSlots = index % 2 === 0 ? [0, 2] : [1, 3];
@@ -7824,7 +7828,7 @@ const twoTargetBoard = (target: PlaneTarget, index: number): { visual: QuestionV
   };
   let distractorIndex = 0;
   const items = labels.map((label, slot) => {
-    if (activeSlots.includes(slot)) return itemForShape(target, true, label, index + slot);
+    if (activeSlots.includes(slot)) return itemForShape(target, false, label, index + slot);
     const shape = distractorsByTarget[target][distractorIndex % 2];
     distractorIndex += 1;
     return itemForShape(shape, false, label, index + slot);
