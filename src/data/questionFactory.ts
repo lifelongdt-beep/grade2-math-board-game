@@ -14159,16 +14159,20 @@ const questionsFor = (
         }
       }
 
-      sameKind = sameKind ?? sameKindLoose;
+      // sameKind에 무른 후보를 미리 섞으면 데이터 문항 차례가 오지
+      // 않습니다. 무른 것은 데이터 문항 뒤에서만 씁니다.
       anyFresh = anyFresh ?? anyFreshLoose;
 
       // 자리의 갈래를 지키며 찾아도 없으면, 데이터로 적어 둔 문항에서
       // 가져옵니다. 풀이 과정 생성기는 차시마다 한 모양뿐이라, 번호를
       // 아무리 바꿔도 같은 모양만 나옵니다 — 그 자리는 데이터 문항이
       // 채우는 편이 낫습니다.
-      const fromBank = sameKind || anyFresh || !crowded
-        ? null
-        : bankQuestion(lesson, difficulty, slot);
+      // 데이터로 적어 둔 문항은 예전에 '생성기에서 아무것도 못 찾았을 때'만
+      // 봤습니다. 그런데 답이 몰리는 차시는 생성기가 늘 같은 답을 내면서도
+      // 문제 글은 새것을 내놓아, anyFresh가 늘 차 있었습니다. 그래서 답을
+      // 갈라 줄 문항을 새로 써 넣어도 화면까지 오지 못했습니다.
+      // 답이 넘친 자리에서는 데이터 문항을 먼저 봅니다.
+      const fromBank = !crowded ? null : bankQuestion(lesson, difficulty, slot);
       const bankShape = fromBank ? shapeOfPrompt(fromBank.prompt) : '';
       const bankUsable = fromBank
         && !seen.has(fromBank.prompt)
@@ -14182,6 +14186,7 @@ const questionsFor = (
       // 것은 눈에 보이지 않습니다.
       question = sameKind
         ?? (bankUsable && fromBank ? fromBank : null)
+        ?? sameKindLoose
         ?? (wantsRich ? first : anyFresh ?? first);
     }
 
