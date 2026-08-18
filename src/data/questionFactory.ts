@@ -668,6 +668,13 @@ const planeShapesVisual = (label: string, items: PlaneShapeVisualItem[]): Questi
   items,
 });
 
+// 도형 하나에만 색을 칠하면 '어느 것일까요?'라는 물음에서 답을 미리
+// 알려 주는 셈입니다. 고르라고 하는 문제에서는 모두 같은 색으로 둡니다.
+const withoutHighlight = (visual: QuestionVisual): QuestionVisual =>
+  visual.kind === 'plane-shapes'
+    ? { ...visual, items: visual.items.map(({ active, ...rest }) => rest) }
+    : visual;
+
 const planeVisualForTarget = (target: '원' | '삼각형' | '사각형' | '칠교', index: number): QuestionVisual => {
   if (target === '칠교') {
     return { kind: 'tangram', label: '칠교 조각으로 만든 모양' };
@@ -712,7 +719,9 @@ const inferQuestionVisual = (
   );
 
   if (targetShape) {
-    return planeVisualForTarget(targetShape, index);
+    const drawn = planeVisualForTarget(targetShape, index);
+    // 찾거나 고르라고 하는 문제에서는 색으로 답을 짚어 주지 않습니다.
+    return /어느 것|찾|고르|골라/.test(prompt) ? withoutHighlight(drawn) : drawn;
   }
 
   if (source.includes('칠교')) {

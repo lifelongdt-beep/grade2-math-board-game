@@ -189,6 +189,26 @@ describe('the maths in each question is true', () => {
     expect([...new Set(mismatched)]).toEqual([]);
   });
 
+  it('does not colour in the answer when it asks which shape it is', () => {
+    // '삼각형은 어느 것일까요?' 옆의 그림에서 삼각형만 색이 칠해져
+    // 있었습니다. 힌트가 아니라 답을 미리 준 것입니다. 고르라고 하는
+    // 문제에서는 모두 같은 색이어야 합니다.
+    const marked: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      const visual = question.visual;
+      if (!visual || visual.kind !== 'plane-shapes') continue;
+
+      const asked = question.basePrompt ?? question.prompt;
+      if (!/어느 것|찾|고르|골라/.test(asked)) continue;
+      if (!visual.items.some((item) => item.active)) continue;
+
+      marked.push(`${lessonId} ${level} ${question.id}: 답을 색으로 짚어 줌 — ${asked.slice(0, 40)}`);
+    }
+
+    expect([...new Set(marked)]).toEqual([]);
+  });
+
   it('draws the thing the question names', () => {
     // '쌓은 모양에서 규칙을 찾아볼까요' 차시에 무늬 문항의 ○△□가 붙어
     // 나왔습니다. 쌓기나무를 말하는 문제 옆에 도형 무늬가 있으면 아이는
