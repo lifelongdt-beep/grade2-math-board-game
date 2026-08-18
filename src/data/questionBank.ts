@@ -2222,6 +2222,45 @@ export const questionBank: Template[] = [
   // 5차시, 쌓기나무는 6차시부터입니다.
   // ══════════════════════════════════════════════════════════════════
   {
+    id: 'hundred-money-step',
+    when: /백을 알아볼까요/,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '자료 해석 · 동전을 모아 100원을 만드는 과정 판단하기',
+    vars: {
+      tens: { from: 6, to: 9 },
+      more: { calc: '10 - tens' },
+    },
+    prompt: '10원짜리 동전 {tens}개에서 100원을 만드는 과정입니다. □에 알맞은 수는 얼마일까요?',
+    steps: [
+      '100원은 10원짜리 10개와 같습니다.',
+      '지금 {tens}개가 있으므로 □개가 더 있어야 합니다.',
+    ],
+    answer: '{more}',
+    wrongs: ['{tens}', '10', '{more + 1}'],
+    solution: '10개에서 {tens}개를 빼면 {more}개가 더 필요합니다.',
+  },
+  {
+    id: 'stack-shape-two-step',
+    when: /여러 가지 모양으로 쌓아/,
+    demand: 'reason',
+    tag: 'solid',
+    strategy: '자료 해석 · 두 사람이 쌓은 것을 모으는 과정 판단하기',
+    vars: {
+      mine: { from: 4, to: 7 },
+      yours: { from: 2, to: 4 },
+      total: { calc: 'mine + yours' },
+    },
+    prompt: '두 사람이 쌓은 쌓기나무를 모으는 과정입니다. □에 알맞은 수는 얼마일까요?',
+    steps: [
+      '준서는 {mine}개, 지우는 {yours}개를 썼습니다.',
+      '{mine}+{yours}=□개입니다.',
+    ],
+    answer: '{total}',
+    wrongs: ['{mine}', '{yours}', '{total + 1}'],
+    solution: '{mine}+{yours}={total}개입니다.',
+  },
+  {
     id: 'triangle-count-step',
     when: /△을 알아보고 찾아/,
     demand: 'reason',
@@ -2992,6 +3031,45 @@ export const questionBank: Template[] = [
     ],
   },
   // ── 2-1 여러 가지 도형 · 삼각형·사각형·원 ────────────────────────
+  {
+    id: 'hundred-money-step',
+    when: /백을 알아볼까요/,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '자료 해석 · 동전을 모아 100원을 만드는 과정 판단하기',
+    vars: {
+      tens: { from: 6, to: 9 },
+      more: { calc: '10 - tens' },
+    },
+    prompt: '10원짜리 동전 {tens}개에서 100원을 만드는 과정입니다. □에 알맞은 수는 얼마일까요?',
+    steps: [
+      '100원은 10원짜리 10개와 같습니다.',
+      '지금 {tens}개가 있으므로 □개가 더 있어야 합니다.',
+    ],
+    answer: '{more}',
+    wrongs: ['{tens}', '10', '{more + 1}'],
+    solution: '10개에서 {tens}개를 빼면 {more}개가 더 필요합니다.',
+  },
+  {
+    id: 'stack-shape-two-step',
+    when: /여러 가지 모양으로 쌓아/,
+    demand: 'reason',
+    tag: 'solid',
+    strategy: '자료 해석 · 두 사람이 쌓은 것을 모으는 과정 판단하기',
+    vars: {
+      mine: { from: 4, to: 7 },
+      yours: { from: 2, to: 4 },
+      total: { calc: 'mine + yours' },
+    },
+    prompt: '두 사람이 쌓은 쌓기나무를 모으는 과정입니다. □에 알맞은 수는 얼마일까요?',
+    steps: [
+      '준서는 {mine}개, 지우는 {yours}개를 썼습니다.',
+      '{mine}+{yours}=□개입니다.',
+    ],
+    answer: '{total}',
+    wrongs: ['{mine}', '{yours}', '{total + 1}'],
+    solution: '{mine}+{yours}={total}개입니다.',
+  },
   {
     id: 'triangle-count-step',
     when: /△을 알아보고 찾아/,
