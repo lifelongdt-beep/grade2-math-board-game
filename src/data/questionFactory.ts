@@ -14106,14 +14106,6 @@ const questionsFor = (
   const shapeSeen = new Map<string, number>();
   const taken = (shape: string) => shapeSeen.get(shape) ?? 0;
 
-  // 한 답이 차지할 수 있는 자리 수입니다.
-  //
-  // '백을 알아볼까요' 하 수준은 서른 문제 가운데 스무 개의 답이 100이었습니다.
-  // 문제가 서로 달라도 답이 같으면 아이는 두어 번 만에 알아채고, 그다음부터는
-  // 문제를 읽지 않고 100을 고릅니다. 묻는 것이 달라지려면 답도 달라져야 합니다.
-  const MOST_PER_ANSWER = 4;
-  const answerSeen = new Map<string, number>();
-  const answerTaken = (answer: string) => answerSeen.get(answer) ?? 0;
 
   for (let slot = 0; slot < 30; slot += 1) {
     const first = buildQuestionAt(lesson, difficulty, slot);
@@ -14127,20 +14119,13 @@ const questionsFor = (
     // 한 모양이 자리를 다 먹는지는 그 밖의 자리에서만 봅니다. 풀이 과정
     // 자리의 모양은 그 안에서 늘려야 합니다 — 상황이 여럿인 풀이를
     // 데이터로 적어 두면 됩니다.
-    const crowded = !isStepSlot(difficulty, slot)
-      && (taken(firstShape) >= MOST_PER_SHAPE || answerTaken(first.answer) >= MOST_PER_ANSWER);
+    const crowded = !isStepSlot(difficulty, slot) && taken(firstShape) >= MOST_PER_SHAPE;
     const avoided = avoidShapes?.has(firstShape) ?? false;
 
     let question = first;
     if (seen.has(first.prompt) || crowded || avoided) {
-      // 답까지 새것인 쪽을 먼저 찾되, 없으면 모양만 새것인 쪽이라도
-      // 씁니다. 답 제한을 딱딱하게 걸었더니 쓸 만한 후보를 걷어차서
-      // 한 차시의 모양이 여섯에서 다섯으로 줄었습니다 — 답이 겹치는
-      // 것보다 문제가 똑같아 보이는 것이 더 나쁩니다.
       let sameKind: Question | null = null;
       let anyFresh: Question | null = null;
-      let sameKindLoose: Question | null = null;
-      let anyFreshLoose: Question | null = null;
 
       for (let again = 1; again <= 8; again += 1) {
         const other = buildQuestionAt(lesson, difficulty, slot + again * 30);
@@ -14149,21 +14134,12 @@ const questionsFor = (
         if (avoidShapes?.has(shape)) continue;
         if (taken(shape) >= MOST_PER_SHAPE) continue;
 
-        // 그림이 있던 자리는 그림이 있는 것으로만 바꿉니다.
-        if (first.visual && !other.visual) continue;
-        const kindFits = isRichQuestion(other) === wantsRich;
-        if (!anyFreshLoose) anyFreshLoose = other;
-        if (kindFits && !sameKindLoose) sameKindLoose = other;
-
-        if (answerTaken(other.answer) < MOST_PER_ANSWER) {
-          if (!anyFresh) anyFresh = other;
-          if (kindFits) { sameKind = other; break; }
+        if (!anyFresh) anyFresh = other;
+        if (isRichQuestion(other) === wantsRich) {
+          sameKind = other;
+          break;
         }
       }
-
-      // sameKind에 무른 후보를 미리 섞으면 데이터 문항 차례가 오지
-      // 않습니다. 무른 것은 데이터 문항 뒤에서만 씁니다.
-      anyFresh = anyFresh ?? anyFreshLoose;
 
       // 자리의 갈래를 지키며 찾아도 없으면, 데이터로 적어 둔 문항에서
       // 가져옵니다. 풀이 과정 생성기는 차시마다 한 모양뿐이라, 번호를
@@ -14174,33 +14150,14 @@ const questionsFor = (
       // 문제 글은 새것을 내놓아, anyFresh가 늘 차 있었습니다. 그래서 답을
       // 갈라 줄 문항을 새로 써 넣어도 화면까지 오지 못했습니다.
       // 답이 넘친 자리에서는 데이터 문항을 먼저 봅니다.
-      // 문제풀에서 한 번만 꺼내 보면, 하필 꺼낸 것이 이미 넘친 답이면
-      // 그냥 포기했습니다. '백을 알아볼까요'에는 답이 1·99·2개인 문항을
-      // 써 두었는데도 답 100짜리를 먼저 꺼내는 바람에 한 번도 쓰이지
-      // 않았습니다. 쓸 만한 것이 나올 때까지 자리를 옮겨 가며 꺼냅니다.
-      let fromBank: Question | null = null;
-      if (crowded) {
-        for (let step = 0; step < 8; step += 1) {
-          const candidate = bankQuestion(lesson, difficulty, slot + step);
-          if (!candidate) break;
-          if (seen.has(candidate.prompt)) continue;
-          const candidateShape = shapeOfPrompt(candidate.prompt);
-          if (taken(candidateShape) >= MOST_PER_SHAPE) continue;
-          if (avoidShapes?.has(candidateShape)) continue;
-          if (answerTaken(candidate.answer) >= MOST_PER_ANSWER) continue;
-          // 그 자리가 맡은 몫을 지킵니다. 자료를 읽는 자리에 데이터 문항을
-          // 끼워 넣었더니 상 수준의 자료 해석 문항이 열에서 아홉으로
-          // 줄었습니다 — 답이 겹치는 것보다 수준이 무너지는 것이 나쁩니다.
-          if (isRichQuestion(candidate) !== wantsRich) continue;
-          // 그림이 있던 자리에 그림 없는 문항을 끼우면 그 차시의 그림
-          // 수가 줄어듭니다. 표와 그래프처럼 그림이 곧 문제인 차시에서는
-          // 답이 겹치는 것보다 그림이 사라지는 것이 더 나쁩니다.
-          if (first.visual && !candidate.visual) continue;
-          fromBank = candidate;
-          break;
-        }
-      }
-      const bankUsable = fromBank !== null;
+      const fromBank = sameKind || anyFresh || !crowded
+        ? null
+        : bankQuestion(lesson, difficulty, slot);
+      const bankShape = fromBank ? shapeOfPrompt(fromBank.prompt) : '';
+      const bankUsable = fromBank
+        && !seen.has(fromBank.prompt)
+        && taken(bankShape) < MOST_PER_SHAPE
+        && !(avoidShapes?.has(bankShape) ?? false);
 
       // 겹치는 것을 피하는 일보다 그 자리의 몫을 지키는 일이 먼저입니다.
       // 자료를 읽는 자리인데 같은 갈래가 없으면, 다른 갈래로 바꾸느니
@@ -14208,14 +14165,12 @@ const questionsFor = (
       // 것은 눈에 보이지 않습니다.
       question = sameKind
         ?? (bankUsable && fromBank ? fromBank : null)
-        ?? sameKindLoose
         ?? (wantsRich ? first : anyFresh ?? first);
     }
 
     seen.add(question.prompt);
     const shape = shapeOfPrompt(question.prompt);
     shapeSeen.set(shape, taken(shape) + 1);
-    answerSeen.set(question.answer, answerTaken(question.answer) + 1);
     made.push(question);
   }
 
