@@ -64,6 +64,26 @@ export const questionBank: Template[] = [
   // ── 2-1 덧셈과 뺄셈 · 더 여러 가지로 묻기 ────────────────────────
   // ── 2-1 길이 재기 ────────────────────────────────────────────────
   {
+    id: 'guess-first-body-step',
+    when: /길이를 어림하고/,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '자료 해석 · 몸의 부분으로 어림한 과정 판단하기',
+    vars: {
+      span: { from: 12, to: 15 },
+      times: { from: 3, to: 6 },
+      total: { calc: 'span * times' },
+    },
+    prompt: '뼘으로 책상의 길이를 어림하는 과정입니다. □에 알맞은 수는 얼마일까요?',
+    steps: [
+      '내 한 뼘은 약 {span}cm입니다.',
+      '책상이 {times}뼘이면 약 □cm입니다.',
+    ],
+    answer: '{total}',
+    wrongs: ['{span}', '{times}', '{total + span}'],
+    solution: '{span}씩 {times}묶음이므로 약 {total}cm입니다.',
+  },
+  {
     id: 'guess-first-two-claims',
     when: /길이를 어림하고/,
     demand: 'reason',
