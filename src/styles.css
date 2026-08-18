@@ -1379,6 +1379,11 @@ button:disabled {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.96));
 }
 
+/* 칠판은 멀리서 보고 손으로 누릅니다. 개인 화면보다 조금 큽니다. */
+.player-lanes:not(.individual) .choice-grid button {
+  min-height: 56px;
+}
+
 .player-lanes.individual .choice-grid button {
   min-height: 46px;
   grid-template-columns: 28px 1fr;
@@ -1495,6 +1500,10 @@ button:disabled {
 .choice-grid {
   display: grid;
   gap: 5px;
+  /* 판이 보기보다 높을 때 보기는 아래쪽에 섭니다. 위로 떠 있으면
+     칠판 앞 아이가 팔을 더 뻗어야 합니다. */
+  align-content: end;
+  grid-auto-rows: min-content;
 }
 
 .choice-grid button {
@@ -4839,17 +4848,20 @@ body::before {
    굴리면 문제가 위로 밀려 나가고, 문제를 붙여 두면 보기 위에 겹칩니다.
    둘 다 겪었습니다 — 겹치는 것보다 보기 판 안에서 구르는 편이 낫습니다. */
 .player-lane:has(.choice-grid.picture-choices) {
-  grid-template-rows: auto auto auto auto minmax(120px, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto minmax(120px, auto);
   overflow: hidden;
 }
 
 .player-lane .student-answer-dock,
 .player-lane:has(.choice-grid.picture-choices) .student-answer-dock {
-  /* 판이 제 줄보다 커지면 가운데 맞춤 때문에 위아래로 똑같이 삐져나와,
-     위쪽이 문제 글과 표를 덮었습니다. 줄에 맞춰 세우면 넘치는 만큼은
-     판 안에서 구르게 됩니다. */
-  align-self: stretch;
-  height: 100%;
+  /* 판을 줄에 맞춰 늘이면(stretch) 보기 상자가 함께 부풀어, 글자 한
+     줄짜리 보기가 280px 상자가 되었습니다. 이제 판은 제 키만 쓰고 줄
+     아래쪽에 붙습니다. 남는 자리는 위쪽 빈 줄이 받습니다.
+     키가 지나치게 커지면 화면 가운데 위까지 손을 뻗어야 하므로 한계를
+     두고, 넘치는 만큼은 판 안에서 구르게 합니다. */
+  align-self: end;
+  height: auto;
+  max-height: 46vh;
   min-height: 0;
   overflow-y: auto;
   /* 넷 중 넷째가 아래에 숨을 수 있으니, 구를 수 있다는 것이 보여야 합니다. */
@@ -5274,11 +5286,16 @@ body::before {
    늘 마지막 칸에 서고, 남는 자리는 문제 칸이 받습니다.
    빈 칸이 사이 여백까지 먹지 않도록 gap 대신 각자 아래 여백을 씁니다. */
 .player-lane.student-question:not(.finished-result) {
-  /* 문제는 제 키를 다 씁니다. 잘린 문제는 읽을 방법이 없지만, 보기는
-     굴려서 볼 수 있습니다. 그래서 남는 자리를 받는 쪽은 보기 판입니다.
-     보기 판은 한 칸 넘게 남깁니다 — 0으로 눌리면 고를 것이 아예
-     보이지 않습니다. */
-  grid-template-rows: auto auto auto auto minmax(120px, 1fr);
+  /* 남는 자리는 문제 '위'로 보냅니다.
+     전자칠판 앞에 선 2학년은 키가 작아 화면 가운데 위쪽에 손이 닿지
+     않습니다. 남는 자리를 보기 판이 받게 두었더니 보기 상자가 280px씩
+     부풀고 문제는 위로 밀려, 아이가 고개를 들어 문제를 읽고 팔을 뻗어
+     보기를 눌러야 했습니다. 빈 줄을 문제 앞에 두면 문제도 보기도
+     아래쪽으로 내려옵니다.
+     보기 판은 제 키만 쓰되 한 칸 넘게는 남기고, 넘치면 판 안에서
+     구릅니다 — 잘린 문제는 읽을 방법이 없지만 보기는 굴려 볼 수 있어
+     문제가 먼저입니다. */
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto minmax(120px, auto);
   gap: 0;
 }
 
@@ -5291,18 +5308,19 @@ body::before {
   grid-row: 2;
 }
 
+/* 3번 줄은 비워 둡니다. 남는 자리가 여기 고입니다. */
 .player-lane.student-question:not(.finished-result) > .student-question-body {
-  grid-row: 3;
-  margin-bottom: 7px;
-}
-
-.player-lane.student-question:not(.finished-result) > .student-feedback {
   grid-row: 4;
   margin-bottom: 7px;
 }
 
-.player-lane.student-question:not(.finished-result) > .student-answer-dock {
+.player-lane.student-question:not(.finished-result) > .student-feedback {
   grid-row: 5;
+  margin-bottom: 7px;
+}
+
+.player-lane.student-question:not(.finished-result) > .student-answer-dock {
+  grid-row: 6;
 }
 
 /* ── 자리끼리 서로 밀지 않게 ────────────────────────────────────────
