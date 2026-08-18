@@ -4839,12 +4839,11 @@ body::before {
    굴리면 문제가 위로 밀려 나가고, 문제를 붙여 두면 보기 위에 겹칩니다.
    둘 다 겪었습니다 — 겹치는 것보다 보기 판 안에서 구르는 편이 낫습니다. */
 .player-lane:has(.choice-grid.picture-choices) {
-  /* 문제가 아무리 길어도 보기 판은 한 칸 넘게 남깁니다. 0으로 눌리면
-     고를 것이 아예 보이지 않습니다. */
-  grid-template-rows: auto auto minmax(150px, 1fr) auto;
+  grid-template-rows: auto auto auto auto minmax(120px, 1fr);
   overflow: hidden;
 }
 
+.player-lane .student-answer-dock,
 .player-lane:has(.choice-grid.picture-choices) .student-answer-dock {
   /* 판이 제 줄보다 커지면 가운데 맞춤 때문에 위아래로 똑같이 삐져나와,
      위쪽이 문제 글과 표를 덮었습니다. 줄에 맞춰 세우면 넘치는 만큼은
@@ -5275,9 +5274,11 @@ body::before {
    늘 마지막 칸에 서고, 남는 자리는 문제 칸이 받습니다.
    빈 칸이 사이 여백까지 먹지 않도록 gap 대신 각자 아래 여백을 씁니다. */
 .player-lane.student-question:not(.finished-result) {
-  /* 문제 칸에 바닥을 둡니다. 도움말이 길면 1fr이 0까지 눌려 문제가
-     통째로 사라졌습니다. 두 줄은 늘 보이고 나머지는 굴려서 읽습니다. */
-  grid-template-rows: auto auto minmax(150px, 1fr) auto auto;
+  /* 문제는 제 키를 다 씁니다. 잘린 문제는 읽을 방법이 없지만, 보기는
+     굴려서 볼 수 있습니다. 그래서 남는 자리를 받는 쪽은 보기 판입니다.
+     보기 판은 한 칸 넘게 남깁니다 — 0으로 눌리면 고를 것이 아예
+     보이지 않습니다. */
+  grid-template-rows: auto auto auto auto minmax(120px, 1fr);
   gap: 0;
 }
 
