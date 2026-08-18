@@ -5196,10 +5196,20 @@ body::before {
 
 .class-goal-prize {
   position: absolute;
-  right: -4px;
+  right: -6px;
   top: 50%;
   transform: translate(0, -50%);
-  font-size: 20px;
+  /* 길이 40px로 넓어졌는데 선물이 20px 그대로라 길 끝에 붙은 점처럼
+     보였습니다. 아이들이 달려가는 곳이니 길만큼 커야 합니다. */
+  font-size: 34px;
+  filter: drop-shadow(0 0 8px rgba(255, 224, 102, 0.75));
+  /* 가만히 있으면 그냥 그림입니다. 천천히 부풀었다 줄며 기다립니다. */
+  animation: goal-wait 1.8s ease-in-out infinite;
+}
+
+@keyframes goal-wait {
+  0%, 100% { transform: translate(0, -50%) scale(1); }
+  50% { transform: translate(0, -50%) scale(1.12); }
 }
 
 .class-goal-prize.near {
@@ -5221,7 +5231,7 @@ body::before {
    순간이라, 눈에 보이는 것도 소리만큼 커야 합니다. */
 .class-goal-prize.open {
   animation: prize-open 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) 1;
-  font-size: 26px;
+  font-size: 46px;
 }
 
 .class-goal-confetti {
