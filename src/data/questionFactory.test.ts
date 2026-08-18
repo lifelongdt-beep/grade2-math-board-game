@@ -380,18 +380,27 @@ describe('questionFactory', () => {
           expect(question.visual?.kind, question.id).toBe('plane-shapes');
           if (question.visual?.kind !== 'plane-shapes') continue;
 
-          const activeKinds = question.visual.items.filter((item) => item.active).map((item) => item.kind);
+          // 말한 도형이 그림에 있어야 합니다. 예전에는 '색이 칠해진
+          // 도형'으로 보았는데, 그것은 '삼각형은 어느 것일까요?'에서
+          // 답을 색으로 짚어 주던 때의 기준입니다. 지금은 고르라는
+          // 문제에서 색을 칠하지 않으므로, 그려져 있는지만 봅니다.
+          const kinds = question.visual.items.map((item) => item.kind);
 
           if (target === '원') {
-            expect(activeKinds, question.id).toContain('circle');
+            expect(kinds, question.id).toContain('circle');
           }
 
           if (target === '삼각형') {
-            expect(activeKinds, question.id).toContain('triangle');
+            // 한쪽이 벌어진 도형은 '삼각형이 아닌 까닭'을 묻는 문제의
+            // 반례입니다. 삼각형 이야기를 하는 그림이 맞습니다.
+            expect(
+              kinds.some((kind) => kind === 'triangle' || kind === 'open-triangle'),
+              question.id,
+            ).toBe(true);
           }
 
           if (target === '사각형') {
-            expect(activeKinds.some((kind) => kind === 'square' || kind === 'rectangle'), question.id).toBe(true);
+            expect(kinds.some((kind) => kind === 'square' || kind === 'rectangle'), question.id).toBe(true);
           }
         }
       }
