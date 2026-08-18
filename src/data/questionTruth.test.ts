@@ -189,6 +189,30 @@ describe('the maths in each question is true', () => {
     expect([...new Set(mismatched)]).toEqual([]);
   });
 
+  it('keeps the later time lessons off the clock face', () => {
+    // 달력 차시의 절반이 '긴바늘이 한 칸 움직이면'과 '몇 분 걸렸을까요'
+    // 였습니다. 태그가 time이라는 것만 보고 문항을 골랐기 때문입니다.
+    // 하루와 달력은 시계에서 분을 읽는 차시가 아닙니다.
+    const strayed: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      const lesson = lessons.find((one) => one.id === lessonId);
+      if (!lesson || lesson.unitTitle !== '시각과 시간') continue;
+      if (!/하루|달력/.test(lesson.title)) continue;
+
+      const asked = question.basePrompt ?? question.prompt;
+      // 짧은바늘은 하루를 이야기할 때 쓸 일이 있습니다. 분을 읽는
+      // 이야기만 봅니다.
+      const stray = /긴바늘|작은 눈금/.exec(asked)
+        ?? (/달력/.test(lesson.title) ? /걸린 시간|몇 분이 걸렸/.exec(asked) : null);
+      if (stray) {
+        strayed.push(`${lessonId} ${level} ${question.id}: ${stray[0]} — ${asked}`);
+      }
+    }
+
+    expect([...new Set(strayed)]).toEqual([]);
+  });
+
   it('keeps each shape lesson to its own shape', () => {
     // 삼각형 차시에 '생활 장면에서 원 찾기'가 나왔습니다. 차시가 다루는
     // 도형을 차시 번호로 짚어 두었는데 그 표가 실제 차시와 어긋나

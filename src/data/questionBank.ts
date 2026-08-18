@@ -10092,7 +10092,7 @@ export const questionBank: Template[] = [
     vars: {},
     prompt: '시계에서 짧은바늘은 무엇을 나타낼까요?',
     answer: '몇 시인지',
-    wrongs: ['몇 분인지', '며칠인지', '무슨 요일인지'],
+    wrongs: ['몇 분인지', '며칠인지', '어느 쪽으로 도는지'],
     solution: '짧은바늘은 시, 긴바늘은 분을 나타냅니다.',
   },
   {
@@ -10136,7 +10136,7 @@ export const questionBank: Template[] = [
     when: /몇 시 몇 분을 읽어 볼까요 ⑵/,
     demand: 'reason',
     tag: 'time',
-    strategy: '작은 눈금 한 칸의 뜻 판단하기',
+    strategy: '조건 함께 보기 · 작은 눈금 한 칸의 뜻 판단하기',
     vars: {},
     prompt: '작은 눈금 한 칸이 1분인 까닭으로 알맞은 것은 어느 것일까요?',
     answer: '숫자 사이 5칸이 5분이기 때문입니다',
