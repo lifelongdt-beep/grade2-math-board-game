@@ -925,12 +925,16 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
   if ((title.includes('백을 알아') || title.includes('천을 알아')) && !title.includes('몇')) {
     const below = unitBase - (four ? 100 : 10);
     if (variant === 0) {
+      // 예전에는 '{below}보다 얼마만큼 더 큰 수는?'을 물어 답이 늘
+      // 100이었습니다. 사이를 묻는 쪽으로 뒤집으면 같은 사실을 다루면서
+      // 답이 달라집니다.
+      const gap = four ? 100 : 10;
       return makeQuestion(
         lesson, difficulty, index,
-        `${below}보다 ${four ? 100 : 10}만큼 더 큰 수는 얼마일까요?`,
-        unitBase, [below, unitBase + (four ? 100 : 10), four ? 100 : 10],
-        `${below}에서 ${four ? 100 : 10}만큼 더 크면 ${unitBase}입니다.`,
-        'number', `${unitName}이 되는 과정 알기`,
+        `${unitBase}은 ${below}보다 얼마만큼 더 큰 수일까요?`,
+        gap, [1, unitBase, below],
+        `${below}에서 ${gap}만큼 더 크면 ${unitBase}입니다.`,
+        'number', `${unitName}과 이웃한 수의 사이 알기`,
       );
     }
     if (variant === 1) {
@@ -954,11 +958,12 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       );
     }
     if (variant === 3) {
+      // 이것도 답이 100이었습니다. 바로 앞의 수를 묻는 쪽으로 바꿉니다.
       return makeQuestion(
         lesson, difficulty, index,
-        `${unitBase - 1}보다 1만큼 더 큰 수는 얼마일까요?`,
-        unitBase, [unitBase - 2, unitBase + 1, unitBase - 10],
-        `${unitBase - 1} 다음 수는 ${unitBase}입니다.`,
+        `${unitBase}보다 1만큼 더 작은 수는 얼마일까요?`,
+        unitBase - 1, [unitBase - 2, unitBase + 1, unitBase - 10],
+        `${unitBase} 바로 앞의 수는 ${unitBase - 1}입니다.`,
         'number', `${unitName} 바로 앞의 수 알기`,
       );
     }
