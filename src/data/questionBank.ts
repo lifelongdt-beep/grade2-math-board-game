@@ -64,6 +64,43 @@ export const questionBank: Template[] = [
   // ── 2-1 덧셈과 뺄셈 · 더 여러 가지로 묻기 ────────────────────────
   // ── 2-1 길이 재기 ────────────────────────────────────────────────
   {
+    id: 'guess-first-two-claims',
+    when: /길이를 어림하고/,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '자료 해석 · 두 사람의 어림을 하나씩 판단하기',
+    vars: {
+      real: { from: 12, to: 24 },
+      near: { from: 1, to: 3 },
+      far: { from: 6, to: 9 },
+      mine: { calc: 'real - near' },
+      yours: { calc: 'real - far' },
+    },
+    prompt: '실제 길이가 {real}cm인데 준서는 약 {mine}cm, 지우는 약 {yours}cm로 어림했습니다.',
+    claims: [
+      { text: '준서가 더 가깝게 어림했습니다.', ok: true },
+      { text: '준서는 {near}cm, 지우는 {far}cm 차이가 납니다.', ok: true },
+      { text: '지우가 더 가깝게 어림했습니다.', ok: false },
+      { text: '두 사람의 어림이 똑같습니다.', ok: false },
+    ],
+  },
+  {
+    id: 'times-name-write',
+    when: /몇의 몇 배를 알아/,
+    demand: 'recall',
+    tag: 'multiplication',
+    strategy: '배를 나타낸 말 고르기',
+    vars: {
+      per: { from: 2, to: 6 },
+      times: { from: 2, to: 5 },
+      total: { calc: 'per * times' },
+    },
+    prompt: '{total}이 {per}씩 {times}묶음일 때 이것을 나타낸 말로 알맞은 것은 어느 것일까요?',
+    answer: '{per}의 {times}배',
+    wrongs: ['{total}의 {per}배', '{times}의 {total}배', '{per}의 {total}배'],
+    solution: '한 묶음이 {per}이고 묶음이 {times}개이므로 {per}의 {times}배입니다.',
+  },
+  {
     id: 'cm-compare-step',
     when: /1cm를 알아/,
     demand: 'reason',
@@ -207,7 +244,7 @@ export const questionBank: Template[] = [
     when: /몇의 몇 배를 알아/,
     demand: 'recall',
     tag: 'multiplication',
-    strategy: '한 묶음의 수와 묶음 수로 몇 배인지 말하기',
+    strategy: '몇씩 몇 자리인지로 배 말하기',
     vars: {
       per: { from: 2, to: 6 },
       times: { from: 3, to: 6 },
