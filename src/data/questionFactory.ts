@@ -403,10 +403,26 @@ const enforceSecondGradeLanguage = (question: Question): Question => {
   };
 };
 
-const rotate = <T,>(items: T[], seed: number): T[] => {
+// 보기를 섞습니다.
+//
+// 예전에는 자리마다 j를 (seed * 13 + i * 7) % (i + 1)로 잡았습니다. 한
+// 씨앗에서 나오는 값들이 서로 붙어 있어 24가지 차례 가운데 절반쯤만
+// 나왔고, 정답이 1번 자리에 33%, 2번 자리에 17%로 앉았습니다(고르면
+// 25%씩이어야 합니다). 아이는 '1번부터 보면 된다'를 먼저 배웁니다.
+//
+// 자리마다 서로 멀리 떨어진 값을 뽑아야 고르게 섞입니다.
+const shuffled = <T,>(items: T[], seed: number): T[] => {
   const copy = [...items];
+  // 0이 들어오면 아래 셈이 계속 0을 내놓아 섞이지 않습니다.
+  let state = (seed >>> 0) || 0x9e3779b9;
+  const next = () => {
+    state ^= state << 13; state >>>= 0;
+    state ^= state >>> 17;
+    state ^= state << 5; state >>>= 0;
+    return state;
+  };
   for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = (seed * 13 + i * 7) % (i + 1);
+    const j = next() % (i + 1);
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
@@ -433,7 +449,7 @@ const makeChoices = (answer: string | number, wrongs: Array<string | number>, se
     }
     delta += 1;
   }
-  const options = rotate(unique.slice(0, 4), seed);
+  const options = shuffled(unique.slice(0, 4), seed);
   return {
     options,
     answerIndex: options.indexOf(answerText),
@@ -7802,7 +7818,7 @@ const singleTargetBoard = (target: PlaneTarget, index: number): { visual: Questi
   };
   const activeSlot = index % 4;
   const labels = ['1', '2', '3', '4'];
-  const distractors = rotate(distractorsByTarget[target], index);
+  const distractors = shuffled(distractorsByTarget[target], index);
   let distractorIndex = 0;
   // 답이 되는 도형에만 색을 칠하면 번호를 세어 볼 까닭이 없어집니다.
   // 넷을 모두 같은 색으로 그리고, 아이가 도형을 보고 번호를 고릅니다.
@@ -8251,7 +8267,7 @@ const planeShapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
 
   if (variant === 2) {
     const object = fact.objects[index % fact.objects.length];
-    const wrongs = rotate([...fact.nearMisses], index).slice(0, 3);
+    const wrongs = shuffled([...fact.nearMisses], index).slice(0, 3);
     return makeQuestion(
       lesson,
       difficulty,
@@ -14090,6 +14106,15 @@ const questionsFor = (
   const shapeSeen = new Map<string, number>();
   const taken = (shape: string) => shapeSeen.get(shape) ?? 0;
 
+  // 한 답이 차지할 수 있는 자리 수입니다.
+  //
+  // '백을 알아볼까요' 하 수준은 서른 문제 가운데 스무 개의 답이 100이었습니다.
+  // 문제가 서로 달라도 답이 같으면 아이는 두어 번 만에 알아채고, 그다음부터는
+  // 문제를 읽지 않고 100을 고릅니다. 묻는 것이 달라지려면 답도 달라져야 합니다.
+  const MOST_PER_ANSWER = 4;
+  const answerSeen = new Map<string, number>();
+  const answerTaken = (answer: string) => answerSeen.get(answer) ?? 0;
+
   for (let slot = 0; slot < 30; slot += 1) {
     const first = buildQuestionAt(lesson, difficulty, slot);
     // 그 자리가 맡고 있던 몫입니다. 자료를 읽고 조건을 함께 보는 문항이
@@ -14102,7 +14127,8 @@ const questionsFor = (
     // 한 모양이 자리를 다 먹는지는 그 밖의 자리에서만 봅니다. 풀이 과정
     // 자리의 모양은 그 안에서 늘려야 합니다 — 상황이 여럿인 풀이를
     // 데이터로 적어 두면 됩니다.
-    const crowded = !isStepSlot(difficulty, slot) && taken(firstShape) >= MOST_PER_SHAPE;
+    const crowded = !isStepSlot(difficulty, slot)
+      && (taken(firstShape) >= MOST_PER_SHAPE || answerTaken(first.answer) >= MOST_PER_ANSWER);
     const avoided = avoidShapes?.has(firstShape) ?? false;
 
     let question = first;
@@ -14116,6 +14142,7 @@ const questionsFor = (
         const shape = shapeOfPrompt(other.prompt);
         if (avoidShapes?.has(shape)) continue;
         if (taken(shape) >= MOST_PER_SHAPE) continue;
+        if (answerTaken(other.answer) >= MOST_PER_ANSWER) continue;
         if (!anyFresh) anyFresh = other;
         if (isRichQuestion(other) === wantsRich) {
           sameKind = other;
@@ -14134,6 +14161,7 @@ const questionsFor = (
       const bankUsable = fromBank
         && !seen.has(fromBank.prompt)
         && taken(bankShape) < MOST_PER_SHAPE
+        && answerTaken(fromBank.answer) < MOST_PER_ANSWER
         && !(avoidShapes?.has(bankShape) ?? false);
 
       // 겹치는 것을 피하는 일보다 그 자리의 몫을 지키는 일이 먼저입니다.
@@ -14148,6 +14176,7 @@ const questionsFor = (
     seen.add(question.prompt);
     const shape = shapeOfPrompt(question.prompt);
     shapeSeen.set(shape, taken(shape) + 1);
+    answerSeen.set(question.answer, answerTaken(question.answer) + 1);
     made.push(question);
   }
 
