@@ -720,8 +720,11 @@ const inferQuestionVisual = (
 
   if (targetShape) {
     const drawn = planeVisualForTarget(targetShape, index);
-    // 찾거나 고르라고 하는 문제에서는 색으로 답을 짚어 주지 않습니다.
-    return /어느 것|찾|고르|골라/.test(prompt) ? withoutHighlight(drawn) : drawn;
+    // 답이 도형 이름인 문제에서는 색으로 답을 짚어 주지 않습니다.
+    // '원을 찾을 때 확인할 성질은?'처럼 답이 성질인 문제는 그 도형을
+    // 짚어 주는 것이 도움이 되므로 그대로 둡니다.
+    const picksAShape = ['원', '삼각형', '사각형'].includes(String(answer));
+    return picksAShape && /어느 것|찾|고르|골라/.test(prompt) ? withoutHighlight(drawn) : drawn;
   }
 
   if (source.includes('칠교')) {

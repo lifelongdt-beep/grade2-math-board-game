@@ -199,6 +199,11 @@ describe('the maths in each question is true', () => {
       const visual = question.visual;
       if (!visual || visual.kind !== 'plane-shapes') continue;
 
+      // 답이 도형 이름인 문제만 봅니다. '원을 찾을 때 확인할 성질은?'의
+      // 답은 성질이므로, 그림에서 원을 짚어 주는 것은 도움이지 답이
+      // 아닙니다.
+      if (!['원', '삼각형', '사각형'].includes(question.answer)) continue;
+
       const asked = question.basePrompt ?? question.prompt;
       if (!/어느 것|찾|고르|골라/.test(asked)) continue;
       if (!visual.items.some((item) => item.active)) continue;
