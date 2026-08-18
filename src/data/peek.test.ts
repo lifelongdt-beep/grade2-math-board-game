@@ -1,20 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { lessons } from './curriculum';
-import { generateQuestions } from './questionFactory';
+import { questionBank } from './questionBank';
 
 describe('peek', () => {
-  it('ranks repeated answers', () => {
-    const worst: string[] = [];
-    for (const lesson of lessons) {
-      if (lesson.title === '단원 도입') continue;
-      for (const level of ['하', '중', '상'] as const) {
-        const tally = new Map<string, number>();
-        for (const q of generateQuestions(lesson, level)) tally.set(q.answer, (tally.get(q.answer) ?? 0) + 1);
-        const top = [...tally.entries()].sort((a, b) => b[1] - a[1])[0];
-        if (top && top[1] >= 8) worst.push(`${top[1]}회 ${lesson.id}|${level} '${top[0]}'`);
-      }
-    }
-    worst.sort((a, b) => Number.parseInt(b, 10) - Number.parseInt(a, 10));
-    expect([`8회 이상 ${worst.length}곳`, ...worst.slice(0, 16)]).toEqual([]);
+  it('lists templates reaching the hundred lesson', () => {
+    const lesson = lessons.find((one) => one.id === '2-1-u1-l2')!;
+    const out = questionBank
+      .filter((t) => (!t.units || t.units.includes(lesson.unitTitle))
+        && (!t.semester || t.semester === lesson.semester)
+        && t.when.test(lesson.title))
+      .map((t) => `${t.demand} ${t.id} => ${t.answer}${t.steps ? ' [steps]' : ''}`);
+    expect([`제목: ${lesson.title}`, `맞는 틀 ${out.length}개`, ...out]).toEqual([]);
   });
 });
