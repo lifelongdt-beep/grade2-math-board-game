@@ -11075,7 +11075,8 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (no >= 5) {
       const big = 10 * (5 + (seed % 4)) + (2 + (seed % 5));
       const small = 10 * (1 + (seed % 3)) + (6 + (seed % 3));
-      if (pick === 0) {
+      // 뺄셈을 덧셈으로 확인하는 것은 두 셈의 관계를 배운 뒤의 일입니다.
+      if (pick === 0 && /관계를 식으로/.test(lesson.title)) {
         return makeQuestion(
           lesson, difficulty, index,
           `${big}-${small}을 계산한 뒤 답이 맞는지 확인하는 방법으로 알맞은 것은?`,
@@ -12097,17 +12098,40 @@ const wordStepQuestion = (
     const b = 12 + ((seed + 5) % 25);
     if (a + b > limit) return null;
 
-    // 오고 간 상황은 더하고 빼기를 함께 씁니다. 세 수를 잇달아 계산하는
-    // 차시에서만 쓰고, 덧셈만 또는 뺄셈만 다루는 차시에는 넣지 않습니다.
-    if (situation === 1 && /세 수의 계산/.test(lesson.title)) {
-      const gone = 5 + (seed % 10);
-      if (a + b - gone < 1) return null;
+    // 두 셈의 관계를 배우는 차시입니다. 전체와 부분을 갈라 보는 상황이
+    // 그 차시가 가르치는 일이라, 한 번만 더하는 문장제로 채우면 안 됩니다.
+    if (/관계를 식으로/.test(lesson.title)) {
+      const scene = [
+        { where: '모둠', one: '남학생', other: '여학생', unit: '명' },
+        { where: '바구니', one: '사과', other: '배', unit: '개' },
+        { where: '책꽂이', one: '동화책', other: '그림책', unit: '권' },
+      ][situation];
       return makeQuestion(
         lesson, difficulty, index,
-        `운동장에 학생이 ${a}명 있었습니다. ${b}명이 더 오고 ${gone}명이 집에 갔습니다. 지금 운동장에 있는 학생 수를 구하는 과정입니다. □에 알맞은 수는? ① 더 온 만큼 더합니다. ② ${a}+${b}=${a + b}명입니다. ③ ${a + b}-${gone}=□`,
-        `${a + b - gone}명`,
-        [`${a + b}명`, `${a + b + gone}명`, `${Math.max(1, a - gone)}명`],
-        `더 온 만큼 더하고 간 만큼 빼면 ${a + b - gone}명입니다.`,
+        `${scene.where}에 ${scene.one} ${a}${scene.unit}과 ${scene.other} ${b}${scene.unit}이 있어 모두 ${a + b}${scene.unit}입니다. ${scene.other} 수를 구하는 과정입니다. □에 알맞은 수는? ① 전체는 ${a + b}${scene.unit}입니다. ② 부분 하나는 ${a}${scene.unit}입니다. ③ ${a + b}-${a}=□`,
+        `${b}${scene.unit}`,
+        [`${a}${scene.unit}`, `${a + b}${scene.unit}`, `${a + b + b}${scene.unit}`],
+        `전체에서 부분 하나를 빼면 남은 부분이 나옵니다. ${a + b}-${a}=${b}${scene.unit}입니다.`,
+        'subtraction', '전체와 부분을 가르는 풀이 한 곳 짚기',
+      );
+    }
+
+    // 세 수를 잇달아 계산하는 차시입니다. 한 번만 더하는 상황을 넣으면
+    // 그 차시가 요구하는 일보다 쉬워집니다.
+    if (/세 수의 계산/.test(lesson.title)) {
+      const gone = 5 + (seed % 10);
+      if (a + b - gone < 1) return null;
+      const scene = [
+        { where: '운동장에 학생이', came: '더 오고', left: '집에 갔습니다', what: '운동장에 있는 학생 수', unit: '명' },
+        { where: '버스에 사람이', came: '더 타고', left: '내렸습니다', what: '버스에 있는 사람 수', unit: '명' },
+        { where: '접시에 빵이', came: '더 놓이고', left: '먹었습니다', what: '접시에 남은 빵 수', unit: '개' },
+      ][situation];
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${scene.where} ${a}${scene.unit} 있었습니다. ${b}${scene.unit}이 ${scene.came} ${gone}${scene.unit}이 ${scene.left}. 지금 ${scene.what}를 구하는 과정입니다. □에 알맞은 수는? ① 늘어난 만큼 더합니다. ② ${a}+${b}=${a + b}${scene.unit}입니다. ③ ${a + b}-${gone}=□`,
+        `${a + b - gone}${scene.unit}`,
+        [`${a + b}${scene.unit}`, `${a + b + gone}${scene.unit}`, `${Math.max(1, a - gone)}${scene.unit}`],
+        `늘어난 만큼 더하고 줄어든 만큼 빼면 ${a + b - gone}${scene.unit}입니다.`,
         'addition', '오고 간 상황의 풀이 한 곳 짚기',
       );
     }
