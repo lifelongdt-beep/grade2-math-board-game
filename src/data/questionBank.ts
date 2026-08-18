@@ -10299,4 +10299,23 @@ export const questionBank: Template[] = [
     wrongs: ['7개월', '10개월', '24개월'],
     solution: '1월부터 12월까지 있으므로 1년은 12개월입니다.',
   },
+  {
+    id: 'three-numbers-give-then-get',
+    when: /세 수의 계산/,
+    demand: 'connect',
+    tag: 'addition',
+    // 이 차시에는 '더 받고 준' 상황만 있었습니다. 빼고 나서 더하는
+    // 차례도 겪어야 앞에서부터 차례로 계산하는 뜻이 살아납니다.
+    strategy: '조건 함께 보기 · 주고 받은 상황을 차례로 계산하기',
+    vars: {
+      have: { from: 30, to: 60 },
+      gave: { from: 5, to: 15 },
+      got: { from: 3, to: 12 },
+      left: { calc: 'have - gave + got' },
+    },
+    prompt: '구슬이 {have}개 있었습니다. 친구에게 {gave}개를 주고 다시 {got}개를 받았습니다. 지금 구슬은 몇 개일까요?',
+    answer: '{left}개',
+    wrongs: ['{have - gave}개', '{have + gave + got}개', '{have - gave - got}개'],
+    solution: '앞에서부터 차례로 계산합니다. {have}-{gave}={have - gave}, {have - gave}+{got}={left}개입니다.',
+  },
 ];
