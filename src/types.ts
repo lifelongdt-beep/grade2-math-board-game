@@ -98,7 +98,10 @@ export interface LearningSupport {
   selfCheck: string;
 }
 
-export type PlaneShapeKind = 'circle' | 'triangle' | 'square' | 'rectangle' | 'parallelogram';
+// open-triangle: 곧은 선 셋으로 그렸지만 한쪽이 벌어져 닫히지 않은
+// 도형입니다. '삼각형이 아닌 까닭'을 묻는 문제에는 삼각형이 아닌 것을
+// 보여 주어야 아이가 무엇을 살펴야 하는지 알 수 있습니다.
+export type PlaneShapeKind = 'circle' | 'triangle' | 'square' | 'rectangle' | 'parallelogram' | 'open-triangle';
 
 export interface PlaneShapeVisualItem {
   kind: PlaneShapeKind;

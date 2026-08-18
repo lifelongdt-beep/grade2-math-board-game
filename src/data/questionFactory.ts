@@ -718,6 +718,13 @@ const inferQuestionVisual = (
     (shapeName) => prompt.includes(shapeName) || String(answer) === shapeName || strategy.includes(shapeName),
   );
 
+  // '곧은 선 3개로 그렸는데 삼각형이 아니었습니다' — 이런 문제에는
+  // 삼각형이 아닌 것을 보여 주어야 합니다. 삼각형을 그려 놓고 왜
+  // 삼각형이 아니냐고 물으면 아이가 볼 것이 없습니다.
+  if (/삼각형이 아니었|삼각형이 아닌 까닭/.test(prompt)) {
+    return planeShapesVisual('한쪽이 벌어진 도형', [{ kind: 'open-triangle' }]);
+  }
+
   if (targetShape) {
     const drawn = planeVisualForTarget(targetShape, index);
     // 답이 도형 이름인 문제에서는 색으로 답을 짚어 주지 않습니다.

@@ -204,6 +204,12 @@ describe('the maths in each question is true', () => {
 
       // 무엇을 묻는지는 전략 이름에 적혀 있습니다. 오답 보기에 다른
       // 도형이 있는 것은 마땅한 일이라 보지 않습니다.
+      //
+      // 제 차시 도형을 함께 말하는 문항 — '사각형을 나누어 삼각형을
+      // 만드는 상황' — 은 그 차시가 다루는 일입니다. 다른 도형만
+      // 말하는 문항만 봅니다.
+      if (question.strategy.includes(mine)) continue;
+
       const others = ['삼각형', '사각형', '원'].filter((shape) => shape !== mine);
       const strayedTo = others.find((shape) => question.strategy.includes(shape));
       if (strayedTo) {

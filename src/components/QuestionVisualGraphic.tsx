@@ -33,6 +33,15 @@ const renderPlaneShape = (item: PlaneShapeVisualItem, index: number, total: numb
     );
   }
 
+  if (item.kind === 'open-triangle') {
+    return (
+      <g key={`${item.kind}-${index}`}>
+        {openTriangle(cx, cy, 76, style.stroke, style.strokeWidth)}
+        {label}
+      </g>
+    );
+  }
+
   if (item.kind === 'triangle') {
     return (
       <g key={`${item.kind}-${index}`}>
@@ -216,6 +225,23 @@ function UnitMeasureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind
     </svg>
   );
 }
+
+// 곧은 선 셋으로 그렸지만 한쪽이 벌어져 있는 도형입니다. 삼각형처럼
+// 보이지만 닫히지 않아 삼각형이 아닙니다.
+const openTriangle = (cx: number, cy: number, size: number, stroke: string, width: number) => {
+  const half = size / 2;
+  const top = `${cx},${cy - half}`;
+  const left = `${cx - half},${cy + half}`;
+  const right = `${cx + half},${cy + half}`;
+  // 아래 변을 짧게 그려 오른쪽을 벌려 둡니다.
+  const gapEnd = `${cx + half - size * 0.28},${cy + half}`;
+  return (
+    <g>
+      <polyline points={`${left} ${top} ${right}`} fill="none" stroke={stroke} strokeWidth={width} strokeLinejoin="round" strokeLinecap="round" />
+      <polyline points={`${left} ${gapEnd}`} fill="none" stroke={stroke} strokeWidth={width} strokeLinecap="round" />
+    </g>
+  );
+};
 
 function PlaneShapesGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'plane-shapes' }> }) {
   return (
