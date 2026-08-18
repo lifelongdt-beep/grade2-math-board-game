@@ -189,6 +189,36 @@ describe('the maths in each question is true', () => {
     expect([...new Set(mismatched)]).toEqual([]);
   });
 
+  it('does not let one answer own a lesson', () => {
+    // 아이가 '문제를 안 읽어도 정답만 보고 고르게 된다'고 했습니다. 재
+    // 보니 '백을 알아볼까요' 하 수준은 서른 문제 가운데 스무 개의 답이
+    // 100이었습니다. 묻는 말이 달라도 답이 같으면 두어 번 만에 들킵니다.
+    //
+    // 이 수는 내려가기만 해야 합니다. 올라간다면 답이 하나로 몰리는
+    // 차시를 새로 만든 것입니다.
+    const WORST_TODAY = 16;
+    let worst = 0;
+    let where = '';
+
+    for (const lesson of lessons) {
+      if (lesson.title === '단원 도입') continue;
+      for (const level of ['하', '중', '상'] as const) {
+        const tally = new Map<string, number>();
+        for (const question of generateQuestions(lesson, level)) {
+          tally.set(question.answer, (tally.get(question.answer) ?? 0) + 1);
+        }
+        for (const [answer, count] of tally) {
+          if (count > worst) {
+            worst = count;
+            where = `${lesson.id} ${level} '${answer}'`;
+          }
+        }
+      }
+    }
+
+    expect(worst, `한 답이 가장 많이 차지한 곳: ${where}`).toBeLessThanOrEqual(WORST_TODAY);
+  });
+
   it('never offers the same choice twice', () => {
     // '{left + eaten}개'가 곧 '{total}개'였습니다. 보기 넷 가운데 둘이
     // 같은 수라, 아이는 셋 중에서 고르면서 넷인 줄 압니다.
