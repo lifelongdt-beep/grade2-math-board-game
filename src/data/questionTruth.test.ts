@@ -196,7 +196,7 @@ describe('the maths in each question is true', () => {
     //
     // 이 수는 내려가기만 해야 합니다. 올라간다면 답이 하나로 몰리는
     // 차시를 새로 만든 것입니다.
-    const WORST_TODAY = 16;
+    const WORST_TODAY = 13;
     let worst = 0;
     let where = '';
 
