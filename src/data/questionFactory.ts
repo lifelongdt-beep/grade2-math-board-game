@@ -14149,6 +14149,8 @@ const questionsFor = (
         if (avoidShapes?.has(shape)) continue;
         if (taken(shape) >= MOST_PER_SHAPE) continue;
 
+        // 그림이 있던 자리는 그림이 있는 것으로만 바꿉니다.
+        if (first.visual && !other.visual) continue;
         const kindFits = isRichQuestion(other) === wantsRich;
         if (!anyFreshLoose) anyFreshLoose = other;
         if (kindFits && !sameKindLoose) sameKindLoose = other;
