@@ -3979,6 +3979,26 @@ export const questionBank: Template[] = [
     solution: '둘씩 꼭 맞게 묶이므로 {at}번째는 마디의 끝인 2입니다.',
   },
   {
+    id: 'pattern-number-sum-step',
+    when: /무늬에서 규칙을 찾아볼까요 ⑵/,
+    demand: 'reason',
+    tag: 'pattern',
+    strategy: '자료 해석 · 수로 나타낸 무늬를 더해 보는 과정 판단하기',
+    vars: {
+      pairs: { from: 3, to: 6 },
+      at: { calc: 'pairs * 2' },
+      total: { calc: 'pairs * 3' },
+    },
+    prompt: '1, 2가 되풀이되는 무늬를 {at}번째까지 쓰고 모두 더하는 과정입니다. □에 알맞은 수는 얼마일까요?',
+    steps: [
+      '한 마디는 1과 2이고 마디의 합은 3입니다.',
+      '마디가 {pairs}번 있으므로 모두 더하면 □입니다.',
+    ],
+    answer: '{total}',
+    wrongs: ['{at}', '{pairs}', '3'],
+    solution: '마디마다 3씩이고 {pairs}마디이므로 모두 {total}입니다.',
+  },
+  {
     id: 'pattern-color-first-step',
     when: /무늬에서 규칙을 찾아볼까요 ⑴/,
     demand: 'recall',
