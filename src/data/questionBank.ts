@@ -4098,6 +4098,16 @@ export const questionBank: Template[] = [
     strategy: '쌓은 모양에서 세어야 할 것 알기',
     vars: {
       k: { from: 2, to: 5 },
+      first: { calc: 'k' },
+      second: { calc: 'k + k' },
+      third: { calc: 'k + k + k' },
+    },
+    // 쌓기나무를 말하는 문제이므로 쌓은 모양을 보여 줍니다. 그림이 없으면
+    // 무늬 그림이 붙어, 아이가 보는 것과 읽는 것이 어긋납니다.
+    visual: {
+      kind: 'cube-pattern',
+      steps: ['first', 'second', 'third'],
+      label: '차례로 쌓은 모양',
     },
     prompt: '쌓은 모양의 규칙을 찾을 때 무엇을 세어야 할까요?',
     answer: '쌓기나무의 수',
@@ -4112,6 +4122,14 @@ export const questionBank: Template[] = [
     strategy: '한 층씩 늘어날 때 달라지는 것 알기',
     vars: {
       k: { from: 2, to: 4 },
+      first: { calc: 'k' },
+      second: { calc: 'k + k' },
+      third: { calc: 'k + k + k' },
+    },
+    visual: {
+      kind: 'cube-pattern',
+      steps: ['first', 'second', 'third'],
+      label: '차례로 쌓은 모양',
     },
     prompt: '쌓기나무를 한 층씩 더 쌓으면 무엇이 달라질까요?',
     answer: '쌓기나무의 수가 늘어납니다',
