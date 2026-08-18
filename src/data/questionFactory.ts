@@ -14186,6 +14186,10 @@ const questionsFor = (
           if (taken(candidateShape) >= MOST_PER_SHAPE) continue;
           if (avoidShapes?.has(candidateShape)) continue;
           if (answerTaken(candidate.answer) >= MOST_PER_ANSWER) continue;
+          // 그 자리가 맡은 몫을 지킵니다. 자료를 읽는 자리에 데이터 문항을
+          // 끼워 넣었더니 상 수준의 자료 해석 문항이 열에서 아홉으로
+          // 줄었습니다 — 답이 겹치는 것보다 수준이 무너지는 것이 나쁩니다.
+          if (isRichQuestion(candidate) !== wantsRich) continue;
           fromBank = candidate;
           break;
         }

@@ -10236,7 +10236,7 @@ export const questionBank: Template[] = [
     prompt: '다음 중 시각을 나타내는 말은 어느 것일까요?',
     answer: '3시',
     wrongs: ['30분 동안', '2시간', '1시간 10분'],
-    solution: '시각은 시간의 한 점이고, 나머지는 얼마 동안인지를 나타냅니다.',
+    solution: '시각은 어느 한 순간이고, 시간은 두 시각 사이의 길이입니다.',
   },
   {
     id: 'elapsed-why-not-add',
