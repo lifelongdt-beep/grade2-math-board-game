@@ -14172,13 +14172,25 @@ const questionsFor = (
       // 문제 글은 새것을 내놓아, anyFresh가 늘 차 있었습니다. 그래서 답을
       // 갈라 줄 문항을 새로 써 넣어도 화면까지 오지 못했습니다.
       // 답이 넘친 자리에서는 데이터 문항을 먼저 봅니다.
-      const fromBank = !crowded ? null : bankQuestion(lesson, difficulty, slot);
-      const bankShape = fromBank ? shapeOfPrompt(fromBank.prompt) : '';
-      const bankUsable = fromBank
-        && !seen.has(fromBank.prompt)
-        && taken(bankShape) < MOST_PER_SHAPE
-        && answerTaken(fromBank.answer) < MOST_PER_ANSWER
-        && !(avoidShapes?.has(bankShape) ?? false);
+      // 문제풀에서 한 번만 꺼내 보면, 하필 꺼낸 것이 이미 넘친 답이면
+      // 그냥 포기했습니다. '백을 알아볼까요'에는 답이 1·99·2개인 문항을
+      // 써 두었는데도 답 100짜리를 먼저 꺼내는 바람에 한 번도 쓰이지
+      // 않았습니다. 쓸 만한 것이 나올 때까지 자리를 옮겨 가며 꺼냅니다.
+      let fromBank: Question | null = null;
+      if (crowded) {
+        for (let step = 0; step < 8; step += 1) {
+          const candidate = bankQuestion(lesson, difficulty, slot + step);
+          if (!candidate) break;
+          if (seen.has(candidate.prompt)) continue;
+          const candidateShape = shapeOfPrompt(candidate.prompt);
+          if (taken(candidateShape) >= MOST_PER_SHAPE) continue;
+          if (avoidShapes?.has(candidateShape)) continue;
+          if (answerTaken(candidate.answer) >= MOST_PER_ANSWER) continue;
+          fromBank = candidate;
+          break;
+        }
+      }
+      const bankUsable = fromBank !== null;
 
       // 겹치는 것을 피하는 일보다 그 자리의 몫을 지키는 일이 먼저입니다.
       // 자료를 읽는 자리인데 같은 갈래가 없으면, 다른 갈래로 바꾸느니
