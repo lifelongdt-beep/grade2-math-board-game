@@ -241,7 +241,7 @@ export const questionBank: Template[] = [
       total: { from: 20, to: 26 },
       c: { calc: 'total - a - b' },
     },
-    prompt: '반 학생 {total}명 중 봄은 {a}명, 여름은 {b}명입니다. 나머지 학생은 몇 명일까요?',
+    prompt: '반 학생 {total}명 중 봄은 {a}명, 여름은 {b}명입니다. 봄도 여름도 고르지 않은 학생은 몇 명일까요?',
     answer: '{c}명',
     wrongs: ['{a}명', '{b}명', '{total}명'],
     solution: '{total}-{a}-{b}={c}명입니다.',
