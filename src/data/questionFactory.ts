@@ -14133,8 +14133,14 @@ const questionsFor = (
 
     let question = first;
     if (seen.has(first.prompt) || crowded || avoided) {
+      // 답까지 새것인 쪽을 먼저 찾되, 없으면 모양만 새것인 쪽이라도
+      // 씁니다. 답 제한을 딱딱하게 걸었더니 쓸 만한 후보를 걷어차서
+      // 한 차시의 모양이 여섯에서 다섯으로 줄었습니다 — 답이 겹치는
+      // 것보다 문제가 똑같아 보이는 것이 더 나쁩니다.
       let sameKind: Question | null = null;
       let anyFresh: Question | null = null;
+      let sameKindLoose: Question | null = null;
+      let anyFreshLoose: Question | null = null;
 
       for (let again = 1; again <= 8; again += 1) {
         const other = buildQuestionAt(lesson, difficulty, slot + again * 30);
@@ -14142,13 +14148,19 @@ const questionsFor = (
         const shape = shapeOfPrompt(other.prompt);
         if (avoidShapes?.has(shape)) continue;
         if (taken(shape) >= MOST_PER_SHAPE) continue;
-        if (answerTaken(other.answer) >= MOST_PER_ANSWER) continue;
-        if (!anyFresh) anyFresh = other;
-        if (isRichQuestion(other) === wantsRich) {
-          sameKind = other;
-          break;
+
+        const kindFits = isRichQuestion(other) === wantsRich;
+        if (!anyFreshLoose) anyFreshLoose = other;
+        if (kindFits && !sameKindLoose) sameKindLoose = other;
+
+        if (answerTaken(other.answer) < MOST_PER_ANSWER) {
+          if (!anyFresh) anyFresh = other;
+          if (kindFits) { sameKind = other; break; }
         }
       }
+
+      sameKind = sameKind ?? sameKindLoose;
+      anyFresh = anyFresh ?? anyFreshLoose;
 
       // 자리의 갈래를 지키며 찾아도 없으면, 데이터로 적어 둔 문항에서
       // 가져옵니다. 풀이 과정 생성기는 차시마다 한 모양뿐이라, 번호를
