@@ -3941,6 +3941,44 @@ export const questionBank: Template[] = [
   // ══════════════════════════════════════════════════════════════════
   // ── 2-2 규칙 찾기 · 더 여러 가지로 묻기 ──────────────────────────
   {
+    id: 'pattern-color-three-step',
+    when: /무늬에서 규칙을 찾아볼까요 ⑴/,
+    demand: 'reason',
+    tag: 'pattern',
+    strategy: '자료 해석 · 세 색 무늬를 마디로 묶는 과정 판단하기',
+    vars: {
+      threes: { from: 3, to: 6 },
+      at: { calc: 'threes * 3' },
+    },
+    prompt: '빨강, 파랑, 노랑이 되풀이되는 무늬를 {at}번째까지 그렸습니다. 노랑이 몇 번 나오는지 세는 과정입니다. □에 알맞은 수는 얼마일까요?',
+    steps: [
+      '세 색이 한 마디로 되풀이됩니다.',
+      '{at}번째까지는 마디가 □번 들어 있고, 마디마다 노랑이 한 번씩 있습니다.',
+    ],
+    answer: '{threes}',
+    wrongs: ['{at}', '3', '{threes + 1}'],
+    solution: '셋씩 묶으면 {threes}마디이므로 노랑은 {threes}번 나옵니다.',
+  },
+  {
+    id: 'pattern-number-place-step',
+    when: /무늬에서 규칙을 찾아볼까요 ⑵/,
+    demand: 'reason',
+    tag: 'pattern',
+    strategy: '자료 해석 · 수로 나타낸 무늬의 자리를 찾는 과정 판단하기',
+    vars: {
+      pairs: { from: 4, to: 7 },
+      at: { calc: 'pairs * 2' },
+    },
+    prompt: '1, 2가 되풀이되는 무늬에서 {at}번째 수를 찾는 과정입니다. □에 알맞은 수는 얼마일까요?',
+    steps: [
+      '1과 2가 한 마디로 되풀이됩니다.',
+      '{at}번째는 마디의 끝자리이므로 □입니다.',
+    ],
+    answer: '2',
+    wrongs: ['1', '{pairs}', '{at}'],
+    solution: '둘씩 꼭 맞게 묶이므로 {at}번째는 마디의 끝인 2입니다.',
+  },
+  {
     id: 'pattern-color-first-step',
     when: /무늬에서 규칙을 찾아볼까요 ⑴/,
     demand: 'recall',
