@@ -737,9 +737,13 @@ function App() {
   const wrongCount = sessionRecords.filter((record) => !record.correct).length;
   const accuracy = sessionRecords.length === 0 ? 0 : Math.round((correctCount / sessionRecords.length) * 100);
 
-  // 한 단계는 아이 한 명당 여섯 문제입니다. 한 판에 한두 단계를 채울
-  // 만한 크기라, 채우는 맛도 있고 손에 닿지 않지도 않습니다.
-  const goalStep = Math.max(6, playerCount * 6);
+  // 한 단계는 아이 한 명당 세 문제입니다.
+  //
+  // 여섯이었을 때는 다섯 명이 서른 개를 맞혀야 한 단계였습니다. 달리는
+  // 것이 목표마다 바뀌는데(기차 → 비행기 → 로켓 → 우주선 → 외계인 →
+  // 사람), 그 속도로는 한 학기에도 외계인을 못 봅니다. 세 문제로 하면
+  // 한 판에 한두 단계씩 올라 수업 몇 번이면 여섯을 다 만납니다.
+  const goalStep = Math.max(3, playerCount * 3);
   const goalStage = Math.floor(correctCount / goalStep) + 1;
   const goalTarget = goalStage * goalStep;
   const goalPercent = Math.round(((correctCount % goalStep) / goalStep) * 100);
