@@ -7011,14 +7011,14 @@ export const questionBank: Template[] = [
     when: /달력을 알아/,
     demand: 'recall',
     tag: 'time',
-    strategy: '한 달의 날수 알기',
-    vars: {
-      k: { from: 2, to: 5 },
-    },
-    prompt: '어느 달이 31일까지 있을 때 그 달은 며칠일까요?',
-    answer: '31일',
-    wrongs: ['30일', '28일', '{k * 7}일'],
-    solution: '31일까지 있으므로 그 달은 31일입니다.',
+    strategy: '한 달의 날수를 찾는 곳 알기',
+    vars: {},
+    // 예전에는 '31일까지 있을 때 그 달은 며칠일까요'라고 물었습니다.
+    // 문제 안에 답이 그대로 적혀 있었습니다.
+    prompt: '달력을 보고 한 달이 며칠인지 알려면 무엇을 보아야 할까요?',
+    answer: '그 달의 마지막 날짜',
+    wrongs: ['첫째 주의 날수', '요일의 수', '달의 이름'],
+    solution: '달력의 맨 끝에 적힌 날짜가 그 달의 날수입니다.',
   },
   {
     id: 'calendar-step',

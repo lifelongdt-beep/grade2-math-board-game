@@ -5928,18 +5928,22 @@ const legacyTimeQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
   }
 
   if ((text.includes('달력') && variant === 0) || (!text.includes('몇 시 몇 분') && !text.includes('걸린') && variant === 2)) {
-    const day = 3 + (index % 20);
-    const add = 7 + (index % 3);
+    // 예전에는 '{day}일에서 {add}일 뒤는 며칠일까요'였습니다. 달력을
+    // 보지 않아도 되는 더하기인 데다, 더하는 날이 7일일 때는 오답 보기
+    // 하나가 정답과 같아졌습니다.
+    const day = 1 + (index % 8);
+    const weeks = 1 + (index % 3);
+    const add = weeks * 7;
     return makeQuestion(
       lesson,
       difficulty,
       index,
-      `${day}일에서 ${add}일 뒤는 며칠일까요?`,
-      `${day + add}일`,
-      [`${day + 7}일`, `${day - 1}일`, `${add}일`],
-      `달력에서 며칠 뒤를 찾을 때는 날짜에 지난 날 수를 더합니다. ${day}+${add}=${day + add}일입니다.`,
+      `달력에서 ${day}일부터 ${day + add}일까지는 몇 주일일까요?`,
+      `${weeks}주일`,
+      [`${add}주일`, `${weeks + 1}주일`, `${weeks + 2}주일`],
+      `1주일은 7일이므로 ${add}일은 ${weeks}주일입니다.`,
       'time',
-      '달력에서 날짜 이동하기',
+      '달력에서 주일 수 세기',
     );
   }
 

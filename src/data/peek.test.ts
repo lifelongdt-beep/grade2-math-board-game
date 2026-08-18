@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { lessons } from './curriculum';
 import { generateQuestions } from './questionFactory';
 
+const WATCH = /여러 가지 방법으로|관계를 식으로|세 수의 계산|곱셈구구를 이용|2단|3단, 6단/;
+
 describe('peek', () => {
-  it('dumps the time unit', () => {
+  it('dumps the method lessons', () => {
     const report: string[] = [];
     for (const lesson of lessons) {
-      if (lesson.unitTitle !== '시각과 시간') continue;
-      if (lesson.title === '단원 도입') continue;
+      if (!WATCH.test(lesson.title)) continue;
+      if (/시각을 읽어/.test(lesson.title)) continue;
       const seen = new Set<string>();
       for (const level of ['하', '중', '상'] as const) {
         for (const question of generateQuestions(lesson, level)) {
