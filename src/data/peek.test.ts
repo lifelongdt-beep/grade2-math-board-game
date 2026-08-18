@@ -2,24 +2,26 @@ import { describe, expect, it } from 'vitest';
 import { lessons } from './curriculum';
 import { generateQuestions } from './questionFactory';
 
-const WORST = new Set(['2-1-u1-l2|하', '2-1-u5-l2|하', '2-2-u2-l8|하', '2-1-u2-l4|상', '2-1-u5-l5|하']);
-
 describe('peek', () => {
-  it('dumps the worst lessons', () => {
-    const out: string[] = [];
+  it('ranks repeated answers', () => {
+    const worst: string[] = [];
+    const atIndex = [0, 0, 0, 0];
+    let total = 0;
     for (const lesson of lessons) {
+      if (lesson.title === '단원 도입') continue;
       for (const level of ['하', '중', '상'] as const) {
-        if (!WORST.has(`${lesson.id}|${level}`)) continue;
-        out.push(`### ${lesson.id} ${level} ${lesson.title}`);
-        const seen = new Set<string>();
+        const tally = new Map<string, number>();
         for (const q of generateQuestions(lesson, level)) {
-          const shape = (q.basePrompt ?? q.prompt).replace(/\d+/g, '#');
-          if (seen.has(shape)) continue;
-          seen.add(shape);
-          out.push(`${shape} => ${q.answer}`);
+          total += 1;
+          const i = q.choices.indexOf(q.answer);
+          if (i >= 0) atIndex[i] += 1;
+          tally.set(q.answer, (tally.get(q.answer) ?? 0) + 1);
         }
+        const top = [...tally.entries()].sort((a, b) => b[1] - a[1])[0];
+        if (top && top[1] >= 8) worst.push(`${top[1]}회 ${lesson.id}|${level} '${top[0]}'`);
       }
     }
-    expect(out).toEqual([]);
+    worst.sort((a, b) => Number.parseInt(b, 10) - Number.parseInt(a, 10));
+    expect([`자리 ${atIndex.map((n) => Math.round((n / total) * 100)).join('/')}`, `8회 이상 ${worst.length}곳`, ...worst.slice(0, 20)]).toEqual([]);
   });
 });
