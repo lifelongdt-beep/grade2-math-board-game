@@ -11207,7 +11207,72 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       );
     }
 
-    if (no >= 6) {
+    // 하루와 달력은 시계를 읽는 차시가 아닙니다. 예전에는 6차시부터를
+    // 한데 묶어, 달력 차시가 '몇 분 걸렸을까요'만 묻고 있었습니다.
+    if (no === 7) {
+      const back = 1 + (seed % 4);
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `밤 12시부터 오후 ${back}시까지는 몇 시간일까요?`,
+          `${12 + back}시간`,
+          [`${back}시간`, `${24 - back}시간`, `${12 - back}시간`],
+          `밤 12시부터 낮 12시까지 12시간이고, 거기서 ${back}시간이 더 지났습니다.`,
+          'time', '조건 함께 보기 · 하루 안에서 시각의 자리 찾기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `오전 ${back + 6}시와 오후 ${back + 6}시는 시계로 보면 바늘의 자리가 같습니다. 두 시각은 무엇이 다를까요?`,
+          '하루 중 언제인지가 다릅니다',
+          ['시계 바늘의 자리가 다릅니다', '걸리는 시간이 다릅니다', '다른 점이 없습니다'],
+          '시계에는 숫자가 12까지만 있어 하루에 같은 자리가 두 번 옵니다. 그래서 오전과 오후로 나누어 말합니다.',
+          'time', '조건 함께 보기 · 오전과 오후를 가려 말하기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        '짧은바늘은 하루 동안 시계를 몇 바퀴 돌까요?',
+        '2바퀴', ['1바퀴', '12바퀴', '24바퀴'],
+        '짧은바늘은 12시간에 한 바퀴를 돕니다. 하루는 24시간이므로 2바퀴 돕니다.',
+        'time', '조건 함께 보기 · 하루와 시계를 이어 보기',
+      );
+    }
+
+    if (no === 8) {
+      const day = 2 + (seed % 7);
+      const names = ['월', '화', '수', '목', '금', '토', '일'];
+      const dayName = names[seed % 7];
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `달력에서 ${day}일 바로 아래 칸에 있는 날은 며칠일까요?`,
+          `${day + 7}일`,
+          [`${day + 1}일`, `${day - 1}일`, `${day + 5}일`],
+          '달력에서 아래 칸은 다음 주의 같은 요일이므로 7일 뒤입니다.',
+          'time', '조건 함께 보기 · 달력의 칸이 놓인 규칙 보기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          '달력에서 가로 한 줄은 며칠일까요?',
+          '7일', ['5일', '12일', '30일'],
+          '가로 한 줄이 1주일이고 1주일은 7일입니다.',
+          'time', '조건 함께 보기 · 달력의 줄이 뜻하는 것 보기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `오늘이 ${dayName}요일입니다. 다음 ${dayName}요일은 며칠 뒤일까요?`,
+        '7일 뒤', ['1일 뒤', '5일 뒤', '30일 뒤'],
+        '요일은 1주일마다 되풀이되고 1주일은 7일입니다.',
+        'time', '조건 함께 보기 · 요일이 되풀이되는 규칙 보기',
+      );
+    }
+
+    if (no === 6) {
       const startMinute = 10 + (seed % 5) * 5;
       const spent = 20 + (seed % 4) * 10;
       if (pick === 0) {
@@ -11813,6 +11878,23 @@ const pickAllQuestion = (
 };
 
 // 차시 내용으로 네 문장을 만듭니다. 옳은 것 둘, 옳지 않은 것 둘입니다.
+// 시각과 시간 단원은 차시마다 다루는 생각이 다릅니다. 시각을 읽는 법,
+// 시간의 길이, 하루의 구조, 달력의 구조는 서로 다른 이야기입니다. 태그가
+// time이라는 것만 보고 문항을 고르면 달력 차시에서 긴바늘을 묻게 됩니다.
+type TimeIdea = '5분읽기' | '1분읽기' | '몇분전' | '1시간' | '걸린시간' | '하루' | '달력';
+
+const timeIdeaOf = (lesson: Lesson): TimeIdea | null => {
+  const title = lesson.title;
+  if (/달력/.test(title)) return '달력';
+  if (/하루/.test(title)) return '하루';
+  if (/걸린 시간/.test(title)) return '걸린시간';
+  if (/1시간/.test(title)) return '1시간';
+  if (/여러 가지 방법/.test(title)) return '몇분전';
+  if (/⑵/.test(title)) return '1분읽기';
+  if (/몇 시 몇 분/.test(title)) return '5분읽기';
+  return null;
+};
+
 const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
   const tag = primaryTag(lesson);
   const seed = n(lesson, index);
@@ -11873,14 +11955,71 @@ const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
   }
 
   if (tag === 'time') {
-    // 긴바늘로 분을 읽는 것을 배운 뒤부터입니다.
     if (/단원 도입/.test(lesson.title)) return null;
     const point = 2 + (seed % 8);
+    const idea = timeIdeaOf(lesson);
+
+    if (idea === '달력') {
+      const week = 2 + (seed % 3);
+      return [
+        { text: '달력에서 같은 요일은 7일마다 돌아옵니다.', ok: true },
+        { text: `${week}주일은 ${week * 7}일입니다.`, ok: true },
+        { text: '달력에서 같은 요일은 5일마다 돌아옵니다.', ok: false },
+        { text: `${week}주일은 ${week}일입니다.`, ok: false },
+      ];
+    }
+
+    if (idea === '하루') {
+      return [
+        { text: '하루는 24시간입니다.', ok: true },
+        { text: '오전과 오후를 나누는 때는 낮 12시입니다.', ok: true },
+        { text: '하루는 12시간입니다.', ok: false },
+        { text: '오전과 오후를 나누는 때는 아침 7시입니다.', ok: false },
+      ];
+    }
+
+    if (idea === '걸린시간') {
+      return [
+        { text: '걸린 시간은 시작한 때부터 마친 때까지의 시간입니다.', ok: true },
+        { text: '같은 일이라도 늦게 시작하면 마치는 때도 늦어집니다.', ok: true },
+        { text: '걸린 시간은 두 시각을 더해서 구합니다.', ok: false },
+        { text: '마친 때만 알면 걸린 시간을 알 수 있습니다.', ok: false },
+      ];
+    }
+
+    if (idea === '1시간') {
+      return [
+        { text: '긴바늘이 한 바퀴 돌면 1시간이 지납니다.', ok: true },
+        { text: '1시간은 60분입니다.', ok: true },
+        { text: '긴바늘이 한 바퀴 돌면 1분이 지납니다.', ok: false },
+        { text: '1시간은 100분입니다.', ok: false },
+      ];
+    }
+
+    if (idea === '몇분전') {
+      const hour = 2 + (seed % 8);
+      return [
+        { text: `${hour}시 55분은 ${hour + 1}시 5분 전이라고도 읽습니다.`, ok: true },
+        { text: '몇 시 몇 분 전은 다음 시각까지 남은 만큼으로 읽는 방법입니다.', ok: true },
+        { text: `${hour}시 55분은 ${hour}시 5분 전이라고 읽습니다.`, ok: false },
+        { text: '몇 시 몇 분 전은 시각이 지난 만큼으로 읽는 방법입니다.', ok: false },
+      ];
+    }
+
+    if (idea === '1분읽기') {
+      return [
+        { text: '시계의 작은 눈금 한 칸은 1분입니다.', ok: true },
+        { text: '숫자와 숫자 사이에는 작은 눈금이 5칸 있습니다.', ok: true },
+        { text: '시계의 작은 눈금 한 칸은 5분입니다.', ok: false },
+        { text: '숫자와 숫자 사이에는 작은 눈금이 10칸 있습니다.', ok: false },
+      ];
+    }
+
+    // 5분 단위로 읽는 차시입니다. 작은 눈금은 다음 차시에서 배웁니다.
     return [
-      { text: '긴바늘이 한 칸 움직이면 5분이 지납니다.', ok: true },
+      { text: '긴바늘이 숫자 한 칸을 지나면 5분이 지납니다.', ok: true },
       { text: `긴바늘이 ${point}을 가리키면 ${point * 5}분입니다.`, ok: true },
-      // '하루'는 7차시 내용이라 여기서 쓸 수 없습니다.
-      { text: '긴바늘이 한 칸 움직이면 1분이 지납니다.', ok: false },
+      { text: '긴바늘이 숫자 한 칸을 지나면 1분이 지납니다.', ok: false },
       { text: `긴바늘이 ${point}을 가리키면 ${point}분입니다.`, ok: false },
     ];
   }
@@ -12125,8 +12264,48 @@ const wordStepQuestion = (
   }
 
   if (tag === 'time') {
-    // 걸린 시간을 구하는 것은 2-2 시각과 시간 6차시부터입니다.
-    if (!/걸린 시간|하루의 시간|달력/.test(lesson.title)) return null;
+    const idea = timeIdeaOf(lesson);
+
+    // 달력 차시는 달력의 구조로 풉니다. 같은 요일이 7일마다 돌아온다는
+    // 것을 쓰지 않으면 그냥 더하기가 되어 버립니다.
+    if (idea === '달력') {
+      const names = ['월', '화', '수', '목', '금', '토', '일'];
+      const first = 1 + (seed % 5);
+      const weeks = 1 + (seed % 3);
+      // 7일 뒤만 물으면 요일을 문제에서 베끼면 그만입니다. 7일씩 지난
+      // 뒤 며칠 더 가야 하는지까지 따져야 답이 나오게 합니다.
+      const step = 1 + (seed % 3);
+      const later = first + weeks * 7 + step;
+      const from = seed % 7;
+      const to = (from + step) % 7;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${first}일이 ${names[from]}요일입니다. 같은 달 ${later}일이 무슨 요일인지 알아보는 과정입니다. □에 알맞은 것은? ① 같은 요일은 7일마다 돌아옵니다. ② 7일씩 ${weeks}번 지난 ${first + weeks * 7}일도 ${names[from]}요일입니다. ③ 거기서 ${step}일 더 가면 □요일입니다.`,
+        `${names[to]}요일`,
+        [`${names[from]}요일`, `${names[(to + 1) % 7]}요일`, `${names[(to + 3) % 7]}요일`],
+        `7일씩 지나면 요일이 그대로이고, 거기서 ${step}일 더 가면 ${names[to]}요일입니다.`,
+        'time', '문장 상황의 풀이 한 곳 짚기',
+      );
+    }
+
+    // 하루 차시는 오전과 오후의 경계를 넘는 것이 어려운 곳입니다.
+    if (idea === '하루') {
+      const start = 8 + (seed % 3);
+      const toNoon = 12 - start;
+      const raw = 1 + ((seed + Math.floor(seed / 3)) % 4);
+      // 오전 쪽과 오후 쪽이 같은 시간이면 오답 보기 둘이 겹칩니다.
+      const end = raw === toNoon ? (raw % 4) + 1 : raw;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `오전 ${start}시에 나가 오후 ${end}시에 돌아왔습니다. 밖에 있던 시간을 구하는 과정입니다. □에 알맞은 수는? ① 오전 ${start}시에서 낮 12시까지 ${toNoon}시간 ② 낮 12시에서 오후 ${end}시까지 ${end}시간 ③ 모두 □시간`,
+        `${toNoon + end}시간`,
+        [`${toNoon}시간`, `${end}시간`, `${toNoon + end + 1}시간`],
+        `낮 12시를 사이에 두고 ${toNoon}시간과 ${end}시간이므로 ${toNoon + end}시간입니다.`,
+        'time', '문장 상황의 풀이 한 곳 짚기',
+      );
+    }
+
+    if (idea !== '걸린시간') return null;
     const start = 1 + (seed % 9);
     const mins = [20, 30, 40][seed % 3];
     return makeQuestion(
