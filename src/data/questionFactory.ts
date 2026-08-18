@@ -14190,6 +14190,10 @@ const questionsFor = (
           // 끼워 넣었더니 상 수준의 자료 해석 문항이 열에서 아홉으로
           // 줄었습니다 — 답이 겹치는 것보다 수준이 무너지는 것이 나쁩니다.
           if (isRichQuestion(candidate) !== wantsRich) continue;
+          // 그림이 있던 자리에 그림 없는 문항을 끼우면 그 차시의 그림
+          // 수가 줄어듭니다. 표와 그래프처럼 그림이 곧 문제인 차시에서는
+          // 답이 겹치는 것보다 그림이 사라지는 것이 더 나쁩니다.
+          if (first.visual && !candidate.visual) continue;
           fromBank = candidate;
           break;
         }
