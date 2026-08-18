@@ -36,12 +36,6 @@ const shapeOf = (prompt: string) =>
 // 문항을 새로 쓰는 것 말고는 채울 방법이 없습니다. 차시마다 무엇을 묻는지
 // 다른 문항을 두세 가지씩 더 써야 하고, 쓰는 대로 이 목록에서 지웁니다.
 const stillThin = new Set<string>([
-  
-  
-  
-  '2-1-u4-l2',
-  '2-1-u4-l3', '2-1-u4-l4', '2-1-u4-l5', '2-1-u4-l6', '2-1-u4-l7',
-  '2-1-u5-l4', '2-1-u5-l5', '2-1-u6-l2', '2-1-u6-l4', '2-1-u6-l5',
 ]);
 
 const covered = lessons.filter(
