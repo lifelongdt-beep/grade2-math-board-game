@@ -403,10 +403,26 @@ const enforceSecondGradeLanguage = (question: Question): Question => {
   };
 };
 
-const rotate = <T,>(items: T[], seed: number): T[] => {
+// 보기를 섞습니다.
+//
+// 예전에는 자리마다 j를 (seed * 13 + i * 7) % (i + 1)로 잡았습니다. 한
+// 씨앗에서 나오는 값들이 서로 붙어 있어 24가지 차례 가운데 절반쯤만
+// 나왔고, 정답이 1번 자리에 33%, 2번 자리에 17%로 앉았습니다(고르면
+// 25%씩이어야 합니다). 아이는 '1번부터 보면 된다'를 먼저 배웁니다.
+//
+// 자리마다 서로 멀리 떨어진 값을 뽑아야 고르게 섞입니다.
+const shuffled = <T,>(items: T[], seed: number): T[] => {
   const copy = [...items];
+  // 0이 들어오면 아래 셈이 계속 0을 내놓아 섞이지 않습니다.
+  let state = (seed >>> 0) || 0x9e3779b9;
+  const next = () => {
+    state ^= state << 13; state >>>= 0;
+    state ^= state >>> 17;
+    state ^= state << 5; state >>>= 0;
+    return state;
+  };
   for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = (seed * 13 + i * 7) % (i + 1);
+    const j = next() % (i + 1);
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
@@ -433,7 +449,7 @@ const makeChoices = (answer: string | number, wrongs: Array<string | number>, se
     }
     delta += 1;
   }
-  const options = rotate(unique.slice(0, 4), seed);
+  const options = shuffled(unique.slice(0, 4), seed);
   return {
     options,
     answerIndex: options.indexOf(answerText),
@@ -668,6 +684,13 @@ const planeShapesVisual = (label: string, items: PlaneShapeVisualItem[]): Questi
   items,
 });
 
+// 도형 하나에만 색을 칠하면 '어느 것일까요?'라는 물음에서 답을 미리
+// 알려 주는 셈입니다. 고르라고 하는 문제에서는 모두 같은 색으로 둡니다.
+const withoutHighlight = (visual: QuestionVisual): QuestionVisual =>
+  visual.kind === 'plane-shapes'
+    ? { ...visual, items: visual.items.map(({ active, ...rest }) => rest) }
+    : visual;
+
 const planeVisualForTarget = (target: '원' | '삼각형' | '사각형' | '칠교', index: number): QuestionVisual => {
   if (target === '칠교') {
     return { kind: 'tangram', label: '칠교 조각으로 만든 모양' };
@@ -711,8 +734,22 @@ const inferQuestionVisual = (
     (shapeName) => prompt.includes(shapeName) || String(answer) === shapeName || strategy.includes(shapeName),
   );
 
+  // '곧은 선 3개로 그렸는데 삼각형이 아니었습니다' — 이런 문제에는
+  // 삼각형이 아닌 것을 보여 주어야 합니다. 삼각형을 그려 놓고 왜
+  // 삼각형이 아니냐고 물으면 아이가 볼 것이 없습니다.
+  if (/삼각형이 아니었|삼각형이 아닌 까닭/.test(prompt)) {
+    return planeShapesVisual('한쪽이 벌어진 도형', [{ kind: 'open-triangle' }]);
+  }
+
   if (targetShape) {
-    return planeVisualForTarget(targetShape, index);
+    const drawn = planeVisualForTarget(targetShape, index);
+    // 답이 도형 이름인 문제에서는 색으로 답을 짚어 주지 않습니다.
+    // '원을 찾을 때 확인할 성질은?'처럼 답이 성질인 문제는 그 도형을
+    // 짚어 주는 것이 도움이 되므로 그대로 둡니다.
+    // '어느 것일까요?'는 그림에서 도형을 고르라는 물음이라 색으로
+    // 짚어 주면 답을 주는 셈입니다. '성질은 무엇일까요?'처럼 답이
+    // 도형이 아닌 물음은 짚어 주는 편이 도움이 됩니다.
+    return /어느 것/.test(prompt) ? withoutHighlight(drawn) : drawn;
   }
 
   if (source.includes('칠교')) {
@@ -5907,18 +5944,22 @@ const legacyTimeQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
   }
 
   if ((text.includes('달력') && variant === 0) || (!text.includes('몇 시 몇 분') && !text.includes('걸린') && variant === 2)) {
-    const day = 3 + (index % 20);
-    const add = 7 + (index % 3);
+    // 예전에는 '{day}일에서 {add}일 뒤는 며칠일까요'였습니다. 달력을
+    // 보지 않아도 되는 더하기인 데다, 더하는 날이 7일일 때는 오답 보기
+    // 하나가 정답과 같아졌습니다.
+    const day = 1 + (index % 8);
+    const weeks = 1 + (index % 3);
+    const add = weeks * 7;
     return makeQuestion(
       lesson,
       difficulty,
       index,
-      `${day}일에서 ${add}일 뒤는 며칠일까요?`,
-      `${day + add}일`,
-      [`${day + 7}일`, `${day - 1}일`, `${add}일`],
-      `달력에서 며칠 뒤를 찾을 때는 날짜에 지난 날 수를 더합니다. ${day}+${add}=${day + add}일입니다.`,
+      `달력에서 ${day}일부터 ${day + add}일까지는 몇 주일일까요?`,
+      `${weeks}주일`,
+      [`${add}주일`, `${weeks + 1}주일`, `${weeks + 2}주일`],
+      `1주일은 7일이므로 ${add}일은 ${weeks}주일입니다.`,
       'time',
-      '달력에서 날짜 이동하기',
+      '달력에서 주일 수 세기',
     );
   }
 
@@ -7777,10 +7818,12 @@ const singleTargetBoard = (target: PlaneTarget, index: number): { visual: Questi
   };
   const activeSlot = index % 4;
   const labels = ['1', '2', '3', '4'];
-  const distractors = rotate(distractorsByTarget[target], index);
+  const distractors = shuffled(distractorsByTarget[target], index);
   let distractorIndex = 0;
+  // 답이 되는 도형에만 색을 칠하면 번호를 세어 볼 까닭이 없어집니다.
+  // 넷을 모두 같은 색으로 그리고, 아이가 도형을 보고 번호를 고릅니다.
   const items = labels.map((label, slot) => {
-    if (slot === activeSlot) return itemForShape(target, true, label, index + slot);
+    if (slot === activeSlot) return itemForShape(target, false, label, index + slot);
     const shape = distractors[distractorIndex % distractors.length];
     distractorIndex += 1;
     return itemForShape(shape, false, label, index + slot);
@@ -7793,6 +7836,8 @@ const singleTargetBoard = (target: PlaneTarget, index: number): { visual: Questi
   };
 };
 
+// 두 자리를 고르는 판도 마찬가지입니다 — 답이 되는 자리에 색을 칠하면
+// 세어 보지 않고 색만 보고 고릅니다.
 const twoTargetBoard = (target: PlaneTarget, index: number): { visual: QuestionVisual; answer: string; wrongs: string[] } => {
   const labels = ['1', '2', '3', '4'];
   const activeSlots = index % 2 === 0 ? [0, 2] : [1, 3];
@@ -7803,7 +7848,7 @@ const twoTargetBoard = (target: PlaneTarget, index: number): { visual: QuestionV
   };
   let distractorIndex = 0;
   const items = labels.map((label, slot) => {
-    if (activeSlots.includes(slot)) return itemForShape(target, true, label, index + slot);
+    if (activeSlots.includes(slot)) return itemForShape(target, false, label, index + slot);
     const shape = distractorsByTarget[target][distractorIndex % 2];
     distractorIndex += 1;
     return itemForShape(shape, false, label, index + slot);
@@ -7822,13 +7867,14 @@ const twoTargetBoard = (target: PlaneTarget, index: number): { visual: QuestionV
 };
 
 const shapeFocusForLesson = (lesson: Lesson, index: number): ShapeFocus => {
-  if (lesson.unitNo === 2) {
-    if (lesson.lessonNo === 2) return '원';
-    if (lesson.lessonNo === 3) return '삼각형';
-    if (lesson.lessonNo === 4) return '사각형';
-    if (lesson.lessonNo === 5) return '칠교';
-    if (lesson.lessonNo === 9) return (['원', '삼각형', '사각형', '칠교'] as ShapeFocus[])[index % 4];
-  }
+  // 차시가 다루는 도형은 차시 제목이 정합니다. 예전에는 차시 번호로
+  // 짚어 두었는데, 2차시를 원으로 적어 두어 삼각형 차시에 원 문항이
+  // 나왔습니다. 제목이 △·□·○ 기호라 글자 검사도 비껴갔습니다.
+  const title = lesson.title;
+  if (title.includes('칠교')) return '칠교';
+  if (title.includes('△') || title.includes('삼각형')) return '삼각형';
+  if (title.includes('□') || title.includes('사각형')) return '사각형';
+  if (title.includes('○') || title.includes('원')) return '원';
 
   const text = `${lesson.unitTitle} ${lesson.title}`;
   if (text.includes('칠교')) return '칠교';
@@ -8221,7 +8267,7 @@ const planeShapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
 
   if (variant === 2) {
     const object = fact.objects[index % fact.objects.length];
-    const wrongs = rotate([...fact.nearMisses], index).slice(0, 3);
+    const wrongs = shuffled([...fact.nearMisses], index).slice(0, 3);
     return makeQuestion(
       lesson,
       difficulty,
@@ -9406,6 +9452,11 @@ const visualForGeneratedQuestion = (
         );
       }
     }
+
+    // '10이 10개이면 얼마일까요?'처럼 같은 수만 두 번 나오는 문제가
+    // 있습니다. 그런 수직선은 점이 모두 한자리에 겹쳐 아무것도 보여
+    // 주지 못합니다. 그릴 것이 없으면 그리지 않습니다.
+    if (new Set(values).size < 2) return undefined;
 
     const gap = Math.max(1, values.length >= 2 ? Math.abs(values[1] - values[0]) || 10 : 10);
     // 눈금이 너무 촘촘하지 않도록 간격을 값의 크기에 맞춥니다.
@@ -11040,7 +11091,8 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (no >= 5) {
       const big = 10 * (5 + (seed % 4)) + (2 + (seed % 5));
       const small = 10 * (1 + (seed % 3)) + (6 + (seed % 3));
-      if (pick === 0) {
+      // 뺄셈을 덧셈으로 확인하는 것은 두 셈의 관계를 배운 뒤의 일입니다.
+      if (pick === 0 && /관계를 식으로/.test(lesson.title)) {
         return makeQuestion(
           lesson, difficulty, index,
           `${big}-${small}을 계산한 뒤 답이 맞는지 확인하는 방법으로 알맞은 것은?`,
@@ -11176,11 +11228,72 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       );
     }
 
-    // 8차시는 달력입니다. 여기서 만드는 세 문항은 모두 시계로 잰
-    // 시간을 다루므로, 달력 차시에는 걸린 시간(6차시)과 하루의 시간(7차시)
-    // 까지만 냅니다. 달력 차시의 조건 함께 보기 문항은 richQuestionFor의
-    // 달력 갈래가 대신 만듭니다.
-    if (no >= 6 && no <= 7) {
+    // 하루와 달력은 시계를 읽는 차시가 아닙니다. 예전에는 6차시부터를
+    // 한데 묶어, 달력 차시가 '몇 분 걸렸을까요'만 묻고 있었습니다.
+    if (no === 7) {
+      const back = 1 + (seed % 4);
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `밤 12시부터 오후 ${back}시까지는 몇 시간일까요?`,
+          `${12 + back}시간`,
+          [`${back}시간`, `${24 - back}시간`, `${12 - back}시간`],
+          `밤 12시부터 낮 12시까지 12시간이고, 거기서 ${back}시간이 더 지났습니다.`,
+          'time', '조건 함께 보기 · 하루 안에서 시각의 자리 찾기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `오전 ${back + 6}시와 오후 ${back + 6}시는 시계로 보면 바늘의 자리가 같습니다. 두 시각은 무엇이 다를까요?`,
+          '하루 중 언제인지가 다릅니다',
+          ['시계 바늘의 자리가 다릅니다', '걸리는 시간이 다릅니다', '다른 점이 없습니다'],
+          '시계에는 숫자가 12까지만 있어 하루에 같은 자리가 두 번 옵니다. 그래서 오전과 오후로 나누어 말합니다.',
+          'time', '조건 함께 보기 · 오전과 오후를 가려 말하기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        '짧은바늘은 하루 동안 시계를 몇 바퀴 돌까요?',
+        '2바퀴', ['1바퀴', '12바퀴', '24바퀴'],
+        '짧은바늘은 12시간에 한 바퀴를 돕니다. 하루는 24시간이므로 2바퀴 돕니다.',
+        'time', '조건 함께 보기 · 하루와 시계를 이어 보기',
+      );
+    }
+
+    if (no === 8) {
+      const day = 2 + (seed % 7);
+      const names = ['월', '화', '수', '목', '금', '토', '일'];
+      const dayName = names[seed % 7];
+      if (pick === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `달력에서 ${day}일 바로 아래 칸에 있는 날은 며칠일까요?`,
+          `${day + 7}일`,
+          [`${day + 1}일`, `${day - 1}일`, `${day + 5}일`],
+          '달력에서 아래 칸은 다음 주의 같은 요일이므로 7일 뒤입니다.',
+          'time', '조건 함께 보기 · 달력의 칸이 놓인 규칙 보기',
+        );
+      }
+      if (pick === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          '달력에서 가로 한 줄은 며칠일까요?',
+          '7일', ['5일', '12일', '30일'],
+          '가로 한 줄이 1주일이고 1주일은 7일입니다.',
+          'time', '조건 함께 보기 · 달력의 줄이 뜻하는 것 보기',
+        );
+      }
+      return makeQuestion(
+        lesson, difficulty, index,
+        `오늘이 ${dayName}요일입니다. 다음 ${dayName}요일은 며칠 뒤일까요?`,
+        '7일 뒤', ['1일 뒤', '5일 뒤', '30일 뒤'],
+        '요일은 1주일마다 되풀이되고 1주일은 7일입니다.',
+        'time', '조건 함께 보기 · 요일이 되풀이되는 규칙 보기',
+      );
+    }
+
+    if (no === 6) {
       const startMinute = 10 + (seed % 5) * 5;
       const spent = 20 + (seed % 4) * 10;
       if (pick === 0) {
@@ -11786,6 +11899,23 @@ const pickAllQuestion = (
 };
 
 // 차시 내용으로 네 문장을 만듭니다. 옳은 것 둘, 옳지 않은 것 둘입니다.
+// 시각과 시간 단원은 차시마다 다루는 생각이 다릅니다. 시각을 읽는 법,
+// 시간의 길이, 하루의 구조, 달력의 구조는 서로 다른 이야기입니다. 태그가
+// time이라는 것만 보고 문항을 고르면 달력 차시에서 긴바늘을 묻게 됩니다.
+type TimeIdea = '5분읽기' | '1분읽기' | '몇분전' | '1시간' | '걸린시간' | '하루' | '달력';
+
+const timeIdeaOf = (lesson: Lesson): TimeIdea | null => {
+  const title = lesson.title;
+  if (/달력/.test(title)) return '달력';
+  if (/하루/.test(title)) return '하루';
+  if (/걸린 시간/.test(title)) return '걸린시간';
+  if (/1시간/.test(title)) return '1시간';
+  if (/여러 가지 방법/.test(title)) return '몇분전';
+  if (/⑵/.test(title)) return '1분읽기';
+  if (/몇 시 몇 분/.test(title)) return '5분읽기';
+  return null;
+};
+
 const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
   const tag = primaryTag(lesson);
   const seed = n(lesson, index);
@@ -11846,14 +11976,71 @@ const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
   }
 
   if (tag === 'time') {
-    // 긴바늘로 분을 읽는 것을 배운 뒤부터입니다.
     if (/단원 도입/.test(lesson.title)) return null;
     const point = 2 + (seed % 8);
+    const idea = timeIdeaOf(lesson);
+
+    if (idea === '달력') {
+      const week = 2 + (seed % 3);
+      return [
+        { text: '달력에서 같은 요일은 7일마다 돌아옵니다.', ok: true },
+        { text: `${week}주일은 ${week * 7}일입니다.`, ok: true },
+        { text: '달력에서 같은 요일은 5일마다 돌아옵니다.', ok: false },
+        { text: `${week}주일은 ${week}일입니다.`, ok: false },
+      ];
+    }
+
+    if (idea === '하루') {
+      return [
+        { text: '하루는 24시간입니다.', ok: true },
+        { text: '오전과 오후를 나누는 때는 낮 12시입니다.', ok: true },
+        { text: '하루는 12시간입니다.', ok: false },
+        { text: '오전과 오후를 나누는 때는 아침 7시입니다.', ok: false },
+      ];
+    }
+
+    if (idea === '걸린시간') {
+      return [
+        { text: '걸린 시간은 시작한 때부터 마친 때까지의 시간입니다.', ok: true },
+        { text: '같은 일이라도 늦게 시작하면 마치는 때도 늦어집니다.', ok: true },
+        { text: '걸린 시간은 두 시각을 더해서 구합니다.', ok: false },
+        { text: '마친 때만 알면 걸린 시간을 알 수 있습니다.', ok: false },
+      ];
+    }
+
+    if (idea === '1시간') {
+      return [
+        { text: '긴바늘이 한 바퀴 돌면 1시간이 지납니다.', ok: true },
+        { text: '1시간은 60분입니다.', ok: true },
+        { text: '긴바늘이 한 바퀴 돌면 1분이 지납니다.', ok: false },
+        { text: '1시간은 100분입니다.', ok: false },
+      ];
+    }
+
+    if (idea === '몇분전') {
+      const hour = 2 + (seed % 8);
+      return [
+        { text: `${hour}시 55분은 ${hour + 1}시 5분 전이라고도 읽습니다.`, ok: true },
+        { text: '몇 시 몇 분 전은 다음 시각까지 남은 만큼으로 읽는 방법입니다.', ok: true },
+        { text: `${hour}시 55분은 ${hour}시 5분 전이라고 읽습니다.`, ok: false },
+        { text: '몇 시 몇 분 전은 시각이 지난 만큼으로 읽는 방법입니다.', ok: false },
+      ];
+    }
+
+    if (idea === '1분읽기') {
+      return [
+        { text: '시계의 작은 눈금 한 칸은 1분입니다.', ok: true },
+        { text: '숫자와 숫자 사이에는 작은 눈금이 5칸 있습니다.', ok: true },
+        { text: '시계의 작은 눈금 한 칸은 5분입니다.', ok: false },
+        { text: '숫자와 숫자 사이에는 작은 눈금이 10칸 있습니다.', ok: false },
+      ];
+    }
+
+    // 5분 단위로 읽는 차시입니다. 작은 눈금은 다음 차시에서 배웁니다.
     return [
-      { text: '긴바늘이 한 칸 움직이면 5분이 지납니다.', ok: true },
+      { text: '긴바늘이 숫자 한 칸을 지나면 5분이 지납니다.', ok: true },
       { text: `긴바늘이 ${point}을 가리키면 ${point * 5}분입니다.`, ok: true },
-      // '하루'는 7차시 내용이라 여기서 쓸 수 없습니다.
-      { text: '긴바늘이 한 칸 움직이면 1분이 지납니다.', ok: false },
+      { text: '긴바늘이 숫자 한 칸을 지나면 1분이 지납니다.', ok: false },
       { text: `긴바늘이 ${point}을 가리키면 ${point}분입니다.`, ok: false },
     ];
   }
@@ -11927,17 +12114,40 @@ const wordStepQuestion = (
     const b = 12 + ((seed + 5) % 25);
     if (a + b > limit) return null;
 
-    // 오고 간 상황은 더하고 빼기를 함께 씁니다. 세 수를 잇달아 계산하는
-    // 차시에서만 쓰고, 덧셈만 또는 뺄셈만 다루는 차시에는 넣지 않습니다.
-    if (situation === 1 && /세 수의 계산/.test(lesson.title)) {
-      const gone = 5 + (seed % 10);
-      if (a + b - gone < 1) return null;
+    // 두 셈의 관계를 배우는 차시입니다. 전체와 부분을 갈라 보는 상황이
+    // 그 차시가 가르치는 일이라, 한 번만 더하는 문장제로 채우면 안 됩니다.
+    if (/관계를 식으로/.test(lesson.title)) {
+      const scene = [
+        { where: '모둠', one: '남학생', other: '여학생', unit: '명' },
+        { where: '바구니', one: '사과', other: '배', unit: '개' },
+        { where: '책꽂이', one: '동화책', other: '그림책', unit: '권' },
+      ][situation];
       return makeQuestion(
         lesson, difficulty, index,
-        `운동장에 학생이 ${a}명 있었습니다. ${b}명이 더 오고 ${gone}명이 집에 갔습니다. 지금 운동장에 있는 학생 수를 구하는 과정입니다. □에 알맞은 수는? ① 더 온 만큼 더합니다. ② ${a}+${b}=${a + b}명입니다. ③ ${a + b}-${gone}=□`,
-        `${a + b - gone}명`,
-        [`${a + b}명`, `${a + b + gone}명`, `${Math.max(1, a - gone)}명`],
-        `더 온 만큼 더하고 간 만큼 빼면 ${a + b - gone}명입니다.`,
+        `${scene.where}에 ${scene.one} ${a}${scene.unit}과 ${scene.other} ${b}${scene.unit}이 있어 모두 ${a + b}${scene.unit}입니다. ${scene.other} 수를 구하는 과정입니다. □에 알맞은 수는? ① 전체는 ${a + b}${scene.unit}입니다. ② 부분 하나는 ${a}${scene.unit}입니다. ③ ${a + b}-${a}=□`,
+        `${b}${scene.unit}`,
+        [`${a}${scene.unit}`, `${a + b}${scene.unit}`, `${a + b + b}${scene.unit}`],
+        `전체에서 부분 하나를 빼면 남은 부분이 나옵니다. ${a + b}-${a}=${b}${scene.unit}입니다.`,
+        'subtraction', '전체와 부분을 가르는 풀이 한 곳 짚기',
+      );
+    }
+
+    // 세 수를 잇달아 계산하는 차시입니다. 한 번만 더하는 상황을 넣으면
+    // 그 차시가 요구하는 일보다 쉬워집니다.
+    if (/세 수의 계산/.test(lesson.title)) {
+      const gone = 5 + (seed % 10);
+      if (a + b - gone < 1) return null;
+      const scene = [
+        { where: '운동장에 학생이', came: '더 오고', left: '집에 갔습니다', what: '운동장에 있는 학생 수', unit: '명' },
+        { where: '버스에 사람이', came: '더 타고', left: '내렸습니다', what: '버스에 있는 사람 수', unit: '명' },
+        { where: '접시에 빵이', came: '더 놓이고', left: '먹었습니다', what: '접시에 남은 빵 수', unit: '개' },
+      ][situation];
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${scene.where} ${a}${scene.unit} 있었습니다. ${b}${scene.unit}이 ${scene.came} ${gone}${scene.unit}이 ${scene.left}. 지금 ${scene.what}를 구하는 과정입니다. □에 알맞은 수는? ① 늘어난 만큼 더합니다. ② ${a}+${b}=${a + b}${scene.unit}입니다. ③ ${a + b}-${gone}=□`,
+        `${a + b - gone}${scene.unit}`,
+        [`${a + b}${scene.unit}`, `${a + b + gone}${scene.unit}`, `${Math.max(1, a - gone)}${scene.unit}`],
+        `늘어난 만큼 더하고 줄어든 만큼 빼면 ${a + b - gone}${scene.unit}입니다.`,
         'addition', '오고 간 상황의 풀이 한 곳 짚기',
       );
     }
@@ -11987,11 +12197,14 @@ const wordStepQuestion = (
     const item = ['빵', '귤', '연필', '초콜릿'][seed % 4];
 
     if (situation === 1) {
+      // 먹는 상황이라 먹을 수 있는 것만 씁니다. 예전에는 연필을 접시에
+      // 담아 놓고 먹었습니다.
+      const food = ['빵', '귤', '초콜릿', '사탕'][seed % 4];
       const eaten = 1 + (seed % 4);
       if (per * groups - eaten < 1) return null;
       return makeQuestion(
         lesson, difficulty, index,
-        `한 접시에 ${subject(item)} ${per}개씩 ${groups}접시가 있었는데 ${eaten}개를 먹었습니다. 남은 ${topic(item)} 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① 처음 수는 ${per}×${groups}=${per * groups}개입니다. ② 먹은 수는 ${eaten}개입니다. ③ ${per * groups}-${eaten}=□`,
+        `한 접시에 ${subject(food)} ${per}개씩 ${groups}접시가 있었는데 ${eaten}개를 먹었습니다. 남은 ${topic(food)} 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① 처음 수는 ${per}×${groups}=${per * groups}개입니다. ② 먹은 수는 ${eaten}개입니다. ③ ${per * groups}-${eaten}=□`,
         `${per * groups - eaten}개`,
         [`${per * groups}개`, `${per * groups + eaten}개`, `${eaten}개`],
         `곱해서 처음 수를 구한 뒤 먹은 수를 빼면 ${per * groups - eaten}개입니다.`,
@@ -12098,8 +12311,48 @@ const wordStepQuestion = (
   }
 
   if (tag === 'time') {
-    // 걸린 시간을 구하는 것은 2-2 시각과 시간 6차시부터입니다.
-    if (!/걸린 시간|하루의 시간|달력/.test(lesson.title)) return null;
+    const idea = timeIdeaOf(lesson);
+
+    // 달력 차시는 달력의 구조로 풉니다. 같은 요일이 7일마다 돌아온다는
+    // 것을 쓰지 않으면 그냥 더하기가 되어 버립니다.
+    if (idea === '달력') {
+      const names = ['월', '화', '수', '목', '금', '토', '일'];
+      const first = 1 + (seed % 5);
+      const weeks = 1 + (seed % 3);
+      // 7일 뒤만 물으면 요일을 문제에서 베끼면 그만입니다. 7일씩 지난
+      // 뒤 며칠 더 가야 하는지까지 따져야 답이 나오게 합니다.
+      const step = 1 + (seed % 3);
+      const later = first + weeks * 7 + step;
+      const from = seed % 7;
+      const to = (from + step) % 7;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `${first}일이 ${names[from]}요일입니다. 같은 달 ${later}일이 무슨 요일인지 알아보는 과정입니다. □에 알맞은 것은? ① 같은 요일은 7일마다 돌아옵니다. ② 7일씩 ${weeks}번 지난 ${first + weeks * 7}일도 ${names[from]}요일입니다. ③ 거기서 ${step}일 더 가면 □요일입니다.`,
+        `${names[to]}요일`,
+        [`${names[from]}요일`, `${names[(to + 1) % 7]}요일`, `${names[(to + 3) % 7]}요일`],
+        `7일씩 지나면 요일이 그대로이고, 거기서 ${step}일 더 가면 ${names[to]}요일입니다.`,
+        'time', '문장 상황의 풀이 한 곳 짚기',
+      );
+    }
+
+    // 하루 차시는 오전과 오후의 경계를 넘는 것이 어려운 곳입니다.
+    if (idea === '하루') {
+      const start = 8 + (seed % 3);
+      const toNoon = 12 - start;
+      const raw = 1 + ((seed + Math.floor(seed / 3)) % 4);
+      // 오전 쪽과 오후 쪽이 같은 시간이면 오답 보기 둘이 겹칩니다.
+      const end = raw === toNoon ? (raw % 4) + 1 : raw;
+      return makeQuestion(
+        lesson, difficulty, index,
+        `오전 ${start}시에 나가 오후 ${end}시에 돌아왔습니다. 밖에 있던 시간을 구하는 과정입니다. □에 알맞은 수는? ① 오전 ${start}시에서 낮 12시까지 ${toNoon}시간 ② 낮 12시에서 오후 ${end}시까지 ${end}시간 ③ 모두 □시간`,
+        `${toNoon + end}시간`,
+        [`${toNoon}시간`, `${end}시간`, `${toNoon + end + 1}시간`],
+        `낮 12시를 사이에 두고 ${toNoon}시간과 ${end}시간이므로 ${toNoon + end}시간입니다.`,
+        'time', '문장 상황의 풀이 한 곳 짚기',
+      );
+    }
+
+    if (idea !== '걸린시간') return null;
     const start = 1 + (seed % 9);
     const mins = [20, 30, 40][seed % 3];
     return makeQuestion(
@@ -13668,8 +13921,16 @@ const bankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Qu
   // 자리를 index로 고릅니다. Math.floor(index / 3)으로 고르면 데이터 문항이
   // 들어가는 여섯 자리(9·10·11·21·22·23)가 모두 같은 값이 되어, 문항을
   // 두 개 적어도 한 개만 쓰였습니다.
-  const template = usable[index % usable.length];
-  return buildFromTemplate(template, lesson, difficulty, index, templateTools);
+  // 고른 틀이 이 차시에서 만들어지지 않을 때가 있습니다(2단 차시의 7단
+  // 문항처럼). 예전에는 거기서 그만두어 그 자리가 통째로 비었고, 차시에
+  // 문항을 더 써도 자리에 닿지 못했습니다. 만들어지는 것이 나올 때까지
+  // 차례로 넘어갑니다.
+  for (let step = 0; step < usable.length; step += 1) {
+    const template = usable[(index + step) % usable.length];
+    const made = buildFromTemplate(template, lesson, difficulty, index, templateTools);
+    if (made) return made;
+  }
+  return null;
 };
 
 // 데이터로 적은 풀이 과정 문항입니다. 남의 풀이를 따라가며 한 단계를
@@ -13727,7 +13988,12 @@ const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number):
           // 안내 문구가 두 수준을 달라 보이게 하고 있어서 그것으로 충분해
           // 보였을 뿐, 문구를 걷어 내니 상과 중이 같은 모양을 나눠 갖고
           // 있었습니다. 상에서는 상황이 있으면 늘 상황으로 냅니다.
-          ? (difficulty === '상' ? wordStepQuestion(lesson, difficulty, index) : null)
+          // 문장 상황 생성기는 차시마다 한 모양뿐이라, 상의 스무 자리를
+          // 모두 내주면 그 차시의 상은 늘 같은 모양이 됩니다. 데이터로
+          // 적어 둔 과정 문항과 번갈아 씁니다.
+          ? (difficulty === '상' && Math.floor(index / 3) % 2 === 0
+              ? wordStepQuestion(lesson, difficulty, index)
+              : null)
             // 뒤섞인 풀이를 차례대로 놓는 문항은 상만 받습니다. 빈칸을
             // 채우는 일과 차례를 잡는 일은 다른 일입니다 — 채우기는 남의
             // 풀이를 따라가면 되지만, 차례를 잡으려면 그 풀이가 왜 그
@@ -13763,7 +14029,15 @@ const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number):
               ? pickTheShapeQuestion(lesson, difficulty, index)
                 ?? pickTheGraphQuestion(lesson, difficulty, index)
               : null)
-            ?? (Math.floor(index / 3) % 4 === 3 ? bankQuestion(lesson, difficulty, index) : null)
+            // 데이터로 적은 문항이 설 자리입니다. 넉 자리에 하나만 내주던
+            // 때에는 차시에 문항을 아무리 더 써도 화면에 나오지 않았습니다
+            // — 서른 자리 가운데 여섯뿐이라, 한 생성기가 스무 자리를
+            // 차지하고 있는 것을 밀어낼 수가 없었습니다.
+            //
+            // 그렇다고 절반을 내주면 이번에는 서로 다른 문제가 줄었습니다.
+            // 데이터 문항은 뽑는 수의 폭이 좁아, 자리를 많이 받을수록 같은
+            // 수가 되풀이됩니다. 셋에 하나가 두 가지가 함께 사는 자리입니다.
+            ?? (Math.floor(index / 3) % 3 === 2 ? bankQuestion(lesson, difficulty, index) : null)
             ?? (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
             ?? challengeQuestion(lesson, difficulty, index)
             ?? richQuestionFor(lesson, difficulty, index)
@@ -13824,23 +14098,42 @@ const questionsFor = (
   const seen = new Set<string>();
   const made: Question[] = [];
 
+  // 한 모양이 차지할 수 있는 자리 수입니다. 서른 자리를 여섯 모양이
+  // 나눠 가지려면 한 모양이 다섯 자리를 넘지 않아야 합니다. 예전에는
+  // 풀이 과정 생성기 하나가 스무 자리를 차지해, 그 차시에 문항을 아무리
+  // 더 써도 화면에는 세 가지밖에 나오지 않았습니다.
+  const MOST_PER_SHAPE = 5;
+  const shapeSeen = new Map<string, number>();
+  const taken = (shape: string) => shapeSeen.get(shape) ?? 0;
+
+
   for (let slot = 0; slot < 30; slot += 1) {
     const first = buildQuestionAt(lesson, difficulty, slot);
     // 그 자리가 맡고 있던 몫입니다. 자료를 읽고 조건을 함께 보는 문항이
     // 수준마다 몇 자리씩 있어야 하는데, 겹친다고 아무것으로나 바꾸면
     // 그 몫이 무너집니다.
     const wantsRich = isRichQuestion(first);
-    const avoided = avoidShapes?.has(shapeOfPrompt(first.prompt)) ?? false;
+    const firstShape = shapeOfPrompt(first.prompt);
+    // 풀이 과정 자리는 수를 세어 둔 자리입니다(상 20자리, 중 5자리).
+    // 그 자리를 다른 갈래로 바꾸면 수준을 가르는 설계가 무너지므로,
+    // 한 모양이 자리를 다 먹는지는 그 밖의 자리에서만 봅니다. 풀이 과정
+    // 자리의 모양은 그 안에서 늘려야 합니다 — 상황이 여럿인 풀이를
+    // 데이터로 적어 두면 됩니다.
+    const crowded = !isStepSlot(difficulty, slot) && taken(firstShape) >= MOST_PER_SHAPE;
+    const avoided = avoidShapes?.has(firstShape) ?? false;
 
     let question = first;
-    if (seen.has(first.prompt) || avoided) {
+    if (seen.has(first.prompt) || crowded || avoided) {
       let sameKind: Question | null = null;
       let anyFresh: Question | null = null;
 
       for (let again = 1; again <= 8; again += 1) {
         const other = buildQuestionAt(lesson, difficulty, slot + again * 30);
         if (seen.has(other.prompt)) continue;
-        if (avoidShapes?.has(shapeOfPrompt(other.prompt))) continue;
+        const shape = shapeOfPrompt(other.prompt);
+        if (avoidShapes?.has(shape)) continue;
+        if (taken(shape) >= MOST_PER_SHAPE) continue;
+
         if (!anyFresh) anyFresh = other;
         if (isRichQuestion(other) === wantsRich) {
           sameKind = other;
@@ -13848,14 +14141,36 @@ const questionsFor = (
         }
       }
 
+      // 자리의 갈래를 지키며 찾아도 없으면, 데이터로 적어 둔 문항에서
+      // 가져옵니다. 풀이 과정 생성기는 차시마다 한 모양뿐이라, 번호를
+      // 아무리 바꿔도 같은 모양만 나옵니다 — 그 자리는 데이터 문항이
+      // 채우는 편이 낫습니다.
+      // 데이터로 적어 둔 문항은 예전에 '생성기에서 아무것도 못 찾았을 때'만
+      // 봤습니다. 그런데 답이 몰리는 차시는 생성기가 늘 같은 답을 내면서도
+      // 문제 글은 새것을 내놓아, anyFresh가 늘 차 있었습니다. 그래서 답을
+      // 갈라 줄 문항을 새로 써 넣어도 화면까지 오지 못했습니다.
+      // 답이 넘친 자리에서는 데이터 문항을 먼저 봅니다.
+      const fromBank = sameKind || anyFresh || !crowded
+        ? null
+        : bankQuestion(lesson, difficulty, slot);
+      const bankShape = fromBank ? shapeOfPrompt(fromBank.prompt) : '';
+      const bankUsable = fromBank
+        && !seen.has(fromBank.prompt)
+        && taken(bankShape) < MOST_PER_SHAPE
+        && !(avoidShapes?.has(bankShape) ?? false);
+
       // 겹치는 것을 피하는 일보다 그 자리의 몫을 지키는 일이 먼저입니다.
       // 자료를 읽는 자리인데 같은 갈래가 없으면, 다른 갈래로 바꾸느니
       // 겹치더라도 그대로 둡니다 — 겹친 것은 눈에 보이지만 수준이 무너진
       // 것은 눈에 보이지 않습니다.
-      question = sameKind ?? (wantsRich ? first : anyFresh ?? first);
+      question = sameKind
+        ?? (bankUsable && fromBank ? fromBank : null)
+        ?? (wantsRich ? first : anyFresh ?? first);
     }
 
     seen.add(question.prompt);
+    const shape = shapeOfPrompt(question.prompt);
+    shapeSeen.set(shape, taken(shape) + 1);
     made.push(question);
   }
 

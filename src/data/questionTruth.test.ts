@@ -189,6 +189,128 @@ describe('the maths in each question is true', () => {
     expect([...new Set(mismatched)]).toEqual([]);
   });
 
+  it('does not let one answer own a lesson', () => {
+    // 아이가 '문제를 안 읽어도 정답만 보고 고르게 된다'고 했습니다. 재
+    // 보니 '백을 알아볼까요' 하 수준은 서른 문제 가운데 스무 개의 답이
+    // 100이었습니다. 묻는 말이 달라도 답이 같으면 두어 번 만에 들킵니다.
+    //
+    // 이 수는 내려가기만 해야 합니다. 올라간다면 답이 하나로 몰리는
+    // 차시를 새로 만든 것입니다.
+    const WORST_TODAY = 16;
+    let worst = 0;
+    let where = '';
+
+    for (const lesson of lessons) {
+      if (lesson.title === '단원 도입') continue;
+      for (const level of ['하', '중', '상'] as const) {
+        const tally = new Map<string, number>();
+        for (const question of generateQuestions(lesson, level)) {
+          tally.set(question.answer, (tally.get(question.answer) ?? 0) + 1);
+        }
+        for (const [answer, count] of tally) {
+          if (count > worst) {
+            worst = count;
+            where = `${lesson.id} ${level} '${answer}'`;
+          }
+        }
+      }
+    }
+
+    expect(worst, `한 답이 가장 많이 차지한 곳: ${where}`).toBeLessThanOrEqual(WORST_TODAY);
+  });
+
+  it('never offers the same choice twice', () => {
+    // '{left + eaten}개'가 곧 '{total}개'였습니다. 보기 넷 가운데 둘이
+    // 같은 수라, 아이는 셋 중에서 고르면서 넷인 줄 압니다.
+    const doubled: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      const seen = new Set(question.choices);
+      if (seen.size !== question.choices.length) {
+        doubled.push(`${lessonId} ${level} ${question.id}: ${question.choices.join(' / ')}`);
+      }
+    }
+
+    expect([...new Set(doubled)]).toEqual([]);
+  });
+
+  it('keeps the later time lessons off the clock face', () => {
+    // 달력 차시의 절반이 '긴바늘이 한 칸 움직이면'과 '몇 분 걸렸을까요'
+    // 였습니다. 태그가 time이라는 것만 보고 문항을 골랐기 때문입니다.
+    // 하루와 달력은 시계에서 분을 읽는 차시가 아닙니다.
+    const strayed: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      const lesson = lessons.find((one) => one.id === lessonId);
+      if (!lesson || lesson.unitTitle !== '시각과 시간') continue;
+      if (!/하루|달력/.test(lesson.title)) continue;
+
+      const asked = question.basePrompt ?? question.prompt;
+      // 짧은바늘은 하루를 이야기할 때 쓸 일이 있습니다. 분을 읽는
+      // 이야기만 봅니다.
+      const stray = /긴바늘|작은 눈금/.exec(asked)
+        ?? (/달력/.test(lesson.title) ? /걸린 시간|몇 분이 걸렸/.exec(asked) : null);
+      if (stray) {
+        strayed.push(`${lessonId} ${level} ${question.id}: ${stray[0]} — ${asked}`);
+      }
+    }
+
+    expect([...new Set(strayed)]).toEqual([]);
+  });
+
+  it('keeps each shape lesson to its own shape', () => {
+    // 삼각형 차시에 '생활 장면에서 원 찾기'가 나왔습니다. 차시가 다루는
+    // 도형을 차시 번호로 짚어 두었는데 그 표가 실제 차시와 어긋나
+    // 있었습니다. 차시 제목이 도형을 말하면 그 도형만 다룹니다.
+    const strayed: string[] = [];
+    const shapeOfTitle = (title: string) =>
+      title.includes('△') ? '삼각형' : title.includes('□') ? '사각형' : title.includes('○') ? '원' : null;
+
+    for (const { lessonId, level, question } of all) {
+      const lesson = lessons.find((one) => one.id === lessonId);
+      const mine = lesson ? shapeOfTitle(lesson.title) : null;
+      if (!mine) continue;
+
+      // 무엇을 묻는지는 전략 이름에 적혀 있습니다. 오답 보기에 다른
+      // 도형이 있는 것은 마땅한 일이라 보지 않습니다.
+      //
+      // 제 차시 도형을 함께 말하는 문항 — '사각형을 나누어 삼각형을
+      // 만드는 상황' — 은 그 차시가 다루는 일입니다. 다른 도형만
+      // 말하는 문항만 봅니다.
+      if (question.strategy.includes(mine)) continue;
+
+      const others = ['삼각형', '사각형', '원'].filter((shape) => shape !== mine);
+      const strayedTo = others.find((shape) => question.strategy.includes(shape));
+      if (strayedTo) {
+        strayed.push(`${lessonId} ${level} ${question.id}: ${mine} 차시인데 ${strayedTo} — ${question.strategy}`);
+      }
+    }
+
+    expect([...new Set(strayed)]).toEqual([]);
+  });
+
+  it('does not colour in the answer when it asks which shape it is', () => {
+    // '삼각형은 어느 것일까요?' 옆의 그림에서 삼각형만 색이 칠해져
+    // 있었습니다. 힌트가 아니라 답을 미리 준 것입니다. 고르라고 하는
+    // 문제에서는 모두 같은 색이어야 합니다.
+    const marked: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      const visual = question.visual;
+      if (!visual || visual.kind !== 'plane-shapes') continue;
+
+      // '어느 것일까요?'만 봅니다. '원을 찾을 때 확인할 성질은?'의 답은
+      // 성질이므로, 그림에서 원을 짚어 주는 것은 도움이지 답이 아닙니다.
+      const asked = question.basePrompt ?? question.prompt;
+      if (!/어느 것/.test(asked)) continue;
+      if (!visual.items.some((item) => item.active)) continue;
+
+      marked.push(`${lessonId} ${level} ${question.id}: 답을 색으로 짚어 줌 — ${asked.slice(0, 40)}`);
+    }
+
+    expect([...new Set(marked)]).toEqual([]);
+  });
+
   it('draws the thing the question names', () => {
     // '쌓은 모양에서 규칙을 찾아볼까요' 차시에 무늬 문항의 ○△□가 붙어
     // 나왔습니다. 쌓기나무를 말하는 문제 옆에 도형 무늬가 있으면 아이는

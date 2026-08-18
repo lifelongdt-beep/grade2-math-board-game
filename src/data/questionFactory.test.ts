@@ -119,11 +119,10 @@ describe('questionFactory', () => {
   // 이것은 감출 일이 아니라 채울 일입니다. 지금 값을 바닥으로 적어 두고,
   // 문항을 더 쓸 때마다 이 수가 올라가야 합니다. 내려가면 검사가 막습니다.
   //
-  // 오늘 실제로 센 값은 5571가지입니다(차시×수준 300개 조합, 자리는
-  // 9000개). 자료를 읽는 자리에 같은 갈래의 다른 문제가 없을 때는 겹치는
-  // 쪽을 골랐으므로, 겹치지 않게만 고를 때보다 스물아홉 가지 적습니다.
+  // 2026-08-18 기준 5999가지입니다(차시×수준 300개 조합, 자리는 9000개).
+  // 열두 단원 예순 차시에 문항을 쓰면서 5518에서 여기까지 올라왔습니다.
   // 바닥은 그보다 조금 낮게 두어 수를 하나 고칠 때마다 걸리지는 않게 합니다.
-  const DISTINCT_TODAY = 5550;
+  const DISTINCT_TODAY = 5950;
 
   it('keeps growing the number of different questions', () => {
     let total = 0;
@@ -381,18 +380,27 @@ describe('questionFactory', () => {
           expect(question.visual?.kind, question.id).toBe('plane-shapes');
           if (question.visual?.kind !== 'plane-shapes') continue;
 
-          const activeKinds = question.visual.items.filter((item) => item.active).map((item) => item.kind);
+          // 말한 도형이 그림에 있어야 합니다. 예전에는 '색이 칠해진
+          // 도형'으로 보았는데, 그것은 '삼각형은 어느 것일까요?'에서
+          // 답을 색으로 짚어 주던 때의 기준입니다. 지금은 고르라는
+          // 문제에서 색을 칠하지 않으므로, 그려져 있는지만 봅니다.
+          const kinds = question.visual.items.map((item) => item.kind);
 
           if (target === '원') {
-            expect(activeKinds, question.id).toContain('circle');
+            expect(kinds, question.id).toContain('circle');
           }
 
           if (target === '삼각형') {
-            expect(activeKinds, question.id).toContain('triangle');
+            // 한쪽이 벌어진 도형은 '삼각형이 아닌 까닭'을 묻는 문제의
+            // 반례입니다. 삼각형 이야기를 하는 그림이 맞습니다.
+            expect(
+              kinds.some((kind) => kind === 'triangle' || kind === 'open-triangle'),
+              question.id,
+            ).toBe(true);
           }
 
           if (target === '사각형') {
-            expect(activeKinds.some((kind) => kind === 'square' || kind === 'rectangle'), question.id).toBe(true);
+            expect(kinds.some((kind) => kind === 'square' || kind === 'rectangle'), question.id).toBe(true);
           }
         }
       }

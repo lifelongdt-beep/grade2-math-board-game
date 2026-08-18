@@ -37,6 +37,7 @@ import {
   watchMuted,
 } from './sound';
 import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
+import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
 import { TeacherPanel } from './components/TeacherPanel';
@@ -736,9 +737,12 @@ function App() {
   const wrongCount = sessionRecords.filter((record) => !record.correct).length;
   const accuracy = sessionRecords.length === 0 ? 0 : Math.round((correctCount / sessionRecords.length) * 100);
 
-  // 한 단계는 아이 한 명당 여섯 문제입니다. 한 판에 한두 단계를 채울
-  // 만한 크기라, 채우는 맛도 있고 손에 닿지 않지도 않습니다.
-  const goalStep = Math.max(6, playerCount * 6);
+  // 한 단계는 아이 한 명당 네 문제입니다.
+  //
+  // 여섯이었을 때는 다섯 명이 서른 개를 맞혀야 한 단계였습니다. 달리는
+  // 것이 목표마다 바뀌는데(기차 → 비행기 → 로켓 → 우주선 → 외계인 →
+  // 사람), 그 속도로는 한 학기에도 외계인을 못 봅니다.
+  const goalStep = Math.max(4, playerCount * 4);
   const goalStage = Math.floor(correctCount / goalStep) + 1;
   const goalTarget = goalStage * goalStep;
   const goalPercent = Math.round(((correctCount % goalStep) / goalStep) * 100);
@@ -1382,8 +1386,11 @@ function App() {
               ⭐
             </span>
           ))}
-          <span className="class-goal-runner" style={{ left: `${goalPercent}%` }} aria-hidden="true">
-            🚀
+          {/* 목표를 이룰 때마다 다른 것이 달립니다 — 기차, 비행기, 로켓,
+              우주선, 외계인, 사람. 무엇이 나올지가 다음 목표를 채울
+              까닭이 됩니다. */}
+          <span className="class-goal-runner" style={{ left: `${goalPercent}%` }}>
+            <GoalRunner stage={goalStage} />
           </span>
           {/* 선물은 다 와 가면 흔들리고, 닿으면 열립니다. */}
           <span className={`class-goal-prize ${goalJustReached ? 'open' : goalPercent >= 92 ? 'near' : ''}`} aria-hidden="true">
@@ -1396,7 +1403,9 @@ function App() {
           )}
         </div>
         <small>
-          {goalJustReached ? '목표 달성! 다음 목표로 🎉' : `${goalStage}단계 · 다음 목표 ${goalTarget}개`}
+          {goalJustReached
+            ? `목표 달성! 다음은 ${runnerNameFor(goalStage)} 🎉`
+            : `${goalStage}단계 · 다음 목표 ${goalTarget}개`}
         </small>
       </div>
 
@@ -1471,22 +1480,6 @@ function App() {
                         </div>
                       )}
 
-                      {/* 자기 자리에서 자기 것을 엽니다. 한가운데 뜨는 창
-                          하나에 다 같이 모이면, 자기 것을 보기 전에 옆자리
-                          것부터 보게 됩니다. */}
-                      <button
-                        className="lane-result-toggle"
-                        type="button"
-                        aria-expanded={Boolean(openResults[player.id])}
-                        onClick={() => {
-                          playTapSound();
-                          setOpenResults((prev) => ({ ...prev, [player.id]: !prev[player.id] }));
-                        }}
-                      >
-                        <BarChart3 size={16} />
-                        {openResults[player.id] ? '결과 접기' : '결과 자세히 보기'}
-                      </button>
-
                       {openResults[player.id] && (() => {
                         const guide = studyGuideFor(sessionRecords, player.id);
                         if (guide.answered === 0) {
@@ -1551,6 +1544,25 @@ function App() {
                           </div>
                         );
                       })()}
+
+                      {/* 자기 자리에서 자기 것을 엽니다. 한가운데 뜨는 창
+                          하나에 다 같이 모이면, 자기 것을 보기 전에 옆자리
+                          것부터 보게 됩니다.
+                          단추는 풀이 글보다 아래에 둡니다. 위에 두었더니
+                          결과를 펼쳤을 때 글에 밀려 위로 올라가, 칠판 앞
+                          아이가 '결과 접기'에 손이 닿지 않았습니다. */}
+                      <button
+                        className="lane-result-toggle"
+                        type="button"
+                        aria-expanded={Boolean(openResults[player.id])}
+                        onClick={() => {
+                          playTapSound();
+                          setOpenResults((prev) => ({ ...prev, [player.id]: !prev[player.id] }));
+                        }}
+                      >
+                        <BarChart3 size={16} />
+                        {openResults[player.id] ? '결과 접기' : '결과 자세히 보기'}
+                      </button>
                     </div>
                   ) : (
                     <>
