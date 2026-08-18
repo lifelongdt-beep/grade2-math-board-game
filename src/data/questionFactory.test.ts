@@ -122,7 +122,7 @@ describe('questionFactory', () => {
   // 2026-08-18 기준 5788가지입니다(차시×수준 300개 조합, 자리는 9000개).
   // 2학기 여섯 단원에 문항을 쓰면서 5518에서 여기까지 올라왔습니다.
   // 바닥은 그보다 조금 낮게 두어 수를 하나 고칠 때마다 걸리지는 않게 합니다.
-  const DISTINCT_TODAY = 5750;
+  const DISTINCT_TODAY = 7000;
 
   it('keeps growing the number of different questions', () => {
     let total = 0;
