@@ -37,6 +37,7 @@ import {
   watchMuted,
 } from './sound';
 import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
+import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
 import { TeacherPanel } from './components/TeacherPanel';
@@ -1382,8 +1383,11 @@ function App() {
               ⭐
             </span>
           ))}
-          <span className="class-goal-runner" style={{ left: `${goalPercent}%` }} aria-hidden="true">
-            🚀
+          {/* 목표를 이룰 때마다 다른 것이 달립니다 — 기차, 비행기, 로켓,
+              우주선, 외계인, 사람. 무엇이 나올지가 다음 목표를 채울
+              까닭이 됩니다. */}
+          <span className="class-goal-runner" style={{ left: `${goalPercent}%` }}>
+            <GoalRunner stage={goalStage} />
           </span>
           {/* 선물은 다 와 가면 흔들리고, 닿으면 열립니다. */}
           <span className={`class-goal-prize ${goalJustReached ? 'open' : goalPercent >= 92 ? 'near' : ''}`} aria-hidden="true">
@@ -1396,7 +1400,9 @@ function App() {
           )}
         </div>
         <small>
-          {goalJustReached ? '목표 달성! 다음 목표로 🎉' : `${goalStage}단계 · 다음 목표 ${goalTarget}개`}
+          {goalJustReached
+            ? `목표 달성! 다음은 ${runnerNameFor(goalStage)} 🎉`
+            : `${goalStage}단계 · 다음 목표 ${goalTarget}개`}
         </small>
       </div>
 

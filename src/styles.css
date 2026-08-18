@@ -4719,6 +4719,15 @@ body::before {
   color: #16663a;
 }
 
+/* '조심할 곳'만 제 색이 없어 .student-result-summary p의 흰색을 물려받아,
+   흰 바탕에 흰 글씨가 되어 아무것도 보이지 않았습니다. '이렇게 해 봐요'와
+   '다 풀고 나서'는 제 색이 있어 멀쩡했습니다.
+   :not()으로 짚어 두 형제의 색은 건드리지 않습니다. */
+.lane-guide-advice .lane-guide-line:not(.how):not(.check),
+.lane-guide-advice .lane-guide-line:not(.how):not(.check) span {
+  color: #111827;
+}
+
 @media (max-width: 720px) {
   .lane-guide-line {
     grid-template-columns: 1fr;
@@ -4957,12 +4966,13 @@ body::before {
 .class-goal {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
-  padding: 8px 16px;
-  border: 1px solid rgba(120, 170, 255, 0.34);
+  padding: 10px 18px;
+  border: 2px solid rgba(120, 190, 255, 0.55);
   border-radius: var(--radius);
-  background: linear-gradient(90deg, rgba(10, 18, 40, 0.86), rgba(16, 30, 66, 0.7));
+  background: linear-gradient(90deg, rgba(10, 18, 40, 0.94), rgba(26, 48, 104, 0.82), rgba(10, 18, 40, 0.94));
+  box-shadow: inset 0 0 26px rgba(79, 210, 255, 0.2), 0 3px 0 rgba(0, 0, 0, 0.6);
 }
 
 /* 이 줄은 검은 바탕 위에 놓입니다. --muted는 밝은 화면에 맞춘 진한
@@ -4971,16 +4981,18 @@ body::before {
 .class-goal strong {
   flex: none;
   color: #eaf4ff;
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  text-shadow: 0 0 10px rgba(79, 210, 255, 0.6);
   white-space: nowrap;
 }
 
 .class-goal small {
   flex: none;
-  color: #9fd0ff;
-  font-size: 12px;
-  font-weight: 700;
+  color: #a8dcff;
+  font-size: 14px;
+  font-weight: 800;
   white-space: nowrap;
 }
 
@@ -4991,21 +5003,29 @@ body::before {
 .class-goal-track {
   position: relative;
   flex: 1 1 auto;
-  min-width: 120px;
-  height: 26px;
+  min-width: 140px;
+  height: 40px;
   border-radius: 999px;
-  border: 1px solid rgba(120, 170, 255, 0.4);
+  border: 2px solid rgba(120, 190, 255, 0.5);
+  /* 빈 길에도 줄무늬가 흘러갑니다. 멈춘 길은 다 끝난 것처럼 보입니다. */
   background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0 2px, transparent 2px 26px),
-    rgba(255, 255, 255, 0.13);
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.12) 0 8px, transparent 8px 20px),
+    rgba(255, 255, 255, 0.12);
+  background-size: 40px 100%, auto;
+  animation: goal-road 1.6s linear infinite;
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes goal-road {
+  to { background-position: -40px 0, 0 0; }
 }
 
 .class-goal-fill {
   position: relative;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #45d6ff, #6ef0a8);
-  box-shadow: 0 0 14px rgba(110, 240, 168, 0.55);
+  background: linear-gradient(90deg, #7a5cff, #45d6ff 45%, #6ef0a8 80%, #fff3a8);
+  box-shadow: 0 0 22px rgba(110, 240, 168, 0.7), inset 0 0 12px rgba(255, 255, 255, 0.35);
   transition: width 0.4s ease;
 }
 
@@ -5051,23 +5071,127 @@ body::before {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  font-size: 15px;
-  filter: grayscale(1) brightness(0.6);
+  font-size: 22px;
+  filter: grayscale(1) brightness(0.55);
   transition: filter 0.3s ease, transform 0.3s ease;
 }
 
 .class-goal-mark.lit {
-  filter: none;
-  transform: translate(-50%, -50%) scale(1.25);
+  filter: drop-shadow(0 0 8px #ffe066);
+  transform: translate(-50%, -50%) scale(1.4);
+  animation: goal-star 1.3s ease-in-out infinite;
+}
+
+@keyframes goal-star {
+  0%, 100% { transform: translate(-50%, -50%) scale(1.4) rotate(-8deg); }
+  50% { transform: translate(-50%, -50%) scale(1.6) rotate(8deg); }
 }
 
 .class-goal-runner {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  font-size: 22px;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 42px;
   transition: left 0.4s ease;
   animation: goal-bob 1.4s ease-in-out infinite;
+  filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.55));
+  z-index: 2;
+}
+
+/* ── 달리는 것의 움직이는 곳 ────────────────────────────────────────
+   이 그림은 움직임이 전부입니다. 멈춰 있으면 아이 눈에 들어오지 않아,
+   목표 막대가 그냥 줄 하나로 보입니다.
+   transform-box: view-box를 두어야 컴포넌트에 적어 둔 자리(예: 14px 31px)가
+   그림 좌표로 읽힙니다. 없으면 요소의 테두리 상자를 기준으로 잡아 바퀴가
+   엉뚱한 곳을 축으로 돕니다. */
+.runner-art {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.runner-art [class^='runner-'] {
+  transform-box: view-box;
+}
+
+@keyframes runner-spin { to { transform: rotate(360deg); } }
+
+/* 기차 — 바퀴가 구르고 굴뚝에서 연기가 오릅니다. */
+.runner-wheel { animation: runner-spin 0.65s linear infinite; }
+
+.runner-smoke circle { fill: #d8e6ff; animation: runner-smoke 1.5s ease-out infinite; }
+.runner-smoke circle:nth-child(2) { animation-delay: 0.5s; }
+.runner-smoke circle:nth-child(3) { animation-delay: 1s; }
+
+@keyframes runner-smoke {
+  0% { transform: translate(0, 0) scale(0.5); opacity: 0.85; }
+  100% { transform: translate(-9px, -9px) scale(1.5); opacity: 0; }
+}
+
+/* 비행기 — 프로펠러가 돕니다. */
+.runner-prop { animation: runner-spin 0.16s linear infinite; }
+
+/* 로켓 — 뒤에서 불꽃이 널름거립니다. */
+.runner-flame {
+  transform-origin: 12px 20px;
+  animation: runner-flame 0.22s ease-in-out infinite;
+  filter: drop-shadow(0 0 5px #ff9b3d);
+}
+
+@keyframes runner-flame {
+  0%, 100% { transform: scaleX(1) scaleY(1); opacity: 1; }
+  50% { transform: scaleX(0.55) scaleY(0.8); opacity: 0.8; }
+}
+
+/* 우주선 — 형광 고리가 둘레를 돕니다. */
+.runner-ring {
+  animation: runner-spin 2.4s linear infinite;
+  filter: drop-shadow(0 0 5px #7bffd4);
+}
+
+.runner-ring ellipse { animation: runner-dash 1.1s linear infinite; }
+
+@keyframes runner-dash { to { stroke-dashoffset: -96; } }
+
+.runner-lamp { animation: runner-lamp 0.9s ease-in-out infinite; }
+
+@keyframes runner-lamp {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+/* 외계인 — 한쪽 눈을 찡긋합니다. 오래 뜨고 있다가 잠깐 감습니다. */
+.runner-wink { animation: runner-wink 2.6s ease-in-out infinite; }
+
+@keyframes runner-wink {
+  0%, 78%, 100% { transform: scaleY(1); }
+  84%, 90% { transform: scaleY(0.08); }
+}
+
+.runner-antenna { animation: runner-lamp 1.2s ease-in-out infinite; }
+
+/* 사람 — 팔다리를 저으며 달립니다. */
+.runner-body { animation: runner-hop 0.42s ease-in-out infinite; }
+
+@keyframes runner-hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.6px); }
+}
+
+.runner-leg-a, .runner-arm-b { animation: runner-swing-a 0.42s ease-in-out infinite; }
+.runner-leg-b, .runner-arm-a { animation: runner-swing-b 0.42s ease-in-out infinite; }
+
+@keyframes runner-swing-a {
+  0%, 100% { transform: rotate(26deg); }
+  50% { transform: rotate(-26deg); }
+}
+
+@keyframes runner-swing-b {
+  0%, 100% { transform: rotate(-26deg); }
+  50% { transform: rotate(26deg); }
 }
 
 .class-goal-prize {
