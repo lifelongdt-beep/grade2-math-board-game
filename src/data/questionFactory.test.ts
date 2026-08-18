@@ -124,7 +124,7 @@ describe('questionFactory', () => {
   // 줄었습니다 — 수가 다른 같은 문제 대신 다른 모양을 넣은 것이라
   // 아이가 보기에는 나아진 맞바꿈입니다.
   // 바닥은 그보다 조금 낮게 두어 수를 하나 고칠 때마다 걸리지는 않게 합니다.
-  const DISTINCT_TODAY = 5480;
+  const DISTINCT_TODAY = 5900;
 
   it('keeps growing the number of different questions', () => {
     let total = 0;
