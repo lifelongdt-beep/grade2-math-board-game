@@ -12181,11 +12181,14 @@ const wordStepQuestion = (
     const item = ['빵', '귤', '연필', '초콜릿'][seed % 4];
 
     if (situation === 1) {
+      // 먹는 상황이라 먹을 수 있는 것만 씁니다. 예전에는 연필을 접시에
+      // 담아 놓고 먹었습니다.
+      const food = ['빵', '귤', '초콜릿', '사탕'][seed % 4];
       const eaten = 1 + (seed % 4);
       if (per * groups - eaten < 1) return null;
       return makeQuestion(
         lesson, difficulty, index,
-        `한 접시에 ${subject(item)} ${per}개씩 ${groups}접시가 있었는데 ${eaten}개를 먹었습니다. 남은 ${topic(item)} 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① 처음 수는 ${per}×${groups}=${per * groups}개입니다. ② 먹은 수는 ${eaten}개입니다. ③ ${per * groups}-${eaten}=□`,
+        `한 접시에 ${subject(food)} ${per}개씩 ${groups}접시가 있었는데 ${eaten}개를 먹었습니다. 남은 ${topic(food)} 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① 처음 수는 ${per}×${groups}=${per * groups}개입니다. ② 먹은 수는 ${eaten}개입니다. ③ ${per * groups}-${eaten}=□`,
         `${per * groups - eaten}개`,
         [`${per * groups}개`, `${per * groups + eaten}개`, `${eaten}개`],
         `곱해서 처음 수를 구한 뒤 먹은 수를 빼면 ${per * groups - eaten}개입니다.`,

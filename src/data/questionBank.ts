@@ -8860,7 +8860,7 @@ export const questionBank: Template[] = [
     words: { item: ['사탕', '초콜릿', '젤리'] },
     prompt: '{item:이} {per}개씩 {groups}봉지 있었는데 {eaten}개를 먹었습니다. 남은 {item:은} 몇 개일까요?',
     answer: '{left}개',
-    wrongs: ['{total}개', '{left + eaten}개', '{per + groups}개'],
+    wrongs: ['{total}개', '{total + eaten}개', '{per + groups}개'],
     solution: '{per}×{groups}={total}이고 {eaten}개를 먹었으므로 {left}개가 남습니다.',
   },
   {

@@ -189,6 +189,21 @@ describe('the maths in each question is true', () => {
     expect([...new Set(mismatched)]).toEqual([]);
   });
 
+  it('never offers the same choice twice', () => {
+    // '{left + eaten}개'가 곧 '{total}개'였습니다. 보기 넷 가운데 둘이
+    // 같은 수라, 아이는 셋 중에서 고르면서 넷인 줄 압니다.
+    const doubled: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      const seen = new Set(question.choices);
+      if (seen.size !== question.choices.length) {
+        doubled.push(`${lessonId} ${level} ${question.id}: ${question.choices.join(' / ')}`);
+      }
+    }
+
+    expect([...new Set(doubled)]).toEqual([]);
+  });
+
   it('keeps the later time lessons off the clock face', () => {
     // 달력 차시의 절반이 '긴바늘이 한 칸 움직이면'과 '몇 분 걸렸을까요'
     // 였습니다. 태그가 time이라는 것만 보고 문항을 골랐기 때문입니다.
