@@ -1667,9 +1667,13 @@ button:disabled {
 }
 
 .student-result-summary {
+  /* 칠판 앞 2학년은 화면 가운데 위쪽에 손이 닿지 않습니다. 결과 카드의
+     내용을 아래로 모으고, 남는 자리는 위에 둡니다. 단추가 맨 아래
+     자식이라 늘 자리 바닥에 섭니다. */
   min-height: 0;
-  display: grid;
-  align-content: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   gap: 12px;
   border: 1px solid #ccefee;
   border-radius: var(--radius);
@@ -1678,7 +1682,7 @@ button:disabled {
 }
 
 .result-kicker {
-  justify-self: start;
+  align-self: flex-start;
   border-radius: 999px;
   background: #fff3c4;
   color: #7b5a00;
@@ -4562,6 +4566,12 @@ body::before {
 }
 
 .lane-result-detail {
+  /* 글이 길어지면 이 안에서만 구릅니다. 예전에는 자리 전체가 굴러서
+     단추가 글을 따라 위로 사라졌습니다. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
   margin-top: 9px;
   padding-top: 9px;
   border-top: 1px dashed rgba(0, 0, 0, 0.16);
@@ -4723,12 +4733,11 @@ body::before {
    밑으로 밀려 들어갑니다. 화면에서는 '1번 학생'과 '1번 학생 결과'가
    겹쳐 보였습니다. 펼친 동안에는 위에서부터 쌓고 자리 전체가 넘어갑니다. */
 .player-lane.finished-result:has(.lane-result-detail) {
-  grid-template-rows: auto auto auto auto;
-  overflow-y: auto;
-}
-
-.player-lane.finished-result:has(.lane-result-detail) .student-result-summary {
-  align-content: start;
+  /* 자리 전체를 굴리면 '결과 접기' 단추가 글을 따라 위로 올라가 손이
+     닿지 않는 자리에 섭니다. 자리는 그대로 두고 풀이 글만 안에서
+     구르게 하면, 단추는 늘 자리 바닥에 있습니다. */
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow-y: hidden;
 }
 
 /* ── 그림으로 고르는 보기 ───────────────────────────────────────────

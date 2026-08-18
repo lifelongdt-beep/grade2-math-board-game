@@ -1471,22 +1471,6 @@ function App() {
                         </div>
                       )}
 
-                      {/* 자기 자리에서 자기 것을 엽니다. 한가운데 뜨는 창
-                          하나에 다 같이 모이면, 자기 것을 보기 전에 옆자리
-                          것부터 보게 됩니다. */}
-                      <button
-                        className="lane-result-toggle"
-                        type="button"
-                        aria-expanded={Boolean(openResults[player.id])}
-                        onClick={() => {
-                          playTapSound();
-                          setOpenResults((prev) => ({ ...prev, [player.id]: !prev[player.id] }));
-                        }}
-                      >
-                        <BarChart3 size={16} />
-                        {openResults[player.id] ? '결과 접기' : '결과 자세히 보기'}
-                      </button>
-
                       {openResults[player.id] && (() => {
                         const guide = studyGuideFor(sessionRecords, player.id);
                         if (guide.answered === 0) {
@@ -1551,6 +1535,25 @@ function App() {
                           </div>
                         );
                       })()}
+
+                      {/* 자기 자리에서 자기 것을 엽니다. 한가운데 뜨는 창
+                          하나에 다 같이 모이면, 자기 것을 보기 전에 옆자리
+                          것부터 보게 됩니다.
+                          단추는 풀이 글보다 아래에 둡니다. 위에 두었더니
+                          결과를 펼쳤을 때 글에 밀려 위로 올라가, 칠판 앞
+                          아이가 '결과 접기'에 손이 닿지 않았습니다. */}
+                      <button
+                        className="lane-result-toggle"
+                        type="button"
+                        aria-expanded={Boolean(openResults[player.id])}
+                        onClick={() => {
+                          playTapSound();
+                          setOpenResults((prev) => ({ ...prev, [player.id]: !prev[player.id] }));
+                        }}
+                      >
+                        <BarChart3 size={16} />
+                        {openResults[player.id] ? '결과 접기' : '결과 자세히 보기'}
+                      </button>
                     </div>
                   ) : (
                     <>
