@@ -65,7 +65,7 @@ describe('peek', () => {
     // 한 차시 서른 문제에 같은 답이 몇 번이나 나오는지.
     for (const [key, m] of perLessonAnswers) {
       const worst = [...m.entries()].sort((a, b) => b[1] - a[1])[0];
-      if (worst && worst[1] >= 5) repeatedAnswer.push(`${key} '${worst[0]}' ${worst[1]}번`);
+      if (worst && worst[1] >= 6) repeatedAnswer.push(`${worst[1]}회 ${key} '${worst[0]}'`);
     }
 
     const pct = (n: number, d: number) => `${Math.round((n / d) * 100)}%`;
@@ -74,7 +74,7 @@ describe('peek', () => {
     out.push(`'길면서 혼자 다른 것' ${pct(longestAndOdd, Math.max(1, longestAndOddTried))} (${longestAndOddTried}문항에서 통함)`);
     out.push(`글 보기 ${textQuestions}개 중 오답 셋이 모두 '어디서도 답이 아닌 것' ${pct(lonelyWrongs, Math.max(1, textQuestions))}`);
     out.push(`같은 답이 한 차시에 5번 넘게: ${repeatedAnswer.length}곳`);
-    out.push(...repeatedAnswer.slice(0, 12));
+    out.push(...repeatedAnswer.sort((a, b) => Number.parseInt(b, 10) - Number.parseInt(a, 10)).slice(0, 30));
 
     expect(out).toEqual([]);
   });
