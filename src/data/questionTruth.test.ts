@@ -189,6 +189,31 @@ describe('the maths in each question is true', () => {
     expect([...new Set(mismatched)]).toEqual([]);
   });
 
+  it('keeps each shape lesson to its own shape', () => {
+    // 삼각형 차시에 '생활 장면에서 원 찾기'가 나왔습니다. 차시가 다루는
+    // 도형을 차시 번호로 짚어 두었는데 그 표가 실제 차시와 어긋나
+    // 있었습니다. 차시 제목이 도형을 말하면 그 도형만 다룹니다.
+    const strayed: string[] = [];
+    const shapeOfTitle = (title: string) =>
+      title.includes('△') ? '삼각형' : title.includes('□') ? '사각형' : title.includes('○') ? '원' : null;
+
+    for (const { lessonId, level, question } of all) {
+      const lesson = lessons.find((one) => one.id === lessonId);
+      const mine = lesson ? shapeOfTitle(lesson.title) : null;
+      if (!mine) continue;
+
+      // 무엇을 묻는지는 전략 이름에 적혀 있습니다. 오답 보기에 다른
+      // 도형이 있는 것은 마땅한 일이라 보지 않습니다.
+      const others = ['삼각형', '사각형', '원'].filter((shape) => shape !== mine);
+      const strayedTo = others.find((shape) => question.strategy.includes(shape));
+      if (strayedTo) {
+        strayed.push(`${lessonId} ${level} ${question.id}: ${mine} 차시인데 ${strayedTo} — ${question.strategy}`);
+      }
+    }
+
+    expect([...new Set(strayed)]).toEqual([]);
+  });
+
   it('does not colour in the answer when it asks which shape it is', () => {
     // '삼각형은 어느 것일까요?' 옆의 그림에서 삼각형만 색이 칠해져
     // 있었습니다. 힌트가 아니라 답을 미리 준 것입니다. 고르라고 하는
@@ -199,13 +224,10 @@ describe('the maths in each question is true', () => {
       const visual = question.visual;
       if (!visual || visual.kind !== 'plane-shapes') continue;
 
-      // 답이 도형 이름인 문제만 봅니다. '원을 찾을 때 확인할 성질은?'의
-      // 답은 성질이므로, 그림에서 원을 짚어 주는 것은 도움이지 답이
-      // 아닙니다.
-      if (!['원', '삼각형', '사각형'].includes(question.answer)) continue;
-
+      // '어느 것일까요?'만 봅니다. '원을 찾을 때 확인할 성질은?'의 답은
+      // 성질이므로, 그림에서 원을 짚어 주는 것은 도움이지 답이 아닙니다.
       const asked = question.basePrompt ?? question.prompt;
-      if (!/어느 것|찾|고르|골라/.test(asked)) continue;
+      if (!/어느 것/.test(asked)) continue;
       if (!visual.items.some((item) => item.active)) continue;
 
       marked.push(`${lessonId} ${level} ${question.id}: 답을 색으로 짚어 줌 — ${asked.slice(0, 40)}`);

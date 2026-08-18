@@ -723,8 +723,10 @@ const inferQuestionVisual = (
     // 답이 도형 이름인 문제에서는 색으로 답을 짚어 주지 않습니다.
     // '원을 찾을 때 확인할 성질은?'처럼 답이 성질인 문제는 그 도형을
     // 짚어 주는 것이 도움이 되므로 그대로 둡니다.
-    const picksAShape = ['원', '삼각형', '사각형'].includes(String(answer));
-    return picksAShape && /어느 것|찾|고르|골라/.test(prompt) ? withoutHighlight(drawn) : drawn;
+    // '어느 것일까요?'는 그림에서 도형을 고르라는 물음이라 색으로
+    // 짚어 주면 답을 주는 셈입니다. '성질은 무엇일까요?'처럼 답이
+    // 도형이 아닌 물음은 짚어 주는 편이 도움이 됩니다.
+    return /어느 것/.test(prompt) ? withoutHighlight(drawn) : drawn;
   }
 
   if (source.includes('칠교')) {
@@ -7834,13 +7836,14 @@ const twoTargetBoard = (target: PlaneTarget, index: number): { visual: QuestionV
 };
 
 const shapeFocusForLesson = (lesson: Lesson, index: number): ShapeFocus => {
-  if (lesson.unitNo === 2) {
-    if (lesson.lessonNo === 2) return '원';
-    if (lesson.lessonNo === 3) return '삼각형';
-    if (lesson.lessonNo === 4) return '사각형';
-    if (lesson.lessonNo === 5) return '칠교';
-    if (lesson.lessonNo === 9) return (['원', '삼각형', '사각형', '칠교'] as ShapeFocus[])[index % 4];
-  }
+  // 차시가 다루는 도형은 차시 제목이 정합니다. 예전에는 차시 번호로
+  // 짚어 두었는데, 2차시를 원으로 적어 두어 삼각형 차시에 원 문항이
+  // 나왔습니다. 제목이 △·□·○ 기호라 글자 검사도 비껴갔습니다.
+  const title = lesson.title;
+  if (title.includes('칠교')) return '칠교';
+  if (title.includes('△') || title.includes('삼각형')) return '삼각형';
+  if (title.includes('□') || title.includes('사각형')) return '사각형';
+  if (title.includes('○') || title.includes('원')) return '원';
 
   const text = `${lesson.unitTitle} ${lesson.title}`;
   if (text.includes('칠교')) return '칠교';
