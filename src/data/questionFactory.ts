@@ -7303,16 +7303,64 @@ const clockVisualFor = (
 });
 
 // 1일을 일요일에 두면 같은 세로줄이 곧 같은 요일이 되어 "7일마다 반복"이 눈에 보입니다.
+// 다만 문제가 '8일이 월요일입니다'처럼 어떤 날의 요일을 정해 버렸으면,
+// 1일을 일요일에 고정한 그림은 문제와 어긋납니다. 그때는 startWeekday를
+// 문제가 말한 요일에 맞춰 옮깁니다.
+const WEEKDAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+const calendarStartWeekdayFor = (day: number, weekdayName: string): number => {
+  const weekdayIndex = WEEKDAY_NAMES.indexOf(weekdayName);
+  if (weekdayIndex === -1) return 0;
+  return ((weekdayIndex - (day - 1)) % 7 + 7) % 7;
+};
+
 const calendarVisualFor = (
   marks: Array<{ day: number; tone: 'start' | 'end' }> = [],
   label = '달력 자료',
+  startWeekday = 0,
 ): QuestionVisual => ({
   kind: 'calendar',
   label,
-  startWeekday: 0,
+  startWeekday,
   days: 30,
   marks,
 });
+
+// 문제글을 보고 달력 그림을 고릅니다. 어디서 부르든(문항의 갈래로 고를
+// 때든, 문제가 '달력'을 이름으로 부를 때든) 같은 규칙으로 골라야
+// 문제와 그림이 늘 같이 맞습니다.
+const calendarVisualForPrompt = (prompt: string): QuestionVisual => {
+  // 답이 되는 날짜는 표시하지 않습니다. 학생이 달력에서 직접 세어야 합니다.
+  const eventMatch = prompt.match(/오늘은 (\d+)일이고 행사는 (\d+)일/);
+  if (eventMatch) {
+    return calendarVisualFor(
+      [
+        { day: Number(eventMatch[1]), tone: 'start' },
+        { day: Number(eventMatch[2]), tone: 'end' },
+      ],
+      '오늘과 행사 날짜 달력',
+    );
+  }
+
+  const moveMatch = prompt.match(/^(\d+)일에서 \d+일 뒤/);
+  if (moveMatch) {
+    return calendarVisualFor([{ day: Number(moveMatch[1]), tone: 'start' }], '날짜를 세는 달력');
+  }
+
+  // '8일이 월요일입니다'처럼 어떤 날의 요일을 정해 준 문제는 1일을
+  // 일요일에 고정한 그림과 어긋납니다. 문제가 말한 요일에 그 날이
+  // 오도록 달력을 옮겨 그립니다.
+  const weekdayMatch = prompt.match(/(\d+)일이\s*(일|월|화|수|목|금|토)요일/);
+  if (weekdayMatch) {
+    const day = Number(weekdayMatch[1]);
+    return calendarVisualFor(
+      [{ day, tone: 'start' }],
+      '요일을 알려 주는 달력',
+      calendarStartWeekdayFor(day, weekdayMatch[2]),
+    );
+  }
+
+  return calendarVisualFor([], '요일이 반복되는 달력');
+};
 
 const patternVisualFor = (items: string[], label = '무늬 규칙 자료', missingIndex?: number): QuestionVisual => ({
   kind: 'pattern',
@@ -7558,7 +7606,7 @@ const richTimeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
         `같은 요일은 7일마다 돌아옵니다. ${day}일에서 7일 뒤인 ${later}일도 수요일입니다.`,
         'time',
         '자료 해석 · 달력에서 요일의 반복 읽기',
-        calendarVisualFor([{ day, tone: 'start' }], '요일이 반복되는 달력'),
+        calendarVisualFor([{ day, tone: 'start' }], '요일이 반복되는 달력', calendarStartWeekdayFor(day, '수')),
       );
     }
     return makeQuestion(
@@ -9329,9 +9377,9 @@ const namedSubjectVisual = (question: Question, index: number): QuestionVisual |
   }
 
   // 달력을 보라는 문제에 무늬가 붙어 나왔습니다. 같은 요일이 어디에
-  // 오는지는 달력을 봐야 세어집니다. 답이 되는 날은 표시하지 않습니다.
+  // 오는지는 달력을 봐야 세어집니다.
   if (/달력/.test(asked)) {
-    return calendarVisualFor([], '달력');
+    return calendarVisualForPrompt(asked);
   }
 
   return undefined;
@@ -9535,25 +9583,11 @@ const visualForGeneratedQuestion = (
 
   if (question.type === 'time') {
     // 달력 문제에는 시계가 아니라 달력을 보여 줍니다.
-    if (/달력|요일|며칠|날짜/.test(question.prompt)) {
-      // 답이 되는 날짜는 표시하지 않습니다. 학생이 달력에서 직접 세어야 합니다.
-      const eventMatch = question.prompt.match(/오늘은 (\d+)일이고 행사는 (\d+)일/);
-      if (eventMatch) {
-        return calendarVisualFor(
-          [
-            { day: Number(eventMatch[1]), tone: 'start' },
-            { day: Number(eventMatch[2]), tone: 'end' },
-          ],
-          '오늘과 행사 날짜 달력',
-        );
-      }
-
-      const moveMatch = question.prompt.match(/^(\d+)일에서 \d+일 뒤/);
-      if (moveMatch) {
-        return calendarVisualFor([{ day: Number(moveMatch[1]), tone: 'start' }], '날짜를 세는 달력');
-      }
-
-      return calendarVisualFor([], '요일이 반복되는 달력');
+    // '다음 달은 몇 월일까요', '1년은 몇 개월일까요'처럼 달력을 다루면서도
+    // 달력·요일·며칠·날짜라는 낱말이 없는 문제가 있어, 개월 수를 묻는
+    // 낱말도 함께 봅니다.
+    if (/달력|요일|며칠|날짜|몇 월|개월/.test(question.prompt)) {
+      return calendarVisualForPrompt(question.prompt);
     }
 
     // 문제에 적힌 숫자를 그대로 시·분으로 읽은 값이라 실제 답과 다릅니다.
@@ -13480,7 +13514,7 @@ const timeShapes: Shape[] = [
         `같은 요일은 7일마다 돌아옵니다. ${day}+7=${day + 7}일입니다.`,
         'time',
         shapeStrategy(difficulty, '자료 해석 · 요일이 7일마다 돌아옴을 이용하기', '7일마다 돌아오는 요일'),
-        calendarVisualFor([{ day, tone: 'start' }], '달력에서 찾기'),
+        calendarVisualFor([{ day, tone: 'start' }], '달력에서 찾기', calendarStartWeekdayFor(day, '수')),
       );
     } },
 
