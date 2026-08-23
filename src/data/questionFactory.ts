@@ -12525,7 +12525,9 @@ const isStepSlot = (difficulty: Difficulty, index: number) => {
   // 100% 같아졌습니다. 차시를 구분하고 있던 것이 사실은 이 문항이었기
   // 때문입니다. 그래서 중에도 남기되, 상과 다른 자리에서 뽑아
   // 두 수준이 같은 문항을 그대로 나눠 갖지는 않게 합니다.
-  if (difficulty === '하') return false;
+  // 하에도 세 자리 둡니다. 성취수준 C가 '안내된 절차에 따라'로 적혀
+  // 있는데 하에 단계 문항이 한 자리도 없던 것을 바로잡습니다.
+  if (difficulty === '하') return index % 10 === 5;
   if (difficulty === '중') return index % 6 === 1;
   return index % 3 !== 0;
 };
@@ -14064,10 +14066,161 @@ const variedQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): 
 // 자리 하나를 만듭니다. 자리마다 어떤 갈래를 받을지는 번호가 정합니다 —
 // 풀이 과정 문항이 놓일 자리, 그림으로 고르는 자리처럼요. 그래서 겹치는
 // 문제를 다시 만들 때도 번호에 30을 더해 같은 갈래를 지킵니다.
+
+// ── 하: 안내된 절차를 따라가는 문항 ──────────────────────────────────
+//
+// 2022 개정 성취수준(1~2학년군)에서 C 수준의 진술은 거의 모두
+// '안내된 절차에 따라 ~할 수 있다'입니다. 예를 들어 [2수01-06]의 C는
+// "안내된 절차에 따라 두 자리 수의 범위에서 간단한 덧셈과 뺄셈을 할 수
+// 있다"이고, [2수03-11]의 C는 "1m가 100cm임을 알고, 안내된 절차에 따라
+// '몇 m'를 '몇 cm'로 나타낼 수 있다"입니다.
+//
+// 그런데 우리는 단계를 보여 주는 문항을 상에 스무 자리, 중에 다섯 자리
+// 두고 하에는 한 자리도 두지 않았습니다. 단계를 보여 주는 것은 어렵게
+// 만드는 장치가 아니라 도와주는 장치이므로 뒤집혀 있었습니다.
+//
+// 중·상의 단계 문항을 하에 그대로 내려 보내는 것으로는 안 됩니다. 그것은
+// 풀이의 한 곳을 비워 두고 '여기서 무슨 일이 일어났는지' 묻는 문항이라
+// 판단을 요구합니다. 하의 단계 문항은 반대입니다 — 길을 끝까지 보여 주고
+// 그 길을 따라오기만 하면 답이 나오게 합니다.
+const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
+  const tag = primaryTag(lesson);
+  const title = lesson.title;
+  const limit = lesson.scope.maxNumber;
+  const seed = n(lesson, index);
+  const guide = (what: string) => `안내된 차례를 따라 ${what}`;
+
+  // 자릿값: 모형의 수를 차례로 읽어 그대로 이어 씁니다.
+  if (tag === 'placeValue' || tag === 'number') {
+    if (/세 자리 수를 알아|네 자리 수를 알아/.test(title)) {
+      const four = lesson.unitTitle === '네 자리 수';
+      const th = four ? 1 + (seed % 8) : 0;
+      const hu = 1 + ((seed + 2) % 8);
+      const te = 1 + ((seed + 4) % 8);
+      const on = 1 + ((seed + 6) % 8);
+      const value = th * 1000 + hu * 100 + te * 10 + on;
+      if (value > limit) return null;
+      const head = four ? `1000이 ${th}개, ` : '';
+      return makeQuestion(
+        lesson, '하', index,
+        `${head}100이 ${hu}개, 10이 ${te}개, 1이 ${on}개인 수를 쓰는 차례입니다. □에 알맞은 수는? ① 큰 자리부터 차례로 씁니다. ② 이어 쓰면 □입니다.`,
+        value,
+        [hu * 100 + te * 10 + on, value + 10, value - 1],
+        `큰 자리부터 차례로 이어 쓰면 ${value}입니다.`,
+        'placeValue', guide('수 쓰기'),
+      );
+    }
+
+    if (/뛰어 세/.test(title)) {
+      const step = [1, 10, 100][index % 3];
+      const start = step * (3 + (seed % 6)) * 3;
+      if (start + step > limit) return null;
+      return makeQuestion(
+        lesson, '하', index,
+        `${start}에서 ${step}씩 뛰어 세는 차례입니다. □에 알맞은 수는? ① ${step}씩 커집니다. ② ${start} 다음은 □입니다.`,
+        start + step,
+        [start + 1, start - step > 0 ? start - step : start + step * 2, start + step * 2],
+        `${step}씩 커지므로 ${start} 다음은 ${start + step}입니다.`,
+        'number', guide('뛰어 세기'),
+      );
+    }
+    return null;
+  }
+
+  // 덧셈·뺄셈: 일의 자리부터 십의 자리까지 길을 끝까지 보여 줍니다.
+  if (tag === 'addition' && /덧셈을 해 볼까요/.test(title)) {
+    const aTens = 1 + (seed % 6);
+    const aOnes = 5 + (seed % 4);
+    const bOnes = 10 - aOnes + (1 + (index % 3));
+    const a = aTens * 10 + aOnes;
+    const sum = a + bOnes;
+    if (sum > limit) return null;
+    return makeQuestion(
+      lesson, '하', index,
+      `${a}+${bOnes}를 계산하는 차례입니다. □에 알맞은 수는? ① 일의 자리끼리 더하면 ${aOnes}+${bOnes}=${aOnes + bOnes}입니다. ② 10은 십의 자리로 올리고 ${(aOnes + bOnes) % 10}을 씁니다. ③ 십의 자리는 ${aTens}+1=${aTens + 1}입니다. ④ 답은 □입니다.`,
+      sum,
+      [a + bOnes - 10, aTens * 10 + (aOnes + bOnes) % 10, sum + 10],
+      `일의 자리에서 올린 1을 십의 자리에 더하면 ${sum}입니다.`,
+      'addition', guide('더하기'),
+    );
+  }
+
+  if (tag === 'subtraction' && /뺄셈을 해 볼까요/.test(title)) {
+    const aTens = 3 + (seed % 5);
+    const aOnes = 1 + (seed % 4);
+    const bOnes = aOnes + 3 + (index % 3);
+    const a = aTens * 10 + aOnes;
+    const gap = a - bOnes;
+    if (gap < 1) return null;
+    return makeQuestion(
+      lesson, '하', index,
+      `${a}-${bOnes}를 계산하는 차례입니다. □에 알맞은 수는? ① ${aOnes}에서 ${bOnes}를 뺄 수 없습니다. ② 십의 자리에서 10을 빌려 ${aOnes + 10}-${bOnes}=${aOnes + 10 - bOnes}입니다. ③ 십의 자리는 ${aTens}-1=${aTens - 1}입니다. ④ 답은 □입니다.`,
+      gap,
+      [a - bOnes + 10, aTens * 10 + (bOnes - aOnes), gap - 10 > 0 ? gap - 10 : gap + 1],
+      `10을 빌려 계산하면 ${gap}입니다.`,
+      'subtraction', guide('빼기'),
+    );
+  }
+
+  // 곱셈: 같은 수를 여러 번 더한 것이 곱셈임을 길로 보여 줍니다.
+  if (tag === 'multiplication') {
+    const dans = lesson.scope.dans ?? [];
+    const each = dans.length ? dans[seed % dans.length] : 2 + (seed % 4);
+    const times = 2 + (seed % 4);
+    const total = each * times;
+    if (total > limit) return null;
+    const chain = Array.from({ length: times }, () => each).join('+');
+    return makeQuestion(
+      lesson, '하', index,
+      `${each}×${times}를 구하는 차례입니다. □에 알맞은 수는? ① ${each}씩 ${times}번 더합니다. ② ${chain}=${total}입니다. ③ 그래서 ${each}×${times}=□입니다.`,
+      total,
+      [each + times, total + each, total - each > 0 ? total - each : total + times],
+      `${each}씩 ${times}번 더하면 ${total}이므로 ${each}×${times}=${total}입니다.`,
+      'multiplication', guide('곱하기'),
+    );
+  }
+
+  // 시각: 두 바늘을 차례로 읽습니다.
+  if (tag === 'time' && /몇 시 몇 분을 읽어 볼까요 ⑴/.test(title)) {
+    const hour = 1 + (seed % 9);
+    const point = 2 + (seed % 8);
+    const minute = point * 5;
+    return makeQuestion(
+      lesson, '하', index,
+      `시계를 읽는 차례입니다. □에 알맞은 것은? ① 짧은바늘이 ${hour}을 지났으므로 ${hour}시입니다. ② 긴바늘이 ${point}을 가리키므로 5×${point}=${minute}분입니다. ③ 그래서 □입니다.`,
+      `${hour}시 ${minute}분`,
+      [`${hour + 1}시 ${minute}분`, `${hour}시 ${point}분`, `${point}시 ${hour}분`],
+      `짧은바늘로 시를, 긴바늘로 분을 읽으면 ${hour}시 ${minute}분입니다.`,
+      'time', guide('시각 읽기'),
+    );
+  }
+
+  // 길이: 1cm가 몇 번 들어 있는지 세어 갑니다.
+  if (tag === 'measurement' && /1cm를 알아|cm보다 더 큰 단위/.test(title)) {
+    const times = 4 + (seed % 8);
+    return makeQuestion(
+      lesson, '하', index,
+      `막대의 길이를 재는 차례입니다. □에 알맞은 것은? ① 한쪽 끝을 눈금 0에 맞춥니다. ② 1cm가 ${times}번 들어 있습니다. ③ 그래서 막대는 □입니다.`,
+      `${times}cm`,
+      [`${times}m`, `${times + 1}cm`, `1cm`],
+      `1cm가 ${times}번이면 ${times}cm입니다.`,
+      'measurement', guide('길이 재기'),
+    );
+  }
+
+  return null;
+};
+
 const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const question = rawQuestionAt(lesson, difficulty, index);
   const chosen =
         isStepSlot(difficulty, index)
+          // 하는 전용 문항만 씁니다. 중·상의 단계 문항은 풀이의 한 곳을
+          // 비워 두고 판단을 요구하므로 하에 그대로 내려 보낼 수 없습니다.
+          // 만들지 못하는 차시에서는 보통 문항을 그대로 둡니다.
+          ? (difficulty === '하'
+              ? guidedStepQuestion(lesson, index) ?? question
+              : (
           // 상은 문장 상황을 읽고 그 풀이의 한 곳을 짚는 문항이 우선입니다.
           // 중의 풀이 과정 문항은 지금처럼 맨 계산의 단계를 짚습니다 —
           // 중은 아직 상황과 절차를 한꺼번에 다루는 단계가 아닙니다.
@@ -14100,7 +14253,7 @@ const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number):
             // 받을 것이 없어 중과 같은 문항을 그대로 받았습니다. 데이터로
             // 적어 둔 판단 문항(ㄱㄴㄷㄹ)이 있으면 그것을 씁니다.
             ?? (difficulty === '상' ? bankQuestion(lesson, difficulty, index) : null)
-            ?? question
+            ?? question))
           // 응용 문항을 먼저 쓰고, 남은 자리의 절반만 새 모양에 내줍니다.
           // 전부 새 모양으로 채우면 이번에는 그 모양 하나가 차시를 덮어
           // 결국 또 같은 문제만 되풀이됩니다. 기존 문항과 섞어야 합니다.
