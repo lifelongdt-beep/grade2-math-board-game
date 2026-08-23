@@ -344,6 +344,13 @@ describe('the maths in each question is true', () => {
       if (named.length === 0) continue;
       if (named.some((subject) => subject.drawnBy.includes(visual.kind))) continue;
 
+      // 자로 잰 두 물건을 견주는 문항은 자 하나로 그릴 수 없습니다.
+      // '크레파스 9cm, 색연필 14cm'를 자 한 개에 그리면 9에서 14까지의
+      // 띠가 되어 두 길이가 모두 사라집니다. 막대 둘로 나란히 그리는
+      // 것이 바른 그림입니다.
+      const twoLengths = (asked.match(/\d+\s*cm/g) ?? []).length >= 2;
+      if (visual.kind === 'bar-model' && twoLengths) continue;
+
       unrelated.push(
         `${lessonId} ${level} ${question.id}: ${named.map((s) => s.name).join('·')}를 말하는데 그림은 ${visual.kind} — ${asked.slice(0, 46)}`,
       );
