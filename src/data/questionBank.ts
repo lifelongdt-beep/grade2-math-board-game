@@ -10135,9 +10135,9 @@ export const questionBank: Template[] = [
     when: /몇 시 몇 분을 읽어 볼까요 ⑴/,
     demand: 'reason',
     tag: 'time',
-    strategy: '조건 함께 보기 · 두 바늘을 보고 분을 읽는 방법 판단하기',
-    vars: { point: { from: 3, to: 9 }, hour: { from: 2, to: 8 } },
-    prompt: '짧은바늘이 {hour}과 다음 수 사이에 있고 긴바늘이 숫자 {point}을 가리킵니다. 몇 분인지 알아보는 방법으로 알맞은 것은 어느 것일까요?',
+    strategy: '분을 읽는 방법 판단하기',
+    vars: { point: { from: 3, to: 9 } },
+    prompt: '긴바늘이 숫자 {point}을 가리킵니다. 몇 분인지 알아보는 방법으로 알맞은 것은 어느 것일까요?',
     answer: '5씩 {point}번 뛰어 셉니다',
     wrongs: ['{point}을 그대로 읽습니다', '{point}에 5를 더합니다', '{point}에 10을 곱합니다'],
     solution: '숫자 한 칸이 5분이므로 5씩 {point}번 뛰어 세어 읽습니다.',
@@ -10566,7 +10566,7 @@ export const questionBank: Template[] = [
   // 이것을 3시 55분으로 읽는 것이 이 단원 최대의 고비입니다.
   {
     id: 'clock5-hour-hand-trap',
-    when: /몇 시 몇 분을 읽어 볼까요 ⑴/,
+    when: /몇 시 몇 분을 읽어 볼까요 ⑵/,
     demand: 'reason',
     tag: 'time',
     strategy: '조건 함께 보기 · 짧은바늘이 가리키는 시 판단하기',
