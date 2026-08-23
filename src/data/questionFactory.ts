@@ -14215,14 +14215,21 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
 
 const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const question = rawQuestionAt(lesson, difficulty, index);
-  const chosen =
-        isStepSlot(difficulty, index)
-          // 하는 전용 문항만 씁니다. 중·상의 단계 문항은 풀이의 한 곳을
-          // 비워 두고 판단을 요구하므로 하에 그대로 내려 보낼 수 없습니다.
-          // 만들지 못하는 차시에서는 보통 문항을 그대로 둡니다.
-          ? (difficulty === '하'
-              ? guidedStepQuestion(lesson, index) ?? question
-              : (
+
+  // 하는 전용 문항만 씁니다. 중·상의 단계 문항은 풀이의 한 곳을 비워 두고
+  // 판단을 요구하므로 하에 그대로 내려 보낼 수 없습니다.
+  //
+  // 만들지 못하는 차시에서는 이 자리를 보통 경로에 그대로 돌려줍니다.
+  // 예전에는 보통 문항(rawQuestionAt)으로 바로 채웠는데, 그러면 그 자리가
+  // 원래 받던 그림 문항·데이터 문항을 건너뛰어 표와 그래프 차시의 그림
+  // 수가 열넷에서 열셋으로 줄었습니다.
+  const guided = difficulty === '하' && isStepSlot(difficulty, index)
+    ? guidedStepQuestion(lesson, index)
+    : null;
+
+  const chosen = guided ??
+        (isStepSlot(difficulty, index) && difficulty !== '하'
+          ? (
           // 상은 문장 상황을 읽고 그 풀이의 한 곳을 짚는 문항이 우선입니다.
           // 중의 풀이 과정 문항은 지금처럼 맨 계산의 단계를 짚습니다 —
           // 중은 아직 상황과 절차를 한꺼번에 다루는 단계가 아닙니다.
