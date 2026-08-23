@@ -12247,10 +12247,10 @@ export const questionBank: Template[] = [
     visual: {
       kind: 'table',
       columns: [
-        { name: '식물원', value: 6 },
-        { name: '놀이공원', value: 12 },
-        { name: '과학관', value: 5 },
-        { name: '박물관', value: 3 },
+        { name: '식물원', value: '6' },
+        { name: '놀이공원', value: '12' },
+        { name: '과학관', value: '5' },
+        { name: '박물관', value: '3' },
       ],
       categoryLabel: '가고 싶은 곳',
       valueLabel: '학생 수(명)',
@@ -12275,9 +12275,9 @@ export const questionBank: Template[] = [
     visual: {
       kind: 'pictograph',
       items: [
-        { label: '사과', count: 5 },
-        { label: '바나나', count: 8 },
-        { label: '포도', count: 3 },
+        { label: '사과', count: '5' },
+        { label: '바나나', count: '8' },
+        { label: '포도', count: '3' },
       ],
       orientation: 'up',
       label: '좋아하는 과일 그래프',
@@ -12298,7 +12298,7 @@ export const questionBank: Template[] = [
     tag: 'time',
     strategy: '자료 해석 · 두 바늘을 함께 보고 시각 판단하기',
     vars: {},
-    visual: { kind: 'clock', hour: 2, minute: 35, label: '시계를 보고 읽기' },
+    visual: { kind: 'clock', hour: '2', minute: '35', label: '시계를 보고 읽기' },
     prompt: '시계를 보고 몇 시 몇 분인지 바르게 읽은 것은 어느 것일까요?',
     answer: '2시 35분',
     wrongs: ['3시 35분', '2시 7분', '3시 7분'],
