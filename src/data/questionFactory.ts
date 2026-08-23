@@ -14262,7 +14262,7 @@ const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number):
             // 받을 것이 없어 중과 같은 문항을 그대로 받았습니다. 데이터로
             // 적어 둔 판단 문항(ㄱㄴㄷㄹ)이 있으면 그것을 씁니다.
             ?? (difficulty === '상' ? bankQuestion(lesson, difficulty, index) : null)
-            ?? question))
+            ?? question)
           // 응용 문항을 먼저 쓰고, 남은 자리의 절반만 새 모양에 내줍니다.
           // 전부 새 모양으로 채우면 이번에는 그 모양 하나가 차시를 덮어
           // 결국 또 같은 문제만 되풀이됩니다. 기존 문항과 섞어야 합니다.
@@ -14291,7 +14291,7 @@ const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number):
             ?? (Math.floor(index / 3) % 2 === 1 ? variedQuestion(lesson, difficulty, index) : null)
             ?? challengeQuestion(lesson, difficulty, index)
             ?? richQuestionFor(lesson, difficulty, index)
-            ?? question;
+            ?? question);
   return addAssessmentLayer(withRichVisual(chosen, index, lesson), index);
 };
 
