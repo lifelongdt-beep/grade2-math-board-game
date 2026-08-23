@@ -12185,7 +12185,7 @@ export const questionBank: Template[] = [
     when: /몇의 몇 배를 알아/,
     demand: 'reason',
     tag: 'multiplication',
-    strategy: '묶음을 배로 바꾸어 말하는 방법 판단하기',
+    strategy: '조건 함께 보기 · 묶음을 배로 바꾸어 말하는 방법 판단하기',
     vars: { each: { from: 4, to: 7 }, groups: { from: 2, to: 3 } },
     prompt: '사과가 {each}개씩 {groups}묶음 있습니다. 이것을 배를 써서 바르게 말한 것은 어느 것일까요?',
     answer: '{each}의 {groups}배',
