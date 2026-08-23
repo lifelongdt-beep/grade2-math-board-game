@@ -14362,7 +14362,11 @@ const questionsFor = (
     // 한 모양이 자리를 다 먹는지는 그 밖의 자리에서만 봅니다. 풀이 과정
     // 자리의 모양은 그 안에서 늘려야 합니다 — 상황이 여럿인 풀이를
     // 데이터로 적어 두면 됩니다.
-    const crowded = !isStepSlot(difficulty, slot) && taken(firstShape) >= MOST_PER_SHAPE;
+    // 하의 안내된 절차 자리는 몫이 정해진 자리가 아니라 '만들 수 있으면
+    // 쓰는' 자리입니다. 이 자리까지 혼잡 검사에서 빼면 그림 있는 문항으로
+    // 바꿔 주던 일이 일어나지 않아 그 차시의 그림 수가 줄어듭니다.
+    const quotaSlot = difficulty !== '하' && isStepSlot(difficulty, slot);
+    const crowded = !quotaSlot && taken(firstShape) >= MOST_PER_SHAPE;
     const avoided = avoidShapes?.has(firstShape) ?? false;
 
     let question = first;
