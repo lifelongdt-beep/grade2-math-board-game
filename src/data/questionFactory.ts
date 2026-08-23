@@ -14163,7 +14163,8 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
   }
 
   // 곱셈: 같은 수를 여러 번 더한 것이 곱셈임을 길로 보여 줍니다.
-  if (tag === 'multiplication') {
+  // ×는 '곱셈을 알아볼까요'부터입니다. 묶어 세기 차시에 쓰면 선행입니다.
+  if (tag === 'multiplication' && /곱셈을 알아|곱셈식으로 나타내|곱셈구구|곱셈표/.test(title)) {
     const dans = lesson.scope.dans ?? [];
     const each = dans.length ? dans[seed % dans.length] : 2 + (seed % 4);
     const times = 2 + (seed % 4);
@@ -14196,7 +14197,8 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
   }
 
   // 길이: 1cm가 몇 번 들어 있는지 세어 갑니다.
-  if (tag === 'measurement' && /1cm를 알아|cm보다 더 큰 단위/.test(title)) {
+  // 눈금 0에 맞추는 것은 '자로 길이를 재는 방법' 차시부터입니다.
+  if (tag === 'measurement' && /자로 길이를 재/.test(title)) {
     const times = 4 + (seed % 8);
     return makeQuestion(
       lesson, '하', index,

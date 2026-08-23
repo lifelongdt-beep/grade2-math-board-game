@@ -43,19 +43,35 @@ describe('difficulty is a difference in what the question asks', () => {
     expect(same).toEqual([]);
   });
 
-  it('keeps the working-out questions out of the easiest level', () => {
-    // 풀이 과정 문항은 남의 풀이를 따라가며 빈칸을 채우는 문항이라
-    // 아직 답을 스스로 내지 못하는 단계에서는 이릅니다.
-    const leaked: string[] = [];
+  it('never blanks a middle step at the easiest level', () => {
+    // 예전에는 하에 단계가 붙은 문항을 아예 넣지 않았습니다. 까닭은
+    // '남의 풀이를 따라가며 중간 빈칸을 채우는 일'이 아직 이르다는
+    // 것이었고, 그 자체는 옳습니다.
+    //
+    // 그런데 2022 개정 성취수준에서 C 수준의 진술은 거의 모두 '안내된
+    // 절차에 따라 ~할 수 있다'입니다([2수01-06] C: "안내된 절차에 따라
+    // 두 자리 수의 범위에서 간단한 덧셈과 뺄셈을 할 수 있다"). 단계를
+    // 보여 주는 것은 어렵게 만드는 장치가 아니라 도와주는 장치입니다.
+    //
+    // 그래서 가리는 곳을 바꿉니다. 하에서는 길을 끝까지 보여 주고 마지막
+    // 답만 묻습니다. 중간 단계를 비워 두는 것만 막습니다.
+    const blanked: string[] = [];
 
     for (const lesson of lessons) {
       for (const question of generateQuestions(lesson, '하')) {
-        if (question.prompt.includes('①')) {
-          leaked.push(`${question.id}: ${question.prompt.slice(0, 34)}`);
+        const prompt = question.basePrompt ?? question.prompt;
+        if (!prompt.includes('①')) continue;
+
+        // 마지막 단계 앞에 □가 있으면 중간을 비운 것입니다.
+        const marks = ['①', '②', '③', '④'];
+        const lastAt = Math.max(...marks.map((mark) => prompt.lastIndexOf(mark)));
+        const blankAt = prompt.indexOf('□');
+        if (blankAt >= 0 && blankAt < lastAt) {
+          blanked.push(`${question.id}: ${prompt.slice(0, 40)}`);
         }
       }
     }
 
-    expect(leaked).toEqual([]);
+    expect(blanked).toEqual([]);
   });
 });
