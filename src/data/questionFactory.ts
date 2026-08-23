@@ -474,7 +474,12 @@ const tuneWrongsForDifficulty = (
   const value = Number(match[1]);
   const suffix = match[2];
   if (/[+\-=×÷]/.test(suffix)) return wrongs;
-  const step = value >= 1000 ? 100 : value >= 100 ? 10 : 1;
+  // '몇 분 전'은 교육과정이 5분 전, 10분 전처럼 간단한 경우만 다루고
+  // 13분 전 같은 경우는 다루지 말라고 못 박아 두었습니다. 답을 ±1로
+  // 흔들면 오답 보기에 13분 전이 생깁니다. 이때는 5씩 흔듭니다.
+  const step = /분 전/.test(suffix)
+    ? 5
+    : value >= 1000 ? 100 : value >= 100 ? 10 : 1;
   // 위로 올리면 범위를 넘는 경우에는 아래로 내려 잡습니다.
   const up = (gap: number) => {
     if (value + gap <= limit) return value + gap;
