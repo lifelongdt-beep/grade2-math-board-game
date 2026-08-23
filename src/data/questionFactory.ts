@@ -1161,6 +1161,33 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
         'number', '거꾸로 뛰어 세기',
       );
     }
+    if (variant === 4) {
+      // 자리가 바뀌는 곳입니다.
+      //
+      // start를 아무 수로나 잡으면 990처럼 자리가 넘어가는 수가 거의
+      // 걸리지 않습니다. 그러면 아이는 '뛰어 세면 그 자리 숫자가 1씩
+      // 커진다'로만 익히고, 990에서 10씩 뛰면 십의 자리가 9에서 0이
+      // 되고 윗자리가 올라간다는 것을 못 넘습니다. 여기서만은 경계를
+      // 골라서 냅니다.
+      const hop = four ? [1, 10, 100][index % 3] : [1, 10][index % 2];
+      const block = hop * 10;
+      const above = 1 + (seed % (four ? 8 : 7));
+      // 뛰어야 할 자리를 9로 채워 둡니다. hop이 10이면 …90이 됩니다.
+      const edge = four
+        ? above * 1000 + (hop === 100 ? 900 : (seed % 9) * 100 + (hop === 10 ? 90 : (seed % 9) * 10 + 9))
+        : above * 100 + (hop === 10 ? 90 : (seed % 9) * 10 + 9);
+      const landed = edge + hop;
+      if (landed <= lesson.scope.maxNumber) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `${edge}에서 ${hop}씩 뛰어 세면 다음에 오는 수는 얼마일까요?`,
+          landed,
+          [edge + (hop === 1 ? 10 : 1), edge - hop, edge - (block - hop)],
+          `${hop}씩 뛰면 그 자리가 9에서 0이 되고 바로 윗자리가 1 커져 ${landed}입니다.`,
+          'placeValue', '자리가 바뀌는 곳에서 뛰어 세기',
+        );
+      }
+    }
     return makeQuestion(
       lesson, difficulty, index,
       `${start}에서 ${step}씩 3번 뛰어 세면 얼마일까요?`,

@@ -10491,4 +10491,147 @@ export const questionBank: Template[] = [
     wrongs: ['0', '1', '{k + k}'],
     solution: '{k}×1={k}이고 {k}×0=0이므로 {k}-0={k}입니다.',
   },
+
+  // ══════════════════════════════════════════════════════════════════
+  // 2학기 보강 — 교육과정이 짚는 고비를 겨눈 문항
+  // ══════════════════════════════════════════════════════════════════
+
+  // 곱셈구구 · 배는 '여러 번 더하기'만이 아니라 두 양의 관계입니다.
+  // 동수누가로만 익히면 '몇 배'가 덧셈의 줄임말로만 남습니다.
+  {
+    id: 'times-relational-length',
+    when: /곱셈구구를 이용하여 문제를 해결/,
+    demand: 'connect',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 두 양의 배 관계를 나타내는 상황',
+    vars: {
+      times: { from: 2, to: 4 },
+      base: { calc: 'times + 2' },
+      result: { calc: '(times + 2) * times' },
+    },
+    prompt: '빨간 끈은 {base}cm이고 파란 끈은 {result}cm입니다. 파란 끈의 길이는 빨간 끈의 몇 배일까요?',
+    answer: '{times}배',
+    wrongs: ['{base}배', '{result}배', '{times + 1}배'],
+    solution: '{base}씩 {times}묶음이 {result}이므로 파란 끈은 빨간 끈의 {times}배입니다.',
+  },
+  {
+    id: 'times-relational-back',
+    when: /곱셈구구를 이용하여 문제를 해결/,
+    demand: 'connect',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 배를 알 때 기준이 되는 양 찾는 상황',
+    vars: {
+      times: { from: 3, to: 6 },
+      base: { from: 4, to: 8 },
+      result: { calc: 'base * times' },
+    },
+    prompt: '노란 리본은 {result}cm이고, 이것은 초록 리본의 {times}배입니다. 초록 리본은 몇 cm일까요?',
+    answer: '{base}cm',
+    wrongs: ['{result}cm', '{times}cm', '{result + times}cm'],
+    solution: '{base}씩 {times}묶음이 {result}이므로 초록 리본은 {base}cm입니다.',
+  },
+
+  // 길이 재기 · 눈금 0에 맞추지 않고 잰 자입니다. 끝 눈금을 그대로
+  // 읽어 버리는 것이 이 단원 최대의 오개념입니다.
+  {
+    id: 'broken-ruler-read',
+    when: /자로 길이를 재어/,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '자료 해석 · 눈금 0이 아닐 때 길이 읽는 방법 판단하기',
+    vars: {
+      startPoint: { from: 2, to: 4 },
+      length: { from: 5, to: 8 },
+      endPoint: { calc: 'startPoint + length' },
+    },
+    prompt: '물건의 한쪽 끝을 자의 눈금 {startPoint}에 맞추었더니 다른 쪽 끝이 눈금 {endPoint}에 닿았습니다. 이 물건의 길이는 몇 cm일까요?',
+    answer: '{length}cm',
+    wrongs: ['{endPoint}cm', '{startPoint}cm', '{endPoint + startPoint}cm'],
+    solution: '눈금 {startPoint}에서 눈금 {endPoint}까지 1cm가 {length}번 들어 있으므로 {length}cm입니다.',
+  },
+  {
+    id: 'broken-ruler-why',
+    when: /자로 길이를 재어/,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '끝 눈금만 읽으면 안 되는 까닭 판단하기',
+    vars: {},
+    prompt: '물건을 눈금 0이 아닌 곳에 대고 재었습니다. 끝에 닿은 눈금을 그대로 길이라고 하면 안 되는 까닭은 무엇일까요?',
+    answer: '시작한 눈금만큼 더 세어지기 때문입니다',
+    wrongs: ['자가 짧기 때문입니다', '물건이 기울어졌기 때문입니다', '눈금이 작기 때문입니다'],
+    solution: '길이는 시작한 눈금부터 끝난 눈금까지 1cm가 몇 번 들어 있는지입니다.',
+  },
+
+  // 시각과 시간 · 2시 55분에서 짧은바늘은 3에 거의 닿아 있습니다.
+  // 이것을 3시 55분으로 읽는 것이 이 단원 최대의 고비입니다.
+  {
+    id: 'clock5-hour-hand-trap',
+    when: /몇 시 몇 분을 읽어 볼까요 ⑴/,
+    demand: 'reason',
+    tag: 'time',
+    strategy: '짧은바늘이 가리키는 시 판단하기',
+    vars: { hour: { from: 1, to: 9 }, next: { calc: 'hour + 1' } },
+    prompt: '짧은바늘이 {next} 바로 앞까지 왔고, 긴바늘이 11을 가리킵니다. 몇 시 몇 분일까요?',
+    answer: '{hour}시 55분',
+    wrongs: ['{next}시 55분', '{hour}시 11분', '{next}시 5분'],
+    solution: '짧은바늘이 {next}를 지나야 {next}시입니다. 아직 지나지 않았으므로 {hour}시 55분입니다.',
+  },
+
+  // 표와 그래프 · 어느 것이 좋은지는 무엇을 알고 싶은지에 달렸습니다.
+  // 묻는 상황을 뒤집어 두 답이 모두 나오게 합니다.
+  {
+    id: 'table-graph-for-compare',
+    when: /표와 그래프를 보고 무엇을 알 수 있을까요/,
+    demand: 'reason',
+    tag: 'data',
+    strategy: '쓰임에 맞는 나타내기 방법 판단하기',
+    vars: {},
+    prompt: '어느 색을 가장 많이 좋아하는지 한눈에 알아보도록 교실 벽에 붙이려고 합니다. 표와 그래프 중 어느 것이 더 알맞을까요?',
+    answer: '그래프',
+    wrongs: ['표', '둘 다 알 수 없습니다', '조사한 사람의 이름표'],
+    solution: '그래프는 칸의 높낮이로 많고 적음이 한눈에 보입니다.',
+  },
+  {
+    id: 'table-graph-for-total',
+    when: /표와 그래프를 보고 무엇을 알 수 있을까요/,
+    demand: 'reason',
+    tag: 'data',
+    strategy: '쓰임을 견주어 나타내기 방법 고르기',
+    vars: {},
+    prompt: '조사한 학생이 모두 몇 명인지 정확히 알아보려고 합니다. 표와 그래프 중 어느 것이 더 알맞을까요?',
+    answer: '표',
+    wrongs: ['그래프', '둘 다 알 수 없습니다', '조사한 사람의 이름표'],
+    solution: '표는 항목마다 수가 적혀 있어 합계를 세기 좋습니다.',
+  },
+
+  // 규칙 찾기 · 덧셈표는 가로·세로만이 아니라 대각선에도 규칙이 있습니다.
+  {
+    id: 'addition-table-diagonal',
+    when: /덧셈표에서 규칙/,
+    demand: 'reason',
+    tag: 'pattern',
+    strategy: '덧셈표 대각선에 숨은 규칙 찾기',
+    vars: {
+      start: { from: 2, to: 6 },
+      s1: { calc: 'start + 2' },
+      s2: { calc: 'start + 4' },
+      s3: { calc: 'start + 6' },
+    },
+    prompt: '덧셈표에서 대각선을 따라 {start}, {s1}, {s2}, □ 와 같이 놓여 있습니다. □에 알맞은 수는 얼마일까요?',
+    answer: '{s3}',
+    wrongs: ['{s2}', '{s2 + 1}', '{s3 + 2}'],
+    solution: '오른쪽으로 한 칸, 아래로 한 칸 가면 두 수가 모두 1씩 커져 합은 2씩 커집니다. 그래서 {s3}입니다.',
+  },
+  {
+    id: 'addition-table-diagonal-why',
+    when: /덧셈표에서 규칙/,
+    demand: 'reason',
+    tag: 'pattern',
+    strategy: '대각선에서 2씩 커지는 까닭 판단하기',
+    vars: {},
+    prompt: '덧셈표에서 대각선을 따라가면 수가 2씩 커집니다. 그 까닭은 무엇일까요?',
+    answer: '더하는 두 수가 모두 1씩 커지기 때문입니다',
+    wrongs: ['한 수만 1씩 커지기 때문입니다', '표가 네모나기 때문입니다', '두 수를 곱했기 때문입니다'],
+    solution: '오른쪽으로 한 칸 가면 한 수가 1 커지고, 아래로 한 칸 가면 다른 수가 1 커집니다.',
+  },
 ];
