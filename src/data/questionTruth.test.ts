@@ -219,6 +219,29 @@ describe('the maths in each question is true', () => {
     expect(worst, `한 답이 가장 많이 차지한 곳: ${where}`).toBeLessThanOrEqual(WORST_TODAY);
   });
 
+  it('keeps 몇 분 전 to the simple cases the curriculum allows', () => {
+    // 2022 개정 수학과 교육과정, 도형과 측정 적용 시 고려 사항:
+    // "'몇 시 몇 분 전'의 시각 읽기에서 5분 전, 10분 전과 같이 간단한
+    //  경우를 다루고, 13분 전과 같이 복잡한 경우는 다루지 않는다."
+    //
+    // 틀에 before: { from: 5, to: 20 }으로 적어 두어 6분 전, 13분 전,
+    // 17분 전이 그대로 나오고 있었습니다.
+    const complicated: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      const text = `${question.basePrompt ?? question.prompt} ${question.choices.join(' ')} ${question.answer}`;
+      const found = text.match(/(\d+)분 전/g) ?? [];
+      for (const one of found) {
+        const minutes = Number(one.replace('분 전', ''));
+        if (minutes % 5 !== 0) {
+          complicated.push(`${lessonId} ${level} ${question.id}: ${one}`);
+        }
+      }
+    }
+
+    expect([...new Set(complicated)]).toEqual([]);
+  });
+
   it('never offers the same choice twice', () => {
     // '{left + eaten}개'가 곧 '{total}개'였습니다. 보기 넷 가운데 둘이
     // 같은 수라, 아이는 셋 중에서 고르면서 넷인 줄 압니다.

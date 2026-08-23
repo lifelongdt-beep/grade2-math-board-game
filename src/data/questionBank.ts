@@ -6595,7 +6595,11 @@ export const questionBank: Template[] = [
     strategy: '몇 분 전으로 읽은 시각 구하기',
     vars: {
       hour: { from: 2, to: 9 },
-      before: { from: 5, to: 20 },
+      // 교육과정: '몇 시 몇 분 전'은 5분 전, 10분 전처럼 간단한 경우만
+      // 다루고 13분 전 같은 복잡한 경우는 다루지 않습니다. 5의 배수만
+      // 나오도록 다섯 칸 단위로 셉니다.
+      beforeStep: { from: 1, to: 4 },
+      before: { calc: 'beforeStep * 5' },
       minute: { calc: '60 - before' },
       prev: { calc: 'hour - 1' },
     },
@@ -6613,7 +6617,11 @@ export const questionBank: Template[] = [
     strategy: '조건 함께 보기 · 두 가지로 읽은 시각을 맞추어 보는 상황',
     vars: {
       hour: { from: 2, to: 9 },
-      before: { from: 5, to: 15 },
+      // 교육과정: '몇 시 몇 분 전'은 5분 전, 10분 전처럼 간단한 경우만
+      // 다루고 13분 전 같은 복잡한 경우는 다루지 않습니다. 5의 배수만
+      // 나오도록 다섯 칸 단위로 셉니다.
+      beforeStep: { from: 1, to: 3 },
+      before: { calc: 'beforeStep * 5' },
       minute: { calc: '60 - before' },
       prev: { calc: 'hour - 1' },
     },
@@ -6630,7 +6638,11 @@ export const questionBank: Template[] = [
     strategy: '자료 해석 · 시각을 읽은 두 가지 방법을 하나씩 판단하기',
     vars: {
       hour: { from: 2, to: 9 },
-      before: { from: 5, to: 15 },
+      // 교육과정: '몇 시 몇 분 전'은 5분 전, 10분 전처럼 간단한 경우만
+      // 다루고 13분 전 같은 복잡한 경우는 다루지 않습니다. 5의 배수만
+      // 나오도록 다섯 칸 단위로 셉니다.
+      beforeStep: { from: 1, to: 3 },
+      before: { calc: 'beforeStep * 5' },
       minute: { calc: '60 - before' },
       prev: { calc: 'hour - 1' },
     },
@@ -6751,7 +6763,11 @@ export const questionBank: Template[] = [
     strategy: '몇 시 몇 분 전으로 읽기',
     vars: {
       hour: { from: 2, to: 11 },
-      before: { from: 5, to: 15 },
+      // 교육과정: '몇 시 몇 분 전'은 5분 전, 10분 전처럼 간단한 경우만
+      // 다루고 13분 전 같은 복잡한 경우는 다루지 않습니다. 5의 배수만
+      // 나오도록 다섯 칸 단위로 셉니다.
+      beforeStep: { from: 1, to: 3 },
+      before: { calc: 'beforeStep * 5' },
       minute: { calc: '60 - before' },
     },
     prompt: '{hour}시 {minute}분은 몇 시 몇 분 전이라고도 할까요?',
@@ -6767,7 +6783,11 @@ export const questionBank: Template[] = [
     strategy: '조건 함께 보기 · 몇 분 전으로 말한 시각을 찾는 상황',
     vars: {
       hour: { from: 3, to: 10 },
-      before: { from: 5, to: 20 },
+      // 교육과정: '몇 시 몇 분 전'은 5분 전, 10분 전처럼 간단한 경우만
+      // 다루고 13분 전 같은 복잡한 경우는 다루지 않습니다. 5의 배수만
+      // 나오도록 다섯 칸 단위로 셉니다.
+      beforeStep: { from: 1, to: 4 },
+      before: { calc: 'beforeStep * 5' },
       minute: { calc: '60 - before' },
     },
     prompt: '지우는 {hour}시 {before}분 전에 집을 나섰습니다. 지우가 집을 나선 시각은 몇 시 몇 분일까요?',
@@ -6783,7 +6803,11 @@ export const questionBank: Template[] = [
     strategy: '자료 해석 · 시각을 말한 여러 가지 방법을 하나씩 판단하기',
     vars: {
       hour: { from: 2, to: 10 },
-      before: { from: 5, to: 15 },
+      // 교육과정: '몇 시 몇 분 전'은 5분 전, 10분 전처럼 간단한 경우만
+      // 다루고 13분 전 같은 복잡한 경우는 다루지 않습니다. 5의 배수만
+      // 나오도록 다섯 칸 단위로 셉니다.
+      beforeStep: { from: 1, to: 3 },
+      before: { calc: 'beforeStep * 5' },
       minute: { calc: '60 - before' },
     },
     prompt: '{hour}시 {minute}분을 여러 가지 방법으로 말했습니다.',
@@ -6802,7 +6826,11 @@ export const questionBank: Template[] = [
     strategy: '자료 해석 · 몇 분 전으로 고쳐 말하는 과정 판단하기',
     vars: {
       hour: { from: 2, to: 10 },
-      before: { from: 5, to: 20 },
+      // 교육과정: '몇 시 몇 분 전'은 5분 전, 10분 전처럼 간단한 경우만
+      // 다루고 13분 전 같은 복잡한 경우는 다루지 않습니다. 5의 배수만
+      // 나오도록 다섯 칸 단위로 셉니다.
+      beforeStep: { from: 1, to: 4 },
+      before: { calc: 'beforeStep * 5' },
       minute: { calc: '60 - before' },
     },
     prompt: '{hour}시 {minute}분을 몇 분 전으로 고쳐 말하는 과정입니다. □에 알맞은 수는 얼마일까요?',
@@ -6822,7 +6850,11 @@ export const questionBank: Template[] = [
     strategy: '긴바늘의 눈금으로 몇 분 전인지 읽기',
     vars: {
       hour: { from: 2, to: 11 },
-      before: { from: 5, to: 15 },
+      // 교육과정: '몇 시 몇 분 전'은 5분 전, 10분 전처럼 간단한 경우만
+      // 다루고 13분 전 같은 복잡한 경우는 다루지 않습니다. 5의 배수만
+      // 나오도록 다섯 칸 단위로 셉니다.
+      beforeStep: { from: 1, to: 3 },
+      before: { calc: 'beforeStep * 5' },
     },
     prompt: '긴바늘이 12까지 작은 눈금으로 {before}칸 남았습니다. {hour}시 몇 분 전일까요?',
     answer: '{before}분 전',
@@ -11302,7 +11334,11 @@ export const questionBank: Template[] = [
     vars: {
       hour: { from: 1, to: 9 },
       next: { calc: 'hour + 1' },
-      gap: { from: 5, to: 20 },
+      // 교육과정: '몇 시 몇 분 전'은 5분 전, 10분 전처럼 간단한 경우만
+      // 다루고 13분 전 같은 복잡한 경우는 다루지 않습니다. 5의 배수만
+      // 나오도록 다섯 칸 단위로 셉니다.
+      gapStep: { from: 1, to: 4 },
+      gap: { calc: 'gapStep * 5' },
       shown: { calc: '60 - gap' },
     },
     prompt: '지금은 {hour}시 {shown}분입니다. {next}시가 되려면 몇 분이 더 있어야 할까요?',
