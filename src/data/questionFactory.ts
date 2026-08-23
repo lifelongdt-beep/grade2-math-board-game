@@ -14440,7 +14440,9 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
       const pear = 2 + ((seed + 2) % 5);
       return makeQuestion(
         lesson, '하', index,
-        `표를 보고 그래프를 그리는 차례입니다. □에 알맞은 수는? ① 사과는 ${apple}명이므로 아래에서부터 ${apple}칸을 채웁니다. ② 배는 ${pear}명이므로 ${pear}칸을 채웁니다. ③ 그리는 ○는 모두 □개입니다.`,
+        // '표를 보고'라고 말하면 표 그림이 있어야 합니다. 여기서 보여 주는
+        // 그림은 그래프이므로, 조사한 수를 옮긴다고만 말합니다.
+        `조사한 수를 그래프로 옮기는 차례입니다. □에 알맞은 수는? ① 사과는 ${apple}명이므로 아래에서부터 ${apple}칸을 채웁니다. ② 배는 ${pear}명이므로 ${pear}칸을 채웁니다. ③ 그리는 ○는 모두 □개입니다.`,
         `${apple + pear}개`,
         [`${apple}개`, `${pear}개`, `${apple + pear + 1}개`],
         `${apple}칸과 ${pear}칸을 더하면 ○는 모두 ${apple + pear}개입니다.`,
