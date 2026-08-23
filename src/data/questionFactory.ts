@@ -438,8 +438,11 @@ const makeChoices = (answer: string | number, wrongs: Array<string | number>, se
     const match = answerText.match(/^(-?\d+)(.*)$/);
     if (!match) return `${answerText} 보기 ${delta}`;
     const value = Number(match[1]);
-    const down = value - delta;
-    return `${down > 0 ? down : value + delta}${match[2]}`;
+    // '몇 분 전'은 교육과정이 5의 배수만 다루라고 못 박았습니다. 빈
+    // 보기를 1씩 채우면 9분 전, 11분 전이 생깁니다.
+    const gap = /분 전/.test(match[2]) ? delta * 5 : delta;
+    const down = value - gap;
+    return `${down > 0 ? down : value + gap}${match[2]}`;
   };
   let delta = 1;
   while (unique.length < 4) {
