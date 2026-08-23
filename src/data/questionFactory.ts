@@ -14232,7 +14232,7 @@ const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number):
           // 문장 상황 생성기는 차시마다 한 모양뿐이라, 상의 스무 자리를
           // 모두 내주면 그 차시의 상은 늘 같은 모양이 됩니다. 데이터로
           // 적어 둔 과정 문항과 번갈아 씁니다.
-          ? (difficulty === '상' && Math.floor(index / 3) % 2 === 0
+          (difficulty === '상' && Math.floor(index / 3) % 2 === 0
               ? wordStepQuestion(lesson, difficulty, index)
               : null)
             // 뒤섞인 풀이를 차례대로 놓는 문항은 상만 받습니다. 빈칸을
