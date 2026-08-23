@@ -12215,7 +12215,7 @@ export const questionBank: Template[] = [
   // ══════════════════════════════════════════════════════════════════
   {
     id: 'table-wrong-claim',
-    when: /표와 그래프를 보고 무엇을 알 수 있을까요/,
+    when: /표와 그래프로 나타내 볼까요/,
     demand: 'reason',
     tag: 'data',
     strategy: '자료 해석 · 표를 보고 잘못 말한 것 판단하기',
@@ -12243,7 +12243,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'graph-most-least-pair',
-    when: /표와 그래프를 보고 무엇을 알 수 있을까요/,
+    when: /표와 그래프로 나타내 볼까요/,
     demand: 'reason',
     tag: 'data',
     strategy: '자료 해석 · 그래프에서 가장 많은 것과 적은 것 견주기',
