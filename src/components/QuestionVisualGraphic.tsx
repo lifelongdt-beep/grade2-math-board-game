@@ -489,6 +489,32 @@ function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'rul
       <rect x="4" y="6" width="368" height="120" rx="14" fill="#f6fcff" stroke="#d7edf2" />
       <rect x="26" y="48" width="324" height="46" rx="8" fill="#fff4bd" stroke="#d4a62f" />
       <rect x={toX(visual.highlightStart)} y="50" width={toX(visual.highlightEnd) - toX(visual.highlightStart)} height="42" rx="6" fill="#dffafa" opacity="0.9" />
+      {/* 재는 물건입니다. 자 위에 얹어 두어야 어느 눈금에서 시작해
+          어느 눈금에서 끝났는지가 눈에 보입니다. 눈금 0에서 시작하지
+          않은 자를 다루는 문항은 이 그림이 없으면 읽을 수 없습니다. */}
+      <rect
+        x={toX(visual.highlightStart)}
+        y="26"
+        width={Math.max(6, toX(visual.highlightEnd) - toX(visual.highlightStart))}
+        height="16"
+        rx="8"
+        fill="#7fd4ff"
+        stroke="#2b7fa8"
+        strokeWidth="2"
+      />
+      {/* 물건의 양 끝이 어느 눈금에 놓였는지 점선으로 내려 짚어 줍니다. */}
+      {[visual.highlightStart, visual.highlightEnd].map((mark) => (
+        <line
+          key={`edge-${mark}`}
+          x1={toX(mark)}
+          y1="26"
+          x2={toX(mark)}
+          y2="96"
+          stroke="#2b7fa8"
+          strokeWidth="2"
+          strokeDasharray="4 3"
+        />
+      ))}
       {ticks.map((value) => {
         const labelled = value % labelStep === 0;
         return (
