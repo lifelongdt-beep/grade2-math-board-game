@@ -65,7 +65,9 @@ describe('difficulty is a difference in what the question asks', () => {
         // 마지막 단계 앞에 □가 있으면 중간을 비운 것입니다.
         const marks = ['①', '②', '③', '④'];
         const lastAt = Math.max(...marks.map((mark) => prompt.lastIndexOf(mark)));
-        const blankAt = prompt.indexOf('□');
+        // 문두의 '□에 알맞은 수는?'은 묻는 말이지 비워 둔 단계가
+        // 아닙니다. 마지막 □가 어디 있는지를 봅니다.
+        const blankAt = prompt.lastIndexOf('□');
         if (blankAt >= 0 && blankAt < lastAt) {
           blanked.push(`${question.id}: ${prompt.slice(0, 40)}`);
         }
