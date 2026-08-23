@@ -14434,13 +14434,16 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
   // 표와 그래프: 세어 표에 쓰고, 표를 보고 칸을 그립니다.
   if (tag === 'data') {
     if (/그래프로 나타내/.test(title)) {
-      const count = 3 + (seed % 6);
+      // '사과는 5명 → ○는 몇 개?'는 수를 옮겨 적으면 그만입니다.
+      // 두 가지를 함께 세게 해야 따라올 길이 생깁니다.
+      const apple = 3 + (seed % 5);
+      const pear = 2 + ((seed + 2) % 5);
       return makeQuestion(
         lesson, '하', index,
-        `표를 보고 그래프를 그리는 차례입니다. □에 알맞은 수는? ① 표에서 사과는 ${count}명입니다. ② 아래에서부터 한 칸에 하나씩 그립니다. ③ ○는 □개를 그립니다.`,
-        `${count}개`,
-        [`${count - 1}개`, `${count + 1}개`, '1개'],
-        `${count}명이면 ○를 ${count}개 그립니다.`,
+        `표를 보고 그래프를 그리는 차례입니다. □에 알맞은 수는? ① 사과는 ${apple}명이므로 아래에서부터 ${apple}칸을 채웁니다. ② 배는 ${pear}명이므로 ${pear}칸을 채웁니다. ③ 그리는 ○는 모두 □개입니다.`,
+        `${apple + pear}개`,
+        [`${apple}개`, `${pear}개`, `${apple + pear + 1}개`],
+        `${apple}칸과 ${pear}칸을 더하면 ○는 모두 ${apple + pear}개입니다.`,
         'data', guide('그래프 칸 그리기'),
       );
     }
