@@ -14111,6 +14111,67 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
       );
     }
 
+    // 백·천: 작은 묶음이 모여 큰 수가 되는 길을 보여 줍니다.
+    if (/백을 알아|천을 알아/.test(title)) {
+      const piece = /천을 알아/.test(title) ? 100 : 10;
+      const many = 4 + (seed % 5);
+      const value = piece * many;
+      if (value > limit) return null;
+      return makeQuestion(
+        lesson, '하', index,
+        `${piece}이 ${many}개인 수를 알아보는 차례입니다. □에 알맞은 수는? ① ${piece}씩 ${many}번 셉니다. ② 그러면 □입니다.`,
+        value,
+        [many, value + piece, piece],
+        `${piece}이 ${many}개이면 ${value}입니다.`,
+        'placeValue', guide('수 알아보기'),
+      );
+    }
+
+    if (/몇백을 알아|몇천을 알아/.test(title)) {
+      const piece = /몇천/.test(title) ? 1000 : 100;
+      const many = 2 + (seed % 7);
+      const value = piece * many;
+      if (value > limit) return null;
+      return makeQuestion(
+        lesson, '하', index,
+        `${piece}이 ${many}개인 수를 쓰는 차례입니다. □에 알맞은 수는? ① ${piece}씩 ${many}번 셉니다. ② 그러면 □입니다.`,
+        value,
+        [many, value + piece, piece],
+        `${piece}이 ${many}개이면 ${value}입니다.`,
+        'placeValue', guide('수 쓰기'),
+      );
+    }
+
+    if (/각 자리의 숫자/.test(title)) {
+      const hu = 2 + (seed % 7);
+      const te = 1 + ((seed + 3) % 8);
+      const on = 1 + ((seed + 5) % 8);
+      const value = hu * 100 + te * 10 + on;
+      if (value > limit) return null;
+      return makeQuestion(
+        lesson, '하', index,
+        `${value}에서 백의 자리 숫자가 나타내는 값을 알아보는 차례입니다. □에 알맞은 수는? ① 백의 자리 숫자는 ${hu}입니다. ② 백의 자리는 100이 몇 개인지를 나타냅니다. ③ 그러면 □입니다.`,
+        hu * 100,
+        [hu, hu * 10, value],
+        `백의 자리 숫자 ${hu}는 100이 ${hu}개라는 뜻이므로 ${hu * 100}입니다.`,
+        'placeValue', guide('자리의 값 알아보기'),
+      );
+    }
+
+    if (/크기를 비교/.test(title)) {
+      const big = 100 * (4 + (seed % 5)) + 10 * (seed % 9) + (seed % 9);
+      const small = 100 * (1 + (seed % 3)) + 10 * ((seed + 4) % 9) + ((seed + 2) % 9);
+      if (big > limit || big <= small) return null;
+      return makeQuestion(
+        lesson, '하', index,
+        `${big}과 ${small} 가운데 큰 수를 찾는 차례입니다. □에 알맞은 것은? ① 가장 높은 자리부터 봅니다. ② 백의 자리는 ${Math.floor(big / 100)}과 ${Math.floor(small / 100)}입니다. ③ 그러면 큰 수는 □입니다.`,
+        big,
+        [small, big - 100, small + 1],
+        `백의 자리가 큰 ${big}이 더 큽니다.`,
+        'number', guide('큰 수 찾기'),
+      );
+    }
+
     if (/뛰어 세/.test(title)) {
       const step = [1, 10, 100][index % 3];
       const start = step * (3 + (seed % 6)) * 3;
@@ -14162,6 +14223,36 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
     );
   }
 
+  if ((tag === 'addition' || tag === 'subtraction') && /세 수의 계산/.test(title)) {
+    const a = 20 + (seed % 30);
+    const b = 5 + (seed % 15);
+    const gone = 3 + (seed % 12);
+    if (a + b > limit || a + b - gone < 1) return null;
+    return makeQuestion(
+      lesson, '하', index,
+      `${a}+${b}-${gone}을 계산하는 차례입니다. □에 알맞은 수는? ① 앞에서부터 차례로 계산합니다. ② ${a}+${b}=${a + b}입니다. ③ ${a + b}-${gone}=□입니다.`,
+      a + b - gone,
+      [a + b, a + b + gone, a - gone > 0 ? a - gone : a + 1],
+      `앞에서부터 차례로 계산하면 ${a + b - gone}입니다.`,
+      'addition', guide('세 수 계산하기'),
+    );
+  }
+
+  if ((tag === 'addition' || tag === 'subtraction') && /관계를 식으로|□의 값을 구해/.test(title)) {
+    const part = 12 + (seed % 20);
+    const other = 8 + (seed % 18);
+    const whole = part + other;
+    if (whole > limit) return null;
+    return makeQuestion(
+      lesson, '하', index,
+      `${part}+□=${whole}에서 □를 찾는 차례입니다. □에 알맞은 수는? ① 전체는 ${whole}입니다. ② 아는 부분은 ${part}입니다. ③ ${whole}-${part}=□입니다.`,
+      other,
+      [whole, part, whole + part],
+      `전체에서 아는 부분을 빼면 ${other}입니다.`,
+      'subtraction', guide('빈 곳의 수 찾기'),
+    );
+  }
+
   // 곱셈: 같은 수를 여러 번 더한 것이 곱셈임을 길로 보여 줍니다.
   // ×는 '곱셈을 알아볼까요'부터입니다. 묶어 세기 차시에 쓰면 선행입니다.
   if (tag === 'multiplication' && /곱셈을 알아|곱셈식으로 나타내|곱셈구구|곱셈표/.test(title)) {
@@ -14193,6 +14284,221 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
       [`${hour + 1}시 ${minute}분`, `${hour}시 ${point}분`, `${point}시 ${hour}분`],
       `짧은바늘로 시를, 긴바늘로 분을 읽으면 ${hour}시 ${minute}분입니다.`,
       'time', guide('시각 읽기'),
+    );
+  }
+
+  // 묶어 세기: ×를 배우기 전 차시에서는 더하기로만 길을 보여 줍니다.
+  if (tag === 'multiplication' && /묶어 세어|몇의 몇 배/.test(title)) {
+    const each = 2 + (seed % 5);
+    const groups = 3 + (seed % 4);
+    const total = each * groups;
+    if (total > limit) return null;
+    const chain = Array.from({ length: groups }, () => each).join('+');
+    return makeQuestion(
+      lesson, '하', index,
+      `${each}씩 ${groups}묶음을 세는 차례입니다. □에 알맞은 수는? ① ${each}를 ${groups}번 더합니다. ② ${chain}=□입니다.`,
+      total,
+      [each + groups, total + each, total - each > 0 ? total - each : total + groups],
+      `${each}를 ${groups}번 더하면 ${total}입니다.`,
+      'multiplication', guide('묶어 세기'),
+    );
+  }
+
+  // 시각과 시간: 차시마다 따라갈 길이 다릅니다.
+  if (tag === 'time') {
+    if (/몇 시 몇 분을 읽어 볼까요 ⑵/.test(title)) {
+      const point = 1 + (seed % 9);
+      const extra = 1 + (seed % 4);
+      const minute = point * 5 + extra;
+      return makeQuestion(
+        lesson, '하', index,
+        `긴바늘이 숫자 ${point}을 지나 작은 눈금 ${extra}칸 더 갔습니다. 분을 읽는 차례입니다. □에 알맞은 수는? ① 숫자 ${point}까지는 5×${point}=${point * 5}분입니다. ② 작은 눈금 한 칸은 1분이므로 ${extra}분 더입니다. ③ 그러면 □분입니다.`,
+        minute,
+        [point * 5, point + extra, minute + 5],
+        `${point * 5}분에서 ${extra}분 더 가면 ${minute}분입니다.`,
+        'time', guide('분 읽기'),
+      );
+    }
+
+    if (/1시간을 알아/.test(title)) {
+      const part = 10 + (seed % 5) * 5;
+      return makeQuestion(
+        lesson, '하', index,
+        `1시간 ${part}분이 몇 분인지 알아보는 차례입니다. □에 알맞은 수는? ① 1시간은 60분입니다. ② 60분에 ${part}분을 더합니다. ③ 그러면 □분입니다.`,
+        60 + part,
+        [part, 100 + part, 60],
+        `60+${part}=${60 + part}분입니다.`,
+        'time', guide('시간을 분으로 나타내기'),
+      );
+    }
+
+    if (/걸린 시간을 알아/.test(title)) {
+      const hour = 1 + (seed % 9);
+      const mins = [10, 20, 30, 40][seed % 4];
+      return makeQuestion(
+        lesson, '하', index,
+        `${hour}시에 시작해 ${hour}시 ${mins}분에 마쳤습니다. 걸린 시간을 구하는 차례입니다. □에 알맞은 수는? ① 시작한 때는 ${hour}시입니다. ② 마친 때는 ${hour}시 ${mins}분입니다. ③ 시가 같으므로 분만 보면 □분입니다.`,
+        `${mins}분`,
+        [`${hour}분`, `${60 - mins}분`, `${mins + 10}분`],
+        `같은 시각에서 ${mins}분이 지났으므로 ${mins}분입니다.`,
+        'time', guide('걸린 시간 구하기'),
+      );
+    }
+
+    if (/하루의 시간을 알아/.test(title)) {
+      return makeQuestion(
+        lesson, '하', index,
+        `하루가 몇 시간인지 알아보는 차례입니다. □에 알맞은 수는? ① 오전은 12시간입니다. ② 오후도 12시간입니다. ③ 12+12=□시간입니다.`,
+        '24시간',
+        ['12시간', '20시간', '30시간'],
+        '오전 12시간과 오후 12시간을 더하면 24시간입니다.',
+        'time', guide('하루의 시간 알아보기'),
+      );
+    }
+
+    if (/달력을 알아/.test(title)) {
+      const weeks = 2 + (seed % 4);
+      return makeQuestion(
+        lesson, '하', index,
+        `${weeks}주일이 며칠인지 알아보는 차례입니다. □에 알맞은 수는? ① 1주일은 7일입니다. ② 7씩 ${weeks}번 셉니다. ③ 그러면 □일입니다.`,
+        `${weeks * 7}일`,
+        [`${weeks}일`, `${weeks * 7 + 7}일`, '7일'],
+        `7씩 ${weeks}번이면 ${weeks * 7}일입니다.`,
+        'time', guide('날수 세기'),
+      );
+    }
+    return null;
+  }
+
+  // 도형: 곧은 선을 세어 이름을 붙입니다.
+  if (tag === 'shape') {
+    if (/△을 알아보고|□을 알아보고/.test(title)) {
+      const sides = /△/.test(title) ? 3 : 4;
+      const name = sides === 3 ? '삼각형' : '사각형';
+      return makeQuestion(
+        lesson, '하', index,
+        `도형의 이름을 알아보는 차례입니다. □에 알맞은 것은? ① 곧은 선을 셉니다. ② 곧은 선이 ${sides}개입니다. ③ 곧은 선 ${sides}개로 둘러싸인 도형은 □입니다.`,
+        name,
+        [sides === 3 ? '사각형' : '삼각형', '원', '곧은 선'],
+        `곧은 선 ${sides}개로 둘러싸인 도형을 ${name}이라고 합니다.`,
+        'shape', guide('도형 이름 붙이기'),
+      );
+    }
+
+    if (/칠교판/.test(title)) {
+      return makeQuestion(
+        lesson, '하', index,
+        `칠교판의 조각 수를 세는 차례입니다. □에 알맞은 수는? ① 삼각형 조각이 5개입니다. ② 사각형 조각이 2개입니다. ③ 5+2=□개입니다.`,
+        '7개',
+        ['5개', '2개', '9개'],
+        '삼각형 5개와 사각형 2개를 더하면 7개입니다.',
+        'shape', guide('조각 수 세기'),
+      );
+    }
+
+    if (/쌓은 모양|쌓아 볼까요/.test(title)) {
+      const first = 2 + (seed % 4);
+      const second = 1 + (seed % 3);
+      return makeQuestion(
+        lesson, '하', index,
+        `쌓기나무 수를 세는 차례입니다. □에 알맞은 수는? ① 1층에 ${first}개가 있습니다. ② 2층에 ${second}개가 있습니다. ③ ${first}+${second}=□개입니다.`,
+        `${first + second}개`,
+        [`${first}개`, `${second}개`, `${first + second + 1}개`],
+        `1층 ${first}개와 2층 ${second}개를 더하면 ${first + second}개입니다.`,
+        'shape', guide('쌓기나무 세기'),
+      );
+    }
+    return null;
+  }
+
+  // 분류하기: 나눈 뒤 세는 길을 보여 줍니다.
+  if (tag === 'classification') {
+    const red = 3 + (seed % 5);
+    const blue = 2 + ((seed + 2) % 5);
+    return makeQuestion(
+      lesson, '하', index,
+      `색깔로 나누어 세는 차례입니다. □에 알맞은 수는? ① 빨강은 ${red}개입니다. ② 파랑은 ${blue}개입니다. ③ ${red}+${blue}=□개입니다.`,
+      `${red + blue}개`,
+      [`${red}개`, `${blue}개`, `${red + blue + 1}개`],
+      `빨강 ${red}개와 파랑 ${blue}개를 더하면 ${red + blue}개입니다.`,
+      'classification', guide('나누어 세기'),
+    );
+  }
+
+  // 표와 그래프: 세어 표에 쓰고, 표를 보고 칸을 그립니다.
+  if (tag === 'data') {
+    if (/그래프로 나타내/.test(title)) {
+      const count = 3 + (seed % 6);
+      return makeQuestion(
+        lesson, '하', index,
+        `표를 보고 그래프를 그리는 차례입니다. □에 알맞은 수는? ① 표에서 사과는 ${count}명입니다. ② 아래에서부터 한 칸에 하나씩 그립니다. ③ ○는 □개를 그립니다.`,
+        `${count}개`,
+        [`${count - 1}개`, `${count + 1}개`, '1개'],
+        `${count}명이면 ○를 ${count}개 그립니다.`,
+        'data', guide('그래프 칸 그리기'),
+      );
+    }
+
+    const a = 3 + (seed % 5);
+    const b = 2 + ((seed + 1) % 5);
+    const cc = 1 + ((seed + 3) % 5);
+    return makeQuestion(
+      lesson, '하', index,
+      `조사한 것을 세어 적는 차례입니다. □에 알맞은 수는? ① 사과 ${a}명, 배 ${b}명, 귤 ${cc}명입니다. ② 세 수를 더합니다. ③ 조사한 학생은 □명입니다.`,
+      `${a + b + cc}명`,
+      [`${a + b}명`, `${a}명`, `${a + b + cc + 1}명`],
+      `${a}+${b}+${cc}=${a + b + cc}명입니다.`,
+      'data', guide('전체 수 세기'),
+    );
+  }
+
+  // 규칙 찾기: 늘어나는 크기를 보고 다음 것을 씁니다.
+  if (tag === 'pattern') {
+    const step = 2 + (seed % 4);
+    const start = step * (2 + (seed % 4));
+    const next = start + step;
+    if (next > limit) return null;
+    return makeQuestion(
+      lesson, '하', index,
+      `${start - step}, ${start} 다음에 올 수를 찾는 차례입니다. □에 알맞은 수는? ① ${step}씩 커지고 있습니다. ② ${start}에 ${step}을 더합니다. ③ 그러면 □입니다.`,
+      next,
+      [start + 1, start, next + step],
+      `${step}씩 커지므로 ${start} 다음은 ${next}입니다.`,
+      'pattern', guide('다음에 올 수 찾기'),
+    );
+  }
+
+  // 길이: 1cm가 몇 번 들어 있는지 세어 갑니다.
+  if (tag === 'measurement' && /길이의 합|길이의 차/.test(title)) {
+    const aM = 1 + (seed % 3);
+    const aC = 10 + (seed % 4) * 10;
+    const bM = 1 + ((seed + 1) % 3);
+    const bC = 10 + ((seed + 2) % 4) * 10;
+    const plus = /길이의 합/.test(title);
+    if (!plus && (aM + 2 < bM || aC < bC)) return null;
+    const m = plus ? aM + bM : aM + 2 - bM;
+    const cm = plus ? aC + bC : aC - bC;
+    if (cm >= 100 || cm < 0) return null;
+    const first = plus ? `${aM}m ${aC}cm` : `${aM + 2}m ${aC}cm`;
+    return makeQuestion(
+      lesson, '하', index,
+      `${first}와 ${bM}m ${bC}cm를 ${plus ? '더하는' : '빼는'} 차례입니다. □에 알맞은 것은? ① m는 m끼리 ${plus ? '더합니다' : '뺍니다'}. ② cm는 cm끼리 ${plus ? '더합니다' : '뺍니다'}. ③ 그러면 □입니다.`,
+      `${m}m ${cm}cm`,
+      [`${m}m`, `${m + 1}m ${cm}cm`, `${m}m ${cm + 10}cm`],
+      `m끼리, cm끼리 ${plus ? '더하면' : '빼면'} ${m}m ${cm}cm입니다.`,
+      'measurement', guide(plus ? '길이 더하기' : '길이 빼기'),
+    );
+  }
+
+  if (tag === 'measurement' && /어림/.test(title)) {
+    const near = 5 + (seed % 8);
+    return makeQuestion(
+      lesson, '하', index,
+      `막대의 길이를 어림하는 차례입니다. □에 알맞은 것은? ① 자로 재니 ${near}cm 눈금에 가장 가깝습니다. ② 눈금과 딱 맞지 않으면 '약'을 붙여 말합니다. ③ 그러면 □입니다.`,
+      `약 ${near}cm`,
+      [`${near}cm`, `약 ${near + 1}cm`, `약 ${near}m`],
+      `가장 가까운 눈금이 ${near}cm이므로 약 ${near}cm입니다.`,
+      'measurement', guide('길이 어림하기'),
     );
   }
 
