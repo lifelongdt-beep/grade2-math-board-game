@@ -6858,7 +6858,10 @@ export const questionBank: Template[] = [
     },
     prompt: '긴바늘이 12까지 작은 눈금으로 {before}칸 남았습니다. {hour}시 몇 분 전일까요?',
     answer: '{before}분 전',
-    wrongs: ['{hour}분 전', '{before + 5}분 전', '{before - 1}분 전'],
+    // 교육과정이 5의 배수만 다루라고 하므로 오답 보기도 5의 배수여야
+    // 합니다. 예전에는 {before - 1}과 {hour}를 그대로 써서 4분 전,
+    // 9분 전, 3분 전 같은 보기가 나왔습니다.
+    wrongs: ['{before + 5}분 전', '{60 - before}분 전', '{before + 10}분 전'],
     solution: '한 칸이 1분이므로 {before}칸은 {before}분 전입니다.',
   },
   {
