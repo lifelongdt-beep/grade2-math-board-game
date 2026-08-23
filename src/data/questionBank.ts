@@ -10887,41 +10887,7 @@ export const questionBank: Template[] = [
   // 뒤 단을 추론하도록 짜여 있습니다. 그 관계를 묻지 않으면 구구단 암기
   // 시험이 됩니다.
   // ══════════════════════════════════════════════════════════════════
-  {
-    id: 'mul-intro-ride',
-    when: /단원 도입/,
-    units: ['곱셈구구'],
-    demand: 'connect',
-    tag: 'multiplication',
-    strategy: '조건 함께 보기 · 묶어 세는 상황',
-    vars: {
-      each: { from: 2, to: 4 },
-      cars: { from: 5, to: 8 },
-      total: { calc: 'each * cars' },
-    },
-    prompt: '체험 학습에서 한 대에 {each}명씩 탈 수 있는 마차 {cars}대에 아이들이 꽉 찼습니다. 아이들은 모두 몇 명일까요?',
-    answer: '{total}명',
-    wrongs: ['{each + cars}명', '{total - each}명', '{total + each}명'],
-    solution: '{each}씩 {cars}묶음이므로 {each}×{cars}={total}명입니다.',
-  },
-  {
-    id: 'mul-intro-why-easy',
-    when: /단원 도입/,
-    units: ['곱셈구구'],
-    demand: 'reason',
-    tag: 'multiplication',
-    strategy: '가장 편리한 세기 방법 판단하기',
-    vars: {},
-    prompt: '초콜릿이 한 줄에 5개씩 4줄로 담겨 있습니다. 전체 개수를 가장 빠르게 구하는 방법은 어느 것일까요?',
-    answer: '5씩 4묶음으로 보고 곱셈으로 구합니다',
-    wrongs: [
-      '하나씩 차례로 셉니다',
-      '5와 4를 더합니다',
-      '한 줄만 세고 그 수를 답으로 합니다',
-    ],
-    solution: '같은 수가 여러 묶음이면 곱셈으로 한 번에 구할 수 있습니다.',
-  },
-  {
+      {
     id: 'two-dan-one-more',
     when: /2단 곱셈구구/,
     demand: 'reason',
