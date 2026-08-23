@@ -11305,19 +11305,7 @@ export const questionBank: Template[] = [
     ],
     solution: '정해진 때를 지켜야 하는 일에는 시계가 꼭 필요합니다.',
   },
-    {
-    id: 'clock5-both-hands-read',
-    when: /몇 시 몇 분을 읽어 볼까요 ⑴/,
-    demand: 'reason',
-    tag: 'time',
-    strategy: '조건 함께 보기 · 두 바늘을 함께 보고 시각 판단하기',
-    vars: {},
-    prompt: '짧은바늘이 2와 3 사이에 있고 긴바늘이 7을 가리킵니다. 이 시각은 몇 시 몇 분일까요?',
-    answer: '2시 35분',
-    wrongs: ['3시 35분', '2시 7분', '3시 7분'],
-    solution: '짧은바늘이 3을 지나지 않았으므로 2시이고, 긴바늘 7은 5×7=35분입니다.',
-  },
-  {
+      {
     id: 'before-which-hour',
     when: /여러 가지 방법으로 시각을 읽어/,
     demand: 'recall',
