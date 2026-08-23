@@ -11782,7 +11782,7 @@ export const questionBank: Template[] = [
     units: ['세 자리 수'],
     demand: 'reason',
     tag: 'number',
-    strategy: '조건을 하나씩 따져 알맞은 수 판단하기',
+    strategy: '조건 함께 보기 · 단서를 하나씩 따져 알맞은 수 판단하기',
     vars: {},
     prompt: '300보다 크고 400보다 작으며, 일의 자리 숫자가 8이고, 세 자리 숫자를 모두 더하면 15인 수는 얼마일까요?',
     answer: '348',
