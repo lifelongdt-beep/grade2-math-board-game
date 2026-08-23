@@ -11305,19 +11305,7 @@ export const questionBank: Template[] = [
     ],
     solution: '정해진 때를 지켜야 하는 일에는 시계가 꼭 필요합니다.',
   },
-  {
-    id: 'clock5-times-five',
-    when: /몇 시 몇 분을 읽어 볼까요 ⑴/,
-    demand: 'reason',
-    tag: 'time',
-    strategy: '5단으로 분을 읽는 방법 판단하기',
-    vars: {},
-    prompt: '시계의 긴바늘이 숫자 8을 가리킵니다. 몇 분인지 알아낼 때 쓸 수 있는 곱셈식은 어느 것일까요?',
-    answer: '5×8=40',
-    wrongs: ['8×1=8', '5+8=13', '8×8=64'],
-    solution: '숫자 한 칸이 5분이므로 가리키는 숫자에 5를 곱하면 분이 됩니다.',
-  },
-  {
+    {
     id: 'clock5-both-hands-read',
     when: /몇 시 몇 분을 읽어 볼까요 ⑴/,
     demand: 'reason',
