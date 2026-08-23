@@ -11882,20 +11882,7 @@ export const questionBank: Template[] = [
   // ══════════════════════════════════════════════════════════════════
   // 2-1 덧셈과 뺄셈 — 여러 방법으로 세는 힘, 등호는 저울
   // ══════════════════════════════════════════════════════════════════
-  {
-    id: 'addsub-intro-which-sign',
-    when: /단원 도입/,
-    units: ['덧셈과 뺄셈'],
-    demand: 'reason',
-    tag: 'subtraction',
-    strategy: '더할 상황인지 뺄 상황인지 판단하기',
-    vars: { mine: { from: 20, to: 28 }, yours: { from: 12, to: 18 } },
-    prompt: '곰이는 우유갑을 {mine}개, 펭이는 {yours}개 모았습니다. 곰이가 펭이보다 몇 개 더 많이 모았는지 알아보려면 어떤 식을 세워야 할까요?',
-    answer: '{mine}-{yours}',
-    wrongs: ['{mine}+{yours}', '{yours}-{mine}', '{yours}+{mine}'],
-    solution: '얼마나 더 많은지는 두 수의 차이를 구해야 하므로 빼기를 씁니다.',
-  },
-  {
+    {
     id: 'add-make-ten-split',
     when: /덧셈을 해 볼까요 ⑴/,
     demand: 'reason',
