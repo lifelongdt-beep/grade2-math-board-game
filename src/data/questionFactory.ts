@@ -14243,13 +14243,19 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
     const other = 8 + (seed % 18);
     const whole = part + other;
     if (whole > limit) return null;
+
+    // □를 넣은 식은 10차시 내용입니다. 9차시는 덧셈식을 뺄셈식으로
+    // 바꾸어 보는 차시이므로 □ 표기를 쓰지 않습니다.
+    const boxLesson = /□의 값을 구해/.test(title);
     return makeQuestion(
       lesson, '하', index,
-      `${part}+□=${whole}에서 □를 찾는 차례입니다. □에 알맞은 수는? ① 전체는 ${whole}입니다. ② 아는 부분은 ${part}입니다. ③ ${whole}-${part}=□입니다.`,
+      boxLesson
+        ? `${part}+□=${whole}에서 □를 찾는 차례입니다. □에 알맞은 수는? ① 전체는 ${whole}입니다. ② 아는 부분은 ${part}입니다. ③ ${whole}-${part}=□입니다.`
+        : `${part}+${other}=${whole}을 뺄셈식으로 나타내는 차례입니다. □에 알맞은 수는? ① 전체는 ${whole}입니다. ② 부분 하나는 ${part}입니다. ③ ${whole}-${part}=□입니다.`,
       other,
       [whole, part, whole + part],
       `전체에서 아는 부분을 빼면 ${other}입니다.`,
-      'subtraction', guide('빈 곳의 수 찾기'),
+      'subtraction', guide(boxLesson ? '빈 곳의 수 찾기' : '뺄셈식으로 나타내기'),
     );
   }
 
