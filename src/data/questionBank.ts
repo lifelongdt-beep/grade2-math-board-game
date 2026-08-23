@@ -10118,19 +10118,7 @@ export const questionBank: Template[] = [
   // 이 단원 문항이 '몇 분 더하기 몇 분'으로 기울어 있었습니다. 시각을
   // 읽는 일은 셈이 아니라 시계라는 도구를 읽는 일이고, 하루와 달력은
   // 시간이 어떻게 짜여 있는지를 보는 일입니다.
-  {
-    id: 'clock5-hour-hand-meaning',
-    when: /몇 시 몇 분을 읽어 볼까요 ⑴/,
-    demand: 'recall',
-    tag: 'time',
-    strategy: '두 바늘이 나타내는 것 알기',
-    vars: {},
-    prompt: '시계에서 짧은바늘은 무엇을 나타낼까요?',
-    answer: '몇 시인지',
-    wrongs: ['몇 분인지', '며칠인지', '어느 쪽으로 도는지'],
-    solution: '짧은바늘은 시, 긴바늘은 분을 나타냅니다.',
-  },
-  {
+    {
     id: 'clock5-how-to-read',
     when: /몇 시 몇 분을 읽어 볼까요 ⑴/,
     demand: 'reason',
