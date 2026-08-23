@@ -488,6 +488,21 @@ function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'rul
     <svg viewBox="0 0 376 132" role="img" aria-label={visual.label}>
       <rect x="4" y="6" width="368" height="120" rx="14" fill="#f6fcff" stroke="#d7edf2" />
       <rect x="26" y="48" width="324" height="46" rx="8" fill="#fff4bd" stroke="#d4a62f" />
+      {/* 앞쪽을 생략했다는 물결 표시입니다. 231cm를 0부터 다 그리면
+          눈금이 뭉개져 읽을 수 없으므로, 왼쪽을 끊고 재는 끝만
+          제대로 보여 줍니다. */}
+      {visual.elided && (
+        <g>
+          <rect x="26" y="48" width="22" height="46" fill="#f6fcff" />
+          <path
+            d="M30 56 q5 -6 10 0 q5 6 10 0 M30 71 q5 -6 10 0 q5 6 10 0 M30 86 q5 -6 10 0 q5 6 10 0"
+            fill="none"
+            stroke="#d4a62f"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+        </g>
+      )}
       <rect x={toX(visual.highlightStart)} y="50" width={toX(visual.highlightEnd) - toX(visual.highlightStart)} height="42" rx="6" fill="#dffafa" opacity="0.9" />
       {/* 재는 물건입니다. 자 위에 얹어 두어야 어느 눈금에서 시작해
           어느 눈금에서 끝났는지가 눈에 보입니다. 눈금 0에서 시작하지

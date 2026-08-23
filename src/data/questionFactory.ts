@@ -7290,6 +7290,24 @@ const rulerVisualFor = (start: number, end: number, label = '자 눈금 자료')
   highlightEnd: end,
 });
 
+// 0에서 시작해 length에서 끝나는 자를 그립니다.
+//
+// 길이를 잰 그림은 물건의 한쪽 끝이 눈금 0에 있어야 합니다. 231cm처럼
+// 길면 0부터 다 그릴 수 없으므로 왼쪽을 물결로 끊고 끝 쪽만 보여 줍니다.
+const measuredRulerFor = (length: number, label = '자로 잰 길이'): QuestionVisual => {
+  const wide = length > 14;
+  const start = wide ? length - 10 : 0;
+  return {
+    kind: 'ruler',
+    label,
+    start,
+    end: length + (wide ? 4 : 2),
+    highlightStart: start,
+    highlightEnd: length,
+    ...(wide ? { elided: true } : {}),
+  };
+};
+
 // 이 단원의 문항은 모두 '아래에서부터 한 칸에 하나씩'을 가르칩니다.
 // '어디부터 그려야 할까요?'의 답도 '맨 아래 칸부터 위로'입니다. 그런데
 // 그림은 옆으로 눕혀 그리고 있어, 배우는 말과 보이는 그림이 어긋났습니다.
@@ -9511,9 +9529,39 @@ const visualForGeneratedQuestion = (
   }
 
   if (question.type === 'measurement') {
-    const start = promptNumbers[0] ?? 2;
-    const end = promptNumbers[1] && promptNumbers[1] > start ? promptNumbers[1] : start + Math.max(4, answerNumber || 8);
-    return rulerVisualFor(start, end, '길이 측정 자료');
+    // 두 물건의 길이를 견주는 문항은 자 하나로 그릴 수 없습니다.
+    // '지우개 12cm, 가위 20cm'를 한 구간으로 그리면 12에서 20까지의
+    // 띠가 되어, 지우개도 가위도 보이지 않습니다. 두 막대로 그립니다.
+    const named: Array<{ label: string; value: number }> = [];
+    const namePattern = /([가-힣]{2,6})(?:는|은|이|가)\s*(\d+)\s*cm/g;
+    let hit = namePattern.exec(question.prompt);
+    while (hit) {
+      if (!named.some((one) => one.label === hit![1])) {
+        named.push({ label: hit[1], value: Number(hit[2]) });
+      }
+      hit = namePattern.exec(question.prompt);
+    }
+    if (named.length >= 2) return barModelVisualFor(named.slice(0, 3), '두 길이 견주기');
+
+    // 눈금 0이 아닌 곳에 대고 잰 문항은 두 눈금이 문제에 그대로
+    // 나옵니다. 이때만 그 구간을 그립니다.
+    const broken = /눈금 \d+에 맞추|눈금 \d+에서 시작|앞부분이 깨져/.test(question.prompt);
+    if (broken && promptNumbers.length >= 2 && promptNumbers[1] > promptNumbers[0]) {
+      return rulerVisualFor(promptNumbers[0], promptNumbers[1], '자로 잰 길이');
+    }
+
+    // 그 밖에는 잰 길이를 0에서부터 그립니다. 예전에는 문제에 나온
+    // 첫 두 수를 눈금으로 삼아, '1m 눈금을 지나 77cm'가 1에서 77까지로
+    // 그려졌습니다. 답에 적힌 길이가 그림이 보여야 할 길이입니다.
+    const cmFromAnswer = /(\d+)\s*m\s*(\d+)\s*cm/.exec(question.answer);
+    const metres = /^(\d+)\s*m$/.exec(question.answer.trim());
+    const measured = cmFromAnswer
+      ? Number(cmFromAnswer[1]) * 100 + Number(cmFromAnswer[2])
+      : metres
+        ? Number(metres[1]) * 100
+        : answerNumber || promptNumbers[promptNumbers.length - 1] || 8;
+    if (measured > 0) return measuredRulerFor(measured, '자로 잰 길이');
+    return rulerVisualFor(0, 8, '길이 측정 자료');
   }
 
   if (question.type === 'data' || question.type === 'classification') {

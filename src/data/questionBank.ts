@@ -10130,19 +10130,7 @@ export const questionBank: Template[] = [
     wrongs: ['{point}을 그대로 읽습니다', '{point}에 5를 더합니다', '{point}에 10을 곱합니다'],
     solution: '숫자 한 칸이 5분이므로 5씩 {point}번 뛰어 세어 읽습니다.',
   },
-  {
-    id: 'clock5-why-not-plain',
-    when: /몇 시 몇 분을 읽어 볼까요 ⑴/,
-    demand: 'reason',
-    tag: 'time',
-    strategy: '숫자를 그대로 읽으면 안 되는 까닭 판단하기',
-    vars: {},
-    prompt: '긴바늘이 가리키는 숫자를 그대로 분으로 읽으면 안 됩니다. 그 까닭은 무엇일까요?',
-    answer: '숫자 한 칸이 5분이기 때문입니다',
-    wrongs: ['시계에 숫자가 12개이기 때문입니다', '긴바늘이 짧은바늘보다 길기 때문입니다', '시계가 둥글기 때문입니다'],
-    solution: '긴바늘이 숫자 한 칸을 지날 때마다 5분씩 지납니다.',
-  },
-  {
+    {
     id: 'clock1-marks-between',
     when: /몇 시 몇 분을 읽어 볼까요 ⑵/,
     demand: 'recall',

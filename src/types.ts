@@ -218,6 +218,9 @@ export interface RulerVisual {
   end: number;
   highlightStart: number;
   highlightEnd: number;
+  // 231cm처럼 긴 길이는 0부터 다 그릴 수 없습니다. 왼쪽을 물결로
+  // 끊어 '앞은 생략했다'고 알리고 오른쪽 끝만 제대로 보여 줍니다.
+  elided?: boolean;
 }
 
 export interface ClockVisual {
