@@ -6,14 +6,23 @@ import type { Difficulty } from '../types';
 // 풀이 과정 문항은 ① ② 로 단계를 나눠 보여 주고 그 사이 빈칸을 묻습니다.
 // 읽을 것이 많고 단계를 따라가야 해서, 답만 묻는 문항보다 어렵습니다.
 // 그래서 난이도마다 몇 문항을 줄지 다르게 정해 두었습니다.
-//   하  0문항 — 아직 과정을 따라갈 단계가 아닙니다. 먼저 답을 낼 수 있어야 합니다.
+//   하  3문항까지 — 2022 개정 성취수준에서 C 수준의 진술은 거의 모두
+//               '안내된 절차에 따라 ~할 수 있다'입니다([2수01-06] C:
+//               "안내된 절차에 따라 두 자리 수의 범위에서 간단한 덧셈과
+//               뺄셈을 할 수 있다"). 단계를 보여 주는 것은 어렵게 만드는
+//               장치가 아니라 도와주는 장치이므로 하에도 두어야 합니다.
+//               다만 하의 단계 문항은 중·상과 다릅니다 — 길을 끝까지
+//               보여 주고 마지막 답만 묻습니다. 중간을 비우지 않는지는
+//               demand.test.ts가 봅니다.
+//               아직 모든 차시에 쓰지는 못해, 만들 수 있는 차시에서만
+//               나옵니다. 그래서 '몇 개 이하'로 봅니다.
 //   중  5문항 — 중은 문장제가 중심이지만, 이 문항을 아예 빼면 차시끼리
 //               문항이 똑같아집니다. 차시를 구분하고 있던 것이 사실은
 //               이 문항이었기 때문입니다. 상과 겹치지 않는 자리에서만 뽑습니다.
 //   상 20문항 — 남의 풀이를 따라가며 판단하는 것이 이 수준의 일입니다.
 //               중에도 두었더니 두 수준이 같은 문항을 나눠 가져 구별되지
 //               않았습니다.
-const expectedSteps: Record<Difficulty, number> = { 하: 0, 중: 5, 상: 20 };
+const expectedSteps: Record<Difficulty, number> = { 하: 3, 중: 5, 상: 20 };
 
 describe('step coverage', () => {
   it('gives each difficulty the share of working-out questions it should have', () => {
@@ -30,7 +39,11 @@ describe('step coverage', () => {
             (question) => question.prompt.includes('①') || question.prompt.includes('바른 차례로 놓으면'),
           ).length;
 
-          if (steps !== expectedSteps[level]) {
+          // 하는 아직 모든 차시를 덮지 못했으므로 '이하'로 봅니다.
+          const off = level === '하'
+            ? steps > expectedSteps[level]
+            : steps !== expectedSteps[level];
+          if (off) {
             wrong.push(
               `${unit.title} ${lesson.lessonNo}차시 (${level}): ${expectedSteps[level]}개여야 하는데 ${steps}개`,
             );
@@ -42,20 +55,8 @@ describe('step coverage', () => {
     expect(wrong).toEqual([]);
   });
 
-  it('never puts a working-out question in the easiest level', () => {
-    // 하 수준에서 이 문항이 하나라도 새어 들어오면 그 자리에서 막습니다.
-    const leaked: string[] = [];
-
-    for (const unit of curriculum) {
-      for (const lesson of unit.lessons) {
-        for (const question of generateQuestions(lesson, '하')) {
-          if (question.prompt.includes('①')) {
-            leaked.push(`${question.id}: ${question.prompt.slice(0, 40)}`);
-          }
-        }
-      }
-    }
-
-    expect(leaked).toEqual([]);
-  });
+  // '하에 풀이 과정 문항이 들어오면 안 된다'는 규칙이 여기 있었습니다.
+  // 이제는 들어와도 되고, 대신 중간 단계를 비우지 않았는지를 봅니다.
+  // 그 검사는 demand.test.ts의 'never blanks a middle step at the
+  // easiest level'이 맡습니다.
 });

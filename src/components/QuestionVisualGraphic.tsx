@@ -488,7 +488,48 @@ function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'rul
     <svg viewBox="0 0 376 132" role="img" aria-label={visual.label}>
       <rect x="4" y="6" width="368" height="120" rx="14" fill="#f6fcff" stroke="#d7edf2" />
       <rect x="26" y="48" width="324" height="46" rx="8" fill="#fff4bd" stroke="#d4a62f" />
+      {/* 앞쪽을 생략했다는 물결 표시입니다. 231cm를 0부터 다 그리면
+          눈금이 뭉개져 읽을 수 없으므로, 왼쪽을 끊고 재는 끝만
+          제대로 보여 줍니다. */}
+      {visual.elided && (
+        <g>
+          <rect x="26" y="48" width="22" height="46" fill="#f6fcff" />
+          <path
+            d="M30 56 q5 -6 10 0 q5 6 10 0 M30 71 q5 -6 10 0 q5 6 10 0 M30 86 q5 -6 10 0 q5 6 10 0"
+            fill="none"
+            stroke="#d4a62f"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+        </g>
+      )}
       <rect x={toX(visual.highlightStart)} y="50" width={toX(visual.highlightEnd) - toX(visual.highlightStart)} height="42" rx="6" fill="#dffafa" opacity="0.9" />
+      {/* 재는 물건입니다. 자 위에 얹어 두어야 어느 눈금에서 시작해
+          어느 눈금에서 끝났는지가 눈에 보입니다. 눈금 0에서 시작하지
+          않은 자를 다루는 문항은 이 그림이 없으면 읽을 수 없습니다. */}
+      <rect
+        x={toX(visual.highlightStart)}
+        y="26"
+        width={Math.max(6, toX(visual.highlightEnd) - toX(visual.highlightStart))}
+        height="16"
+        rx="8"
+        fill="#7fd4ff"
+        stroke="#2b7fa8"
+        strokeWidth="2"
+      />
+      {/* 물건의 양 끝이 어느 눈금에 놓였는지 점선으로 내려 짚어 줍니다. */}
+      {[visual.highlightStart, visual.highlightEnd].map((mark) => (
+        <line
+          key={`edge-${mark}`}
+          x1={toX(mark)}
+          y1="26"
+          x2={toX(mark)}
+          y2="96"
+          stroke="#2b7fa8"
+          strokeWidth="2"
+          strokeDasharray="4 3"
+        />
+      ))}
       {ticks.map((value) => {
         const labelled = value % labelStep === 0;
         return (
@@ -788,9 +829,31 @@ function StandingPictograph({ visual }: { visual: Extract<QuestionVisual, { kind
       {items.map((item, index) => {
         const x = left + index * columnWidth + columnWidth / 2;
         const units = Math.min(Math.ceil(item.count / visual.unit), rows);
+        // 학생이 채울 줄입니다. ○를 그리지 않고 자리만 비워 둡니다.
+        // 성취수준 [2수04-03] C가 '일부가 주어진 그래프를 완성하기'라,
+        // 채워야 할 곳이 눈에 보여야 물음이 성립합니다.
+        const blank = visual.blankAt === index;
         return (
           <g key={`${item.label}-${index}`}>
-            {Array.from({ length: units }).map((_, at) => (
+            {blank && (
+              <g>
+                <rect
+                  x={x - 14}
+                  y={bottom - rows * cell}
+                  width="28"
+                  height={rows * cell}
+                  rx="6"
+                  fill="#fff1f3"
+                  stroke="#ff9aa2"
+                  strokeWidth="2"
+                  strokeDasharray="5 4"
+                />
+                <text x={x} y={bottom - cell / 2 + 5} textAnchor="middle" fill="#c2485a" fontSize="16" fontWeight="900">
+                  ?
+                </text>
+              </g>
+            )}
+            {!blank && Array.from({ length: units }).map((_, at) => (
               <circle
                 key={at}
                 cx={x}
@@ -880,6 +943,12 @@ function ArrayGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'arr
       {Array.from({ length: visual.rows }).map((_, row) =>
         Array.from({ length: visual.columns }).map((__, column) => {
           const faded = visual.fadedRows != null && row >= visual.rows - visual.fadedRows;
+          // 묶지 않은 물건은 적힌 개수만큼만 그립니다. 마지막 줄이 다
+          // 차지 않으면 남는 자리는 비워 둡니다 — 7개라고 적어 놓고
+          // 다섯 개짜리 두 줄(열 개)을 그리면 말과 그림이 어긋납니다.
+          if (visual.plainCount !== undefined && row * visual.columns + column >= visual.plainCount) {
+            return null;
+          }
           return (
             <circle
               key={`${row}-${column}`}
@@ -895,7 +964,12 @@ function ArrayGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'arr
       )}
       <rect x="112" y="121" width="152" height="20" rx="10" fill="#e8fbfb" />
       <text x="188" y="136" textAnchor="middle" fill="#0f7175" fontSize="13" fontWeight="900">
-        {visual.rows}묶음 × {visual.columns}개
+        {/* 우리말은 '한 묶음의 크기'를 먼저 말합니다 — 5개씩 2묶음.
+            '2묶음 × 5개'로 적어 두었더니 무엇이 묶음이고 무엇이 낱개인지
+            거꾸로 읽혔습니다. */}
+        {visual.plainCount === undefined
+          ? `${visual.columns}개씩 ${visual.rows}묶음`
+          : `${visual.plainCount}개`}
       </text>
     </svg>
   );

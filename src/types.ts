@@ -218,6 +218,9 @@ export interface RulerVisual {
   end: number;
   highlightStart: number;
   highlightEnd: number;
+  // 231cm처럼 긴 길이는 0부터 다 그릴 수 없습니다. 왼쪽을 물결로
+  // 끊어 '앞은 생략했다'고 알리고 오른쪽 끝만 제대로 보여 줍니다.
+  elided?: boolean;
 }
 
 export interface ClockVisual {
@@ -273,6 +276,12 @@ export interface PictographVisual {
     count: number;
   }>;
   /**
+   * 학생이 채워야 할 줄입니다. 그 줄은 칸을 그리지 않고 물음표만 두어
+   * '여기를 네가 채워라'로 보이게 합니다. 성취수준 [2수04-03]의 C가
+   * '일부가 주어진 그래프를 완성하기'라, 빈 줄이 있어야 담을 수 있습니다.
+   */
+  blankAt?: number;
+  /**
    * 그래프를 세우는 방향입니다. 교과서의 그래프는 항목을 가로줄에 두고
    * ○를 아래에서 위로 쌓습니다. '아래에서부터 한 칸에 하나씩 그립니다'
    * 라고 말해 놓고 옆으로 눕혀 그리면, 아이가 배우는 그림과 보는 그림이
@@ -287,6 +296,13 @@ export interface ArrayVisual {
   rows: number;
   columns: number;
   fadedRows?: number;
+  /**
+   * 묶어 세기 전의 물건을 보여 줄 때 씁니다. '하나씩 세면 불편하다'를
+   * 다루는 문항에 '5개씩 5묶음'이라고 적어 주면, 묶는 방법을 먼저
+   * 알려 주는 셈이 되어 물음이 사라집니다. 이 값이 있으면 묶음 설명
+   * 대신 전체 개수만 적습니다.
+   */
+  plainCount?: number;
 }
 
 export interface PatternVisual {

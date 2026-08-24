@@ -196,7 +196,7 @@ describe('the maths in each question is true', () => {
     //
     // 이 수는 내려가기만 해야 합니다. 올라간다면 답이 하나로 몰리는
     // 차시를 새로 만든 것입니다.
-    const WORST_TODAY = 16;
+    const WORST_TODAY = 13;
     let worst = 0;
     let where = '';
 
@@ -217,6 +217,29 @@ describe('the maths in each question is true', () => {
     }
 
     expect(worst, `한 답이 가장 많이 차지한 곳: ${where}`).toBeLessThanOrEqual(WORST_TODAY);
+  });
+
+  it('keeps 몇 분 전 to the simple cases the curriculum allows', () => {
+    // 2022 개정 수학과 교육과정, 도형과 측정 적용 시 고려 사항:
+    // "'몇 시 몇 분 전'의 시각 읽기에서 5분 전, 10분 전과 같이 간단한
+    //  경우를 다루고, 13분 전과 같이 복잡한 경우는 다루지 않는다."
+    //
+    // 틀에 before: { from: 5, to: 20 }으로 적어 두어 6분 전, 13분 전,
+    // 17분 전이 그대로 나오고 있었습니다.
+    const complicated: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      const text = `${question.basePrompt ?? question.prompt} ${question.choices.join(' ')} ${question.answer}`;
+      const found = text.match(/(\d+)분 전/g) ?? [];
+      for (const one of found) {
+        const minutes = Number(one.replace('분 전', ''));
+        if (minutes % 5 !== 0) {
+          complicated.push(`${lessonId} ${level} ${question.id}: ${one}`);
+        }
+      }
+    }
+
+    expect([...new Set(complicated)]).toEqual([]);
   });
 
   it('never offers the same choice twice', () => {
@@ -343,6 +366,13 @@ describe('the maths in each question is true', () => {
       const named = subjects.filter((subject) => subject.says.test(asked));
       if (named.length === 0) continue;
       if (named.some((subject) => subject.drawnBy.includes(visual.kind))) continue;
+
+      // 자로 잰 두 물건을 견주는 문항은 자 하나로 그릴 수 없습니다.
+      // '크레파스 9cm, 색연필 14cm'를 자 한 개에 그리면 9에서 14까지의
+      // 띠가 되어 두 길이가 모두 사라집니다. 막대 둘로 나란히 그리는
+      // 것이 바른 그림입니다.
+      const twoLengths = (asked.match(/\d+\s*cm/g) ?? []).length >= 2;
+      if (visual.kind === 'bar-model' && twoLengths) continue;
 
       unrelated.push(
         `${lessonId} ${level} ${question.id}: ${named.map((s) => s.name).join('·')}를 말하는데 그림은 ${visual.kind} — ${asked.slice(0, 46)}`,
