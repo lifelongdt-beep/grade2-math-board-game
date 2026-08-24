@@ -9573,21 +9573,6 @@ const visualForGeneratedQuestion = (
       }
     }
 
-    // 수직선은 수가 '줄지어' 있을 때에만 뜻이 있습니다.
-    //
-    // 예전에는 문제에 나온 아무 두 수나 점으로 찍고 그 차를 눈금
-    // 간격으로 삼았습니다. 그래서 '100이 2개이면 얼마일까요?'에
-    // 눈금이 98씩인 수직선이 나왔습니다. 100과 2는 줄지어 있는 수가
-    // 아니라 '한 묶음의 크기'와 '묶음 수'입니다.
-    //
-    // 줄지어 있다는 표시가 없으면 자리값표로 보여 줍니다.
-    const inOrder = /뛰어 세|다음 수|사이|순서|차례로|커지|작아지/.test(question.prompt)
-      || (values.length >= 3
-        && values.slice(1).every((one, at) => one - values[at] === values[1] - values[0]));
-    // 줄지어 있지 않으면 수직선으로 보여 줄 것이 없습니다. 자리값표를
-    // 대신 그려 보았더니, 이번에는 문제가 묻지 않은 자리를 보여 주어
-    // 179군데가 어긋났습니다. 그릴 것이 없으면 그리지 않습니다.
-    if (!inOrder) return undefined;
 
     const gap = Math.max(1, values.length >= 2 ? Math.abs(values[1] - values[0]) || 10 : 10);
     // 눈금이 너무 촘촘하지 않도록 간격을 값의 크기에 맞춥니다.
