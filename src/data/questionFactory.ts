@@ -7412,12 +7412,17 @@ const richNumberQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
   // 1~3차시에서는 몇백(몇천)까지만 다룹니다.
   if (numberUnit && lesson.lessonNo < 4) {
     const piece = four ? 100 : 10;
+    // 2차시는 '백(천)이 어떻게 만들어지는가'만 다룹니다. 몇백·몇천은
+    // 3차시입니다. 여기서 '100이 80개이면?'을 물으면 다음 차시를 먼저
+    // 다루는 셈이고, 답도 8000이 되어 2차시가 다루는 1000을 넘습니다.
+    const groups = lesson.lessonNo <= 2 ? 1 : count;
+    const total = unitBase * groups;
     return makeQuestion(
       lesson, difficulty, index,
-      `${piece}이 ${count * 10}개이면 얼마일까요?`,
-      value,
-      [piece * count, value + piece, count * 10],
-      `${piece}이 10개이면 ${unitBase}입니다. ${piece}이 ${count * 10}개이면 ${unitBase}이 ${count}개이므로 ${value}입니다.`,
+      `${piece}이 ${groups * 10}개이면 얼마일까요?`,
+      total,
+      [piece * groups, total + piece, groups * 10],
+      `${piece}이 10개이면 ${unitBase}입니다. ${piece}이 ${groups * 10}개이면 ${unitBase}이 ${groups}개이므로 ${total}입니다.`,
       'placeValue',
       '조건 함께 보기 · 작은 묶음을 큰 묶음으로 바꾸어 세기',
     );
@@ -9649,6 +9654,9 @@ const visualForGeneratedQuestion = (
       // 답이 곱이면 묶음을 그릴 수 없습니다. 5개씩 2묶음을 그려 놓으면
       // 세어서 10이 바로 나와 물음이 사라집니다. 이때는 수의 길에
       // 5만 짚어 주고 아이가 두 번 뛰게 합니다.
+      // '7의 1배는?'은 짚어 준 수가 곧 답입니다. 이런 문항은 보여 줄
+      // 것이 없으므로 그리지 않습니다.
+      if (howMany === 1) return undefined;
       if (base > 0 && answerNumber === base * howMany) {
         return numberLineVisualFor([base], base, '몇 배를 세는 수의 길', 0);
       }
