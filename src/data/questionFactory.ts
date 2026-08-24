@@ -14440,6 +14440,9 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
         [`${first}개`, `${second}개`, `${first + second + 1}개`],
         `1층 ${first}개와 2층 ${second}개를 더하면 ${first + second}개입니다.`,
         'shape', guide('쌓기나무 세기'),
+        // 쌓기나무를 말하면 쌓기나무를 그려야 합니다. 그냥 두면 평면도형이
+        // 그려져 문제와 그림이 어긋납니다.
+        cubeStackVisual('쌓은 모양', index, first + second),
       );
     }
     return null;
