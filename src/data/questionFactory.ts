@@ -9769,6 +9769,24 @@ const visualForGeneratedQuestion = (
     const groupable = each !== null && groups !== null
       && each >= 1 && groups >= 1 && each <= 9 && groups <= 9;
 
+    // '5단 곱셈구구는 몇씩 커질까요?' — 5단이 어떻게 늘어나는지 묻는
+    // 문항입니다. 동그라미 다섯 개로는 '커진다'가 보이지 않습니다.
+    // 5, 10, 15, 20을 수의 길에 늘어놓으면 5씩 늘어나는 것이 보입니다.
+    // 어느 점도 굵게 짚지 않습니다 — 답이 '5씩'이라 짚으면 답을 주는
+    // 셈이 됩니다.
+    const dan = /(\d+)단/.exec(question.prompt);
+    if (dan && !groupable) {
+      const size = Number(dan[1]);
+      if (size >= 1 && size <= 9) {
+        return numberLineVisualFor(
+          [size, size * 2, size * 3, size * 4],
+          size,
+          `${size}단이 커지는 모습`,
+          -1,
+        );
+      }
+    }
+
     const loose = /(\d+)/.exec(question.prompt);
     if (loose && !groupable) {
       const many = Number(loose[1]);
