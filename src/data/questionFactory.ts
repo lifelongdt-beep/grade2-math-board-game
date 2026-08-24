@@ -9643,10 +9643,14 @@ const visualForGeneratedQuestion = (
     // 묶음이 적혀 있지 않은 문항이 있습니다. 여기에 묶음 배열을 그리면
     // 묶는 방법을 먼저 알려 주는 셈입니다. 물건만 늘어놓아 '많다'는
     // 것을 보여 주고, 설명에는 전체 개수만 적습니다.
-    const loose = /물건이 (\d+)개/.exec(question.prompt);
-    if (loose) {
+    //
+    // 묶음을 적어 두지 않은 곱셈 문항은 모두 이렇게 그립니다. 예전처럼
+    // 문제에 나온 첫 두 수를 집어 묶음 배열을 그리면, 문제가 말하지
+    // 않은 묶음을 그림이 지어내게 됩니다.
+    const loose = /(\d+)/.exec(question.prompt);
+    if (loose && (each === null || groups === null)) {
       const many = Number(loose[1]);
-      if (many >= 1 && many <= 30) {
+      if (many >= 2 && many <= 30) {
         const wide = Math.min(5, many);
         return {
           kind: 'array',
