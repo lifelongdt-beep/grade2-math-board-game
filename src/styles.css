@@ -2044,7 +2044,7 @@ button:disabled {
 }
 
 .hint-modal-card {
-  width: min(480px, calc(100% - 24px));
+  width: min(560px, calc(100% - 16px));
   max-height: calc(100% - 24px);
   overflow: auto;
   display: grid;
@@ -2252,17 +2252,39 @@ button:disabled {
   min-height: 32px;
 }
 
-.interactive-enlarged-visual svg {
+/* 그림 칸은 평소 높이가 정해져 있습니다(.question-visual-figure).
+   자세히 보기에서 svg만 키웠더니 그림이 그 칸을 넘어 흘러나와 아래
+   글자와 '다 봤어요' 버튼을 덮었습니다. 달력처럼 세로로 긴 그림은
+   마지막 줄이 잘렸습니다. 칸의 높이 제한도 함께 풀어 줍니다. */
+.interactive-counter-visual .question-visual-figure,
+.interactive-enlarged-visual .question-visual-figure {
   width: 100%;
   height: auto;
-  min-height: 220px;
 }
 
-.interactive-enlarged-caption {
+.interactive-counter-visual .question-visual-figure svg,
+.interactive-enlarged-visual .question-visual-figure svg {
+  height: auto;
+}
+
+/* 그림에서 어디를 먼저 보는지 알려 주는 차례입니다. */
+.hint-reading-steps {
   margin: 0;
-  color: var(--muted);
-  font-weight: 800;
-  font-size: 13px;
+  padding: 12px 14px 12px 34px;
+  display: grid;
+  gap: 6px;
+  border: 1px solid #cdebe6;
+  border-radius: var(--radius);
+  background: #f2fbfa;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.hint-reading-steps li::marker {
+  color: var(--teal-dark);
+  font-weight: 900;
 }
 
 .retry-msg {
