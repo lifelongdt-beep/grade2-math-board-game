@@ -246,6 +246,7 @@ const buildAnalysisWorkbook = (
     '조심할 점',
     '확인 질문',
     '해설',
+    '힌트 사용',
   ];
   const recordToRow = (record: AnswerRecord) => {
     const player = analytics.find((item) => item.player.id === record.playerId)?.player;
@@ -267,6 +268,7 @@ const buildAnalysisWorkbook = (
       record.support.misconceptionTip,
       record.support.selfCheck,
       record.explanation,
+      record.hintUsed ? '사용' : '',
     ];
   };
 

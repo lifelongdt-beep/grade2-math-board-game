@@ -13,6 +13,8 @@ import {
   QrCode,
   RefreshCcw,
   Smartphone,
+  Lightbulb,
+  Search,
   Sparkles,
   Timer,
   Users,
@@ -37,6 +39,8 @@ import {
   watchMuted,
 } from './sound';
 import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
+import { HighlightedPrompt } from './components/HighlightedPrompt';
+import { InteractiveHintModal } from './components/InteractiveHintModal';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
@@ -559,6 +563,15 @@ function App() {
   const [sessionDuration, setSessionDuration] = useState<SessionDuration>(initialRoute.duration);
   const [muted, setMutedState] = useState(isMuted);
   const [openResults, setOpenResults] = useState<Record<number, boolean>>({});
+  // 3단계 스캐폴딩 힌트: 1단계(핵심 말 강조)는 문제글에 늘 켜 두고,
+  // 2단계(정지된 그림)도 이미 문제와 함께 보입니다. 여기서는 그 위의
+  // 두 가지를 다룹니다 — 짧은 도움말을 미리 열어 보는 것과, 조작형
+  // 힌트 창을 여는 것입니다. 둘 다 새 문제로 넘어가면 다시 닫힙니다.
+  const [hintTextOpen, setHintTextOpen] = useState<Record<number, boolean>>({});
+  const [hintModalOpen, setHintModalOpen] = useState<Record<number, boolean>>({});
+  // 이 문제에서 조작형 힌트를 열어 본 적이 있는지입니다. 정답 기록에
+  // 실어 두면 교사가 어느 문제에서 도움이 더 필요했는지 볼 수 있습니다.
+  const [hintUsedThisQuestion, setHintUsedThisQuestion] = useState<Record<number, boolean>>({});
   const [round, setRound] = useState(1);
   // 맞힐 때마다 시간이 조금씩 늘어납니다. 줄어들기만 하는 시계는 2학년에게
   // 재미보다 불안이라, 잘 풀수록 더 오래 놀 수 있게 합니다.
@@ -923,7 +936,17 @@ function App() {
     setBonusFlash(Date.now());
   };
 
+  // 새 문제로 넘어갈 때 힌트 상태를 접습니다. 열어 두었던 도움말이나
+  // 조작형 힌트가 다음 문제까지 이어지면, 아직 보지도 않은 문제의
+  // 그림이 열려 있는 채로 나타납니다.
+  const resetHintState = (playerId: number) => {
+    setHintTextOpen((prev) => ({ ...prev, [playerId]: false }));
+    setHintModalOpen((prev) => ({ ...prev, [playerId]: false }));
+    setHintUsedThisQuestion((prev) => ({ ...prev, [playerId]: false }));
+  };
+
   const nextForPlayer = (player: Player) => {
+    resetHintState(player.id);
     setPlayerStates((prev) => {
       const current = prev[player.id];
       if (!current) return prev;
@@ -993,6 +1016,7 @@ function App() {
       attempts: state.activeRetry === null ? 1 : 2,
       responseMs,
       answeredAt: new Date().toISOString(),
+      hintUsed: hintUsedThisQuestion[player.id] ?? false,
       ...(isCorrect
         ? {}
         : (() => {
@@ -1013,6 +1037,10 @@ function App() {
     }
 
     setRecords((prev) => [...prev, record]);
+    if (isCorrect) {
+      // 맞히면 바로 다음 문제로 넘어가므로, 여기서 곧장 힌트 상태를 접습니다.
+      resetHintState(player.id);
+    }
     setPlayerStates((prev) => {
       const currentState = prev[player.id] ?? state;
 
@@ -1576,7 +1604,50 @@ function App() {
                           <span>{question.strategy}</span>
                         </div>
                         <QuestionVisualGraphic visual={question.visual} />
-                        <p>{question.prompt}</p>
+                        <HighlightedPrompt text={question.prompt} />
+
+                        {/* 힌트 스캐폴딩: 1단계(핵심 말 강조)는 위 문제글에
+                            이미 켜져 있고, 2단계(정지된 그림)도 이미
+                            보입니다. 이 줄은 그 위 두 가지 — 짧은 도움말을
+                            미리 열어 보는 것과, 만져 보는 힌트 창을 여는
+                            것 — 을 아이가 원할 때 스스로 꺼내 쓰게 합니다.
+                            문제 칸 안에 두어, 답 칸(student-answer-dock)의
+                            자리를 밀어내지 않고 이 칸 안에서만 스크롤됩니다. */}
+                        {state.feedback !== 'explain' && (
+                          <div className="hint-controls">
+                            <button
+                              type="button"
+                              className="hint-toggle-button"
+                              aria-expanded={Boolean(hintTextOpen[player.id])}
+                              onClick={() => {
+                                playTapSound();
+                                setHintTextOpen((prev) => ({ ...prev, [player.id]: !prev[player.id] }));
+                              }}
+                            >
+                              <Lightbulb size={16} /> {hintTextOpen[player.id] ? '힌트 접기' : '힌트 보기'}
+                            </button>
+                            {question.visual && (
+                              <button
+                                type="button"
+                                className="hint-interactive-button"
+                                onClick={() => {
+                                  playTapSound();
+                                  setHintModalOpen((prev) => ({ ...prev, [player.id]: true }));
+                                  setHintUsedThisQuestion((prev) => ({ ...prev, [player.id]: true }));
+                                }}
+                              >
+                                <Search size={16} /> 자세히 보기
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {state.feedback !== 'explain' && hintTextOpen[player.id] && (
+                          <div className="hint-text-panel" aria-label={`${player.name} 힌트`}>
+                            <p className="quick-core"><span>핵심</span>{question.support.studentConcept}</p>
+                            <p><span>볼 곳</span>{question.support.studentHint}</p>
+                          </div>
+                        )}
                       </div>
 
                       {state.feedback === 'correct' && (
@@ -1595,8 +1666,30 @@ function App() {
                             <p><span>정답</span>{question.answer}</p>
                             <p className="quick-reason"><span>왜?</span>{question.support.steps[2]}</p>
                           </div>
-                          <button type="button" onClick={() => nextForPlayer(player)}>다음 문제</button>
+                          <div className="wrong-feedback-actions">
+                            {question.visual && (
+                              <button
+                                type="button"
+                                className="hint-interactive-button"
+                                onClick={() => {
+                                  playTapSound();
+                                  setHintModalOpen((prev) => ({ ...prev, [player.id]: true }));
+                                  setHintUsedThisQuestion((prev) => ({ ...prev, [player.id]: true }));
+                                }}
+                              >
+                                <Search size={16} /> 만져서 다시 보기
+                              </button>
+                            )}
+                            <button type="button" onClick={() => nextForPlayer(player)}>다음 문제</button>
+                          </div>
                         </div>
+                      )}
+
+                      {hintModalOpen[player.id] && question.visual && (
+                        <InteractiveHintModal
+                          visual={question.visual}
+                          onClose={() => setHintModalOpen((prev) => ({ ...prev, [player.id]: false }))}
+                        />
                       )}
 
                       <div className="student-answer-dock">

@@ -171,25 +171,52 @@ const primaryTag = (lesson: Lesson): ConceptTag => {
   return lesson.tags[0] ?? 'number';
 };
 
+// 'time' 갈래는 시계로 시각을 읽는 차시(6~7차시)와 달력으로 날짜를
+// 읽는 차시(8차시)를 함께 묶습니다. 두 차시는 다루는 것이 전혀 달라서,
+// 시계 갈래의 도움말("60분이 1시간")을 달력 문제에 그대로 붙이면
+// 문제와 해설이 어긋납니다. 달력 차시만 따로 도움말을 둡니다.
+const calendarLearningSupport = {
+  studentConcept: '날짜인지 요일인지 먼저 보세요.',
+  studentHint: '1주일은 7일, 1년은 12개월이라는 점을 떠올려요.',
+  coreConcept: '1주일은 7일, 1년은 12개월이고, 달력에서 같은 요일은 7일마다 되풀이됩니다.',
+  readStrategy: '무엇을 구하는지(몇 주, 며칠, 몇 월)를 먼저 나누고, 1주일 7일·1년 12개월 규칙을 적용합니다.',
+  misconceptionTip: '12월 다음은 13월이 아니라 다시 1월입니다. 개월 수도 12를 넘기면 다음 해로 넘어갑니다.',
+  selfCheck: '1주일 7일, 1년 12개월 규칙으로 다시 확인했나요?',
+};
+
 const buildLearningSupport = (
   lesson: Lesson,
   tag: ConceptTag,
   solution: string,
   strategy: string,
-): LearningSupport => ({
-  studentConcept: studentConceptGuide[tag],
-  studentHint: studentHintGuide[tag],
-  coreConcept: coreConceptGuide[tag],
-  readStrategy: `${strategy}: ${readStrategyGuide[tag]}`,
-  steps: [
-    '문제에서 무엇을 구하라고 했는지 먼저 찾습니다.',
-    readStrategyGuide[tag],
-    solution,
-  ],
-  misconceptionTip: misconceptionGuide[tag],
-  textbookConnection: `차시 목표 "${lesson.objective}"와 연결됩니다. 교과서 핵심은 ${lesson.textbookFocus} 익힘책 핵심은 ${lesson.workbookFocus}`,
-  selfCheck: selfCheckGuide[tag],
-});
+): LearningSupport => {
+  const isCalendar = tag === 'time' && lesson.title.includes('달력');
+  const guide = isCalendar
+    ? calendarLearningSupport
+    : {
+        studentConcept: studentConceptGuide[tag],
+        studentHint: studentHintGuide[tag],
+        coreConcept: coreConceptGuide[tag],
+        readStrategy: readStrategyGuide[tag],
+        misconceptionTip: misconceptionGuide[tag],
+        selfCheck: selfCheckGuide[tag],
+      };
+
+  return {
+    studentConcept: guide.studentConcept,
+    studentHint: guide.studentHint,
+    coreConcept: guide.coreConcept,
+    readStrategy: `${strategy}: ${guide.readStrategy}`,
+    steps: [
+      '문제에서 무엇을 구하라고 했는지 먼저 찾습니다.',
+      guide.readStrategy,
+      solution,
+    ],
+    misconceptionTip: guide.misconceptionTip,
+    textbookConnection: `차시 목표 "${lesson.objective}"와 연결됩니다. 교과서 핵심은 ${lesson.textbookFocus} 익힘책 핵심은 ${lesson.workbookFocus}`,
+    selfCheck: guide.selfCheck,
+  };
+};
 
 const lessonNote = (support: LearningSupport) =>
   [
@@ -666,6 +693,16 @@ const solidQuestionVisual = (prompt: string, index: number): QuestionVisual => {
   const topLayerMatch = prompt.match(/맨 위층에\s*(\d+)개,\s*아래층에\s*(\d+)개/);
   if (topLayerMatch) {
     return cubeStackVisual(prompt, index, Number(topLayerMatch[1]) + Number(topLayerMatch[2]));
+  }
+
+  // 두 사람(또는 두 모양)의 쌓기나무 수를 모으거나 견주는 과정 문제입니다.
+  // □가 곧 답(합 또는 차)이므로 그림에 합계를 그리면 답을 미리 보여주게
+  // 됩니다. 대신 문제에 이미 나온 첫 번째 수(내 모양)를 그려 줍니다.
+  const twoStackMatch =
+    prompt.match(/준서는\s*(\d+)개,\s*지우는\s*(\d+)개를 썼습니다/) ??
+    prompt.match(/내 모양은\s*(\d+)개,\s*친구 모양은\s*(\d+)개입니다/);
+  if (twoStackMatch) {
+    return cubeStackVisual(prompt, index, Number(twoStackMatch[1]));
   }
 
   if (prompt.includes('앞, 옆, 위') || prompt.includes('앞에서 본 모양과 위에서 본 모양')) {
@@ -7382,16 +7419,64 @@ const clockVisualFor = (
 });
 
 // 1일을 일요일에 두면 같은 세로줄이 곧 같은 요일이 되어 "7일마다 반복"이 눈에 보입니다.
+// 다만 문제가 '8일이 월요일입니다'처럼 어떤 날의 요일을 정해 버렸으면,
+// 1일을 일요일에 고정한 그림은 문제와 어긋납니다. 그때는 startWeekday를
+// 문제가 말한 요일에 맞춰 옮깁니다.
+const WEEKDAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+const calendarStartWeekdayFor = (day: number, weekdayName: string): number => {
+  const weekdayIndex = WEEKDAY_NAMES.indexOf(weekdayName);
+  if (weekdayIndex === -1) return 0;
+  return ((weekdayIndex - (day - 1)) % 7 + 7) % 7;
+};
+
 const calendarVisualFor = (
   marks: Array<{ day: number; tone: 'start' | 'end' }> = [],
   label = '달력 자료',
+  startWeekday = 0,
 ): QuestionVisual => ({
   kind: 'calendar',
   label,
-  startWeekday: 0,
+  startWeekday,
   days: 30,
   marks,
 });
+
+// 문제글을 보고 달력 그림을 고릅니다. 어디서 부르든(문항의 갈래로 고를
+// 때든, 문제가 '달력'을 이름으로 부를 때든) 같은 규칙으로 골라야
+// 문제와 그림이 늘 같이 맞습니다.
+const calendarVisualForPrompt = (prompt: string): QuestionVisual => {
+  // 답이 되는 날짜는 표시하지 않습니다. 학생이 달력에서 직접 세어야 합니다.
+  const eventMatch = prompt.match(/오늘은 (\d+)일이고 행사는 (\d+)일/);
+  if (eventMatch) {
+    return calendarVisualFor(
+      [
+        { day: Number(eventMatch[1]), tone: 'start' },
+        { day: Number(eventMatch[2]), tone: 'end' },
+      ],
+      '오늘과 행사 날짜 달력',
+    );
+  }
+
+  const moveMatch = prompt.match(/^(\d+)일에서 \d+일 뒤/);
+  if (moveMatch) {
+    return calendarVisualFor([{ day: Number(moveMatch[1]), tone: 'start' }], '날짜를 세는 달력');
+  }
+
+  // '8일이 월요일입니다'처럼 어떤 날의 요일을 정해 준 문제는 1일을
+  // 일요일에 고정한 그림과 어긋납니다. 문제가 말한 요일에 그 날이
+  // 오도록 달력을 옮겨 그립니다.
+  const weekdayMatch = prompt.match(/(\d+)일이\s*(일|월|화|수|목|금|토)요일/);
+  if (weekdayMatch) {
+    const day = Number(weekdayMatch[1]);
+    return calendarVisualFor(
+      [{ day, tone: 'start' }],
+      '요일을 알려 주는 달력',
+      calendarStartWeekdayFor(day, weekdayMatch[2]),
+    );
+  }
+
+  return calendarVisualFor([], '요일이 반복되는 달력');
+};
 
 const patternVisualFor = (items: string[], label = '무늬 규칙 자료', missingIndex?: number): QuestionVisual => ({
   kind: 'pattern',
@@ -7642,7 +7727,7 @@ const richTimeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
         `같은 요일은 7일마다 돌아옵니다. ${day}일에서 7일 뒤인 ${later}일도 수요일입니다.`,
         'time',
         '자료 해석 · 달력에서 요일의 반복 읽기',
-        calendarVisualFor([{ day, tone: 'start' }], '요일이 반복되는 달력'),
+        calendarVisualFor([{ day, tone: 'start' }], '요일이 반복되는 달력', calendarStartWeekdayFor(day, '수')),
       );
     }
     return makeQuestion(
@@ -9375,13 +9460,31 @@ const namedSubjectVisual = (question: Question, index: number): QuestionVisual |
       const row = Number(meeting[1]);
       const column = Number(meeting[2]);
       if (row >= 1 && row <= 9 && column >= 1 && column <= 9) {
+        // "만나는 칸의 오른쪽/아래 칸을 구하는" 문제는 만나는 칸이 아니라
+        // 옆 칸이 빈칸입니다. 만나는 칸 값은 풀이 ①에서 이미 알려 줍니다.
+        const stepDirection = asked.match(/만나는 칸의\s*(오른쪽|왼쪽|아래|위)\s*칸을 구하는/)?.[1];
+        // "만나는 칸의 수는 N입니다"처럼 만나는 칸 값을 문제에서 이미
+        // 알려 주는 경우, 그 칸을 빈칸으로 그리면 문제와 그림이 어긋납니다.
+        const meetingGiven = /만나는 칸의 수는\s*\d+입니다/.test(asked);
+        const blank =
+          stepDirection === '오른쪽'
+            ? { row, column: column + 1 }
+            : stepDirection === '왼쪽'
+              ? { row, column: column - 1 }
+              : stepDirection === '아래'
+                ? { row: row + 1, column }
+                : stepDirection === '위'
+                  ? { row: row - 1, column }
+                  : meetingGiven
+                    ? undefined
+                    : { row, column };
         return {
           kind: 'grid-table',
           label: `${table[1]}의 한 부분`,
           operation,
           rows: span(row, 4),
           columns: span(column, 5),
-          blank: { row, column },
+          ...(blank ? { blank } : {}),
         };
       }
     }
@@ -9413,9 +9516,9 @@ const namedSubjectVisual = (question: Question, index: number): QuestionVisual |
   }
 
   // 달력을 보라는 문제에 무늬가 붙어 나왔습니다. 같은 요일이 어디에
-  // 오는지는 달력을 봐야 세어집니다. 답이 되는 날은 표시하지 않습니다.
+  // 오는지는 달력을 봐야 세어집니다.
   if (/달력/.test(asked)) {
-    return calendarVisualFor([], '달력');
+    return calendarVisualForPrompt(asked);
   }
 
   return undefined;
@@ -9600,6 +9703,30 @@ const visualForGeneratedQuestion = (
     // 띠가 되어, 지우개도 가위도 보이지 않습니다. 두 막대로 그립니다.
     const named = namedLengths(question.prompt);
     if (named.length >= 2) return barModelVisualFor(named.slice(0, 3), '두 길이 견주기');
+
+    // '32cm+16cm는 몇 cm일까요?'처럼 두 길이를 더하거나 빼서 답을 구하는
+    // 문항입니다. 답(합 또는 차)을 자로 그리면 그림이 답을 미리 보여
+    // 주므로, 문제에 나온 두 길이만 막대로 그립니다.
+    const arithmetic = question.prompt.match(/(\d+)\s*cm\s*[+\-]\s*(\d+)\s*cm/);
+    if (arithmetic) {
+      return barModelVisualFor(
+        [
+          { label: '①', value: Number(arithmetic[1]) },
+          { label: '②', value: Number(arithmetic[2]) },
+        ],
+        '더하거나 뺄 두 길이',
+      );
+    }
+
+    // '{start}부터 {end}까지 놓인'처럼 두 눈금이 문제에 그대로 나오는
+    // 문항은 그 구간을 그대로 그립니다. 답(끝-시작)만 보고 0부터 그리면
+    // 문제에 적힌 시작 눈금과 그림이 어긋납니다.
+    const span = question.prompt.match(/(\d+)부터 (\d+)까지/);
+    if (span) {
+      const from = Number(span[1]);
+      const to = Number(span[2]);
+      if (to > from) return rulerVisualFor(from, to, '자로 잰 길이');
+    }
 
     // 눈금 0이 아닌 곳에 대고 잰 문항은 두 눈금이 문제에 그대로
     // 나옵니다. 이때만 그 구간을 그립니다.
@@ -9810,25 +9937,11 @@ const visualForGeneratedQuestion = (
 
   if (question.type === 'time') {
     // 달력 문제에는 시계가 아니라 달력을 보여 줍니다.
-    if (/달력|요일|며칠|날짜/.test(question.prompt)) {
-      // 답이 되는 날짜는 표시하지 않습니다. 학생이 달력에서 직접 세어야 합니다.
-      const eventMatch = question.prompt.match(/오늘은 (\d+)일이고 행사는 (\d+)일/);
-      if (eventMatch) {
-        return calendarVisualFor(
-          [
-            { day: Number(eventMatch[1]), tone: 'start' },
-            { day: Number(eventMatch[2]), tone: 'end' },
-          ],
-          '오늘과 행사 날짜 달력',
-        );
-      }
-
-      const moveMatch = question.prompt.match(/^(\d+)일에서 \d+일 뒤/);
-      if (moveMatch) {
-        return calendarVisualFor([{ day: Number(moveMatch[1]), tone: 'start' }], '날짜를 세는 달력');
-      }
-
-      return calendarVisualFor([], '요일이 반복되는 달력');
+    // '다음 달은 몇 월일까요', '1년은 몇 개월일까요'처럼 달력을 다루면서도
+    // 달력·요일·며칠·날짜라는 낱말이 없는 문제가 있어, 개월 수를 묻는
+    // 낱말도 함께 봅니다.
+    if (/달력|요일|며칠|날짜|몇 월|개월/.test(question.prompt)) {
+      return calendarVisualForPrompt(question.prompt);
     }
 
     // 문제에 적힌 숫자를 그대로 시·분으로 읽은 값이라 실제 답과 다릅니다.
@@ -13757,7 +13870,7 @@ const timeShapes: Shape[] = [
         `같은 요일은 7일마다 돌아옵니다. ${day}+7=${day + 7}일입니다.`,
         'time',
         shapeStrategy(difficulty, '자료 해석 · 요일이 7일마다 돌아옴을 이용하기', '7일마다 돌아오는 요일'),
-        calendarVisualFor([{ day, tone: 'start' }], '달력에서 찾기'),
+        calendarVisualFor([{ day, tone: 'start' }], '달력에서 찾기', calendarStartWeekdayFor(day, '수')),
       );
     } },
 
