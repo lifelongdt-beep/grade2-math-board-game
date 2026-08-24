@@ -12333,31 +12333,33 @@ export const questionBank: Template[] = [
   // 아이는 그림에서 비어 있는 곳을 보고 거기 들어갈 것을 고릅니다.
   // ══════════════════════════════════════════════════════════════════
   {
-    id: 'table-fill-one-cell',
+    id: 'graph-columns-from-table',
     when: /자료를 분류하여 표로|자료를 조사하여 표로/,
     demand: 'recall',
     tag: 'data',
-    strategy: '자료 해석 · 표의 빈칸 채우기',
+    strategy: '자료 해석 · 표의 수만큼 그래프 칸 정하기',
     vars: {
       apple: { from: 3, to: 8 },
       pear: { from: 2, to: 7 },
       grape: { from: 1, to: 6 },
     },
+    // 표를 그려 주고 그 수를 읽게 합니다. 문제 글에 수를 적으면 그림을
+    // 보지 않고 옮겨 적으면 그만이라, 표를 보는 일이 사라집니다.
     visual: {
       kind: 'table',
       columns: [
         { name: '사과', value: '{apple}' },
-        { name: '배', value: '?' },
+        { name: '배', value: '{pear}' },
         { name: '포도', value: '{grape}' },
       ],
       categoryLabel: '좋아하는 과일',
       valueLabel: '학생 수(명)',
-      label: '한 칸이 비어 있는 표',
+      label: '조사한 것을 적은 표',
     },
-    prompt: '배를 좋아하는 학생은 {pear}명입니다. 표의 빈칸에 들어갈 수는 얼마일까요?',
-    answer: '{pear}',
-    wrongs: ['{apple}', '{grape}', '{pear + apple}'],
-    solution: '배를 좋아하는 학생이 {pear}명이므로 빈칸에는 {pear}을 씁니다.',
+    prompt: '표를 보고 그래프를 그리려고 합니다. 배는 ○를 몇 개 그려야 할까요?',
+    answer: '{pear}개',
+    wrongs: ['{apple}개', '{grape}개', '1개'],
+    solution: '표에서 배는 {pear}명이고 한 칸에 하나씩 그리므로 ○는 {pear}개입니다.',
   },
   {
     id: 'table-fill-from-total',
@@ -12397,6 +12399,7 @@ export const questionBank: Template[] = [
       apple: { from: 3, to: 7 },
       pear: { from: 2, to: 6 },
       grape: { from: 1, to: 5 },
+      total: { calc: 'apple + pear + grape' },
     },
     visual: {
       kind: 'pictograph',
@@ -12409,10 +12412,10 @@ export const questionBank: Template[] = [
       blankAt: 1,
       label: '한 줄이 비어 있는 그래프',
     },
-    prompt: '배를 좋아하는 학생은 {pear}명입니다. 그래프의 빈 줄에는 ○를 몇 개 그려야 할까요?',
+    prompt: '조사한 학생은 모두 {total}명입니다. 그래프의 빈 줄에는 ○를 몇 개 그려야 할까요?',
     answer: '{pear}개',
-    wrongs: ['{apple}개', '{grape}개', '{pear + 2}개'],
-    solution: '한 칸에 하나씩 그리므로 {pear}명이면 ○를 {pear}개 그립니다.',
+    wrongs: ['{total}개', '{apple}개', '{grape}개'],
+    solution: '{total}에서 사과 {apple}명과 포도 {grape}명을 빼면 배는 {pear}명이므로 ○는 {pear}개입니다.',
   },
   {
     id: 'graph-fill-tallest',
@@ -12424,6 +12427,7 @@ export const questionBank: Template[] = [
       apple: { from: 4, to: 6 },
       pear: { from: 7, to: 9 },
       grape: { from: 1, to: 3 },
+      total: { calc: 'apple + pear + grape' },
     },
     visual: {
       kind: 'pictograph',
@@ -12436,7 +12440,7 @@ export const questionBank: Template[] = [
       blankAt: 1,
       label: '한 줄이 비어 있는 그래프',
     },
-    prompt: '배를 좋아하는 학생은 {pear}명입니다. 빈 줄을 채우면 가장 많은 학생이 좋아하는 과일은 무엇일까요?',
+    prompt: '조사한 학생은 모두 {total}명입니다. 빈 줄을 채우면 가장 많은 학생이 좋아하는 과일은 무엇일까요?',
     answer: '배',
     wrongs: ['사과', '포도', '모두 같습니다'],
     solution: '배가 {pear}명으로 사과 {apple}명, 포도 {grape}명보다 많습니다.',
