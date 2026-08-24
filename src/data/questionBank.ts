@@ -12364,7 +12364,7 @@ export const questionBank: Template[] = [
     when: /자료를 조사하여 표로|표와 그래프로 나타내/,
     demand: 'reason',
     tag: 'data',
-    strategy: '자료 해석 · 합계를 보고 빈칸 채우기',
+    strategy: '자료 해석 · 전체 수를 보고 빈칸 판단하기',
     vars: {
       apple: { from: 3, to: 7 },
       grape: { from: 2, to: 6 },
@@ -12419,7 +12419,7 @@ export const questionBank: Template[] = [
     when: /표와 그래프를 보고 무엇을 알 수 있을까요/,
     demand: 'reason',
     tag: 'data',
-    strategy: '자료 해석 · 빈 줄을 채운 뒤 가장 많은 것 찾기',
+    strategy: '자료 해석 · 빈 줄을 채워 가장 많은 것 판단하기',
     vars: {
       apple: { from: 4, to: 6 },
       pear: { from: 7, to: 9 },
