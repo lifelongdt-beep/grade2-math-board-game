@@ -9,7 +9,7 @@ describe('peek', () => {
     for (const lesson of lessons) {
       for (const level of ['하', '중', '상'] as const) {
         for (const q of generateQuestions(lesson, level)) {
-          if (!/상자에|봉지에|줄에|접시에/.test(q.prompt)) continue;
+          if (!/상자에 .*씩 들어/.test(q.prompt)) continue;
           const v = q.visual;
           if (v?.kind !== 'array') continue;
           const shape = v.plainCount === undefined
