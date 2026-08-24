@@ -14293,6 +14293,22 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
     );
   }
 
+  if (tag === 'multiplication' && /여러 가지 방법으로 세어/.test(title)) {
+    const step = 2 + (seed % 4);
+    const groups = 3 + (seed % 4);
+    const total = step * groups;
+    if (total > limit) return null;
+    const chain = Array.from({ length: groups }, (_unused, at) => step * (at + 1)).join(', ');
+    return makeQuestion(
+      lesson, '하', index,
+      `바둑돌을 ${step}씩 뛰어 세는 차례입니다. □에 알맞은 수는? ① ${step}씩 건너뜁니다. ② ${chain}으로 이어집니다. ③ 모두 □개입니다.`,
+      `${total}개`,
+      [`${step}개`, `${groups}개`, `${total + step}개`],
+      `${step}씩 ${groups}번 뛰어 세면 ${total}개입니다.`,
+      'multiplication', guide('뛰어 세기'),
+    );
+  }
+
   // 묶어 세기: ×를 배우기 전 차시에서는 더하기로만 길을 보여 줍니다.
   if (tag === 'multiplication' && /묶어 세어|몇의 몇 배/.test(title)) {
     const each = 2 + (seed % 5);
@@ -14387,6 +14403,17 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
         name,
         [sides === 3 ? '사각형' : '삼각형', '원', '곧은 선'],
         `곧은 선 ${sides}개로 둘러싸인 도형을 ${name}이라고 합니다.`,
+        'shape', guide('도형 이름 붙이기'),
+      );
+    }
+
+    if (/○을 알아보고/.test(title)) {
+      return makeQuestion(
+        lesson, '하', index,
+        '도형의 이름을 알아보는 차례입니다. □에 알맞은 것은? ① 곧은 선이 하나도 없습니다. ② 뾰족한 곳도 없습니다. ③ 굽은 선으로만 둘러싸인 도형은 □입니다.',
+        '원',
+        ['삼각형', '사각형', '곧은 선'],
+        '굽은 선으로만 둘러싸이고 뾰족한 곳이 없는 도형을 원이라고 합니다.',
         'shape', guide('도형 이름 붙이기'),
       );
     }
@@ -14510,6 +14537,44 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
       [`${near}cm`, `약 ${near + 1}cm`, `약 ${near}m`],
       `가장 가까운 눈금이 ${near}cm이므로 약 ${near}cm입니다.`,
       'measurement', guide('길이 어림하기'),
+    );
+  }
+
+  if (tag === 'measurement' && /길이를 비교하는 방법/.test(title)) {
+    const mine = 5 + (seed % 6);
+    const yours = mine + 1 + (seed % 3);
+    return makeQuestion(
+      lesson, '하', index,
+      `연필과 색연필 가운데 더 긴 것을 찾는 차례입니다. □에 알맞은 것은? ① 한쪽 끝을 나란히 맞춥니다. ② 연필은 클립 ${mine}개, 색연필은 클립 ${yours}개만큼입니다. ③ 더 긴 것은 □입니다.`,
+      '색연필',
+      ['연필', '길이가 같습니다', '알 수 없습니다'],
+      `클립 개수가 더 많은 색연필이 더 깁니다.`,
+      'measurement', guide('더 긴 것 찾기'),
+    );
+  }
+
+  if (tag === 'measurement' && /여러 가지 단위로/.test(title)) {
+    const clip = 8 + (seed % 6);
+    const pencil = 3 + (seed % 3);
+    return makeQuestion(
+      lesson, '하', index,
+      `같은 책상을 두 가지로 재어 보는 차례입니다. □에 알맞은 것은? ① 짧은 클립으로 재니 ${clip}번입니다. ② 긴 연필로 재니 ${pencil}번입니다. ③ 한 번에 재는 길이가 더 긴 것은 □입니다.`,
+      '연필',
+      ['클립', '두 가지가 같습니다', '알 수 없습니다'],
+      `같은 길이를 잴 때 재는 횟수가 적을수록 그 단위가 깁니다.`,
+      'measurement', guide('단위로 재어 보기'),
+    );
+  }
+
+  if (tag === 'measurement' && /1cm를 알아/.test(title)) {
+    const times = 4 + (seed % 8);
+    return makeQuestion(
+      lesson, '하', index,
+      `막대의 길이를 알아보는 차례입니다. □에 알맞은 것은? ① 1cm짜리 조각을 빈틈없이 이어 놓습니다. ② 조각이 ${times}개 들어갑니다. ③ 그러면 막대는 □입니다.`,
+      `${times}cm`,
+      [`${times}개`, `${times + 1}cm`, '1cm'],
+      `1cm가 ${times}번이면 ${times}cm입니다.`,
+      'measurement', guide('길이 알아보기'),
     );
   }
 
