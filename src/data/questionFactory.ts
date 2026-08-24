@@ -9542,6 +9542,19 @@ const visualForGeneratedQuestion = (
     // 주지 못합니다. 그릴 것이 없으면 그리지 않습니다.
     if (new Set(values).size < 2) return undefined;
 
+    // '100이 2개이면 얼마일까요?'처럼 한 묶음의 크기와 묶음 수가 적힌
+    // 문제입니다. 두 수는 줄지어 있는 수가 아니므로 그 차(98)를 눈금
+    // 간격으로 쓰면 뜻 없는 그림이 됩니다. 한 묶음의 크기가 곧 뛰는
+    // 크기이므로, 100씩 눈금을 긋고 100을 짚어 줍니다.
+    const bundle = /(\d+)이 \d+개/.exec(question.prompt)
+      ?? /(\d+)원짜리[^\d]*\d+개/.exec(question.prompt);
+    if (bundle) {
+      const piece = Number(bundle[1]);
+      if (piece > 0 && piece !== answerNumber) {
+        return numberLineVisualFor([piece], piece, '묶음을 세는 수의 길', 0);
+      }
+    }
+
     // 수직선은 수가 '줄지어' 있을 때에만 뜻이 있습니다.
     //
     // 예전에는 문제에 나온 아무 두 수나 점으로 찍고 그 차를 눈금
