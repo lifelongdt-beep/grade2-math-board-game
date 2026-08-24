@@ -727,6 +727,27 @@ const planeVisualForTarget = (target: '원' | '삼각형' | '사각형' | '칠�
   ]);
 };
 
+// 문장에서 '이름 + 몇 cm'를 읽습니다. '빨간 끈이 5cm'처럼 이름이 두
+// 낱말일 수도 있어 사이의 빈칸을 하나까지 받아 줍니다.
+//
+// 길이 재기 단원 안에만 두었더니, 곱셈 단원의 '빨간 끈이 5cm, 파란 끈이
+// 10cm입니다. 파란 끈은 빨간 끈의 몇 배일까요?'에서는 쓰이지 못해
+// 동그라미 다섯 개짜리 그림이 나왔습니다. 두 양을 견주는 문항은 단원과
+// 상관없이 두 막대로 보여 주어야 합니다.
+const namedLengths = (prompt: string): Array<{ label: string; value: number }> => {
+  const found: Array<{ label: string; value: number }> = [];
+  const pattern = /([가-힣]{1,4}(?:\s[가-힣]{1,4})?)(?:은|는|이|가)\s*(\d+)\s*cm/g;
+  let hit = pattern.exec(prompt);
+  while (hit) {
+    const label = hit[1];
+    if (!found.some((one) => one.label === label)) {
+      found.push({ label, value: Number(hit[2]) });
+    }
+    hit = pattern.exec(prompt);
+  }
+  return found;
+};
+
 const inferQuestionVisual = (
   tag: ConceptTag,
   prompt: string,
@@ -9540,15 +9561,7 @@ const visualForGeneratedQuestion = (
     // 두 물건의 길이를 견주는 문항은 자 하나로 그릴 수 없습니다.
     // '지우개 12cm, 가위 20cm'를 한 구간으로 그리면 12에서 20까지의
     // 띠가 되어, 지우개도 가위도 보이지 않습니다. 두 막대로 그립니다.
-    const named: Array<{ label: string; value: number }> = [];
-    const namePattern = /([가-힣]{2,6})(?:는|은|이|가)\s*(\d+)\s*cm/g;
-    let hit = namePattern.exec(question.prompt);
-    while (hit) {
-      if (!named.some((one) => one.label === hit![1])) {
-        named.push({ label: hit[1], value: Number(hit[2]) });
-      }
-      hit = namePattern.exec(question.prompt);
-    }
+    const named = namedLengths(question.prompt);
     if (named.length >= 2) return barModelVisualFor(named.slice(0, 3), '두 길이 견주기');
 
     // 눈금 0이 아닌 곳에 대고 잰 문항은 두 눈금이 문제에 그대로
@@ -9616,6 +9629,36 @@ const visualForGeneratedQuestion = (
   }
 
   if (question.type === 'multiplication') {
+    // '빨간 끈이 5cm, 파란 끈이 10cm입니다. 파란 끈은 빨간 끈의 몇
+    // 배일까요?' — 두 양을 견주는 문항입니다. 낱개 그림으로는 '몇 배'가
+    // 보이지 않습니다. 두 막대를 나란히 놓아야 한쪽이 다른 쪽의 몇
+    // 배인지 눈에 들어옵니다.
+    const compared = namedLengths(question.prompt);
+    if (compared.length >= 2) {
+      return barModelVisualFor(compared.slice(0, 3), '두 길이 견주기');
+    }
+
+    // '5의 2배인 수는?' — 배는 같은 크기를 여러 번 뛰는 일입니다.
+    // 동그라미 다섯 개를 늘어놓으면 '5'만 보이고 '2배'가 보이지
+    // 않습니다. 5씩 눈금이 있는 수의 길에 5를 짚어 주면, 아이가
+    // 거기서 두 번 뛰어 보며 답을 찾습니다.
+    const timesOf = /(\d+)의 (\d+)배/.exec(question.prompt);
+    if (timesOf) {
+      const base = Number(timesOf[1]);
+      const howMany = Number(timesOf[2]);
+      // 답이 곱이면 묶음을 그릴 수 없습니다. 5개씩 2묶음을 그려 놓으면
+      // 세어서 10이 바로 나와 물음이 사라집니다. 이때는 수의 길에
+      // 5만 짚어 주고 아이가 두 번 뛰게 합니다.
+      if (base > 0 && answerNumber === base * howMany) {
+        return numberLineVisualFor([base], base, '몇 배를 세는 수의 길', 0);
+      }
+      // '2의 2배는 2를 몇 번 더한 것?'처럼 답이 곱이 아닐 때는
+      // 2개씩 2묶음을 그려 배의 뜻을 보여 주는 것이 맞습니다.
+      if (base >= 1 && base <= 9 && howMany >= 1 && howMany <= 9) {
+        return arrayVisualFor(howMany, base, `${base}씩 ${howMany}묶음`);
+      }
+    }
+
     // 뛰어 세기는 묶음이 아니라 수의 길입니다.
     //
     // '3씩 뛰어 세면 3 다음에 오는 수는?'에 3묶음 배열을 그렸더니
