@@ -12319,4 +12319,126 @@ export const questionBank: Template[] = [
     wrongs: ['3시 35분', '2시 7분', '3시 7분'],
     solution: '짧은바늘이 3을 지나지 않았으므로 2시이고, 긴바늘 7은 5×7=35분입니다.',
   },
+
+  // ══════════════════════════════════════════════════════════════════
+  // 일부가 주어진 표·그래프를 완성하기
+  //
+  // 2022 개정 성취수준(1~2학년군)에서 이 단원의 C 수준은 이렇게 적혀
+  // 있습니다.
+  //   [2수04-02] C: 자료를 보고 일부가 주어진 표를 완성할 수 있다.
+  //   [2수04-03] C: 표를 보고 일부가 주어진 그래프를 완성할 수 있다.
+  //
+  // 그러려면 화면에 '아직 비어 있는 곳'이 보여야 합니다. 표는 값이
+  // null인 칸을 물음표로 그리고, 그래프는 그 줄을 점선으로 비워 둡니다.
+  // 아이는 그림에서 비어 있는 곳을 보고 거기 들어갈 것을 고릅니다.
+  // ══════════════════════════════════════════════════════════════════
+  {
+    id: 'table-fill-one-cell',
+    when: /자료를 분류하여 표로|자료를 조사하여 표로/,
+    demand: 'recall',
+    tag: 'data',
+    strategy: '자료 해석 · 표의 빈칸 채우기',
+    vars: {
+      apple: { from: 3, to: 8 },
+      pear: { from: 2, to: 7 },
+      grape: { from: 1, to: 6 },
+    },
+    visual: {
+      kind: 'table',
+      columns: [
+        { name: '사과', value: '{apple}' },
+        { name: '배', value: '?' },
+        { name: '포도', value: '{grape}' },
+      ],
+      categoryLabel: '좋아하는 과일',
+      valueLabel: '학생 수(명)',
+      label: '한 칸이 비어 있는 표',
+    },
+    prompt: '배를 좋아하는 학생은 {pear}명입니다. 표의 빈칸에 들어갈 수는 얼마일까요?',
+    answer: '{pear}',
+    wrongs: ['{apple}', '{grape}', '{pear + apple}'],
+    solution: '배를 좋아하는 학생이 {pear}명이므로 빈칸에는 {pear}을 씁니다.',
+  },
+  {
+    id: 'table-fill-from-total',
+    when: /자료를 조사하여 표로|표와 그래프로 나타내/,
+    demand: 'reason',
+    tag: 'data',
+    strategy: '자료 해석 · 합계를 보고 빈칸 채우기',
+    vars: {
+      apple: { from: 3, to: 7 },
+      grape: { from: 2, to: 6 },
+      pear: { from: 2, to: 6 },
+      total: { calc: 'apple + grape + pear' },
+    },
+    visual: {
+      kind: 'table',
+      columns: [
+        { name: '사과', value: '{apple}' },
+        { name: '배', value: '?' },
+        { name: '포도', value: '{grape}' },
+      ],
+      categoryLabel: '좋아하는 과일',
+      valueLabel: '학생 수(명)',
+      label: '한 칸이 비어 있는 표',
+    },
+    prompt: '조사한 학생은 모두 {total}명입니다. 표의 빈칸에 들어갈 수는 얼마일까요?',
+    answer: '{pear}',
+    wrongs: ['{total}', '{apple}', '{total - apple}'],
+    solution: '{total}에서 사과 {apple}명과 포도 {grape}명을 빼면 {pear}명입니다.',
+  },
+  {
+    id: 'graph-fill-one-column',
+    when: /자료를 분류하여 그래프로|표와 그래프로 나타내/,
+    demand: 'recall',
+    tag: 'data',
+    strategy: '자료 해석 · 그래프의 빈 줄 채우기',
+    vars: {
+      apple: { from: 3, to: 7 },
+      pear: { from: 2, to: 6 },
+      grape: { from: 1, to: 5 },
+    },
+    visual: {
+      kind: 'pictograph',
+      items: [
+        { label: '사과', count: '{apple}' },
+        { label: '배', count: '{pear}' },
+        { label: '포도', count: '{grape}' },
+      ],
+      orientation: 'up',
+      blankAt: 1,
+      label: '한 줄이 비어 있는 그래프',
+    },
+    prompt: '배를 좋아하는 학생은 {pear}명입니다. 그래프의 빈 줄에는 ○를 몇 개 그려야 할까요?',
+    answer: '{pear}개',
+    wrongs: ['{apple}개', '{grape}개', '{pear + 2}개'],
+    solution: '한 칸에 하나씩 그리므로 {pear}명이면 ○를 {pear}개 그립니다.',
+  },
+  {
+    id: 'graph-fill-tallest',
+    when: /표와 그래프를 보고 무엇을 알 수 있을까요/,
+    demand: 'reason',
+    tag: 'data',
+    strategy: '자료 해석 · 빈 줄을 채운 뒤 가장 많은 것 찾기',
+    vars: {
+      apple: { from: 4, to: 6 },
+      pear: { from: 7, to: 9 },
+      grape: { from: 1, to: 3 },
+    },
+    visual: {
+      kind: 'pictograph',
+      items: [
+        { label: '사과', count: '{apple}' },
+        { label: '배', count: '{pear}' },
+        { label: '포도', count: '{grape}' },
+      ],
+      orientation: 'up',
+      blankAt: 1,
+      label: '한 줄이 비어 있는 그래프',
+    },
+    prompt: '배를 좋아하는 학생은 {pear}명입니다. 빈 줄을 채우면 가장 많은 학생이 좋아하는 과일은 무엇일까요?',
+    answer: '배',
+    wrongs: ['사과', '포도', '모두 같습니다'],
+    solution: '배가 {pear}명으로 사과 {apple}명, 포도 {grape}명보다 많습니다.',
+  },
 ];
