@@ -660,6 +660,16 @@ const solidQuestionVisual = (prompt: string, index: number): QuestionVisual => {
     return cubeStackVisual(prompt, index, Number(topLayerMatch[1]) + Number(topLayerMatch[2]));
   }
 
+  // 두 사람(또는 두 모양)의 쌓기나무 수를 모으거나 견주는 과정 문제입니다.
+  // □가 곧 답(합 또는 차)이므로 그림에 합계를 그리면 답을 미리 보여주게
+  // 됩니다. 대신 문제에 이미 나온 첫 번째 수(내 모양)를 그려 줍니다.
+  const twoStackMatch =
+    prompt.match(/준서는\s*(\d+)개,\s*지우는\s*(\d+)개를 썼습니다/) ??
+    prompt.match(/내 모양은\s*(\d+)개,\s*친구 모양은\s*(\d+)개입니다/);
+  if (twoStackMatch) {
+    return cubeStackVisual(prompt, index, Number(twoStackMatch[1]));
+  }
+
   if (prompt.includes('앞, 옆, 위') || prompt.includes('앞에서 본 모양과 위에서 본 모양')) {
     return cubeViewsVisual(
       [
@@ -9339,13 +9349,31 @@ const namedSubjectVisual = (question: Question, index: number): QuestionVisual |
       const row = Number(meeting[1]);
       const column = Number(meeting[2]);
       if (row >= 1 && row <= 9 && column >= 1 && column <= 9) {
+        // "만나는 칸의 오른쪽/아래 칸을 구하는" 문제는 만나는 칸이 아니라
+        // 옆 칸이 빈칸입니다. 만나는 칸 값은 풀이 ①에서 이미 알려 줍니다.
+        const stepDirection = asked.match(/만나는 칸의\s*(오른쪽|왼쪽|아래|위)\s*칸을 구하는/)?.[1];
+        // "만나는 칸의 수는 N입니다"처럼 만나는 칸 값을 문제에서 이미
+        // 알려 주는 경우, 그 칸을 빈칸으로 그리면 문제와 그림이 어긋납니다.
+        const meetingGiven = /만나는 칸의 수는\s*\d+입니다/.test(asked);
+        const blank =
+          stepDirection === '오른쪽'
+            ? { row, column: column + 1 }
+            : stepDirection === '왼쪽'
+              ? { row, column: column - 1 }
+              : stepDirection === '아래'
+                ? { row: row + 1, column }
+                : stepDirection === '위'
+                  ? { row: row - 1, column }
+                  : meetingGiven
+                    ? undefined
+                    : { row, column };
         return {
           kind: 'grid-table',
           label: `${table[1]}의 한 부분`,
           operation,
           rows: span(row, 4),
           columns: span(column, 5),
-          blank: { row, column },
+          ...(blank ? { blank } : {}),
         };
       }
     }
