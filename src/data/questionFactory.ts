@@ -9634,10 +9634,21 @@ const visualForGeneratedQuestion = (
     // 예전에는 문제에 나온 첫 두 수를 집어 썼습니다. 그래서 '12가 4씩
     // 3묶음일 때'라는 문제에 12와 4를 집어 4묶음 × 9개(36개)를 그렸습니다.
     // 문제와 아무 상관 없는 그림이었습니다.
-    const grouped = /(\d+)\s*[가-힣]{0,2}씩\s*(\d+)/.exec(question.prompt);
+    // '한 상자에 인형이 7개씩 들어 있습니다. 5상자에 든…'처럼 한 묶음의
+    // 크기와 묶음 수가 떨어져 있는 문장이 많습니다. 두 수가 붙어 있을
+    // 때만 읽었더니 이런 문장에서 묶음을 놓쳐, 인형 일곱 개만 흩어 놓은
+    // 그림이 나왔습니다. '씩' 뒤에 처음 나오는 수를 묶음 수로 봅니다.
+    const perGroup = /(\d+)\s*[가-힣]{0,3}씩/.exec(question.prompt);
+    const afterPer = perGroup
+      ? /(\d+)/.exec(question.prompt.slice(perGroup.index + perGroup[0].length))
+      : null;
     const times = /(\d+)\s*×\s*(\d+)/.exec(question.prompt);
-    const each = grouped ? Number(grouped[1]) : times ? Number(times[1]) : null;
-    const groups = grouped ? Number(grouped[2]) : times ? Number(times[2]) : null;
+    const each = perGroup && afterPer
+      ? Number(perGroup[1])
+      : times ? Number(times[1]) : null;
+    const groups = perGroup && afterPer
+      ? Number(afterPer[1])
+      : times ? Number(times[2]) : null;
 
     // '물건이 25개 있습니다. 하나씩 세면 어떤 점이 불편할까요?'처럼
     // 묶음이 적혀 있지 않은 문항이 있습니다. 여기에 묶음 배열을 그리면

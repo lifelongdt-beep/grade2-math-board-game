@@ -943,6 +943,12 @@ function ArrayGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'arr
       {Array.from({ length: visual.rows }).map((_, row) =>
         Array.from({ length: visual.columns }).map((__, column) => {
           const faded = visual.fadedRows != null && row >= visual.rows - visual.fadedRows;
+          // 묶지 않은 물건은 적힌 개수만큼만 그립니다. 마지막 줄이 다
+          // 차지 않으면 남는 자리는 비워 둡니다 — 7개라고 적어 놓고
+          // 다섯 개짜리 두 줄(열 개)을 그리면 말과 그림이 어긋납니다.
+          if (visual.plainCount !== undefined && row * visual.columns + column >= visual.plainCount) {
+            return null;
+          }
           return (
             <circle
               key={`${row}-${column}`}
