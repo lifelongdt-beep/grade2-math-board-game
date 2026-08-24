@@ -387,6 +387,7 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'ruler' ||
     visual.kind === 'clock' ||
     visual.kind === 'calendar' ||
+    visual.kind === 'year-calendar' ||
     visual.kind === 'pictograph' ||
     visual.kind === 'cube-pattern' ||
     visual.kind === 'array'
@@ -7441,10 +7442,27 @@ const calendarVisualFor = (
   marks,
 });
 
+const yearCalendarVisualFor = (marks: Array<{ month: number }> = [], label = '연간 달력 자료'): QuestionVisual => ({
+  kind: 'year-calendar',
+  label,
+  marks,
+});
+
 // 문제글을 보고 달력 그림을 고릅니다. 어디서 부르든(문항의 갈래로 고를
 // 때든, 문제가 '달력'을 이름으로 부를 때든) 같은 규칙으로 골라야
 // 문제와 그림이 늘 같이 맞습니다.
 const calendarVisualForPrompt = (prompt: string): QuestionVisual => {
+  // '다음 달은 몇 월', '1년은 몇 개월'처럼 달의 순서·개수를 묻는 문제는
+  // 하루짜리 달력이 아니라 1월~12월이 한눈에 보이는 연간 달력이 필요합니다.
+  // 답이 되는 달(다음 달)은 표시하지 않고, 문제에 이미 나온 달만 표시합니다.
+  const nextMonthMatch = prompt.match(/(\d+)월 다음 달은/);
+  if (nextMonthMatch) {
+    return yearCalendarVisualFor([{ month: Number(nextMonthMatch[1]) }], '달의 순서를 보는 연간 달력');
+  }
+  if (/개월/.test(prompt)) {
+    return yearCalendarVisualFor([], '1년의 달 수를 세는 연간 달력');
+  }
+
   // 답이 되는 날짜는 표시하지 않습니다. 학생이 달력에서 직접 세어야 합니다.
   const eventMatch = prompt.match(/오늘은 (\d+)일이고 행사는 (\d+)일/);
   if (eventMatch) {
