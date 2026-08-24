@@ -9647,8 +9647,13 @@ const visualForGeneratedQuestion = (
     // 묶음을 적어 두지 않은 곱셈 문항은 모두 이렇게 그립니다. 예전처럼
     // 문제에 나온 첫 두 수를 집어 묶음 배열을 그리면, 문제가 말하지
     // 않은 묶음을 그림이 지어내게 됩니다.
+    // 0의 곱(0×7)은 묶음으로 그릴 수 없습니다. 묶음이 성립하지 않는
+    // 경우도 '묶음이 적혀 있지 않은' 것과 같이 다룹니다.
+    const groupable = each !== null && groups !== null
+      && each >= 1 && groups >= 1 && each <= 9 && groups <= 9;
+
     const loose = /(\d+)/.exec(question.prompt);
-    if (loose && (each === null || groups === null)) {
+    if (loose && !groupable) {
       const many = Number(loose[1]);
       if (many >= 2 && many <= 30) {
         const wide = Math.min(5, many);
@@ -9662,11 +9667,10 @@ const visualForGeneratedQuestion = (
       }
     }
 
-    // 무엇이 묶음인지 알 수 없으면 그리지 않습니다. 없는 그림보다
-    // 틀린 그림이 훨씬 나쁩니다.
-    if (each === null || groups === null) return undefined;
-    if (each < 1 || groups < 1 || each > 9 || groups > 9) return undefined;
-    return arrayVisualFor(groups, each, `${each}씩 ${groups}묶음`);
+    // 무엇이 묶음인지도, 셀 물건도 알 수 없으면 그리지 않습니다.
+    // 없는 그림보다 틀린 그림이 훨씬 나쁩니다.
+    if (!groupable) return undefined;
+    return arrayVisualFor(groups as number, each as number, `${each}씩 ${groups}묶음`);
   }
 
   if (question.type === 'time') {
