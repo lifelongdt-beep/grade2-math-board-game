@@ -795,6 +795,59 @@ function CalendarGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: '
   );
 }
 
+// '다음 달은 몇 월', '1년은 몇 개월'처럼 달의 순서·개수를 묻는 문제용
+// 연간 달력입니다. 하루짜리 달력(day grid)으로는 몇 월 다음이 몇 월인지
+// 보여줄 수 없어서, 1월~12월을 3×4 칸으로 늘어놓습니다.
+function YearCalendarGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'year-calendar' }> }) {
+  const columns = 4;
+  const rows = 3;
+  const cellWidth = 84;
+  const cellHeight = 44;
+  const left = 12;
+  const top = 12;
+  const width = left * 2 + cellWidth * columns;
+  const height = top * 2 + cellHeight * rows;
+  const markedMonths = new Set(visual.marks.map((mark) => mark.month));
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="3" y="3" width={width - 6} height={height - 6} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {Array.from({ length: 12 }).map((_, index) => {
+        const month = index + 1;
+        const column = index % columns;
+        const row = Math.floor(index / columns);
+        const x = left + column * cellWidth;
+        const y = top + row * cellHeight;
+        const marked = markedMonths.has(month);
+        return (
+          <g key={month}>
+            <rect
+              x={x + 4}
+              y={y + 4}
+              width={cellWidth - 8}
+              height={cellHeight - 8}
+              rx="10"
+              fill={marked ? '#dffafa' : '#ffffff'}
+              stroke={marked ? '#0f9f9f' : '#cfeaf0'}
+              strokeWidth={marked ? 3 : 2}
+            />
+            <text
+              x={x + cellWidth / 2}
+              y={y + cellHeight / 2 + 6}
+              textAnchor="middle"
+              fill="#24364a"
+              fontSize="17"
+              fontWeight={marked ? 900 : 700}
+            >
+              {month}월
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 // 교과서의 그래프는 항목을 아래 가로줄에 두고 ○를 아래에서 위로 쌓습니다.
 // '아래에서부터 한 칸에 하나씩 그립니다'라고 가르쳐 놓고 옆으로 눕힌
 // 그림만 보여 주면, 배우는 그림과 보는 그림이 다릅니다.
@@ -1103,6 +1156,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'ruler' && <RulerGraphic visual={visual} />}
       {visual.kind === 'clock' && <ClockGraphic visual={visual} />}
       {visual.kind === 'calendar' && <CalendarGraphic visual={visual} />}
+      {visual.kind === 'year-calendar' && <YearCalendarGraphic visual={visual} />}
       {visual.kind === 'table' && <TableGraphic visual={visual} />}
       {visual.kind === 'pictograph' && <PictographGraphic visual={visual} />}
       {visual.kind === 'array' && <ArrayGraphic visual={visual} />}
