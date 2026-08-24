@@ -216,6 +216,100 @@ const COUNTABLE_KINDS = new Set<QuestionVisual['kind']>([
   'plane-shapes',
 ]);
 
+// 그림을 크게 보여 주는 것만으로는 푸는 길이 보이지 않습니다. 그림
+// 갈래마다 '어디를 먼저 보는지'가 정해져 있는데, 그것을 아는 아이만
+// 그림에서 답을 찾습니다. 자는 양 끝의 눈금을 보고 그 사이 칸을 세고,
+// 달력은 세로줄이 같은 요일이라는 것을 알아야 읽힙니다.
+//
+// 답은 알려 주지 않습니다. 보는 차례만 알려 줍니다.
+const readingStepsFor = (visual: QuestionVisual): string[] => {
+  switch (visual.kind) {
+    case 'calendar':
+    case 'year-calendar':
+      return [
+        '세로로 줄지어 있는 날짜는 모두 같은 요일이에요.',
+        '한 줄 아래로 내려가면 7일 뒤예요.',
+        '날짜를 손가락으로 짚으며 세어 보세요.',
+      ];
+    case 'number-line':
+      return [
+        '눈금과 눈금 사이가 얼마씩 벌어지는지 보세요.',
+        '색이 진한 점이 어디인지 찾으세요.',
+        '거기에서 몇 번 뛰면 되는지 세어 보세요.',
+      ];
+    case 'ruler':
+      return [
+        '물건의 왼쪽 끝이 어느 눈금에 있는지 보세요.',
+        '오른쪽 끝이 어느 눈금에 있는지 보세요.',
+        '두 눈금 사이가 몇 칸인지 세어 보세요.',
+      ];
+    case 'bar-model':
+      return [
+        '어느 막대가 더 긴지 보세요.',
+        '짧은 막대가 긴 막대 안에 몇 번 들어가는지 보세요.',
+      ];
+    case 'table':
+    case 'grid-table':
+      return [
+        '맨 윗줄이 무엇을 뜻하는지 읽으세요.',
+        '문제가 묻는 것이 어느 칸인지 손가락으로 짚으세요.',
+        '그 칸에 적힌 수를 읽으세요.',
+      ];
+    case 'pictograph':
+      return [
+        '한 칸이 하나를 뜻해요.',
+        '줄마다 칸이 몇 개인지 세어 보세요.',
+        '줄끼리 견주어 어느 줄이 긴지 보세요.',
+      ];
+    case 'array':
+      return [
+        '한 줄에 몇 개씩 있는지 세어 보세요.',
+        '그런 줄이 몇 줄인지 세어 보세요.',
+      ];
+    case 'pattern':
+      return [
+        '처음부터 보면서 되풀이되는 부분을 찾으세요.',
+        '몇 개마다 되풀이되는지 세어 보세요.',
+      ];
+    case 'tangram':
+      return [
+        '조각의 곧은 선이 몇 개인지 세어 보세요.',
+        '같은 모양끼리 짝지어 보세요.',
+      ];
+    case 'clock':
+      return [
+        '짧은바늘이 어느 숫자를 지났는지 보세요.',
+        '긴바늘이 어디를 가리키는지 보세요.',
+        '긴바늘은 숫자 한 칸이 5분이에요.',
+      ];
+    case 'place-value':
+      return [
+        '자리마다 모형이 몇 개인지 세어 보세요.',
+        '한 자리에 10개가 모이면 윗자리 1개가 돼요.',
+      ];
+    case 'unit-measure':
+      return [
+        '재는 단위 하나가 얼마만큼인지 보세요.',
+        '그것이 몇 번 들어가는지 세어 보세요.',
+      ];
+    default:
+      return [
+        '문제가 묻는 곳을 그림에서 손가락으로 짚어 보세요.',
+        '수가 적혀 있으면 소리 내어 읽어 보세요.',
+      ];
+  }
+};
+
+function PictureReadingSteps({ visual }: { visual: QuestionVisual }) {
+  return (
+    <ol className="hint-reading-steps">
+      {readingStepsFor(visual).map((step) => (
+        <li key={step}>{step}</li>
+      ))}
+    </ol>
+  );
+}
+
 const enlargedCaptionFor = (visual: QuestionVisual) => {
   if (visual.kind === 'calendar' || visual.kind === 'year-calendar') return '달력을 자세히 살펴보세요';
   if (visual.kind === 'number-line') return '수직선을 자세히 살펴보세요';
@@ -228,12 +322,13 @@ const enlargedCaptionFor = (visual: QuestionVisual) => {
 };
 
 function EnlargedVisual({ visual }: { visual: QuestionVisual }) {
+  // 아래에 있던 '수직선을 자세히 살펴보세요'는 창 제목과 똑같은 말이라
+  // 두 번 읽혔습니다. 그 자리에는 읽는 차례를 둡니다.
   return (
     <div className="interactive-counter-widget">
       <div className="interactive-counter-visual interactive-enlarged-visual">
         <QuestionVisualGraphic visual={visual} />
       </div>
-      <p className="interactive-enlarged-caption">{enlargedCaptionFor(visual)}</p>
     </div>
   );
 }
@@ -264,6 +359,7 @@ export function InteractiveHintModal({ visual, onClose }: InteractiveHintModalPr
         {visual.kind !== 'clock' && visual.kind !== 'place-value' && !isCountable && (
           <EnlargedVisual visual={visual} />
         )}
+        <PictureReadingSteps visual={visual} />
         <button type="button" className="hint-modal-done" onClick={onClose}>
           다 봤어요
         </button>
