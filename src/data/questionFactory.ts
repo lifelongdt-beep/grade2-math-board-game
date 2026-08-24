@@ -9639,6 +9639,22 @@ const visualForGeneratedQuestion = (
     const each = grouped ? Number(grouped[1]) : times ? Number(times[1]) : null;
     const groups = grouped ? Number(grouped[2]) : times ? Number(times[2]) : null;
 
+    // '물건이 25개 있습니다. 하나씩 세면 어떤 점이 불편할까요?'처럼
+    // 묶음이 적혀 있지 않은 문항이 있습니다. 여기에 묶음 배열을 그리면
+    // 묶는 방법을 먼저 알려 주는 셈입니다. 물건만 늘어놓아 '많다'는
+    // 것을 보여 주고, 설명에는 전체 개수만 적습니다.
+    const loose = /물건이 (\d+)개/.exec(question.prompt);
+    if (loose) {
+      const many = Number(loose[1]);
+      if (many >= 1 && many <= 30) {
+        const wide = Math.min(5, many);
+        return {
+          ...arrayVisualFor(Math.ceil(many / wide), wide, '세어 볼 물건'),
+          plainCount: many,
+        };
+      }
+    }
+
     // 무엇이 묶음인지 알 수 없으면 그리지 않습니다. 없는 그림보다
     // 틀린 그림이 훨씬 나쁩니다.
     if (each === null || groups === null) return undefined;

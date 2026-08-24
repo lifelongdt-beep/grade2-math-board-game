@@ -961,7 +961,9 @@ function ArrayGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'arr
         {/* 우리말은 '한 묶음의 크기'를 먼저 말합니다 — 5개씩 2묶음.
             '2묶음 × 5개'로 적어 두었더니 무엇이 묶음이고 무엇이 낱개인지
             거꾸로 읽혔습니다. */}
-        {visual.columns}개씩 {visual.rows}묶음
+        {visual.plainCount === undefined
+          ? `${visual.columns}개씩 ${visual.rows}묶음`
+          : `${visual.plainCount}개`}
       </text>
     </svg>
   );

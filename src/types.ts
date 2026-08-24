@@ -296,6 +296,13 @@ export interface ArrayVisual {
   rows: number;
   columns: number;
   fadedRows?: number;
+  /**
+   * 묶어 세기 전의 물건을 보여 줄 때 씁니다. '하나씩 세면 불편하다'를
+   * 다루는 문항에 '5개씩 5묶음'이라고 적어 주면, 묶는 방법을 먼저
+   * 알려 주는 셈이 되어 물음이 사라집니다. 이 값이 있으면 묶음 설명
+   * 대신 전체 개수만 적습니다.
+   */
+  plainCount?: number;
 }
 
 export interface PatternVisual {
