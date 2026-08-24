@@ -171,25 +171,52 @@ const primaryTag = (lesson: Lesson): ConceptTag => {
   return lesson.tags[0] ?? 'number';
 };
 
+// 'time' 갈래는 시계로 시각을 읽는 차시(6~7차시)와 달력으로 날짜를
+// 읽는 차시(8차시)를 함께 묶습니다. 두 차시는 다루는 것이 전혀 달라서,
+// 시계 갈래의 도움말("60분이 1시간")을 달력 문제에 그대로 붙이면
+// 문제와 해설이 어긋납니다. 달력 차시만 따로 도움말을 둡니다.
+const calendarLearningSupport = {
+  studentConcept: '날짜인지 요일인지 먼저 보세요.',
+  studentHint: '1주일은 7일, 1년은 12개월이라는 점을 떠올려요.',
+  coreConcept: '1주일은 7일, 1년은 12개월이고, 달력에서 같은 요일은 7일마다 되풀이됩니다.',
+  readStrategy: '무엇을 구하는지(몇 주, 며칠, 몇 월)를 먼저 나누고, 1주일 7일·1년 12개월 규칙을 적용합니다.',
+  misconceptionTip: '12월 다음은 13월이 아니라 다시 1월입니다. 개월 수도 12를 넘기면 다음 해로 넘어갑니다.',
+  selfCheck: '1주일 7일, 1년 12개월 규칙으로 다시 확인했나요?',
+};
+
 const buildLearningSupport = (
   lesson: Lesson,
   tag: ConceptTag,
   solution: string,
   strategy: string,
-): LearningSupport => ({
-  studentConcept: studentConceptGuide[tag],
-  studentHint: studentHintGuide[tag],
-  coreConcept: coreConceptGuide[tag],
-  readStrategy: `${strategy}: ${readStrategyGuide[tag]}`,
-  steps: [
-    '문제에서 무엇을 구하라고 했는지 먼저 찾습니다.',
-    readStrategyGuide[tag],
-    solution,
-  ],
-  misconceptionTip: misconceptionGuide[tag],
-  textbookConnection: `차시 목표 "${lesson.objective}"와 연결됩니다. 교과서 핵심은 ${lesson.textbookFocus} 익힘책 핵심은 ${lesson.workbookFocus}`,
-  selfCheck: selfCheckGuide[tag],
-});
+): LearningSupport => {
+  const isCalendar = tag === 'time' && lesson.title.includes('달력');
+  const guide = isCalendar
+    ? calendarLearningSupport
+    : {
+        studentConcept: studentConceptGuide[tag],
+        studentHint: studentHintGuide[tag],
+        coreConcept: coreConceptGuide[tag],
+        readStrategy: readStrategyGuide[tag],
+        misconceptionTip: misconceptionGuide[tag],
+        selfCheck: selfCheckGuide[tag],
+      };
+
+  return {
+    studentConcept: guide.studentConcept,
+    studentHint: guide.studentHint,
+    coreConcept: guide.coreConcept,
+    readStrategy: `${strategy}: ${guide.readStrategy}`,
+    steps: [
+      '문제에서 무엇을 구하라고 했는지 먼저 찾습니다.',
+      guide.readStrategy,
+      solution,
+    ],
+    misconceptionTip: guide.misconceptionTip,
+    textbookConnection: `차시 목표 "${lesson.objective}"와 연결됩니다. 교과서 핵심은 ${lesson.textbookFocus} 익힘책 핵심은 ${lesson.workbookFocus}`,
+    selfCheck: guide.selfCheck,
+  };
+};
 
 const lessonNote = (support: LearningSupport) =>
   [
@@ -9676,6 +9703,20 @@ const visualForGeneratedQuestion = (
     // 띠가 되어, 지우개도 가위도 보이지 않습니다. 두 막대로 그립니다.
     const named = namedLengths(question.prompt);
     if (named.length >= 2) return barModelVisualFor(named.slice(0, 3), '두 길이 견주기');
+
+    // '32cm+16cm는 몇 cm일까요?'처럼 두 길이를 더하거나 빼서 답을 구하는
+    // 문항입니다. 답(합 또는 차)을 자로 그리면 그림이 답을 미리 보여
+    // 주므로, 문제에 나온 두 길이만 막대로 그립니다.
+    const arithmetic = question.prompt.match(/(\d+)\s*cm\s*[+\-]\s*(\d+)\s*cm/);
+    if (arithmetic) {
+      return barModelVisualFor(
+        [
+          { label: '①', value: Number(arithmetic[1]) },
+          { label: '②', value: Number(arithmetic[2]) },
+        ],
+        '더하거나 뺄 두 길이',
+      );
+    }
 
     // '{start}부터 {end}까지 놓인'처럼 두 눈금이 문제에 그대로 나오는
     // 문항은 그 구간을 그대로 그립니다. 답(끝-시작)만 보고 0부터 그리면
