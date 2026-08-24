@@ -9721,6 +9721,29 @@ const visualForGeneratedQuestion = (
     // 크기와 묶음 수가 떨어져 있는 문장이 많습니다. 두 수가 붙어 있을
     // 때만 읽었더니 이런 문장에서 묶음을 놓쳐, 인형 일곱 개만 흩어 놓은
     // 그림이 나왔습니다. '씩' 뒤에 처음 나오는 수를 묶음 수로 봅니다.
+    // '5×□=35입니다. □에 알맞은 수는?' — 빠진 수가 네모라 곱셈식으로
+    // 읽히지 않았습니다. 그래서 첫 수 5만 집어 동그라미 다섯 개를
+    // 그렸습니다. 빠진 자리는 곱을 나누어 알 수 있습니다.
+    // 5씩 7줄을 그려 주면 아이가 줄을 세어 □를 찾습니다.
+    const missing = /(\d+)\s*×\s*□\s*=\s*(\d+)/.exec(question.prompt);
+    const missingFirst = /□\s*×\s*(\d+)\s*=\s*(\d+)/.exec(question.prompt);
+    if (missing || missingFirst) {
+      const known = Number((missing ?? missingFirst)![1]);
+      const product = Number((missing ?? missingFirst)![2]);
+      if (known >= 1 && product >= known && product % known === 0) {
+        const other = product / known;
+        if (other >= 1 && other <= 9) {
+          // '5×□'는 5씩 몇 묶음인지를 묻습니다. '□×5'는 몇씩 5묶음인지를
+          // 묻는 것이라 한 줄의 크기와 줄 수가 서로 바뀝니다.
+          const eachSide = missing ? known : other;
+          const groupSide = missing ? other : known;
+          if (eachSide <= 9) {
+            return arrayVisualFor(groupSide, eachSide, `${eachSide}씩 ${groupSide}묶음`);
+          }
+        }
+      }
+    }
+
     const perGroup = /(\d+)\s*[가-힣]{0,3}씩/.exec(question.prompt);
     const afterPer = perGroup
       ? /(\d+)/.exec(question.prompt.slice(perGroup.index + perGroup[0].length))
