@@ -57,7 +57,10 @@ describe('문제글의 핵심 말 강조', () => {
           }
 
           pieces.forEach((piece, index) => {
+            // 'cm'과 'm'은 로마자라 우리말 낱말 속에 들어갈 일이
+            // 없습니다. '5m끼리'의 m은 제대로 칠한 것입니다.
             if (piece.kind !== 'keyword' || piece.text.length !== 1) return;
+            if (!hangul.test(piece.text)) return;
             const before = pieces[index - 1]?.text.slice(-1);
             const after = pieces[index + 1]?.text.slice(0, 1);
             if (before && hangul.test(before)) {
