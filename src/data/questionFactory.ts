@@ -9553,12 +9553,10 @@ const visualForGeneratedQuestion = (
     const inOrder = /뛰어 세|다음 수|사이|순서|차례로|커지|작아지/.test(question.prompt)
       || (values.length >= 3
         && values.slice(1).every((one, at) => one - values[at] === values[1] - values[0]));
-    if (!inOrder) {
-      const shown = Number.isFinite(answerNumber) && answerNumber > 0
-        ? promptNumbers.find((one) => one !== answerNumber) ?? promptNumbers[0]
-        : promptNumbers[0];
-      return shown > 0 ? placeValueVisualFor(shown, '자리값표') : undefined;
-    }
+    // 줄지어 있지 않으면 수직선으로 보여 줄 것이 없습니다. 자리값표를
+    // 대신 그려 보았더니, 이번에는 문제가 묻지 않은 자리를 보여 주어
+    // 179군데가 어긋났습니다. 그릴 것이 없으면 그리지 않습니다.
+    if (!inOrder) return undefined;
 
     const gap = Math.max(1, values.length >= 2 ? Math.abs(values[1] - values[0]) || 10 : 10);
     // 눈금이 너무 촘촘하지 않도록 간격을 값의 크기에 맞춥니다.
