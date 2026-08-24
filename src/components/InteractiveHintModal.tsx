@@ -202,13 +202,51 @@ function InteractiveCounter({ visual }: { visual: QuestionVisual }) {
   );
 }
 
+// 낱개 물건을 하나씩 짚어 세는 그림만 탭 카운터가 맞습니다. 달력·
+// 수직선·자·막대·표·규칙·칠교판은 세는 것이 아니라 읽거나 견주는
+// 그림이라, 탭 카운터를 붙이면 문제와 상관없는 숫자만 늘어납니다.
+// 이런 그림은 세지 않고 그림만 크게 보여 줍니다.
+const COUNTABLE_KINDS = new Set<QuestionVisual['kind']>([
+  'array',
+  'pictograph',
+  'cube-stack',
+  'cube-pattern',
+  'cube-views',
+  'unit-measure',
+  'plane-shapes',
+]);
+
+const enlargedCaptionFor = (visual: QuestionVisual) => {
+  if (visual.kind === 'calendar' || visual.kind === 'year-calendar') return '달력을 자세히 살펴보세요';
+  if (visual.kind === 'number-line') return '수직선을 자세히 살펴보세요';
+  if (visual.kind === 'ruler') return '자를 자세히 살펴보세요';
+  if (visual.kind === 'bar-model') return '막대를 자세히 살펴보세요';
+  if (visual.kind === 'grid-table' || visual.kind === 'table') return '표를 자세히 살펴보세요';
+  if (visual.kind === 'pattern') return '규칙을 자세히 살펴보세요';
+  if (visual.kind === 'tangram') return '칠교판을 자세히 살펴보세요';
+  return '그림을 자세히 살펴보세요';
+};
+
+function EnlargedVisual({ visual }: { visual: QuestionVisual }) {
+  return (
+    <div className="interactive-counter-widget">
+      <div className="interactive-counter-visual interactive-enlarged-visual">
+        <QuestionVisualGraphic visual={visual} />
+      </div>
+      <p className="interactive-enlarged-caption">{enlargedCaptionFor(visual)}</p>
+    </div>
+  );
+}
+
 const widgetTitleFor = (visual: QuestionVisual) => {
   if (visual.kind === 'clock') return '시계를 움직여 보세요';
   if (visual.kind === 'place-value') return '수 모형을 모으거나 지워 보세요';
-  return '하나씩 짚어 세어 보세요';
+  if (COUNTABLE_KINDS.has(visual.kind)) return '하나씩 짚어 세어 보세요';
+  return enlargedCaptionFor(visual);
 };
 
 export function InteractiveHintModal({ visual, onClose }: InteractiveHintModalProps) {
+  const isCountable = COUNTABLE_KINDS.has(visual.kind);
   return (
     <div className="hint-modal-overlay" role="dialog" aria-modal="true" aria-label="움직여 보는 힌트">
       <div className="hint-modal-card">
@@ -220,7 +258,12 @@ export function InteractiveHintModal({ visual, onClose }: InteractiveHintModalPr
         </header>
         {visual.kind === 'clock' && <InteractiveClock />}
         {visual.kind === 'place-value' && <InteractivePlaceValue visual={visual} />}
-        {visual.kind !== 'clock' && visual.kind !== 'place-value' && <InteractiveCounter visual={visual} />}
+        {visual.kind !== 'clock' && visual.kind !== 'place-value' && isCountable && (
+          <InteractiveCounter visual={visual} />
+        )}
+        {visual.kind !== 'clock' && visual.kind !== 'place-value' && !isCountable && (
+          <EnlargedVisual visual={visual} />
+        )}
         <button type="button" className="hint-modal-done" onClick={onClose}>
           다 봤어요
         </button>

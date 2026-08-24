@@ -2006,7 +2006,10 @@ button:disabled {
   padding: 10px 11px;
 }
 
-.hint-text-panel p {
+/* .student-question-body p (여러 화면 크기별로 다시 정의되어 흰 글자를
+   씌웁니다)와 이 판이 밝은 카드라, 글자색이 하얗게 묻히지 않도록 특
+   이도를 한 단계 더 올려 둡니다. */
+.hint-text-panel.hint-text-panel p {
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -2027,19 +2030,22 @@ button:disabled {
 
 /* ── 3단계: 만져 보는 힌트 창 ─────────────────────────────────── */
 
+/* 여러 명이 한 화면을 나누어 쓰는 자리에서, 힌트 창이 화면 전체를
+   덮으면 다른 학생의 문제 풀이를 가립니다. 이 학생의 칸(.player-lane,
+   position: relative)만 덮도록 fixed가 아니라 absolute로 둡니다. */
 .hint-modal-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 30;
   display: grid;
   place-items: center;
   background: rgba(11, 20, 30, 0.5);
-  padding: 18px;
+  padding: 12px;
 }
 
 .hint-modal-card {
-  width: min(480px, calc(100vw - 28px));
-  max-height: calc(100vh - 28px);
+  width: min(480px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
   overflow: auto;
   display: grid;
   gap: 14px;
@@ -2244,6 +2250,19 @@ button:disabled {
   font-weight: 800;
   text-decoration: underline;
   min-height: 32px;
+}
+
+.interactive-enlarged-visual svg {
+  width: 100%;
+  height: auto;
+  min-height: 220px;
+}
+
+.interactive-enlarged-caption {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 13px;
 }
 
 .retry-msg {

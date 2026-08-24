@@ -267,6 +267,16 @@ export interface CalendarVisual {
   }>;
 }
 
+// '다음 달은 몇 월일까요', '1년은 몇 개월일까요'처럼 달의 순서나 개수를
+// 묻는 문제는 하루짜리 달력(day grid)이 아니라 1월~12월이 한눈에 보이는
+// 연간 달력이 필요합니다. mark는 문제에 이미 나온 달만 표시합니다 —
+// 답이 되는 달을 표시하면 그림이 답을 대신 알려주게 됩니다.
+export interface YearCalendarVisual {
+  kind: 'year-calendar';
+  label: string;
+  marks: Array<{ month: number }>;
+}
+
 export interface PictographVisual {
   kind: 'pictograph';
   label: string;
@@ -327,6 +337,7 @@ export type QuestionVisual =
   | ClockVisual
   | TableVisual
   | CalendarVisual
+  | YearCalendarVisual
   | PictographVisual
   | ArrayVisual
   | PatternVisual;
