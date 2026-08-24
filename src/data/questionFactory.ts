@@ -9677,6 +9677,16 @@ const visualForGeneratedQuestion = (
     const named = namedLengths(question.prompt);
     if (named.length >= 2) return barModelVisualFor(named.slice(0, 3), '두 길이 견주기');
 
+    // '{start}부터 {end}까지 놓인'처럼 두 눈금이 문제에 그대로 나오는
+    // 문항은 그 구간을 그대로 그립니다. 답(끝-시작)만 보고 0부터 그리면
+    // 문제에 적힌 시작 눈금과 그림이 어긋납니다.
+    const span = question.prompt.match(/(\d+)부터 (\d+)까지/);
+    if (span) {
+      const from = Number(span[1]);
+      const to = Number(span[2]);
+      if (to > from) return rulerVisualFor(from, to, '자로 잰 길이');
+    }
+
     // 눈금 0이 아닌 곳에 대고 잰 문항은 두 눈금이 문제에 그대로
     // 나옵니다. 이때만 그 구간을 그립니다.
     const broken = /눈금 \d+에 맞추|눈금 \d+에서 시작|앞부분이 깨져/.test(question.prompt);
