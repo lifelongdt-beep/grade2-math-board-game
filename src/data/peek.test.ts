@@ -3,22 +3,24 @@ import { lessons } from './curriculum';
 import { generateQuestions } from './questionFactory';
 
 describe('peek', () => {
-  it('dumps the fill-in questions', () => {
-    const out: string[] = [];
+  it('counts blank visuals by kind', () => {
+    let tableBlank = 0;
+    let graphBlank = 0;
+    const graphSample: string[] = [];
     for (const lesson of lessons) {
-      if (lesson.unitTitle !== '표와 그래프') continue;
       for (const level of ['하', '중', '상'] as const) {
         for (const q of generateQuestions(lesson, level)) {
           const v = q.visual;
           if (!v) continue;
-          const blankCell = v.kind === 'table' && v.columns.some((one) => one.value === null);
-          const blankRow = v.kind === 'pictograph' && v.blankAt !== undefined;
-          if (!blankCell && !blankRow) continue;
-          const shape = `${lesson.title}|${level} ${v.kind} ${q.prompt.slice(0, 44)} => ${q.answer}`;
-          if (!out.includes(shape) && out.length < 8) out.push(shape);
+          if (v.kind === 'table' && v.columns.some((one) => one.value === null)) tableBlank += 1;
+          if (v.kind === 'pictograph' && v.blankAt !== undefined) {
+            graphBlank += 1;
+            const one = `${lesson.title}|${level} ${q.prompt.slice(0, 40)} => ${q.answer}`;
+            if (!graphSample.includes(one) && graphSample.length < 4) graphSample.push(one);
+          }
         }
       }
     }
-    expect([`빈칸 문항 ${out.length}가지`, ...out]).toEqual([]);
+    expect([`표 빈칸 ${tableBlank}개 · 그래프 빈칸 ${graphBlank}개`, ...graphSample]).toEqual([]);
   });
 });
