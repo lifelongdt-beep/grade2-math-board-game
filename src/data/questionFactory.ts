@@ -9546,6 +9546,24 @@ const visualForGeneratedQuestion = (
     // 문제입니다. 두 수는 줄지어 있는 수가 아니므로 그 차(98)를 눈금
     // 간격으로 쓰면 뜻 없는 그림이 됩니다. 한 묶음의 크기가 곧 뛰는
     // 크기이므로, 100씩 눈금을 긋고 100을 짚어 줍니다.
+    // '90보다 10만큼 더 큰 수는?' — 뛰는 크기가 문제에 적혀 있습니다.
+    // 90을 짚고 10씩 눈금을 그으면 한 번 뛰어 답을 찾습니다.
+    const moreThan = /(\d+)보다 (\d+)만큼/.exec(question.prompt);
+    if (moreThan) {
+      const from = Number(moreThan[1]);
+      const step = Number(moreThan[2]);
+      if (from > 0 && step > 0) {
+        return numberLineVisualFor([from], step, '수의 위치 자료', 0);
+      }
+    }
+
+    // '99 다음 수는?' — 한 칸씩 가는 자리입니다.
+    const nextOf = /(\d+) 다음 수/.exec(question.prompt);
+    if (nextOf) {
+      const from = Number(nextOf[1]);
+      if (from > 0) return numberLineVisualFor([from], 1, '수의 위치 자료', 0);
+    }
+
     const bundle = /(\d+)이 \d+개/.exec(question.prompt)
       ?? /(\d+)원짜리[^\d]*\d+개/.exec(question.prompt);
     if (bundle) {
