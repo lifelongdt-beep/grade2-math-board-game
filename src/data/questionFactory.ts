@@ -9649,7 +9649,10 @@ const visualForGeneratedQuestion = (
       if (many >= 1 && many <= 30) {
         const wide = Math.min(5, many);
         return {
-          ...arrayVisualFor(Math.ceil(many / wide), wide, '세어 볼 물건'),
+          kind: 'array',
+          label: '세어 볼 물건',
+          rows: Math.ceil(many / wide),
+          columns: wide,
           plainCount: many,
         };
       }
