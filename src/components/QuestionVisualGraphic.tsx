@@ -666,9 +666,9 @@ function TableGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'tab
   const cells = [...visual.columns.map((column) => ({ name: column.name, value: column.value }))];
   if (visual.totalLabel) cells.push({ name: visual.totalLabel, value: visual.total ?? null });
 
-  // 흰 카드 위에 표를 얹으면 카드의 둥근 모서리와 안쪽 여백이 세로의
-  // 3분의 1을 먹습니다. 표는 선과 글자만 있으면 표이므로, 자리의 검은
-  // 바탕에 그대로 긋습니다.
+  // 판은 표가 차지하는 만큼만 깔아 자리를 더 쓰지 않습니다. 예전에는
+  // 판을 아예 깔지 않고 자리의 검은 바탕에 흰 글자로 그렸는데, 자세히
+  // 보기 창은 바탕이 밝아 글자가 보이지 않았습니다.
   const labelWidth = 96;
   const cellWidth = Math.max(58, Math.min(84, Math.round(320 / Math.max(cells.length, 1))));
   const rowHeight = 38;
@@ -679,6 +679,15 @@ function TableGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'tab
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect
+        x={edge}
+        y={edge}
+        width={gridWidth}
+        height={rowHeight * 2}
+        rx="10"
+        fill="#f6fcff"
+        stroke="#d7edf2"
+      />
       {[0, 1].map((row) => (
         <rect
           key={row}
@@ -686,8 +695,8 @@ function TableGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'tab
           y={edge + row * rowHeight}
           width={gridWidth}
           height={rowHeight}
-          fill={row === 0 ? 'rgba(126, 226, 255, 0.14)' : 'transparent'}
-          stroke="#6fd3ea"
+          fill={row === 0 ? '#e6f7f7' : 'transparent'}
+          stroke="#7fc3ce"
           strokeWidth="2"
         />
       ))}
@@ -697,7 +706,7 @@ function TableGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'tab
           x={edge + labelWidth / 2}
           y={edge + row * rowHeight + rowHeight / 2 + 6}
           textAnchor="middle"
-          fill="#8ee9ff"
+          fill="#0f7175"
           fontSize="16"
           fontWeight="900"
         >
@@ -709,12 +718,12 @@ function TableGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'tab
         const isTotal = Boolean(visual.totalLabel) && index === cells.length - 1;
         return (
           <g key={`${cell.name}-${index}`}>
-            <line x1={x} y1={edge} x2={x} y2={edge + rowHeight * 2} stroke="#6fd3ea" strokeWidth="2" />
+            <line x1={x} y1={edge} x2={x} y2={edge + rowHeight * 2} stroke="#7fc3ce" strokeWidth="2" />
             <text
               x={x + cellWidth / 2}
               y={edge + rowHeight / 2 + 6}
               textAnchor="middle"
-              fill={isTotal ? '#ffd479' : '#ffffff'}
+              fill={isTotal ? '#8a6500' : '#24364a'}
               fontSize="16"
               fontWeight="900"
             >
@@ -724,7 +733,7 @@ function TableGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'tab
               x={x + cellWidth / 2}
               y={edge + rowHeight + rowHeight / 2 + 7}
               textAnchor="middle"
-              fill={cell.value === null ? '#ff9aa2' : '#ffffff'}
+              fill={cell.value === null ? '#c2454f' : '#24364a'}
               fontSize="19"
               fontWeight="900"
             >
