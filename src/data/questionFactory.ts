@@ -14393,7 +14393,8 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
   }
 
   // 도형: 곧은 선을 세어 이름을 붙입니다.
-  if (tag === 'shape') {
+  // 쌓기나무 차시의 태그는 'shape'가 아니라 'solid'입니다. 둘 다 받습니다.
+  if (tag === 'shape' || tag === 'solid') {
     if (/△을 알아보고|□을 알아보고/.test(title)) {
       const sides = /△/.test(title) ? 3 : 4;
       const name = sides === 3 ? '삼각형' : '사각형';
@@ -14563,6 +14564,23 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
       ['클립', '두 가지가 같습니다', '알 수 없습니다'],
       `같은 길이를 잴 때 재는 횟수가 적을수록 그 단위가 깁니다.`,
       'measurement', guide('단위로 재어 보기'),
+    );
+  }
+
+  // [2수03-11] C: "1m가 100cm임을 알고, 안내된 절차에 따라 '몇 m'를
+  // '몇 cm'로 나타낼 수 있다" — 성취수준이 곧 이 문항입니다.
+  if (tag === 'measurement' && /cm보다 더 큰 단위/.test(title)) {
+    const metre = 1 + (seed % 4);
+    const part = 10 + (seed % 8) * 10;
+    const total = metre * 100 + part;
+    if (total > limit) return null;
+    return makeQuestion(
+      lesson, '하', index,
+      `${metre}m ${part}cm를 cm로만 나타내는 차례입니다. □에 알맞은 것은? ① 1m는 100cm입니다. ② ${metre}m는 ${metre * 100}cm입니다. ③ ${metre * 100}+${part}=□입니다.`,
+      `${total}cm`,
+      [`${metre * 10 + part}cm`, `${metre * 100}cm`, `${part}cm`],
+      `${metre}m는 ${metre * 100}cm이므로 모두 ${total}cm입니다.`,
+      'measurement', guide('m를 cm로 나타내기'),
     );
   }
 
