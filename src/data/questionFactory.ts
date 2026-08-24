@@ -13979,12 +13979,15 @@ const drawTemplateVisual = (drawn: DrawnVisual, lesson: Lesson): QuestionVisual 
       valueLabel: drawn.valueLabel,
     });
   }
-  return pictographVisualFor(
+  const graph = pictographVisualFor(
     drawn.items,
     drawn.unit ?? 1,
     drawn.label ?? '그림그래프 자료',
     drawn.orientation ?? 'up',
   );
+  return drawn.blankAt === undefined || graph.kind !== 'pictograph'
+    ? graph
+    : { ...graph, blankAt: drawn.blankAt };
 };
 
 const templateTools = {

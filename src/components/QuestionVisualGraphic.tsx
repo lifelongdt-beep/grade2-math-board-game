@@ -829,9 +829,31 @@ function StandingPictograph({ visual }: { visual: Extract<QuestionVisual, { kind
       {items.map((item, index) => {
         const x = left + index * columnWidth + columnWidth / 2;
         const units = Math.min(Math.ceil(item.count / visual.unit), rows);
+        // 학생이 채울 줄입니다. ○를 그리지 않고 자리만 비워 둡니다.
+        // 성취수준 [2수04-03] C가 '일부가 주어진 그래프를 완성하기'라,
+        // 채워야 할 곳이 눈에 보여야 물음이 성립합니다.
+        const blank = visual.blankAt === index;
         return (
           <g key={`${item.label}-${index}`}>
-            {Array.from({ length: units }).map((_, at) => (
+            {blank && (
+              <g>
+                <rect
+                  x={x - 14}
+                  y={bottom - rows * cell}
+                  width="28"
+                  height={rows * cell}
+                  rx="6"
+                  fill="#fff1f3"
+                  stroke="#ff9aa2"
+                  strokeWidth="2"
+                  strokeDasharray="5 4"
+                />
+                <text x={x} y={bottom - cell / 2 + 5} textAnchor="middle" fill="#c2485a" fontSize="16" fontWeight="900">
+                  ?
+                </text>
+              </g>
+            )}
+            {!blank && Array.from({ length: units }).map((_, at) => (
               <circle
                 key={at}
                 cx={x}

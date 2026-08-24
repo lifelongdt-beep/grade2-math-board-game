@@ -72,7 +72,15 @@ export type VisualSpec =
       label?: string;
     }
   | { kind: 'cube-pattern'; steps: string[]; unknownIndex?: number; label?: string }
-  | { kind: 'pictograph'; items: Array<{ label: string; count: string }>; unit?: number; orientation?: 'up' | 'right'; label?: string };
+  | {
+      kind: 'pictograph';
+      items: Array<{ label: string; count: string }>;
+      unit?: number;
+      orientation?: 'up' | 'right';
+      // 몇째 줄을 비워 둘지입니다. 학생이 채울 자리입니다.
+      blankAt?: number;
+      label?: string;
+    };
 
 // 식을 모두 수로 바꾼 그림입니다. 실제 그림은 questionFactory가 그립니다 —
 // 눈금 여백이나 수직선 시작점 같은 규칙이 이미 그쪽에 있고, 그것을 여기에
@@ -87,13 +95,21 @@ export type DrawnVisual =
   | { kind: 'bar-model'; bars: Array<{ label: string; value: number }>; label?: string }
   | {
       kind: 'table';
-      columns: Array<{ name: string; value: number }>;
+      // value가 null이면 학생이 채워야 할 빈칸입니다.
+      columns: Array<{ name: string; value: number | null }>;
       categoryLabel: string;
       valueLabel: string;
       label?: string;
     }
   | { kind: 'cube-pattern'; steps: number[]; unknownIndex?: number; label?: string }
-  | { kind: 'pictograph'; items: Array<{ label: string; count: number }>; unit?: number; orientation?: 'up' | 'right'; label?: string };
+  | {
+      kind: 'pictograph';
+      items: Array<{ label: string; count: number }>;
+      unit?: number;
+      orientation?: 'up' | 'right';
+      blankAt?: number;
+      label?: string;
+    };
 
 export type Claim = { text: string; ok: boolean };
 
@@ -353,11 +369,19 @@ const resolveVisual = (
   }
 
   if (spec.kind === 'table') {
-    const columns: Array<{ name: string; value: number }> = [];
+    const columns: Array<{ name: string; value: number | null }> = [];
     for (const column of spec.columns) {
-      const value = at(column.value);
       const name = text(column.name);
-      if (value === null || value < 0 || !name) return null;
+      if (!name) return null;
+
+      // '?'는 계산이 안 되는 값이 아니라 '비워 둔다'는 뜻입니다.
+      if (column.value.trim() === '?') {
+        columns.push({ name, value: null });
+        continue;
+      }
+
+      const value = at(column.value);
+      if (value === null || value < 0) return null;
       columns.push({ name, value });
     }
     return {
@@ -376,7 +400,7 @@ const resolveVisual = (
     if (count === null || count < 0 || !label) return null;
     items.push({ label, count });
   }
-  return { kind: 'pictograph', items, unit: spec.unit, orientation: spec.orientation, label: text(spec.label) };
+  return { kind: 'pictograph', items, unit: spec.unit, orientation: spec.orientation, blankAt: spec.blankAt, label: text(spec.label) };
 };
 
 // 데이터로 적힌 문항을 실제 문항으로 만듭니다.
