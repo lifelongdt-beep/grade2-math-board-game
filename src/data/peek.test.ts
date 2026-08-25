@@ -2,36 +2,34 @@ import { describe, expect, it } from 'vitest';
 import { lessons } from './curriculum';
 import { generateQuestions } from './questionFactory';
 
-// 늘 같은 답이 나오는 문항을 찾습니다. 수가 바뀌지 않는 개념 문항은
-// 아이가 문장을 읽지 않고 답을 외워 버립니다.
+// 한 아이가 한 차시에서 겪는 되풀이를 셉니다. 30문항 안에 똑같은
+// 문제글이 몇 번이나 나오는지가 곧 지겨움입니다.
 describe('peek', () => {
-  it('finds questions whose answer never changes', () => {
-    const seen = new Map<string, { answers: Set<string>; count: number; lesson: string }>();
+  it('counts repeats inside one lesson', () => {
+    const worst: Array<{ times: number; lesson: string; prompt: string; answer: string }> = [];
 
     for (const lesson of lessons) {
       for (const level of ['하', '중', '상'] as const) {
+        const seen = new Map<string, { times: number; answers: Set<string> }>();
         for (const q of generateQuestions(lesson, level)) {
-          const key = q.prompt;
-          const found = seen.get(key) ?? { answers: new Set<string>(), count: 0, lesson: lesson.title };
+          const found = seen.get(q.prompt) ?? { times: 0, answers: new Set<string>() };
+          found.times += 1;
           found.answers.add(q.answer);
-          found.count += 1;
-          seen.set(key, found);
+          seen.set(q.prompt, found);
+        }
+        for (const [prompt, info] of seen) {
+          if (info.times >= 3) {
+            worst.push({ times: info.times, lesson: `${lesson.title}·${level}`, prompt, answer: [...info.answers].join(' / ') });
+          }
         }
       }
     }
 
-    for (const [prompt, info] of [...seen.entries()]
-      .filter(([, one]) => one.answers.size === 1 && one.count >= 6)
-      .sort((a, b) => b[1].count - a[1].count)) {
-      console.log(`PEEK|${info.count}|${info.lesson}|${prompt}|${[...info.answers][0]}`);
+    worst.sort((a, b) => b.times - a.times);
+    for (const one of worst.slice(0, 40)) {
+      console.log(`PEEK|${one.times}|${one.lesson}|${one.prompt.slice(0, 44)}|${one.answer.slice(0, 30)}`);
     }
 
-    const stuck = [...seen.entries()]
-      .filter(([, info]) => info.answers.size === 1 && info.count >= 6)
-      .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 24)
-      .map(([prompt, info]) => `${info.count}회 · ${prompt.slice(0, 46)} => ${[...info.answers][0]}`);
-
-    expect.soft([`한 답만 나오는 문항 ${[...seen.values()].filter((i) => i.answers.size === 1 && i.count >= 6).length}가지`, ...stuck]).toEqual([]);
+    expect([`한 차시에서 3번 넘게 되풀이되는 문항 ${worst.length}곳`]).toEqual([]);
   });
 });
