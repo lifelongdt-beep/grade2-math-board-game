@@ -10,15 +10,31 @@
 //
 // 담는 기준은 하나입니다 — 2학년이 교실이나 집에서 실제로 겪는 일일 것.
 
-// 씨앗으로 하나를 고릅니다. 같은 씨앗이면 늘 같은 것이 나와, 한 아이가
-// 같은 문제를 다시 풀 때 답이 뒤바뀌지 않습니다.
+// 씨앗을 잘 섞습니다.
+//
+// 그냥 나머지로 고르면 꾸러미가 돌지 않습니다. 어떤 문항이 나올 자리는
+// variant가 정하는데 그것이 index를 5로 나눈 나머지입니다. 그래서 그
+// 문항이 나오는 index는 0, 5, 10, 15…처럼 5씩 건너뜁니다. 꾸러미가
+// 다섯 칸이면 5의 배수만 더해져 늘 같은 칸에 떨어집니다 — 스무 번을
+// 뽑아도 같은 것만 나왔습니다. 씨앗을 한 번 흩어 놓으면 이 맞물림이
+// 풀립니다.
+//
+// 같은 씨앗이면 늘 같은 것이 나옵니다. 한 아이가 같은 문제를 다시 풀
+// 때 답이 뒤바뀌지 않아야 합니다.
+const scatter = (seed: number): number => {
+  let x = (Math.abs(Math.trunc(seed)) + 0x9e3779b9) >>> 0;
+  x = Math.imul(x ^ (x >>> 15), 0x85ebca6b) >>> 0;
+  x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35) >>> 0;
+  return (x ^ (x >>> 16)) >>> 0;
+};
+
 export const pickBySeed = <T,>(items: T[], seed: number): T =>
-  items[Math.abs(Math.trunc(seed)) % items.length];
+  items[scatter(seed) % items.length];
 
 // 씨앗으로 서로 다른 여럿을 고릅니다. 오답 보기를 만들 때 씁니다.
 export const pickSome = <T,>(items: T[], seed: number, howMany: number): T[] => {
   const taken: T[] = [];
-  const start = Math.abs(Math.trunc(seed));
+  const start = scatter(seed);
   for (let step = 0; step < items.length && taken.length < howMany; step += 1) {
     const one = items[(start + step * 3 + (step % 2)) % items.length];
     if (!taken.includes(one)) taken.push(one);
