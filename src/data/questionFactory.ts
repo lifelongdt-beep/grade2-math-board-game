@@ -9685,6 +9685,18 @@ const visualForGeneratedQuestion = (
       if (from > 0) return numberLineVisualFor([from], 1, '수의 위치 자료', 0);
     }
 
+    // '1000을 100씩 묶으면 몇 묶음일까요?' — 0에서 1000까지 100씩
+    // 눈금을 그으면 아이가 뛴 횟수를 세어 묶음 수를 찾습니다.
+    // 눈금 간격은 문제에 적힌 '몇씩'이어야 합니다.
+    const intoBundles = /(\d+)[을를]\s*(\d+)씩 묶으면/.exec(question.prompt);
+    if (intoBundles) {
+      const whole = Number(intoBundles[1]);
+      const piece = Number(intoBundles[2]);
+      if (piece > 0 && whole > piece && whole % piece === 0 && whole / piece <= 12) {
+        return numberLineVisualFor([0, whole], piece, '묶음을 세는 수의 길', -1);
+      }
+    }
+
     const bundle = /(\d+)이 \d+개/.exec(question.prompt)
       ?? /(\d+)원짜리[^\d]*\d+개/.exec(question.prompt);
     if (bundle) {
