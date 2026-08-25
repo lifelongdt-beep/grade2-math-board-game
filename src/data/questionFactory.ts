@@ -1,3 +1,19 @@
+import {
+  pickBySeed,
+  pickSome,
+  UNDER_HUNDRED,
+  OVER_HUNDRED,
+  OVER_THOUSAND,
+  NEEDS_MEASURING,
+  NOT_MEASURING,
+  COMPARE_WORDS,
+  SORTING_SETS,
+  BAD_SORTING,
+  SORTED_PLACES,
+  UNSORTED_PLACES,
+  COUNTING_WAYS,
+  SHAPE_THINGS,
+} from './lifeContexts';
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, PlaneShapeKind, PlaneShapeVisualItem, Question, QuestionVisual } from '../types';
 import { questionBank } from './questionBank';
 import { buildFromTemplate, templateFits } from './questionTemplate';
@@ -952,15 +968,20 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       return makeQuestion(
         lesson, difficulty, index,
         `생활에서 ${four ? '1000보다 큰 수' : '100보다 큰 수'}를 볼 수 있는 곳으로 알맞은 것은?`,
-        // 사물함 번호를 예로 들고 있었습니다. 한 반은 마흔 명이 넘지
-        // 않으니 사물함 번호는 100을 넘을 수가 없습니다. 교실에서
-        // 아이가 바로 확인할 수 있는 것이라 더 눈에 띄는 잘못입니다.
-        // 쪽수는 100을 넘고, 물건 값은 1000을 넘습니다.
-        four ? '가게에서 파는 물건의 값' : '책의 쪽수',
-        ['한 사람의 손가락 수', '한 주의 날수', '한 상자의 색연필 수'],
+        // 답이 늘 하나였습니다. 1000보다 큰 수를 묻는 자리에 '책의
+        // 쪽수'만 나오면, 아이는 쪽수라는 말만 외웁니다. 생활에는 큰
+        // 수가 훨씬 많습니다.
+        //
+        // 1000보다 큰 수를 물을 때는 100대인 것(책의 쪽수, 학교 학생
+        // 수)을 미끼로 함께 놓습니다. 크기를 견주어 보아야 고를 수
+        // 있는 문항이 됩니다.
+        pickBySeed(four ? OVER_THOUSAND : OVER_HUNDRED, seed),
         four
-          ? '가게에는 1000원이 넘는 물건이 많습니다.'
-          : '책은 100쪽이 넘는 것이 많습니다.',
+          ? [pickBySeed(OVER_HUNDRED, seed + 1), ...pickSome(UNDER_HUNDRED, seed, 2)]
+          : pickSome(UNDER_HUNDRED, seed, 3),
+        four
+          ? '1000이 넘는 수는 생활에서도 값이나 큰 묶음에서 볼 수 있습니다.'
+          : '100이 넘는 수는 생활 곳곳에 있습니다.',
         'number', '큰 수가 필요한 상황 찾기',
       );
     }
@@ -968,9 +989,9 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       return makeQuestion(
         lesson, difficulty, index,
         '물건이 아주 많을 때 수를 세는 방법으로 알맞은 것은?',
-        '10개씩 묶어서 센다',
-        ['눈으로 어림한다', '하나씩만 센다', '세지 않는다'],
-        `10개씩 묶어 세면 많은 물건도 빠르고 정확하게 셀 수 있습니다.`,
+        pickBySeed(COUNTING_WAYS, seed).right,
+        pickBySeed(COUNTING_WAYS, seed).wrong,
+        `${pickBySeed(COUNTING_WAYS, seed).right.replace(/다$/, '면')} 많은 물건도 빠지지 않고 셀 수 있습니다.`,
         'number', '큰 수를 세는 방법 생각하기',
       );
     }
@@ -987,9 +1008,9 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
     return makeQuestion(
       lesson, difficulty, index,
       '수가 많을 때 세기 쉬운 방법으로 알맞은 것은?',
-      '10개씩 묶어 세고 남은 것을 센다',
-      ['보이는 대로 어림한다', '큰 것부터 센다', '세지 않고 넘어간다'],
-      `10개씩 묶어 세면 많은 물건도 빠짐없이 셀 수 있습니다.`,
+      pickBySeed(COUNTING_WAYS, seed + 2).right,
+      pickBySeed(COUNTING_WAYS, seed + 2).wrong,
+      `${pickBySeed(COUNTING_WAYS, seed + 2).right.replace(/다$/, '면')} 많은 물건도 빠짐없이 셀 수 있습니다.`,
       'number', '묶어 세는 방법 고르기',
     );
   }
@@ -3524,19 +3545,19 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        '길이를 비교할 때 쓰는 말로 알맞은 것은?',
-        '더 길다, 더 짧다',
-        ['더 무겁다, 더 가볍다', '더 많다, 더 적다', '더 예쁘다, 덜 예쁘다'],
-        '길이는 더 길다, 더 짧다로 비교해서 말합니다.',
-        'measurement', '길이를 나타내는 말 알기',
+        `${pickBySeed(COMPARE_WORDS, seed).what}을 비교할 때 쓰는 말로 알맞은 것은?`,
+        pickBySeed(COMPARE_WORDS, seed).right,
+        pickBySeed(COMPARE_WORDS, seed).wrong,
+        `${pickBySeed(COMPARE_WORDS, seed).what}은 ${pickBySeed(COMPARE_WORDS, seed).right}로 비교해서 말합니다.`,
+        'measurement', '견주는 말 알기',
       );
     }
     if (variant === 2) {
       return makeQuestion(
         lesson, difficulty, index,
         '길이를 재야 하는 상황으로 알맞은 것은?',
-        '책상에 맞는 책꽂이를 고를 때',
-        ['우유가 몇 개인지 셀 때', '오늘이 며칠인지 알 때', '누가 더 무거운지 알 때'],
+        pickBySeed(NEEDS_MEASURING, seed),
+        pickSome(NOT_MEASURING, seed, 3),
         '물건이 자리에 맞는지 알아보려면 길이를 재어야 합니다.',
         'measurement', '길이 재기가 필요한 상황 찾기',
       );
@@ -4407,9 +4428,9 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
       return makeQuestion(
         lesson, difficulty, index,
         '생활에서 물건을 나누어 놓은 곳으로 알맞은 것은?',
-        '가게의 물건 진열대',
-        ['빈 운동장', '하늘', '창문'],
-        '가게에서는 비슷한 물건끼리 모아 놓아 찾기 쉽게 합니다.',
+        pickBySeed(SORTED_PLACES, seed),
+        pickSome(UNSORTED_PLACES, seed, 3),
+        `${pickBySeed(SORTED_PLACES, seed)}에는 비슷한 것끼리 모아 놓아 찾기 쉽습니다.`,
         'classification', '생활 속 분류 찾기',
       );
     }
@@ -7661,10 +7682,10 @@ const richDataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
   if (lesson.unitTitle === '분류하기' && lesson.lessonNo < 4) {
     return makeQuestion(
       lesson, difficulty, index,
-      '연필, 지우개, 색종이, 풀을 나눌 때 알맞은 분류 기준은?',
-      '쓰임',
-      ['좋아하는 정도', '값이 비싼 순서', '새것인지 아닌지'],
-      '연필과 지우개는 쓰고 지울 때, 색종이와 풀은 만들 때 쓰므로 쓰임으로 나눌 수 있습니다.',
+      `${pickBySeed(SORTING_SETS, index).things}을 나눌 때 알맞은 분류 기준은?`,
+      pickBySeed(SORTING_SETS, index).right,
+      pickSome(BAD_SORTING, index, 3),
+      pickBySeed(SORTING_SETS, index).why,
       'classification',
       '조건 함께 보기 · 여러 물건에 맞는 기준 고르기',
     );
@@ -13598,13 +13619,17 @@ const figureShapes: Shape[] = [
     make: (lesson, difficulty, index) => {
       const target = lesson.title.includes('△') ? '삼각형'
         : lesson.title.includes('□') ? '사각형' : '원';
-      const things: Record<string, string> = { 삼각형: '삼각김밥', 사각형: '공책', 원: '동전' };
-      const others = ['삼각김밥', '공책', '동전'].filter((x) => x !== things[target]);
+      // 도형마다 찾을 수 있는 물건이 여럿입니다. 늘 삼각김밥·공책·동전만
+      // 나오면 물건 이름을 외워 버립니다.
+      const right = pickBySeed(SHAPE_THINGS[target], index);
+      const others = Object.entries(SHAPE_THINGS)
+        .filter(([name]) => name !== target)
+        .map(([, list], at) => pickBySeed(list, index + at));
       return makeQuestion(
         lesson, difficulty, index,
         `${target} 모양을 찾을 수 있는 물건은 무엇일까요?`,
-        things[target], [...others, '구슬'],
-        `${things[target]}의 겉면에서 ${target} 모양을 찾을 수 있습니다.`,
+        right, [...others, '구슬'],
+        `${right}에서 ${target} 모양을 찾을 수 있습니다.`,
         'shape',
         shapeStrategy(difficulty, '조건 함께 보기 · 생활 속에서 도형 찾기', '생활 속에서 도형 찾기'),
       );
