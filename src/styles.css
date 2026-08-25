@@ -1930,10 +1930,17 @@ button:disabled {
    3단계: 만져 보는 힌트 (hint-modal-*, interactive-*)
    ════════════════════════════════════════════════════════════════ */
 
+/* 글자에 그냥 배경을 깔면 상자 높이가 글꼴이 정한 만큼(글자 크기의
+   1.4배쯤) 잡힙니다. 전자칠판의 큰 글씨에서는 그 상자가 글자보다
+   훨씬 커 보여, 한 줄 안에서 강조한 곳만 툭툭 튀어나옵니다.
+   inline-block으로 바꾸어 상자 높이를 우리가 정합니다. */
 .hint-number,
 .hint-keyword {
-  border-radius: 5px;
-  padding: 0 3px;
+  display: inline-block;
+  line-height: 1.16;
+  vertical-align: baseline;
+  border-radius: 4px;
+  padding: 0 2px;
   font-weight: 900;
 }
 
