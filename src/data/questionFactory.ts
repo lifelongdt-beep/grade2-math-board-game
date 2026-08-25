@@ -9707,10 +9707,33 @@ const visualForGeneratedQuestion = (
     }
 
 
-    const gap = Math.max(1, values.length >= 2 ? Math.abs(values[1] - values[0]) || 10 : 10);
-    // 눈금이 너무 촘촘하지 않도록 간격을 값의 크기에 맞춥니다.
-    const span = Math.max(...values) - Math.min(...values);
-    const step = span > 0 ? Math.max(gap, Math.ceil(span / 8)) : gap;
+    // 눈금 간격은 '몇씩 세는가'입니다. 두 수의 차가 아닙니다.
+    //
+    // 예전에는 문제에 나온 두 수의 차를 그대로 간격으로 삼았습니다.
+    // 그래서 '100은 10이 몇 개인 수일까요?'에 90씩 뛰는 자가 나왔고,
+    // '1000을 100씩 묶으면'에는 900씩 뛰는 자가 나왔습니다. 아이가
+    // 세어 볼 수 없는 눈금입니다. 세는 단위를 이 차례로 찾습니다.
+    const small = Math.min(...values);
+    const big = Math.max(...values);
+    const span = big - small;
+
+    // ① 문제글이 '몇씩'이라고 말해 주면 그것이 곧 간격입니다.
+    const said = /(\d+)\s*[가-힣]{0,3}씩/.exec(question.prompt);
+    const counted = said ? Number(said[1]) : 0;
+    const saidFits = counted > 0 && (span === 0 || span % counted === 0) && span / counted <= 12;
+
+    // ② 작은 수가 큰 수 안에 꼭 맞게 들어가면, 작은 수가 세는 단위입니다.
+    //    '100은 10이 몇 개'에서 10씩 열 칸입니다.
+    const unitFits = small > 0 && big % small === 0 && big / small >= 2 && big / small <= 12;
+
+    // ③ 그래도 알 수 없으면 세기 좋은 간격 가운데 고릅니다. 3이나 7씩
+    //    가는 자는 2학년이 눈으로 좇기 어렵습니다.
+    const EASY_STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000];
+    const rough = Math.max(1, values.length >= 2 ? Math.abs(values[1] - values[0]) || 10 : 10);
+    const wanted = span > 0 ? Math.max(1, Math.ceil(span / 8)) : rough;
+    const easy = EASY_STEPS.find((one) => one >= wanted) ?? 1000;
+
+    const step = saidFits ? counted : unitFits ? small : easy;
     // 정답이 그림에 굵게 표시되면 답을 알려 주는 셈이 됩니다.
     const answerShown = Number.isFinite(answerNumber) && values.includes(answerNumber);
     return numberLineVisualFor(
