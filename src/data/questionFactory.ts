@@ -17,6 +17,9 @@ import {
   SUBTRACTING_SITUATIONS,
   LENGTH_PAIRS,
   BUNDLE_ASKS,
+  TIDYING_WAYS,
+  SORTING_GOOD,
+  SORTING_BAD_GOOD,
 } from './lifeContexts';
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, PlaneShapeKind, PlaneShapeVisualItem, Question, QuestionVisual } from '../types';
 import { questionBank } from './questionBank';
@@ -4424,9 +4427,9 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
       return makeQuestion(
         lesson, difficulty, index,
         '어질러진 학용품을 정리할 때 하면 좋은 일은?',
-        '같은 것끼리 모은다',
-        ['상자에 아무렇게나 넣는다', '큰 것만 남긴다', '색을 칠한다'],
-        '같은 것끼리 모아 두면 정리도 쉽고 찾기도 쉽습니다.',
+        pickBySeed(TIDYING_WAYS, index).right,
+        pickBySeed(TIDYING_WAYS, index).wrong,
+        pickBySeed(TIDYING_WAYS, index).why,
         'classification', '같은 것끼리 모으기',
       );
     }
@@ -4444,8 +4447,8 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
       return makeQuestion(
         lesson, difficulty, index,
         '물건을 나누어 놓으면 좋은 점은?',
-        '찾고 싶은 것을 쉽게 찾을 수 있다',
-        ['물건이 많아진다', '물건이 예뻐진다', '물건이 커진다'],
+        pickBySeed(SORTING_GOOD, index),
+        pickSome(SORTING_BAD_GOOD, index, 3),
         '나누어 놓으면 필요한 것을 빨리 찾을 수 있습니다.',
         'classification', '분류하면 좋은 점 알기',
       );
@@ -7266,14 +7269,22 @@ const legacyPatternQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
   }
 
   if ((text.includes('계산식') && variant === 0) || (!text.includes('계산식') && variant === 1)) {
+    const firstOf = 10 + (n(lesson, index) % 8);
+    const growBy = 2 + (n(lesson, index, 7) % 4);
     return makeQuestion(
       lesson,
       difficulty,
       index,
-      `12+3=15, 12+6=18, 12+9=21입니다. 다음 식으로 알맞은 것은?`,
-      '12+12=24',
-      ['12+10=21', '12+6=24', '12+1=24'],
-      `더하는 수가 3씩 커지고 결과도 3씩 커집니다. 그래서 다음은 12+12=24입니다.`,
+      // 수가 늘 12+3, 12+6, 12+9였습니다. 한 차시에 열두 번 나오는
+      // 문항이라 아이가 식을 읽지 않고 답을 외웠습니다.
+      `${firstOf}+${growBy}=${firstOf + growBy}, ${firstOf}+${growBy * 2}=${firstOf + growBy * 2}, ${firstOf}+${growBy * 3}=${firstOf + growBy * 3}입니다. 다음 식으로 알맞은 것은?`,
+      `${firstOf}+${growBy * 4}=${firstOf + growBy * 4}`,
+      [
+        `${firstOf}+${growBy * 3}=${firstOf + growBy * 4}`,
+        `${firstOf}+${growBy * 4}=${firstOf + growBy * 3}`,
+        `${firstOf}+${growBy * 5}=${firstOf + growBy * 4}`,
+      ],
+      `더하는 수가 ${growBy}씩 커지고 답도 ${growBy}씩 커집니다. 그래서 다음은 ${firstOf}+${growBy * 4}=${firstOf + growBy * 4}입니다.`,
       'pattern',
       '식 배열의 변화 규칙 찾기',
     );
