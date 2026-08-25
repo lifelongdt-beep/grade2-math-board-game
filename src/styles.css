@@ -1700,6 +1700,10 @@ button:disabled {
 .student-result-list {
   display: grid;
   gap: 8px;
+  /* 푼 문제·정답·오답에 '우리 반에 보탬'이 더해져 네 칸입니다. 한 줄로
+     세우면 세로로 길어져 아래 단추가 밀립니다. 자리가 나면 두 칸씩
+     놓아 높이를 그대로 둡니다. */
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
 }
 
 .student-result-list div {
