@@ -1520,19 +1520,26 @@ function App() {
 
                         return (
                           <div className="lane-result-detail">
-                            {guide.strong.length > 0 && (
-                              <section className="lane-guide-block good">
-                                <h4>잘한 문제</h4>
+                            {/* 칭찬을 맨 위에 둡니다. 걸린 곳부터 읽는
+                                아이는 그 뒤를 잘 읽지 않습니다. */}
+                            <section className="lane-guide-block good">
+                              <h4>잘한 점</h4>
+                              {guide.cheer && <p className="lane-cheer">{guide.cheer}</p>}
+                              {guide.strong.length > 0 && (
                                 <ul className="lane-guide-kinds">
                                   {guide.strong.map((one) => (
                                     <li key={one.kind}>
                                       <strong>{one.kind}</strong>
-                                      <span>{one.total}번 만나 모두 맞혔어요</span>
+                                      {/* 몇 번 맞혔는지는 아이가 이미
+                                          압니다. 무엇을 할 줄 알게
+                                          되었는지를 적어 줍니다. */}
+                                      <span>{one.praise}</span>
+                                      <span className="lane-guide-count">{one.total}번 다 맞혔어요</span>
                                     </li>
                                   ))}
                                 </ul>
-                              </section>
-                            )}
+                              )}
+                            </section>
 
                             {guide.weak.length === 0 ? (
                               <p className="lane-result-empty good">
