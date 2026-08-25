@@ -221,7 +221,8 @@ export const LENGTH_PAIRS = [
 export const BUNDLE_ASKS = [
   (piece: number) => `${piece}이 10개이면 얼마일까요?`,
   (piece: number) => `${piece}씩 10묶음은 얼마일까요?`,
-  (piece: number) => `${piece}을 10번 뛰어 세면 얼마가 될까요?`,
+  // '뛰어 세기'는 6차시에서 배웁니다. 2차시에서 쓰면 선행입니다.
+  (piece: number) => `${piece}을 10번 모으면 얼마일까요?`,
   (piece: number) => `${piece}짜리 묶음 10개를 모으면 얼마일까요?`,
 ];
 

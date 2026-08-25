@@ -12331,50 +12331,73 @@ const rawQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number): Q
 // ㄱ·ㄴ·ㄷ·ㄹ 네 문장을 주고 '옳은 것을 모두 고른 것은?'을 물으면,
 // 보기는 'ㄱ, ㄹ'처럼 조합이 됩니다. 누르는 것은 하나지만 판단은 네 번
 // 해야 하므로, 4지선다 틀 안에서 여러 개를 판단하게 됩니다.
-type Claim = { text: string; ok: boolean };
+// 한 생각에 대해 옳은 문장과 옳지 않은 문장을 짝으로 적어 둡니다.
+//
+// 예전에는 옳은 문장 둘, 옳지 않은 문장 둘을 그 차례대로 늘어놓았습니다.
+// 그래서 답이 늘 'ㄱ, ㄴ'(옳은 것) 아니면 'ㄷ, ㄹ'(옳지 않은 것)이었고,
+// 아이는 문장을 읽지 않고 자리만 보고 골랐습니다.
+//
+// 짝으로 적어 두면 생각마다 어느 쪽을 낼지 그때그때 정할 수 있습니다.
+// 옳은 것이 하나일 수도, 셋일 수도, 넷 다일 수도 있습니다.
+type Idea = { right: string; wrong: string };
 
-// 네 문장 중 옳은 것(또는 옳지 않은 것) 둘을 답으로 하는 문항을 만듭니다.
-const pickAllQuestion = (
+// 네 문장을 주고 옳은 것(또는 옳지 않은 것)을 모두 고르게 합니다.
+//
+// 무엇을 묻는지는 문장 앞에 둡니다. 뒤에 두면 아이가 네 문장을 다 읽고
+// 나서야 무엇을 찾아야 하는지 알게 되어, 처음부터 다시 읽어야 합니다.
+const judgeQuestion = (
   lesson: Lesson,
   difficulty: Difficulty,
   index: number,
-  claims: Claim[],
+  ideas: Idea[],
   // 데이터로 적은 문항은 자기 상황 설명과 갈래·전략 이름을 함께 넘깁니다.
   lead = '',
   tag?: ConceptTag,
   strategy?: string,
   visual?: QuestionVisual,
 ): Question | null => {
-  if (claims.length !== 4) return null;
-  const trueCount = claims.filter((claim) => claim.ok).length;
-  if (trueCount !== 2) return null;
+  if (ideas.length < 4) return null;
 
   const labels = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ'];
   const seed = n(lesson, index);
   const askOk = seed % 2 === 0;
 
-  const wanted = claims
-    .map((claim, at) => ({ ...claim, label: labels[at] }))
-    .filter((claim) => (askOk ? claim.ok : !claim.ok))
-    .map((claim) => claim.label);
+  // 어느 생각을 낼지, 그리고 그 생각의 어느 쪽을 낼지 모두 섞습니다.
+  const chosen = shuffled(ideas, seed).slice(0, 4);
+
+  // 옳은 문장을 몇 개 낼지 정합니다. 묻는 쪽이 하나도 없으면 답이
+  // 없는 문제가 되므로, 묻는 쪽은 적어도 하나 있게 합니다.
+  const howManyRight = 1 + (Math.trunc(seed / 2) % 4);
+  const rightAt = new Set(shuffled([0, 1, 2, 3], seed + 11).slice(0, howManyRight));
+  if (!askOk && rightAt.size === 4) rightAt.delete(shuffled([0, 1, 2, 3], seed + 29)[0]);
+
+  const shown = chosen.map((idea, at) => ({
+    text: rightAt.has(at) ? idea.right : idea.wrong,
+    ok: rightAt.has(at),
+    label: labels[at],
+  }));
+
+  const wanted = shown.filter((one) => (askOk ? one.ok : !one.ok)).map((one) => one.label);
   const answer = wanted.join(', ');
 
-  // 나머지 짝들을 오답 보기로 씁니다.
-  const pairs: string[] = [];
-  for (let a = 0; a < labels.length; a += 1) {
-    for (let b = a + 1; b < labels.length; b += 1) {
-      pairs.push(`${labels[a]}, ${labels[b]}`);
-    }
+  // 오답 보기는 다른 묶음들입니다. 답과 크기가 비슷한 것부터 씁니다 —
+  // 크기만 보고 고를 수 없어야 네 문장을 다 읽게 됩니다.
+  const groups: string[] = [];
+  for (let mask = 1; mask < 16; mask += 1) {
+    const one = labels.filter((_, at) => (mask >> at) & 1).join(', ');
+    if (one !== answer) groups.push(one);
   }
-  const wrongs = pairs.filter((pair) => pair !== answer).slice(0, 3);
+  const near = shuffled(groups, seed + 7).sort(
+    (a, b) => Math.abs(a.split(',').length - wanted.length) - Math.abs(b.split(',').length - wanted.length),
+  );
+  const wrongs = near.slice(0, 3);
 
-  const listed = claims
-    .map((claim, at) => `${labels[at]} ${claim.text}`)
-    .join(' ');
+  const listed = shown.map((one) => `${one.label} ${one.text}`).join(' ');
+  const asking = `옳${askOk ? '은' : '지 않은'} 것을 모두 고른 것은?`;
 
   return makeQuestion(
     lesson, difficulty, index,
-    `${lead ? `${lead} ` : ''}${listed} 위에서 옳${askOk ? '은' : '지 않은'} 것을 모두 고른 것은?`,
+    `${lead ? `${lead} ` : ''}${asking} ${listed}`,
     answer, wrongs,
     `${wanted.join('과 ')}이 옳${askOk ? '은' : '지 않은'} 설명입니다.`,
     tag ?? primaryTag(lesson),
@@ -12383,7 +12406,57 @@ const pickAllQuestion = (
   );
 };
 
-// 차시 내용으로 네 문장을 만듭니다. 옳은 것 둘, 옳지 않은 것 둘입니다.
+// 문제은행에 데이터로 적은 판별 문항은 옳은 문장 둘, 옳지 않은 문장
+// 둘로 짜여 있습니다(110개). 짝이 아니라 문장 넷으로 적혀 있어 옳은
+// 것의 개수를 바꿀 수 없습니다. 자리라도 섞고, 무엇을 묻는지는 앞에
+// 둡니다 — 이 둘만으로도 'ㄱ, ㄴ 아니면 ㄷ, ㄹ'이라는 자리 패턴은
+// 사라집니다.
+type Claim = { text: string; ok: boolean };
+
+const judgeFixedQuestion = (
+  lesson: Lesson,
+  difficulty: Difficulty,
+  index: number,
+  claims: Claim[],
+  lead = '',
+  tag?: ConceptTag,
+  strategy?: string,
+  visual?: QuestionVisual,
+): Question | null => {
+  if (claims.length !== 4) return null;
+
+  const labels = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ'];
+  const seed = n(lesson, index);
+  const askOk = seed % 2 === 0;
+
+  const shown = shuffled(claims, seed).map((claim, at) => ({ ...claim, label: labels[at] }));
+  const wanted = shown.filter((one) => (askOk ? one.ok : !one.ok)).map((one) => one.label);
+  if (wanted.length === 0) return null;
+  const answer = wanted.join(', ');
+
+  const groups: string[] = [];
+  for (let mask = 1; mask < 16; mask += 1) {
+    const one = labels.filter((_, at) => (mask >> at) & 1).join(', ');
+    if (one !== answer) groups.push(one);
+  }
+  const wrongs = shuffled(groups, seed + 7)
+    .sort((a, b) => Math.abs(a.split(',').length - wanted.length) - Math.abs(b.split(',').length - wanted.length))
+    .slice(0, 3);
+
+  const listed = shown.map((one) => `${one.label} ${one.text}`).join(' ');
+
+  return makeQuestion(
+    lesson, difficulty, index,
+    `${lead ? `${lead} ` : ''}옳${askOk ? '은' : '지 않은'} 것을 모두 고른 것은? ${listed}`,
+    answer, wrongs,
+    `${wanted.join('과 ')}이 옳${askOk ? '은' : '지 않은'} 설명입니다.`,
+    tag ?? primaryTag(lesson),
+    strategy ?? shapeStrategy(difficulty, '자료 해석 · 여러 설명을 하나씩 판단하기', '설명을 하나씩 판단하기'),
+    visual,
+  );
+};
+
+// 차시 내용으로 생각의 짝을 만듭니다.
 // 시각과 시간 단원은 차시마다 다루는 생각이 다릅니다. 시각을 읽는 법,
 // 시간의 길이, 하루의 구조, 달력의 구조는 서로 다른 이야기입니다. 태그가
 // time이라는 것만 보고 문항을 고르면 달력 차시에서 긴바늘을 묻게 됩니다.
@@ -12401,7 +12474,7 @@ const timeIdeaOf = (lesson: Lesson): TimeIdea | null => {
   return null;
 };
 
-const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
+const ideasForLesson = (lesson: Lesson, index: number): Idea[] | null => {
   const tag = primaryTag(lesson);
   const seed = n(lesson, index);
   const four = lesson.unitTitle === '네 자리 수';
@@ -12417,10 +12490,22 @@ const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
     if (value > lesson.scope.maxNumber) return null;
     const at = seed % (names.length - 1);
     return [
-      { text: `${value}에서 ${digits[at]}은 ${names[at]}의 자리 숫자입니다.`, ok: true },
-      { text: `${value}에서 ${digits[at]}이 나타내는 값은 ${digits[at] * units[at]}입니다.`, ok: true },
-      { text: `${value}에서 ${digits[at]}이 나타내는 값은 ${digits[at]}입니다.`, ok: false },
-      { text: `${value}는 ${names[names.length - 1]}의 자리가 가장 높은 자리입니다.`, ok: false },
+      {
+        right: `${value}에서 ${digits[at]}은 ${names[at]}의 자리 숫자입니다.`,
+        wrong: `${value}에서 ${digits[at]}은 ${names[names.length - 1]}의 자리 숫자입니다.`,
+      },
+      {
+        right: `${value}에서 ${digits[at]}이 나타내는 값은 ${digits[at] * units[at]}입니다.`,
+        wrong: `${value}에서 ${digits[at]}이 나타내는 값은 ${digits[at]}입니다.`,
+      },
+      {
+        right: `${value}에서 가장 높은 자리는 ${names[0]}의 자리입니다.`,
+        wrong: `${value}에서 가장 높은 자리는 ${names[names.length - 1]}의 자리입니다.`,
+      },
+      {
+        right: `${value}는 ${four ? '네' : '세'} 자리 수입니다.`,
+        wrong: `${value}는 ${four ? '세' : '네'} 자리 수입니다.`,
+      },
     ];
   }
 
@@ -12431,10 +12516,22 @@ const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
     const times = 3 + (seed % 5);
     if (dan * times > lesson.scope.maxNumber) return null;
     return [
-      { text: `${dan}×${times}는 ${dan}씩 ${times}묶음입니다.`, ok: true },
-      { text: `${dan}단은 곱하는 수가 1 커지면 ${dan}씩 커집니다.`, ok: true },
-      { text: `${dan}×${times}는 ${dan}과 ${times}를 더한 것과 같습니다.`, ok: false },
-      { text: `${dan}단은 곱하는 수가 커져도 곱은 그대로입니다.`, ok: false },
+      {
+        right: `${dan}×${times}는 ${dan}씩 ${times}묶음입니다.`,
+        wrong: `${dan}×${times}는 ${dan}씩 ${dan}묶음입니다.`,
+      },
+      {
+        right: `${dan}단은 곱하는 수가 1 커지면 ${dan}씩 커집니다.`,
+        wrong: `${dan}단은 곱하는 수가 커져도 곱은 그대로입니다.`,
+      },
+      {
+        right: `${dan}×${times}는 ${dan}을 ${times}번 더한 것과 같습니다.`,
+        wrong: `${dan}×${times}는 ${dan}과 ${times}를 더한 것과 같습니다.`,
+      },
+      {
+        right: `${dan}×1은 ${dan}입니다.`,
+        wrong: `${dan}×1은 1입니다.`,
+      },
     ];
   }
 
@@ -12446,17 +12543,32 @@ const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
     const rulerKnown = lesson.semester === '2-2' || /자로 길이|어림/.test(lesson.title);
     if (!rulerKnown) {
       return [
-        { text: `1cm가 ${cm}번이면 ${cm}cm입니다.`, ok: true },
-        { text: 'cm는 길이를 나타내는 단위입니다.', ok: true },
-        { text: `1cm가 ${cm}번이면 ${cm}m입니다.`, ok: false },
-        { text: 'cm는 무게를 나타내는 단위입니다.', ok: false },
+        { right: `1cm가 ${cm}번이면 ${cm}cm입니다.`, wrong: `1cm가 ${cm}번이면 1cm입니다.` },
+        { right: 'cm는 길이를 나타내는 단위입니다.', wrong: 'cm는 무게를 나타내는 단위입니다.' },
+        {
+          right: '길이를 견주려면 같은 단위로 재어야 합니다.',
+          wrong: '길이를 견줄 때는 서로 다른 단위로 재어도 됩니다.',
+        },
+        {
+          right: `${cm}cm는 1cm가 ${cm}개 모인 길이입니다.`,
+          wrong: `${cm}cm는 1cm가 1개 모인 길이입니다.`,
+        },
       ];
     }
     return [
-      { text: '자로 잴 때는 물건의 한쪽 끝을 눈금 0에 맞춥니다.', ok: true },
-      { text: `1m는 100cm와 같습니다.`, ok: true },
-      { text: `${cm}cm는 ${cm}m와 같습니다.`, ok: false },
-      { text: '자로 잴 때는 어느 눈금에서 시작해도 길이가 같습니다.', ok: false },
+      {
+        right: '자로 잴 때는 물건의 한쪽 끝을 눈금 0에 맞춥니다.',
+        wrong: '자로 잴 때는 어느 눈금에서 시작해도 길이가 같습니다.',
+      },
+      { right: '1m는 100cm와 같습니다.', wrong: `1m는 ${cm}cm와 같습니다.` },
+      {
+        right: '자로 잴 때는 눈금을 세어 길이를 읽습니다.',
+        wrong: '자로 잴 때는 눈금을 세지 않고 짐작해서 읽습니다.',
+      },
+      {
+        right: '물건의 끝이 눈금 사이에 있으면 가까운 쪽 눈금으로 읽습니다.',
+        wrong: '물건의 끝이 눈금 사이에 있으면 아무 눈금이나 읽어도 됩니다.',
+      },
     ];
   }
 
@@ -12468,83 +12580,161 @@ const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
     if (idea === '달력') {
       const week = 2 + (seed % 3);
       return [
-        { text: '달력에서 같은 요일은 7일마다 돌아옵니다.', ok: true },
-        { text: `${week}주일은 ${week * 7}일입니다.`, ok: true },
-        { text: '달력에서 같은 요일은 5일마다 돌아옵니다.', ok: false },
-        { text: `${week}주일은 ${week}일입니다.`, ok: false },
+        {
+          right: '달력에서 같은 요일은 7일마다 돌아옵니다.',
+          wrong: '달력에서 같은 요일은 5일마다 돌아옵니다.',
+        },
+        { right: `${week}주일은 ${week * 7}일입니다.`, wrong: `${week}주일은 ${week}일입니다.` },
+        { right: '1주일은 7일입니다.', wrong: '1주일은 5일입니다.' },
+        {
+          right: '달력에서 바로 아래 칸의 날짜는 7일 뒤입니다.',
+          wrong: '달력에서 바로 아래 칸의 날짜는 1일 뒤입니다.',
+        },
       ];
     }
 
     if (idea === '하루') {
       return [
-        { text: '하루는 24시간입니다.', ok: true },
-        { text: '오전과 오후를 나누는 때는 낮 12시입니다.', ok: true },
-        { text: '하루는 12시간입니다.', ok: false },
-        { text: '오전과 오후를 나누는 때는 아침 7시입니다.', ok: false },
+        { right: '하루는 24시간입니다.', wrong: '하루는 12시간입니다.' },
+        {
+          right: '오전과 오후를 나누는 때는 낮 12시입니다.',
+          wrong: '오전과 오후를 나누는 때는 아침 7시입니다.',
+        },
+        {
+          right: '오전 12시간과 오후 12시간을 더하면 하루가 됩니다.',
+          wrong: '오전 12시간만으로 하루가 됩니다.',
+        },
+        { right: '아침 8시는 오전입니다.', wrong: '아침 8시는 오후입니다.' },
       ];
     }
 
     if (idea === '걸린시간') {
       return [
-        { text: '걸린 시간은 시작한 때부터 마친 때까지의 시간입니다.', ok: true },
-        { text: '같은 일이라도 늦게 시작하면 마치는 때도 늦어집니다.', ok: true },
-        { text: '걸린 시간은 두 시각을 더해서 구합니다.', ok: false },
-        { text: '마친 때만 알면 걸린 시간을 알 수 있습니다.', ok: false },
+        {
+          right: '걸린 시간은 시작한 때부터 마친 때까지의 시간입니다.',
+          wrong: '걸린 시간은 두 시각을 더해서 구합니다.',
+        },
+        {
+          right: '같은 일이라도 늦게 시작하면 마치는 때도 늦어집니다.',
+          wrong: '마친 때만 알면 걸린 시간을 알 수 있습니다.',
+        },
+        {
+          right: '같은 때에 시작하면 늦게 마칠수록 걸린 시간이 깁니다.',
+          wrong: '같은 때에 시작하면 언제 마치든 걸린 시간이 같습니다.',
+        },
+        {
+          right: '걸린 시간을 알려면 시작한 때와 마친 때를 모두 알아야 합니다.',
+          wrong: '걸린 시간을 알려면 시작한 때만 알면 됩니다.',
+        },
       ];
     }
 
     if (idea === '1시간') {
       return [
-        { text: '긴바늘이 한 바퀴 돌면 1시간이 지납니다.', ok: true },
-        { text: '1시간은 60분입니다.', ok: true },
-        { text: '긴바늘이 한 바퀴 돌면 1분이 지납니다.', ok: false },
-        { text: '1시간은 100분입니다.', ok: false },
+        {
+          right: '긴바늘이 한 바퀴 돌면 1시간이 지납니다.',
+          wrong: '긴바늘이 한 바퀴 돌면 1분이 지납니다.',
+        },
+        { right: '1시간은 60분입니다.', wrong: '1시간은 100분입니다.' },
+        { right: '90분은 1시간 30분입니다.', wrong: '90분은 1시간 9분입니다.' },
+        {
+          right: '짧은바늘이 숫자 하나를 지나면 1시간이 지납니다.',
+          wrong: '짧은바늘이 숫자 하나를 지나면 5분이 지납니다.',
+        },
       ];
     }
 
     if (idea === '몇분전') {
       const hour = 2 + (seed % 8);
       return [
-        { text: `${hour}시 55분은 ${hour + 1}시 5분 전이라고도 읽습니다.`, ok: true },
-        { text: '몇 시 몇 분 전은 다음 시각까지 남은 만큼으로 읽는 방법입니다.', ok: true },
-        { text: `${hour}시 55분은 ${hour}시 5분 전이라고 읽습니다.`, ok: false },
-        { text: '몇 시 몇 분 전은 시각이 지난 만큼으로 읽는 방법입니다.', ok: false },
+        {
+          right: `${hour}시 55분은 ${hour + 1}시 5분 전이라고도 읽습니다.`,
+          wrong: `${hour}시 55분은 ${hour}시 5분 전이라고 읽습니다.`,
+        },
+        {
+          right: '몇 시 몇 분 전은 다음 시각까지 남은 만큼으로 읽는 방법입니다.',
+          wrong: '몇 시 몇 분 전은 시각이 지난 만큼으로 읽는 방법입니다.',
+        },
+        {
+          right: `${hour}시 50분은 ${hour + 1}시 10분 전입니다.`,
+          wrong: `${hour}시 50분은 ${hour}시 10분 전입니다.`,
+        },
+        {
+          right: '몇 시 몇 분 전으로 읽어도 가리키는 시각은 같습니다.',
+          wrong: '몇 시 몇 분 전으로 읽으면 가리키는 시각이 달라집니다.',
+        },
       ];
     }
 
     if (idea === '1분읽기') {
       return [
-        { text: '시계의 작은 눈금 한 칸은 1분입니다.', ok: true },
-        { text: '숫자와 숫자 사이에는 작은 눈금이 5칸 있습니다.', ok: true },
-        { text: '시계의 작은 눈금 한 칸은 5분입니다.', ok: false },
-        { text: '숫자와 숫자 사이에는 작은 눈금이 10칸 있습니다.', ok: false },
+        { right: '시계의 작은 눈금 한 칸은 1분입니다.', wrong: '시계의 작은 눈금 한 칸은 5분입니다.' },
+        {
+          right: '숫자와 숫자 사이에는 작은 눈금이 5칸 있습니다.',
+          wrong: '숫자와 숫자 사이에는 작은 눈금이 10칸 있습니다.',
+        },
+        {
+          right: '긴바늘이 숫자 하나를 지나면 5분이 지납니다.',
+          wrong: '긴바늘이 숫자 하나를 지나면 1분이 지납니다.',
+        },
+        {
+          right: '시계 한 바퀴에는 작은 눈금이 60칸 있습니다.',
+          wrong: '시계 한 바퀴에는 작은 눈금이 12칸 있습니다.',
+        },
       ];
     }
 
     // 5분 단위로 읽는 차시입니다. 작은 눈금은 다음 차시에서 배웁니다.
     return [
-      { text: '긴바늘이 숫자 한 칸을 지나면 5분이 지납니다.', ok: true },
-      { text: `긴바늘이 ${point}을 가리키면 ${point * 5}분입니다.`, ok: true },
-      { text: '긴바늘이 숫자 한 칸을 지나면 1분이 지납니다.', ok: false },
-      { text: `긴바늘이 ${point}을 가리키면 ${point}분입니다.`, ok: false },
+      {
+        right: '긴바늘이 숫자 한 칸을 지나면 5분이 지납니다.',
+        wrong: '긴바늘이 숫자 한 칸을 지나면 1분이 지납니다.',
+      },
+      {
+        right: `긴바늘이 ${point}을 가리키면 ${point * 5}분입니다.`,
+        wrong: `긴바늘이 ${point}을 가리키면 ${point}분입니다.`,
+      },
+      { right: '짧은바늘은 시를 나타냅니다.', wrong: '짧은바늘은 분을 나타냅니다.' },
+      {
+        right: '긴바늘이 12를 가리키면 몇 시 정각입니다.',
+        wrong: '긴바늘이 12를 가리키면 30분입니다.',
+      },
     ];
   }
 
   if (tag === 'data') {
     return [
-      { text: '표는 항목별 수를 정확히 알아보기 좋습니다.', ok: true },
-      { text: '그래프는 많고 적음을 한눈에 알아보기 좋습니다.', ok: true },
-      { text: '표는 많고 적음을 한눈에 알아보기 좋습니다.', ok: false },
-      { text: '그래프에서는 조사한 사람의 이름을 알 수 있습니다.', ok: false },
+      {
+        right: '표는 항목별 수를 정확히 알아보기 좋습니다.',
+        wrong: '표는 많고 적음을 한눈에 알아보기 좋습니다.',
+      },
+      {
+        right: '그래프는 많고 적음을 한눈에 알아보기 좋습니다.',
+        wrong: '그래프에서는 조사한 사람의 이름을 알 수 있습니다.',
+      },
+      {
+        right: '표에서는 조사한 것의 수를 하나하나 알 수 있습니다.',
+        wrong: '표에서는 조사한 것의 수를 알 수 없습니다.',
+      },
+      {
+        right: '그래프에서 가장 긴 줄이 가장 많은 것입니다.',
+        wrong: '그래프에서 가장 짧은 줄이 가장 많은 것입니다.',
+      },
     ];
   }
 
   if (tag === 'shape') {
     return [
-      { text: '삼각형은 곧은 선 3개로 둘러싸여 있습니다.', ok: true },
-      { text: '사각형은 꼭짓점이 4개입니다.', ok: true },
-      { text: '원은 곧은 선으로 둘러싸여 있습니다.', ok: false },
-      { text: '도형은 방향이 달라지면 다른 도형이 됩니다.', ok: false },
+      {
+        right: '삼각형은 곧은 선 3개로 둘러싸여 있습니다.',
+        wrong: '삼각형은 곧은 선 4개로 둘러싸여 있습니다.',
+      },
+      { right: '사각형은 꼭짓점이 4개입니다.', wrong: '사각형은 꼭짓점이 3개입니다.' },
+      { right: '원은 곧은 선이 없습니다.', wrong: '원은 곧은 선으로 둘러싸여 있습니다.' },
+      {
+        right: '도형은 방향이 달라져도 같은 도형입니다.',
+        wrong: '도형은 방향이 달라지면 다른 도형이 됩니다.',
+      },
     ];
   }
 
@@ -12552,18 +12742,43 @@ const claimsForLesson = (lesson: Lesson, index: number): Claim[] | null => {
     // 덧셈표·곱셈표 이야기는 그 표를 배우는 차시부터입니다.
     if (/덧셈표|곱셈표/.test(lesson.title)) {
       const plus = lesson.title.includes('덧셈표');
+      const name = plus ? '덧셈표' : '곱셈표';
       return [
-        { text: `${plus ? '덧셈표' : '곱셈표'}에서 오른쪽으로 갈수록 수가 커집니다.`, ok: true },
-        { text: `${plus ? '덧셈표' : '곱셈표'}는 세로줄과 가로줄을 바꾸어도 값이 같습니다.`, ok: true },
-        { text: `${plus ? '덧셈표' : '곱셈표'}에서 오른쪽으로 갈수록 수가 작아집니다.`, ok: false },
-        { text: `${plus ? '덧셈표' : '곱셈표'}에는 같은 수가 한 번씩만 나옵니다.`, ok: false },
+        {
+          right: `${name}에서 오른쪽으로 갈수록 수가 커집니다.`,
+          wrong: `${name}에서 오른쪽으로 갈수록 수가 작아집니다.`,
+        },
+        {
+          right: `${name}는 세로줄과 가로줄을 바꾸어도 값이 같습니다.`,
+          wrong: `${name}는 세로줄과 가로줄을 바꾸면 값이 달라집니다.`,
+        },
+        {
+          right: `${name}에서 아래로 내려갈수록 수가 커집니다.`,
+          wrong: `${name}에서 아래로 내려갈수록 수가 작아집니다.`,
+        },
+        {
+          right: `${name}에는 같은 수가 여러 번 나올 수 있습니다.`,
+          wrong: `${name}에는 같은 수가 한 번씩만 나옵니다.`,
+        },
       ];
     }
     return [
-      { text: '규칙을 찾으려면 되풀이되는 한 묶음을 먼저 찾습니다.', ok: true },
-      { text: '되풀이되는 묶음을 알면 다음에 올 것을 알 수 있습니다.', ok: true },
-      { text: '규칙은 맨 끝에서부터 찾는 것이 좋습니다.', ok: false },
-      { text: '되풀이되는 것이 없어도 규칙이라고 합니다.', ok: false },
+      {
+        right: '규칙을 찾으려면 되풀이되는 한 묶음을 먼저 찾습니다.',
+        wrong: '규칙은 맨 끝에서부터 찾는 것이 좋습니다.',
+      },
+      {
+        right: '되풀이되는 묶음을 알면 다음에 올 것을 알 수 있습니다.',
+        wrong: '되풀이되는 것이 없어도 규칙이라고 합니다.',
+      },
+      {
+        right: '되풀이되는 묶음은 처음부터 차례로 보면 찾을 수 있습니다.',
+        wrong: '되풀이되는 묶음은 아무 곳이나 짚으면 바로 알 수 있습니다.',
+      },
+      {
+        right: '규칙을 알면 뒤에 올 것을 말할 수 있습니다.',
+        wrong: '규칙을 알아도 뒤에 올 것은 알 수 없습니다.',
+      },
     ];
   }
 
@@ -13000,8 +13215,8 @@ const numberShapes: Shape[] = [
     // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
     fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
-      const claims = claimsForLesson(lesson, index);
-      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+      const claims = ideasForLesson(lesson, index);
+      return claims ? judgeQuestion(lesson, difficulty, index, claims) : null;
     } },
 
   // A. 같은 값을 다른 묶음으로 나타내기
@@ -13196,8 +13411,8 @@ const multiplyShapes: Shape[] = [
     // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
     fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
-      const claims = claimsForLesson(lesson, index);
-      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+      const claims = ideasForLesson(lesson, index);
+      return claims ? judgeQuestion(lesson, difficulty, index, claims) : null;
     } },
 
   // B. 두 곱 비교
@@ -13604,8 +13819,8 @@ const figureShapes: Shape[] = [
     // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
     fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
-      const claims = claimsForLesson(lesson, index);
-      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+      const claims = ideasForLesson(lesson, index);
+      return claims ? judgeQuestion(lesson, difficulty, index, claims) : null;
     } },
 
   // 성질을 듣고 도형 이름 찾기
@@ -13697,8 +13912,8 @@ const lengthShapes: Shape[] = [
     // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
     fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
-      const claims = claimsForLesson(lesson, index);
-      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+      const claims = ideasForLesson(lesson, index);
+      return claims ? judgeQuestion(lesson, difficulty, index, claims) : null;
     } },
 
   // 자로 잴 때 0이 아닌 곳에서 시작한 경우
@@ -13900,8 +14115,8 @@ const timeShapes: Shape[] = [
     // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
     fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
-      const claims = claimsForLesson(lesson, index);
-      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+      const claims = ideasForLesson(lesson, index);
+      return claims ? judgeQuestion(lesson, difficulty, index, claims) : null;
     } },
 
   // 몇 시 몇 분 전
@@ -14018,8 +14233,8 @@ const dataShapes: Shape[] = [
     // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
     fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
-      const claims = claimsForLesson(lesson, index);
-      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+      const claims = ideasForLesson(lesson, index);
+      return claims ? judgeQuestion(lesson, difficulty, index, claims) : null;
     } },
 
   // 표에서 빠진 칸 구하기
@@ -14075,8 +14290,8 @@ const ruleShapes: Shape[] = [
     // 단원 도입에는 넣지 않습니다. 판단할 내용을 아직 배우지 않았습니다.
     fits: (lesson) => lesson.title !== '단원 도입',
     make: (lesson, difficulty, index) => {
-      const claims = claimsForLesson(lesson, index);
-      return claims ? pickAllQuestion(lesson, difficulty, index, claims) : null;
+      const claims = ideasForLesson(lesson, index);
+      return claims ? judgeQuestion(lesson, difficulty, index, claims) : null;
     } },
 
   // 규칙을 말로 설명한 것 고르기
@@ -14394,7 +14609,7 @@ const drawTemplateVisual = (drawn: DrawnVisual, lesson: Lesson): QuestionVisual 
 const templateTools = {
   make: makeQuestion,
   draw: drawTemplateVisual,
-  pickAll: pickAllQuestion,
+  pickAll: judgeFixedQuestion,
 };
 
 const bankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
