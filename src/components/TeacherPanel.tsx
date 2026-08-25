@@ -22,6 +22,9 @@ interface TeacherPanelProps {
   players: Player[];
   lesson: Lesson;
   currentQuestion: Question;
+  // 우리 반 목표 한 단계에 필요한 정답 수입니다. 몇 번째 단계를 누가
+  // 밀었는지 적으려면 이 수가 있어야 합니다.
+  goalStep: number;
 }
 
 const formatMs = (ms: number) => `${(ms / 1000).toFixed(1)}초`;
@@ -65,6 +68,76 @@ const excelWorksheet = (name: string, rows: unknown[][]) => `
       ${rows.map((row) => `<Row>${row.map(excelCell).join('')}</Row>`).join('')}
     </Table>
   </Worksheet>`;
+
+// 우리 반 길에 누가 얼마나 보탰는지 적습니다.
+//
+// 길은 모두의 정답을 시간 순서대로 이어 붙여 채웁니다. 그래서 몇 번째
+// 정답이 몇 단계를 밀었는지가 정해집니다 — 스물네 번째 정답이 1단계의
+// 마지막 칸이었다면, 그 칸을 민 아이가 누구인지 남길 수 있습니다.
+type Contribution = {
+  // 보탠 정답 수입니다.
+  gave: number;
+  // 반 전체 정답 가운데 몇 퍼센트인지입니다.
+  percent: number;
+  // 단계별로 몇 칸씩 밀었는지입니다.
+  byStage: Array<{ stage: number; gave: number }>;
+  // 이 아이가 채워서 단계가 넘어간 횟수입니다.
+  finished: number;
+  // 쉬지 않고 이어서 보탠 최다 횟수입니다.
+  streak: number;
+  // 첫 보탬까지 걸린 문제 수입니다. 0이면 첫 문제부터 보탰습니다.
+  firstAt: number | null;
+};
+
+const contributionsFor = (
+  records: AnswerRecord[],
+  goalStep: number,
+): Map<number, Contribution> => {
+  // 길에 놓인 차례대로 봅니다. 기록이 쌓인 순서가 곧 채워진 순서입니다.
+  const filled = records
+    .filter((record) => record.correct)
+    .slice()
+    .sort((a, b) => a.answeredAt.localeCompare(b.answeredAt));
+
+  const found = new Map<number, Contribution>();
+  const stageOf = new Map<number, Map<number, number>>();
+  let last = -1;
+  let running = new Map<number, number>();
+
+  filled.forEach((record, at) => {
+    const who = record.playerId;
+    const one = found.get(who) ?? { gave: 0, percent: 0, byStage: [], finished: 0, streak: 0, firstAt: null };
+    one.gave += 1;
+    if (one.firstAt === null) one.firstAt = at;
+
+    const stage = Math.floor(at / goalStep) + 1;
+    const mine = stageOf.get(who) ?? new Map<number, number>();
+    mine.set(stage, (mine.get(stage) ?? 0) + 1);
+    stageOf.set(who, mine);
+
+    // 이 정답으로 한 단계가 꽉 찼는지 봅니다.
+    if ((at + 1) % goalStep === 0) one.finished += 1;
+
+    // 이어서 보탠 횟수입니다. 사이에 다른 아이가 끼면 끊깁니다.
+    if (who === last) {
+      running.set(who, (running.get(who) ?? 1) + 1);
+    } else {
+      running = new Map([[who, 1]]);
+    }
+    one.streak = Math.max(one.streak, running.get(who) ?? 1);
+    last = who;
+
+    found.set(who, one);
+  });
+
+  for (const [who, one] of found) {
+    one.percent = filled.length === 0 ? 0 : Math.round((one.gave / filled.length) * 100);
+    one.byStage = [...(stageOf.get(who) ?? new Map())]
+      .sort((a, b) => a[0] - b[0])
+      .map(([stage, gave]) => ({ stage, gave }));
+  }
+  return found;
+};
 
 const useAnalytics = (records: AnswerRecord[], players: Player[]) =>
   players.map((player) => {
@@ -193,6 +266,8 @@ const buildAnalysisWorkbook = (
   analytics: ReturnType<typeof useAnalytics>,
   accuracy: number,
   averageTime: number,
+  shares: Map<number, Contribution>,
+  goalStep: number,
 ) => {
   const summaryRows = [
     ['항목', '값'],
@@ -226,6 +301,28 @@ const buildAnalysisWorkbook = (
       item.commonMistake ? `${item.commonMistake.what} ${item.commonMistake.times}회` : '없음',
       narrativeFor(item, lesson),
     ]),
+  ];
+
+  // 우리 반 목표에 누가 얼마나 보탰는지입니다. 단계별로 적어 두면,
+  // 앞 단계에만 몰려 있는 아이가 누구인지 나중에도 볼 수 있습니다.
+  const classCorrect = records.filter((record) => record.correct).length;
+  const shareRows = [
+    ['학생', '출석번호', '보탠 개수', '반 전체 대비(%)', '단계를 채운 칸', '이어서 보탠 최다', '첫 보탬 차례', '단계별 보탬'],
+    ...analytics.map((item) => {
+      const share = shares.get(item.player.id);
+      return [
+        item.player.name,
+        item.player.attendanceNo,
+        share?.gave ?? 0,
+        share?.percent ?? 0,
+        share?.finished ?? 0,
+        share?.streak ?? 0,
+        share?.firstAt === null || share?.firstAt === undefined ? '없음' : `${share.firstAt + 1}번째`,
+        (share?.byStage ?? []).map((one) => `${one.stage}단계 ${one.gave}개`).join(', ') || '없음',
+      ];
+    }),
+    [],
+    ['반 전체 정답', classCorrect, '한 단계', goalStep, '넘은 단계', Math.floor(classCorrect / goalStep)],
   ];
 
   const recordHeader = [
@@ -280,6 +377,7 @@ const buildAnalysisWorkbook = (
   xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
   ${excelWorksheet('전체 요약', summaryRows)}
   ${excelWorksheet('학생별 분석', studentRows)}
+  ${excelWorksheet('목표 기여도', shareRows)}
   ${excelWorksheet('전체 풀이 기록', [recordHeader, ...records.map(recordToRow)])}
   ${excelWorksheet('틀린 문제', [recordHeader, ...wrongRecords.map(recordToRow)])}
 </Workbook>`;
@@ -287,10 +385,19 @@ const buildAnalysisWorkbook = (
   return workbook;
 };
 
-export function TeacherPanel({ isOpen, onClose, records, players, lesson, currentQuestion }: TeacherPanelProps) {
+export function TeacherPanel({ isOpen, onClose, records, players, lesson, currentQuestion, goalStep }: TeacherPanelProps) {
   const [wrongRecordFilter, setWrongRecordFilter] = useState<number | 'all'>('all');
   const [excelStatus, setExcelStatus] = useState('');
   const analytics = useAnalytics(records, players);
+  const shares = contributionsFor(records, goalStep);
+  const classCorrect = records.filter((record) => record.correct).length;
+  const stagesDone = Math.floor(classCorrect / goalStep);
+  // 많이 보탠 차례로 늘어놓습니다. 한 사람에게 몰렸는지, 고르게
+  // 나뉘었는지가 한눈에 보여야 다음 자리 배치를 정할 수 있습니다.
+  const ranked = players
+    .map((player) => ({ player, share: shares.get(player.id) ?? null }))
+    .sort((a, b) => (b.share?.gave ?? 0) - (a.share?.gave ?? 0));
+  const most = ranked[0]?.share?.gave ?? 0;
   const wrongRecords = records.filter((record) => !record.correct);
   const wrongRecordsByPlayer = Object.fromEntries(
     players.map((player) => [player.id, wrongRecords.filter((record) => record.playerId === player.id)]),
@@ -306,7 +413,7 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
   const averageTime = average(records.map((record) => record.responseMs));
 
   const downloadAnalysisExcel = () => {
-    const workbook = buildAnalysisWorkbook(lesson, records, wrongRecords, analytics, accuracy, averageTime);
+    const workbook = buildAnalysisWorkbook(lesson, records, wrongRecords, analytics, accuracy, averageTime, shares, goalStep);
     const blob = new Blob([workbook], {
       type: 'application/vnd.ms-excel;charset=utf-8;',
     });
@@ -428,6 +535,21 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
                   <dt>되풀이되는 실수</dt>
                   <dd>{item.commonMistake ? `${item.commonMistake.what} ${item.commonMistake.times}회` : '아직 없음'}</dd>
                 </div>
+                <div>
+                  <dt>우리 반에 보탬</dt>
+                  <dd>
+                    {shares.get(item.player.id)?.gave ?? 0}개
+                    {classCorrect > 0 && ` · ${shares.get(item.player.id)?.percent ?? 0}%`}
+                  </dd>
+                </div>
+                <div>
+                  <dt>단계를 채운 칸</dt>
+                  <dd>
+                    {(shares.get(item.player.id)?.finished ?? 0) > 0
+                      ? `${shares.get(item.player.id)?.finished}번`
+                      : '아직 없음'}
+                  </dd>
+                </div>
               </dl>
               <p className="student-narrative">{narrativeFor(item, lesson)}</p>
               <div className="type-chips">
@@ -451,6 +573,69 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
             </article>
           ))}
         </div>
+
+        {/* 우리 반 목표에 누가 얼마나 보탰는지입니다.
+            길은 모두의 정답을 시간 순서대로 이어 붙여 채웁니다. 그래서
+            몇 번째 정답이 어느 단계를 밀었는지가 정해집니다. 한 사람에게
+            몰렸는지 고르게 나뉘었는지가 보여야 다음 모둠을 짤 수 있습니다. */}
+        <section className="goal-share">
+          <div className="goal-share-head">
+            <div>
+              <h3>우리 반 목표 기여도</h3>
+              <p>
+                모두 {classCorrect}개를 채워 {stagesDone}단계를 넘었습니다.
+                한 단계는 {goalStep}개입니다.
+              </p>
+            </div>
+          </div>
+
+          {classCorrect === 0 ? (
+            <p className="goal-share-empty">아직 채운 칸이 없습니다.</p>
+          ) : (
+            <ol className="goal-share-list">
+              {ranked.map(({ player, share }) => (
+                <li key={player.id}>
+                  <div className="goal-share-who">
+                    <span className="player-dot" style={{ background: player.color }} />
+                    <strong>{player.name}</strong>
+                  </div>
+                  <div className="goal-share-bar" aria-hidden="true">
+                    <div
+                      className="goal-share-fill"
+                      style={{
+                        width: `${most === 0 ? 0 : Math.round(((share?.gave ?? 0) / most) * 100)}%`,
+                        background: player.color,
+                      }}
+                    />
+                  </div>
+                  <div className="goal-share-numbers">
+                    <strong>{share?.gave ?? 0}개</strong>
+                    <span>{share?.percent ?? 0}%</span>
+                  </div>
+                  <div className="goal-share-detail">
+                    {/* 어느 단계를 밀었는지 적습니다. 앞 단계에만 몰려
+                        있으면 뒤로 갈수록 손을 놓았다는 뜻입니다. */}
+                    {(share?.byStage.length ?? 0) === 0 ? (
+                      <span className="goal-share-none">보탠 칸 없음</span>
+                    ) : (
+                      share?.byStage.map((one) => (
+                        <span key={one.stage} className="goal-share-stage">
+                          {one.stage}단계 {one.gave}개
+                        </span>
+                      ))
+                    )}
+                    {(share?.finished ?? 0) > 0 && (
+                      <span className="goal-share-finish">단계를 채운 칸 {share?.finished}번</span>
+                    )}
+                    {(share?.streak ?? 0) >= 3 && (
+                      <span className="goal-share-streak">이어서 {share?.streak}개</span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
 
         <section className="wrong-list">
           <div className="wrong-list-head">

@@ -1812,6 +1812,7 @@ function App() {
         players={players}
         lesson={lesson}
         currentQuestion={sampleQuestion}
+        goalStep={goalStep}
       />
 
     </main>
