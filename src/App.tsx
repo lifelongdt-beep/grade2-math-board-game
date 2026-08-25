@@ -1505,6 +1505,13 @@ function App() {
                             <span>오답</span>
                             <strong>{result.wrong}개</strong>
                           </div>
+                          {/* 우리 반 길은 모두의 정답을 합해서 채웁니다.
+                              내가 몇 칸을 밀었는지 보이지 않으면, 함께
+                              채웠다는 말이 남의 이야기로 들립니다. */}
+                          <div className="share-result">
+                            <span>우리 반에 보탬</span>
+                            <strong>{result.correct}개</strong>
+                          </div>
                         </div>
                       )}
 
@@ -1525,6 +1532,34 @@ function App() {
                             <section className="lane-guide-block good">
                               <h4>잘한 점</h4>
                               {guide.cheer && <p className="lane-cheer">{guide.cheer}</p>}
+
+                              {/* 우리 반 목표에 얼마나 보탰는지입니다.
+                                  등수가 아니라 보탬이라, 적게 푼 아이도
+                                  자기 몫이 길에 남아 있는 것을 봅니다. */}
+                              {correctCount > 0 && (
+                                <div className="lane-share">
+                                  <p className="lane-share-line">
+                                    우리 반이 채운 <strong>{correctCount}개</strong> 가운데
+                                    {' '}<strong>{result.correct}개</strong>를 보탰어요
+                                    {result.correct > 0 && (
+                                      <span className="lane-share-percent">
+                                        {Math.round((result.correct / correctCount) * 100)}%
+                                      </span>
+                                    )}
+                                  </p>
+                                  <div className="lane-share-track" aria-hidden="true">
+                                    <div
+                                      className="lane-share-fill"
+                                      style={{ width: `${Math.min(100, Math.round((result.correct / correctCount) * 100))}%` }}
+                                    />
+                                  </div>
+                                  <p className="lane-share-note">
+                                    {result.correct === 0
+                                      ? `다음에 한 문제만 맞혀도 ${runnerNameFor(goalStage)}가 한 칸 더 갑니다.`
+                                      : `${runnerNameFor(goalStage)}를 ${result.correct}칸 밀어 준 셈이에요.`}
+                                  </p>
+                                </div>
+                              )}
                               {guide.strong.length > 0 && (
                                 <ul className="lane-guide-kinds">
                                   {guide.strong.map((one) => (

@@ -5040,6 +5040,66 @@ body::before {
   color: #4a5568;
 }
 
+/* 우리 반 길에 얼마나 보탰는지입니다. 등수가 아니라 보탬이라,
+   적게 푼 아이도 자기 몫이 남아 있는 것을 봅니다. */
+.lane-share {
+  margin: 0 0 9px;
+  padding: 9px 11px;
+  border-radius: 4px;
+  background: #eef4ff;
+  border-left: 3px solid #3b6fd4;
+}
+
+.lane-share-line {
+  margin: 0;
+  color: #1e3a6f;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.lane-share-line strong {
+  color: #16305c;
+  font-weight: 950;
+}
+
+.lane-share-percent {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #3b6fd4;
+  color: white;
+  font-size: 11.5px;
+  font-weight: 900;
+}
+
+.lane-share-track {
+  margin-top: 6px;
+  height: 8px;
+  border-radius: 999px;
+  background: #d7e3f7;
+  overflow: hidden;
+}
+
+.lane-share-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #4f86e8, #7bb0ff);
+}
+
+.lane-share-note {
+  margin: 6px 0 0;
+  color: #4a5568;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+/* 접힌 결과에서도 보탠 개수를 봅니다. */
+.student-result-list .share-result strong {
+  color: #2f6fb5;
+}
+
 /* 칭찬 한 줄. 아이가 결과를 열었을 때 맨 먼저 읽는 자리입니다. */
 .lane-cheer {
   margin: 0 0 8px;
