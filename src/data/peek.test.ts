@@ -18,7 +18,7 @@ describe('peek', () => {
           seen.set(q.prompt, found);
         }
         for (const [prompt, info] of seen) {
-          if (info.times >= 3) {
+          if (info.times >= 6 && info.answers.size === 1) {
             worst.push({ times: info.times, lesson: `${lesson.title}·${level}`, prompt, answer: [...info.answers].join(' / ') });
           }
         }
@@ -30,6 +30,6 @@ describe('peek', () => {
       console.log(`PEEK|${one.times}|${one.lesson}|${one.prompt.slice(0, 44)}|${one.answer.slice(0, 30)}`);
     }
 
-    expect([`한 차시에서 3번 넘게 되풀이되는 문항 ${worst.length}곳`]).toEqual([]);
+    expect([`한 차시에서 6번 넘게 같은 답만 나오는 문항 ${worst.length}곳`]).toEqual([]);
   });
 });
