@@ -179,19 +179,44 @@ function InteractivePlaceValue({ visual }: { visual: Extract<QuestionVisual, { k
 function InteractiveCounter({ visual }: { visual: QuestionVisual }) {
   const [count, setCount] = useState(0);
 
+  // 묶음 그림에서는 한 묶음씩 셉니다.
+  //
+  // 하나씩 세면 1, 2, 3, 4…가 되어 곱셈구구를 배우는 자리에서 낱개
+  // 세기로 되돌아갑니다. 묶어 세기는 4, 8, 12, 16, 20처럼 한 묶음이
+  // 통째로 늘어나는 것을 보는 일입니다. 그 뛰는 폭이 곧 곱하는 수입니다.
+  //
+  // 묶지 않고 흩어 놓은 물건(plainCount)은 하나씩 세는 것이 맞습니다.
+  const grouped = visual.kind === 'array' && visual.plainCount === undefined ? visual : null;
+  const bundle = grouped ? grouped.columns : 1;
+  const most = grouped ? grouped.rows * grouped.columns : Number.POSITIVE_INFINITY;
+  const bundles = count / bundle;
+
+  // 센 만큼만 진하게 남기고 아직 세지 않은 묶음은 흐리게 둡니다.
+  // 어디까지 세었는지 손가락으로 짚지 않아도 보입니다.
+  const shown: QuestionVisual = grouped && count > 0
+    ? { ...grouped, fadedRows: Math.max(0, grouped.rows - bundles) }
+    : visual;
+
   const tap = () => {
     playTapSound();
-    setCount((value) => value + 1);
+    setCount((value) => Math.min(most, value + bundle));
   };
 
   return (
     <div className="interactive-counter-widget">
       <div className="interactive-counter-visual">
-        <QuestionVisualGraphic visual={visual} />
+        <QuestionVisualGraphic visual={shown} />
       </div>
       <button type="button" className="interactive-counter-button" onClick={tap}>
         <span className="interactive-counter-number">{count}</span>
-        <span>탭해서 하나씩 세어 보세요</span>
+        {bundle > 1 ? (
+          <span>
+            {bundles > 0 && <strong className="interactive-counter-bundles">{bundles}묶음 </strong>}
+            탭해서 한 묶음씩 세어 보세요
+          </span>
+        ) : (
+          <span>탭해서 하나씩 세어 보세요</span>
+        )}
       </button>
       {count > 0 && (
         <button type="button" className="interactive-counter-reset" onClick={() => setCount(0)}>
