@@ -4428,9 +4428,9 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
       return makeQuestion(
         lesson, difficulty, index,
         '생활에서 물건을 나누어 놓은 곳으로 알맞은 것은?',
-        pickBySeed(SORTED_PLACES, seed),
-        pickSome(UNSORTED_PLACES, seed, 3),
-        `${pickBySeed(SORTED_PLACES, seed)}에는 비슷한 것끼리 모아 놓아 찾기 쉽습니다.`,
+        pickBySeed(SORTED_PLACES, index),
+        pickSome(UNSORTED_PLACES, index, 3),
+        `${pickBySeed(SORTED_PLACES, index)}에는 비슷한 것끼리 모아 놓아 찾기 쉽습니다.`,
         'classification', '생활 속 분류 찾기',
       );
     }
