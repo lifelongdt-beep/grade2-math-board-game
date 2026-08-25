@@ -13,6 +13,10 @@ import {
   UNSORTED_PLACES,
   COUNTING_WAYS,
   SHAPE_THINGS,
+  ADDING_SITUATIONS,
+  SUBTRACTING_SITUATIONS,
+  LENGTH_PAIRS,
+  BUNDLE_ASKS,
 } from './lifeContexts';
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, PlaneShapeKind, PlaneShapeVisualItem, Question, QuestionVisual } from '../types';
 import { questionBank } from './questionBank';
@@ -1035,7 +1039,9 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       const piece = four ? 100 : 10;
       return makeQuestion(
         lesson, difficulty, index,
-        `${piece}이 10개이면 얼마일까요?`,
+        // 답이 정해진 문항입니다. 묻는 말이라도 바꾸어야 아이가 문장을
+        // 다시 읽습니다. 한 차시에 열 번 나오는 문항이었습니다.
+        pickBySeed(BUNDLE_ASKS, n(lesson, index))(piece),
         unitBase, [piece, unitBase * 10, piece * 5],
         `${piece}씩 10묶음을 모으면 ${unitBase}이 됩니다.`,
         'placeValue', `${unitName}의 구성 알기`,
@@ -1927,7 +1933,7 @@ const calcUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
     if (variant === 2) {
       return makeQuestion(
         lesson, difficulty, index,
-        '두 수를 모두 합한 수를 구할 때 쓰는 계산은?',
+        `${pickBySeed(ADDING_SITUATIONS, n(lesson, index))} 쓰는 계산은?`,
         '덧셈', ['뺄셈', '비교하기', '세어 보기'],
         '모두 몇 개인지 구할 때는 덧셈을 씁니다.',
         'addition', '더하는 상황 알아보기',
@@ -1936,7 +1942,7 @@ const calcUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
     if (variant === 3) {
       return makeQuestion(
         lesson, difficulty, index,
-        '남은 수를 구할 때 쓰는 계산은?',
+        `${pickBySeed(SUBTRACTING_SITUATIONS, n(lesson, index))} 쓰는 계산은?`,
         '뺄셈', ['덧셈', '묶어 세기', '뛰어 세기'],
         '전체에서 없어진 만큼을 덜어 낼 때는 뺄셈을 씁니다.',
         'subtraction', '빼는 상황 알아보기',
@@ -3531,7 +3537,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
         lesson, difficulty, index,
         secondSemester
           ? '교실의 긴 벽처럼 아주 긴 길이를 잴 때 어떤 점이 불편할까요?'
-          : '연필과 색연필 중 어느 것이 더 긴지 알아보려면 어떻게 할까요?',
+          : `${pickBySeed(LENGTH_PAIRS, seed)[0]}과 ${pickBySeed(LENGTH_PAIRS, seed)[1]} 중 어느 것이 더 긴지 알아보려면 어떻게 할까요?`,
         secondSemester ? '짧은 자로는 여러 번 재어야 해서 불편하다' : '두 물건을 나란히 맞대어 본다',
         secondSemester
           ? ['한 번에 잴 수 있다', '길이를 알 수 없다', '무게를 재면 된다']
@@ -5050,9 +5056,9 @@ const multiplyUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: num
       return makeQuestion(
         lesson, difficulty, index,
         '많은 물건의 수를 빠르게 세려면 어떻게 하면 좋을까요?',
-        '같은 수씩 모아서 센다',
-        ['하나씩 천천히 센다', '눈으로 어림한다', '가장 큰 것만 센다'],
-        '같은 수씩 모아 세면 빠르고 정확하게 셀 수 있습니다.',
+        pickBySeed(COUNTING_WAYS, n(lesson, index, 5)).right,
+        pickBySeed(COUNTING_WAYS, n(lesson, index, 5)).wrong,
+        `${pickBySeed(COUNTING_WAYS, n(lesson, index, 5)).right.replace(/다$/, '면')} 빠르고 정확하게 셀 수 있습니다.`,
         'multiplication', '빠르게 세는 방법 생각하기',
       );
     }
