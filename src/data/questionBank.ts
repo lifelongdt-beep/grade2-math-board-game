@@ -13540,7 +13540,9 @@ export const questionBank: Template[] = [
     real: true,
     demand: 'reason',
     tag: 'time',
-    strategy: '조건 함께 보기 · 두 가지 일에 걸린 시간을 판단하기',
+    // '걸린 시간'이라는 말은 6차시에서 배웁니다. 전략 이름에 써도
+    // 선행으로 잡힙니다 — 이름도 아이가 읽는 글입니다.
+    strategy: '조건 함께 보기 · 60분이 넘으면 시간과 분으로 나누어 판단하기',
     vars: {
       first: { from: 20, to: 40 },
       second: { from: 25, to: 45 },
