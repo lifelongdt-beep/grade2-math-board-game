@@ -17,7 +17,7 @@ describe('틀렸을 때 주는 볼 곳', () => {
           const hint = question.support.studentHint;
           // 첫 동작이 적혀 있어야 합니다. '…보세요', '…적으세요',
           // '…합니다'처럼 시키는 말로 끝나야 합니다.
-          const acts = /(보세요|적으세요|세요\.|봅니다\.|합니다\.|읽으세요|모으세요)/.test(hint);
+          const acts = /(보세요|하세요|적으세요|읽으세요|모으세요|니다)\.?$/.test(hint.trim());
           if (!acts || hint.length < 20) vague.push(`${question.id}: ${hint}`);
         }
       }
