@@ -12871,4 +12871,258 @@ export const questionBank: Template[] = [
     wrongs: ['사과', '포도', '모두 같습니다'],
     solution: '배가 {pear}명으로 사과 {apple}명, 포도 {grape}명보다 많습니다.',
   },
+  // ══════════════════════════════════════════════════════════════
+  // 2-2 ① 네 자리 수 — 실생활 문제 해결
+  // ──────────────────────────────────────────────────────────────
+  // 상 수준 문항이 두 틀에 몰려 있었습니다. '…과정입니다. □에 알맞은
+  // 수는? ① ② ③'과 '옳은 것을 모두 고른 것은? ㄱ ㄴ ㄷ ㄹ'입니다.
+  // 둘 다 남이 세워 준 풀이를 따라가거나 문장의 참거짓을 가리는 일이라,
+  // 무엇을 해야 할지 스스로 정하는 자리가 없습니다.
+  //
+  // 여기 문항은 아이가 스스로 정할 것을 남겨 둡니다.
+  //   · 조건이 둘 이상이라 무엇부터 볼지 정해야 합니다
+  //   · 쓰이지 않는 조건이 섞여 있습니다
+  //   · 결과에서 처음을 거꾸로 찾아야 합니다
+  //   · 두 가지 가운데 나은 쪽을 골라야 합니다
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'real-thousand-coins-together',
+    when: /천을 알아볼까요/,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '조건 함께 보기 · 얼마가 더 있어야 하는지 거꾸로 판단하기',
+    vars: {
+      mine: { from: 2, to: 5 },
+      yours: { from: 1, to: 4 },
+      together: { calc: 'mine + yours' },
+      need: { calc: '10 - mine - yours' },
+    },
+    words: { friend: ['지호', '수아', '민서', '태윤', '하람'] },
+    prompt:
+      '나는 100원짜리 동전 {mine}개, {friend:은} {yours}개를 가지고 있습니다. 둘이 모아 1000원짜리 공책을 사려고 합니다. 100원짜리 동전이 몇 개 더 있어야 할까요?',
+    answer: '{need}개',
+    wrongs: ['{together}개', '{need + 1}개', '{10 - mine}개'],
+    solution:
+      '둘이 모은 것은 100원짜리 {together}개입니다. 1000원은 100원짜리 10개이므로 {need}개가 더 있어야 합니다.',
+  },
+  {
+    id: 'real-thousand-save-days',
+    when: /천을 알아볼까요/,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '조건 함께 보기 · 며칠이 걸리는지 거꾸로 판단하기',
+    vars: {
+      days: { from: 2, to: 4 },
+      each: { from: 1, to: 2 },
+      used: { calc: 'days * each' },
+      now: { calc: '10 - days * each' },
+      nowWon: { calc: '1000 - days * each * 100' },
+    },
+    prompt:
+      '저금통에 100원짜리 동전이 {now}개 있습니다. 하루에 {each}개씩 넣으면 1000원이 되는 것은 며칠 뒤일까요?',
+    answer: '{days}일 뒤',
+    wrongs: ['{used}일 뒤', '{now}일 뒤', '{days + 1}일 뒤'],
+    solution:
+      '지금은 {nowWon}원입니다. 1000원까지 100원짜리 {used}개가 더 필요하고 하루에 {each}개씩 넣으므로 {days}일 뒤입니다.',
+  },
+  {
+    id: 'real-thousands-buy-with-bills',
+    when: /몇천을 알아볼까요/,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '조건 함께 보기 · 얼마가 모자라는지 판단하기',
+    vars: {
+      price: { from: 5, to: 9 },
+      have: { from: 2, to: 4 },
+      short: { calc: 'price - have' },
+      priceWon: { calc: 'price * 1000' },
+      haveWon: { calc: 'have * 1000' },
+      shortWon: { calc: 'price * 1000 - have * 1000' },
+    },
+    words: { thing: ['필통', '축구공', '물통', '색연필 세트', '줄넘기'] },
+    prompt:
+      '{thing} 값이 {priceWon}원입니다. 1000원짜리 지폐 {have}장을 가지고 있습니다. 얼마가 더 있어야 살 수 있을까요?',
+    answer: '{shortWon}원',
+    wrongs: ['{priceWon}원', '{haveWon}원', '{shortWon + 1000}원'],
+    solution: '{priceWon}원에서 {haveWon}원을 빼면 {shortWon}원이 더 있어야 합니다.',
+  },
+  {
+    id: 'real-thousands-count-mixed',
+    when: /몇천을 알아볼까요/,
+    demand: 'reason',
+    tag: 'placeValue',
+    strategy: '자료 해석 · 쓰이지 않는 조건을 가려내어 판단하기',
+    vars: {
+      bills: { from: 3, to: 8 },
+      pencils: { from: 2, to: 9 },
+      total: { calc: 'bills * 1000' },
+      trap: { calc: 'bills * 1000 + pencils' },
+      trap2: { calc: 'bills * 100' },
+    },
+    // 연필 수는 답과 상관없습니다. 문제에 적힌 수를 모두 써야 한다고
+    // 믿는 아이가 많아, 쓰이지 않는 조건을 가려내는 연습이 필요합니다.
+    prompt:
+      '지갑에 1000원짜리 지폐 {bills}장이 있고, 필통에는 연필 {pencils}자루가 있습니다. 지갑에 든 돈은 모두 얼마일까요?',
+    answer: '{total}원',
+    wrongs: ['{trap}원', '{trap2}원', '{pencils}000원'],
+    solution: '연필 수는 돈과 상관이 없습니다. 1000이 {bills}개이므로 {total}원입니다.',
+  },
+  {
+    id: 'real-fourdigit-warehouse',
+    when: /네 자리 수를 알아볼까요/,
+    demand: 'reason',
+    tag: 'placeValue',
+    strategy: '조건 함께 보기 · 묶음을 모아 수로 나타내는 방법 판단하기',
+    vars: {
+      box: { from: 2, to: 6 },
+      bag: { from: 1, to: 8 },
+      loose: { from: 1, to: 9 },
+      total: { calc: 'box * 1000 + bag * 100 + loose' },
+      trapTen: { calc: 'box * 1000 + bag * 10 + loose' },
+      trapSum: { calc: 'box + bag + loose' },
+      trapShift: { calc: 'box * 1000 + bag * 100 + loose * 10' },
+    },
+    words: { item: ['색종이', '단추', '구슬', '스티커', '클립'] },
+    // 십의 자리에 아무것도 없습니다. 자리를 비워 두면 수가 달라지므로
+    // 0을 써야 한다는 것을 스스로 알아채야 합니다.
+    prompt:
+      '{item:을} 1000개씩 든 상자 {box}개, 100개씩 든 봉지 {bag}개, 낱개 {loose}개를 창고에 넣었습니다. 창고에 있는 {item:은} 모두 몇 개일까요?',
+    answer: '{total}개',
+    wrongs: ['{trapTen}개', '{trapSum}개', '{trapShift}개'],
+    solution:
+      '1000이 {box}개, 100이 {bag}개, 1이 {loose}개입니다. 십의 자리에는 아무것도 없으므로 0을 써서 {total}개입니다.',
+  },
+  {
+    id: 'real-fourdigit-pay-with-bills',
+    when: /각 자리의 숫자는 얼마를 나타/,
+    demand: 'reason',
+    tag: 'placeValue',
+    strategy: '조건 함께 보기 · 자리의 값으로 필요한 지폐 수 판단하기',
+    vars: {
+      th: { from: 2, to: 8 },
+      hu: { from: 1, to: 9 },
+      te: { from: 1, to: 9 },
+      on: { from: 1, to: 9 },
+      price: { calc: 'th * 1000 + hu * 100 + te * 10 + on' },
+      enough: { calc: 'th + 1' },
+      tooMany: { calc: 'th + 2' },
+    },
+    words: { thing: ['가방', '실내화', '보드게임', '동화책 묶음', '물감 세트'] },
+    // 1000원짜리로만 내려면 값보다 많이 내야 합니다. 자리값을 알아야
+    // '천의 자리 숫자보다 한 장 더'라는 것이 보입니다.
+    prompt:
+      '{thing} 값이 {price}원입니다. 1000원짜리 지폐로만 내려고 합니다. 적어도 몇 장이 필요할까요?',
+    answer: '{enough}장',
+    wrongs: ['{th}장', '{tooMany}장', '{hu}장'],
+    solution:
+      '{price}원은 1000이 {th}개이고도 더 남습니다. {th}장으로는 모자라므로 {enough}장이 필요합니다.',
+  },
+  {
+    id: 'real-skip-count-saving',
+    when: /뛰어 세어 볼까요/,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '조건 함께 보기 · 뛰어 세어 앞일을 판단하기',
+    vars: {
+      start: { from: 1, to: 4 },
+      weeks: { from: 2, to: 4 },
+      startWon: { calc: 'start * 1000' },
+      total: { calc: 'start * 1000 + weeks * 1000' },
+      onlyOne: { calc: 'start * 1000 + 1000' },
+      hundredTrap: { calc: 'start * 1000 + weeks * 100' },
+    },
+    prompt:
+      '통장에 {startWon}원이 있습니다. 이번 주부터 매주 1000원씩 넣으면 {weeks}주 뒤에는 얼마가 될까요?',
+    answer: '{total}원',
+    wrongs: ['{onlyOne}원', '{hundredTrap}원', '{startWon}원'],
+    solution: '{startWon}원에서 1000씩 {weeks}번 뛰어 세면 {total}원입니다.',
+  },
+  {
+    id: 'real-skip-count-backwards',
+    when: /뛰어 세어 볼까요/,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '조건 함께 보기 · 지난 일을 거꾸로 판단하기',
+    vars: {
+      nowTh: { from: 4, to: 8 },
+      back: { from: 2, to: 3 },
+      now: { calc: 'nowTh * 1000' },
+      then: { calc: 'nowTh * 1000 - back * 1000' },
+      forward: { calc: 'nowTh * 1000 + back * 1000' },
+      hundredTrap: { calc: 'nowTh * 1000 - back * 100' },
+    },
+    prompt:
+      '오늘 저금통에 {now}원이 들어 있습니다. 매주 1000원씩 넣어 왔다면 {back}주 전에는 얼마가 들어 있었을까요?',
+    answer: '{then}원',
+    wrongs: ['{now}원', '{forward}원', '{hundredTrap}원'],
+    solution:
+      '앞으로 갈 때 1000씩 커졌으므로 거꾸로 가면 1000씩 작아집니다. {back}번 거꾸로 뛰면 {then}원입니다.',
+  },
+  {
+    id: 'real-compare-shop-middle',
+    when: /수의 크기를 비교해 볼까요/,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '자료 해석 · 세 곳의 값을 견주어 고르기',
+    vars: {
+      th: { from: 2, to: 7 },
+      low: { from: 1, to: 3 },
+      high: { from: 5, to: 8 },
+      priceA: { calc: 'th * 1000 + high * 100 + 50 + 5' },
+      priceB: { calc: 'th * 1000 + low * 100 + 90 + 5' },
+      priceC: { calc: 'th * 1000 + high * 100 + 20 + 5' },
+    },
+    words: { thing: ['같은 필통', '같은 물통', '같은 색연필', '같은 실내화'] },
+    // 십의 자리만 보면 나 가게가 가장 비싸 보입니다. 백의 자리부터
+    // 보아야 한다는 것을 알아야 풀립니다.
+    prompt:
+      '{thing:을} 세 가게에서 팝니다. 가 가게는 {priceA}원, 나 가게는 {priceB}원, 다 가게는 {priceC}원입니다. 가장 싼 가게는 어디일까요?',
+    answer: '나 가게',
+    wrongs: ['가 가게', '다 가게', '세 곳이 모두 같습니다'],
+    solution:
+      '천의 자리가 모두 같으므로 백의 자리를 봅니다. 나 가게가 {low}으로 가장 작아 가장 쌉니다.',
+  },
+  {
+    id: 'real-compare-shop-last',
+    when: /수의 크기를 비교해 볼까요/,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '자료 해석 · 마지막 자리까지 견주어 고르기',
+    vars: {
+      th: { from: 3, to: 8 },
+      hu: { from: 2, to: 7 },
+      priceA: { calc: 'th * 1000 + hu * 100 + 40 + 7' },
+      priceB: { calc: 'th * 1000 + hu * 100 + 40 + 9' },
+      priceC: { calc: 'th * 1000 + hu * 100 + 40 + 3' },
+    },
+    words: { thing: ['같은 공책', '같은 지우개', '같은 자', '같은 풀'] },
+    // 앞자리가 모두 같아 마지막 자리까지 보아야 합니다.
+    prompt:
+      '{thing:을} 세 가게에서 팝니다. 가 가게는 {priceA}원, 나 가게는 {priceB}원, 다 가게는 {priceC}원입니다. 가장 싼 가게는 어디일까요?',
+    answer: '다 가게',
+    wrongs: ['가 가게', '나 가게', '세 곳이 모두 같습니다'],
+    solution:
+      '천·백·십의 자리가 모두 같으므로 일의 자리를 봅니다. 3이 가장 작은 다 가게가 가장 쌉니다.',
+  },
+  {
+    id: 'real-compare-enough-money',
+    when: /수의 크기를 비교해 볼까요/,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '조건 함께 보기 · 가진 돈으로 살 수 있는지 판단하기',
+    vars: {
+      have: { from: 3, to: 6 },
+      over: { from: 1, to: 2 },
+      haveWon: { calc: 'have * 1000' },
+      cheap: { calc: 'have * 1000 - 500' },
+      dear: { calc: 'have * 1000 + over * 1000' },
+    },
+    words: { small: ['공책', '지우개 묶음', '연필 한 다스'], big: ['보드게임', '축구공', '그림물감'] },
+    prompt:
+      '{haveWon}원을 가지고 문구점에 갔습니다. {small} 값은 {cheap}원, {big} 값은 {dear}원입니다. 지금 살 수 있는 것은 어느 것일까요?',
+    answer: '{small}',
+    wrongs: ['{big}', '둘 다 살 수 있습니다', '둘 다 살 수 없습니다'],
+    solution:
+      '{cheap}은 {haveWon}보다 작고 {dear}은 {haveWon}보다 큽니다. 그래서 {small:을} 살 수 있습니다.',
+  },
 ];
