@@ -14132,7 +14132,7 @@ export const questionBank: Template[] = [
     when: /쌓은 모양을 알아볼까요/,
     real: true,
     demand: 'reason',
-    tag: 'shape',
+    tag: 'solid',
     strategy: '조건 함께 보기 · 층마다 세어 쌓기나무 수를 판단하기',
     vars: {
       first: { from: 3, to: 6 },
@@ -14155,7 +14155,7 @@ export const questionBank: Template[] = [
     when: /여러 가지 모양으로 쌓아/,
     real: true,
     demand: 'reason',
-    tag: 'shape',
+    tag: 'solid',
     strategy: '조건 함께 보기 · 몇 개가 더 있어야 하는지 거꾸로 판단하기',
     vars: {
       first: { from: 3, to: 6 },
