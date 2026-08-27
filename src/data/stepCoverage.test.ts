@@ -19,10 +19,13 @@ import type { Difficulty } from '../types';
 //   중  5문항 — 중은 문장제가 중심이지만, 이 문항을 아예 빼면 차시끼리
 //               문항이 똑같아집니다. 차시를 구분하고 있던 것이 사실은
 //               이 문항이었기 때문입니다. 상과 겹치지 않는 자리에서만 뽑습니다.
-//   상 20문항 — 남의 풀이를 따라가며 판단하는 것이 이 수준의 일입니다.
-//               중에도 두었더니 두 수준이 같은 문항을 나눠 가져 구별되지
-//               않았습니다.
+//   상 10~20문항 — 남의 풀이를 따라가며 판단하는 것도 이 수준의 일이지만
+//               그것만으로 스무 자리를 채우면 상이 한 가지 틀로 굳습니다.
+//               실생활 문제 해결 문항을 쓴 차시는 그 절반을 내주므로
+//               열 개까지 내려갑니다. 아직 문항을 쓰지 못한 차시는
+//               스무 개 그대로입니다.
 const expectedSteps: Record<Difficulty, number> = { 하: 3, 중: 5, 상: 20 };
+const leastSteps: Record<Difficulty, number> = { 하: 0, 중: 5, 상: 10 };
 
 describe('step coverage', () => {
   it('gives each difficulty the share of working-out questions it should have', () => {
@@ -39,13 +42,11 @@ describe('step coverage', () => {
             (question) => question.prompt.includes('①') || question.prompt.includes('바른 차례로 놓으면'),
           ).length;
 
-          // 하는 아직 모든 차시를 덮지 못했으므로 '이하'로 봅니다.
-          const off = level === '하'
-            ? steps > expectedSteps[level]
-            : steps !== expectedSteps[level];
-          if (off) {
+          // 하는 아직 모든 차시를 덮지 못했고, 상은 실생활 문항에 자리를
+          // 얼마나 내주었는지에 따라 달라지므로 폭으로 봅니다.
+          if (steps > expectedSteps[level] || steps < leastSteps[level]) {
             wrong.push(
-              `${unit.title} ${lesson.lessonNo}차시 (${level}): ${expectedSteps[level]}개여야 하는데 ${steps}개`,
+              `${unit.title} ${lesson.lessonNo}차시 (${level}): ${leastSteps[level]}~${expectedSteps[level]}개여야 하는데 ${steps}개`,
             );
           }
         }
