@@ -14022,6 +14022,31 @@ export const questionBank: Template[] = [
       '백의 자리가 모두 같으므로 십의 자리를 봅니다. 나 가게가 {low}로 가장 작아 가장 쌉니다.',
   },
 
+  {
+    id: 'real-threedigit-compare-last',
+    when: /수의 크기를 비교해 볼까요/,
+    semester: '2-1',
+    real: true,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '자료 해석 · 마지막 자리까지 견주어 고르기',
+    vars: {
+      hu: { from: 3, to: 8 },
+      te: { from: 2, to: 7 },
+      priceA: { calc: 'hu * 100 + te * 10 + 7' },
+      priceB: { calc: 'hu * 100 + te * 10 + 9' },
+      priceC: { calc: 'hu * 100 + te * 10 + 3' },
+    },
+    words: { thing: ['같은 풀', '같은 가위', '같은 크레파스', '같은 스케치북'] },
+    // 앞자리가 모두 같아 마지막 자리까지 보아야 합니다.
+    prompt:
+      '{thing:을} 세 가게에서 팝니다. 가 가게는 {priceA}원, 나 가게는 {priceB}원, 다 가게는 {priceC}원입니다. 가장 싼 가게는 어디일까요?',
+    answer: '다 가게',
+    wrongs: ['가 가게', '나 가게', '세 곳이 모두 같습니다'],
+    solution:
+      '백의 자리와 십의 자리가 모두 같으므로 일의 자리를 봅니다. 3이 가장 작은 다 가게가 가장 쌉니다.',
+  },
+
   // ══════════════════════════════════════════════════════════════
   // 2-1 ② 여러 가지 도형 — 실생활 문제 해결
   // ══════════════════════════════════════════════════════════════
@@ -14059,12 +14084,14 @@ export const questionBank: Template[] = [
       three: ['삼각김밥', '삼각자'],
       round: ['동전', '접시', '단추'],
     },
+    // '어느 것일까요'로 물으면 그림이 답을 색으로 짚어 줍니다.
+    // 세 물건을 모두 가려내야 답이 나오는 물음으로 바꿉니다.
     prompt:
-      '교실에서 {four}, {three}, {round}을 찾았습니다. 이 가운데 곧은 선 4개로 둘러싸인 것은 어느 것일까요?',
-    answer: '{four}',
-    wrongs: ['{three}', '{round}', '셋 다 아닙니다'],
+      '교실에서 {four}, {three}, {round:을} 찾아 겉면을 본떠 그렸습니다. 곧은 선으로 둘러싸인 도형은 몇 개일까요?',
+    answer: '2개',
+    wrongs: ['1개', '3개', '0개'],
     solution:
-      '{four:은} 곧은 선 4개로 둘러싸여 있어 사각형입니다.',
+      '{four:은} 사각형, {three:은} 삼각형이라 곧은 선으로 둘러싸여 있습니다. {round:은} 곧은 선이 없습니다.',
   },
   {
     id: 'real-shape-circle-rolls',
@@ -14076,11 +14103,11 @@ export const questionBank: Template[] = [
     vars: { any: { from: 1, to: 4 } },
     words: { round: ['접시', '동전', '단추', '시계 앞면'], flat: ['공책', '색종이', '지우개', '필통'] },
     prompt:
-      '{round:과} {flat:을} 바닥에 대고 본떠 그렸습니다. 어느 쪽에서 대어도 똑같이 둥근 모양이 나오는 것은 어느 것일까요?',
-    answer: '{round}',
-    wrongs: ['{flat}', '둘 다 둥급니다', '둘 다 둥글지 않습니다'],
+      '{round:과} {flat:을} 바닥에 대고 본떠 그렸습니다. 그린 도형 가운데 꼭짓점이 하나도 없는 것은 몇 개일까요?',
+    answer: '1개',
+    wrongs: ['2개', '0개', '4개'],
     solution:
-      '{round:은} 어느 쪽에서 보아도 둥글어 본뜨면 원이 됩니다.',
+      '{round:을} 본뜨면 원이 되어 꼭짓점이 없습니다. {flat:을} 본뜨면 꼭짓점이 있습니다.',
   },
   {
     id: 'real-shape-tangram-pieces',
@@ -14110,13 +14137,18 @@ export const questionBank: Template[] = [
     vars: {
       first: { from: 3, to: 6 },
       second: { from: 1, to: 3 },
-      total: { calc: 'first + second' },
+      want: { from: 12, to: 16 },
+      made: { calc: 'first + second' },
+      more: { calc: 'want - first - second' },
     },
+    // 그림은 '1층에 N개, 2층에 M개를 쌓았습니다'를 보고 그립니다.
+    // 다르게 쓰면 쌓기나무를 말하면서 평면도형 그림이 나옵니다.
     prompt:
-      '쌓기나무를 1층에 {first}개 놓고 그 위 2층에 {second}개를 올렸습니다. 쌓기나무는 모두 몇 개일까요?',
-    answer: '{total}개',
-    wrongs: ['{first}개', '{second}개', '{total + 1}개'],
-    solution: '1층 {first}개와 2층 {second}개를 더하면 {total}개입니다.',
+      '1층에 {first}개, 2층에 {second}개를 쌓았습니다. 쌓기나무 {want}개를 남김없이 쓰려면 몇 개를 더 쌓아야 할까요?',
+    answer: '{more}개',
+    wrongs: ['{made}개', '{want}개', '{more + 1}개'],
+    solution:
+      '지금 쌓은 것은 {first}+{second}={made}개입니다. {want}-{made}={more}개를 더 쌓아야 합니다.',
   },
   {
     id: 'real-shape-stack-need-more',
@@ -14126,15 +14158,17 @@ export const questionBank: Template[] = [
     tag: 'shape',
     strategy: '조건 함께 보기 · 몇 개가 더 있어야 하는지 거꾸로 판단하기',
     vars: {
-      want: { from: 7, to: 12 },
-      have: { from: 3, to: 6 },
-      more: { calc: 'want - have' },
+      first: { from: 3, to: 6 },
+      second: { from: 1, to: 4 },
+      one: { calc: 'first + second' },
+      both: { calc: 'first + second + first + second' },
     },
     prompt:
-      '쌓기나무 {want}개로 모양을 만들려고 합니다. 지금 {have}개가 있습니다. 몇 개가 더 있어야 할까요?',
-    answer: '{more}개',
-    wrongs: ['{want}개', '{have}개', '{more + 1}개'],
-    solution: '{want}-{have}={more}이므로 {more}개가 더 있어야 합니다.',
+      '1층에 {first}개, 2층에 {second}개를 쌓았습니다. 친구도 똑같은 모양으로 쌓으려면 쌓기나무는 모두 몇 개 필요할까요?',
+    answer: '{both}개',
+    wrongs: ['{one}개', '{both + 1}개', '{first}개'],
+    solution:
+      '한 사람이 쌓은 것이 {first}+{second}={one}개입니다. 두 사람이면 {one}+{one}={both}개입니다.',
   },
 
   // ══════════════════════════════════════════════════════════════
@@ -14305,7 +14339,7 @@ export const questionBank: Template[] = [
     answer: '{whole}-{part}',
     wrongs: ['{whole}+{part}', '{part}+{other}', '{part}-{other}'],
     solution:
-      '전체에서 아는 부분을 빼면 나머지 부분을 알 수 있습니다. {whole}-{part}={other}개입니다.',
+      '전체에서 아는 부분을 빼면 남은 부분을 알 수 있습니다. {whole}-{part}={other}개입니다.',
   },
   {
     id: 'real-box-value',
