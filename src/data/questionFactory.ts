@@ -14612,6 +14612,26 @@ const templateTools = {
   pickAll: judgeFixedQuestion,
 };
 
+// 실생활 문제 해결 문항만 골라 씁니다.
+//
+// 상 수준의 서른 자리 가운데 스무 자리가 '과정 짚기'와 '옳은 것 고르기'
+// 두 틀에 가 있었습니다. 남이 세워 준 풀이를 따라가거나 문장의 참거짓을
+// 가리는 일이라, 무엇을 해야 할지 스스로 정하는 자리가 없습니다.
+// 그 스무 자리 가운데 셋에 하나를 실생활 문항에 내줍니다.
+const realLifeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  const usable = questionBank.filter(
+    (template) => template.real && templateFits(template, lesson) && !template.steps,
+  );
+  if (usable.length === 0) return null;
+
+  for (let step = 0; step < usable.length; step += 1) {
+    const template = usable[(index + step) % usable.length];
+    const made = buildFromTemplate(template, lesson, difficulty, index, templateTools);
+    if (made) return made;
+  }
+  return null;
+};
+
 const bankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
   const wanted = demandsFor[difficulty];
   const fitting = questionBank.filter((template) => templateFits(template, lesson));
@@ -15265,7 +15285,13 @@ const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number):
           // 문장 상황 생성기는 차시마다 한 모양뿐이라, 상의 스무 자리를
           // 모두 내주면 그 차시의 상은 늘 같은 모양이 됩니다. 데이터로
           // 적어 둔 과정 문항과 번갈아 씁니다.
-          (difficulty === '상' && Math.floor(index / 3) % 2 === 0
+          // 실생활 문제 해결 문항이 먼저입니다. 풀이 과정 자리 스무 곳
+          // 가운데 열 곳(1, 4, 7, …)을 내줍니다. 나머지 열 곳은 그대로
+          // 과정을 짚는 문항이 씁니다 — 둘 다 필요합니다.
+          (difficulty === '상' && index % 3 === 1
+              ? realLifeQuestion(lesson, difficulty, index)
+              : null)
+            ?? (difficulty === '상' && Math.floor(index / 3) % 2 === 0
               ? wordStepQuestion(lesson, difficulty, index)
               : null)
             // 뒤섞인 풀이를 차례대로 놓는 문항은 상만 받습니다. 빈칸을
