@@ -81,7 +81,12 @@ const renderPlaneShape = (item: PlaneShapeVisualItem, index: number, total: numb
   );
 };
 
-const renderCube = (cube: { x: number; y: number; z: number }, index: number) => {
+const renderCube = (
+  cube: { x: number; y: number; z: number },
+  index: number,
+  // 비쳐 보이게 그리면 뒤에 숨은 쌓기나무까지 셀 수 있습니다.
+  seeThrough = false,
+) => {
   const sx = 160 + (cube.x - cube.y) * 32;
   const sy = 34 + (cube.x + cube.y) * 17 - cube.z * 32;
   const top = `${sx},${sy} ${sx + 28},${sy + 14} ${sx},${sy + 28} ${sx - 28},${sy + 14}`;
@@ -89,7 +94,7 @@ const renderCube = (cube: { x: number; y: number; z: number }, index: number) =>
   const right = `${sx + 28},${sy + 14} ${sx},${sy + 28} ${sx},${sy + 60} ${sx + 28},${sy + 46}`;
 
   return (
-    <g key={`${cube.x}-${cube.y}-${cube.z}-${index}`}>
+    <g key={`${cube.x}-${cube.y}-${cube.z}-${index}`} opacity={seeThrough ? 0.55 : 1}>
       <polygon points={left} fill="#c5eef3" stroke="#4f8f9a" strokeWidth="2" />
       <polygon points={right} fill="#9edce8" stroke="#4f8f9a" strokeWidth="2" />
       <polygon points={top} fill="#effcff" stroke="#4f8f9a" strokeWidth="2" />
@@ -258,7 +263,7 @@ function CubeStackGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
         {visual.cubes
           .slice()
           .sort((a, b) => a.x + a.y + a.z - (b.x + b.y + b.z))
-          .map(renderCube)}
+          .map((cube, index) => renderCube(cube, index, visual.seeThrough))}
       </g>
     </svg>
   );
