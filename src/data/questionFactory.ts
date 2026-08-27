@@ -14826,6 +14826,22 @@ const realLifeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
   return null;
 };
 
+// 중 수준 전용 문장제만 골라 씁니다. 하와 같은 모양이 되풀이되던
+// 자리를 이 문항이 먼저 가져갑니다.
+const midQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  const usable = questionBank.filter(
+    (template) => template.mid && templateFits(template, lesson) && !template.steps,
+  );
+  if (usable.length === 0) return null;
+
+  for (let step = 0; step < usable.length; step += 1) {
+    const template = usable[(index + step) % usable.length];
+    const made = buildFromTemplate(template, lesson, difficulty, index, templateTools);
+    if (made) return made;
+  }
+  return null;
+};
+
 const bankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
   const wanted = demandsFor[difficulty];
   const fitting = questionBank.filter((template) => templateFits(template, lesson));
@@ -15519,7 +15535,13 @@ const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number):
           // 그대로 이어받습니다.
           // 그림으로 고르는 문항입니다. 도형과 그래프는 글로 물으면
           // 낱말을 아는지 묻게 되므로, 자리를 얼마간 내어 줍니다.
-          : (index % 5 === 2
+          // 중은 자기 몫의 문장제를 먼저 가져갑니다. 서른 자리 가운데
+          // 열 자리입니다. 이 자리가 없으면 하와 같은 생성기가 채워
+          // 두 수준이 같은 문항을 나눠 갖게 됩니다.
+          : (difficulty === '중' && index % 3 === 1
+              ? midQuestion(lesson, difficulty, index)
+              : null)
+            ?? (index % 5 === 2
               ? pickTheShapeQuestion(lesson, difficulty, index)
                 ?? pickTheGraphQuestion(lesson, difficulty, index)
               : null)
