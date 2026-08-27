@@ -19,8 +19,8 @@ const record = (over: Partial<AnswerRecord>): AnswerRecord => ({
   type: 'multiplication',
   strategy: '기초 · 개념 확인 · 곱셈구구 계산하기',
   support: {
-    studentConcept: '',
-    studentHint: '',
+    studentConcept: '곱셈은 같은 수를 여러 번 더한 것입니다.',
+    studentHint: '한 묶음에 5개씩 3묶음입니다. 5씩 3번 뛰어 세어 보세요.',
     steps: ['', '', ''],
     misconceptionTip: '자리를 맞추어 보세요.',
     selfCheck: '다시 세어 보았나요?',
