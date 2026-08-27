@@ -15711,8 +15711,10 @@ export const questionBank: Template[] = [
       used: { calc: 'first + second' },
       left: { calc: 'have - first - second' },
     },
+    // 그림은 '1층에 N개, 2층에 M개'를 보고 그립니다. '쌓기나무 10개'라고
+    // 적으면 그림(6개)과 어긋납니다.
     prompt:
-      '쌓기나무 {have}개 가운데 1층에 {first}개, 2층에 {second}개를 썼습니다. 남은 쌓기나무는 몇 개일까요?',
+      '1층에 {first}개, 2층에 {second}개를 쌓았습니다. 처음 상자에는 {have}개가 들어 있었습니다. 상자에 남은 것은 몇 개일까요?',
     answer: '{left}개',
     wrongs: ['{used}개', '{have}개', '{left + 1}개'],
     solution: '쓴 것은 {first}+{second}={used}개입니다. {have}-{used}={left}개가 남습니다.',
