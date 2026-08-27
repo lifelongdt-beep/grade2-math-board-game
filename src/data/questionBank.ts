@@ -13167,24 +13167,27 @@ export const questionBank: Template[] = [
     solution: '하나에 2개씩 {how}묶음이므로 2×{how}={total}개입니다.',
   },
   {
-    id: 'real-mul5-clock-minutes',
-    when: /5단 곱셈구구/,
+    id: 'real-mul5-drink-left',
     real: true,
+    when: /5단 곱셈구구/,
     demand: 'reason',
     tag: 'multiplication',
-    strategy: '조건 함께 보기 · 곱셈으로 시계 눈금을 판단하기',
+    strategy: '조건 함께 보기 · 곱한 뒤 남은 것을 판단하기',
     vars: {
-      point: { from: 3, to: 9 },
-      minute: { calc: 'point * 5' },
-      wrongPoint: { calc: 'point + 5' },
-      wrongTen: { calc: 'point * 10' },
+      rows: { from: 3, to: 8 },
+      drunk: { from: 2, to: 9 },
+      bought: { calc: '5 * rows' },
+      left: { calc: '5 * rows - drunk' },
+      forgot: { calc: '5 * rows' },
     },
-    // 시계의 큰 눈금 한 칸이 5분이라는 것을 곱셈으로 잇습니다.
+    words: { item: ['요구르트', '방울토마토', '초코볼', '사탕'] },
+    // 곱한 뒤 빼야 합니다. 곱만 하고 답하는 아이가 많습니다.
     prompt:
-      '시계의 긴바늘이 12에서 출발해 숫자 {point}까지 갔습니다. 숫자 한 칸은 5분입니다. 몇 분이 지났을까요?',
-    answer: '{minute}분',
-    wrongs: ['{point}분', '{wrongPoint}분', '{wrongTen}분'],
-    solution: '숫자 한 칸이 5분이고 {point}칸을 갔으므로 5×{point}={minute}분입니다.',
+      '{item:이} 한 줄에 5개씩 들어 있습니다. {rows}줄을 사서 {drunk}개를 먹었습니다. 남은 {item:은} 몇 개일까요?',
+    answer: '{left}개',
+    wrongs: ['{forgot}개', '{drunk}개', '{left + 5}개'],
+    solution:
+      '산 것은 5×{rows}={bought}개입니다. {drunk}개를 먹었으므로 {left}개가 남습니다.',
   },
   {
     id: 'real-mul36-boxes-and-loose',
