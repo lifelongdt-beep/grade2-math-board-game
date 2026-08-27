@@ -13860,4 +13860,471 @@ export const questionBank: Template[] = [
     wrongs: ['{third + 1}', '{fourth + step}', '{second}'],
     solution: '{step}씩 커지는 규칙이므로 다음은 {fourth}입니다.',
   },
+  // ══════════════════════════════════════════════════════════════
+  // 2-1 ① 세 자리 수 — 실생활 문제 해결
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'real-hundred-coins-need',
+    when: /^백을 알아볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '조건 함께 보기 · 얼마가 더 있어야 하는지 거꾸로 판단하기',
+    vars: {
+      mine: { from: 2, to: 5 },
+      yours: { from: 1, to: 3 },
+      together: { calc: 'mine + yours' },
+      need: { calc: '10 - mine - yours' },
+    },
+    words: { friend: ['지호', '수아', '민서', '태윤', '하람'] },
+    prompt:
+      '나는 10원짜리 동전 {mine}개, {friend:은} {yours}개를 가지고 있습니다. 둘이 모아 100원짜리 사탕을 사려고 합니다. 10원짜리 동전이 몇 개 더 있어야 할까요?',
+    answer: '{need}개',
+    wrongs: ['{together}개', '{need + 1}개', '{10 - mine}개'],
+    solution:
+      '둘이 모은 것은 10원짜리 {together}개입니다. 100원은 10원짜리 10개이므로 {need}개가 더 있어야 합니다.',
+  },
+  {
+    id: 'real-hundreds-buy-coins',
+    when: /몇백을 알아볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '조건 함께 보기 · 얼마가 모자라는지 판단하기',
+    vars: {
+      price: { from: 5, to: 9 },
+      have: { from: 2, to: 4 },
+      priceWon: { calc: 'price * 100' },
+      haveWon: { calc: 'have * 100' },
+      shortWon: { calc: 'price * 100 - have * 100' },
+    },
+    words: { thing: ['공책', '지우개', '연필', '색종이 한 묶음', '풀'] },
+    prompt:
+      '{thing} 값이 {priceWon}원입니다. 100원짜리 동전 {have}개를 가지고 있습니다. 얼마가 더 있어야 살 수 있을까요?',
+    answer: '{shortWon}원',
+    wrongs: ['{priceWon}원', '{haveWon}원', '{shortWon + 100}원'],
+    solution: '{priceWon}원에서 {haveWon}원을 빼면 {shortWon}원이 더 있어야 합니다.',
+  },
+  {
+    id: 'real-threedigit-warehouse',
+    when: /세 자리 수를 알아볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'placeValue',
+    strategy: '조건 함께 보기 · 묶음을 모아 수로 나타내는 방법 판단하기',
+    vars: {
+      box: { from: 2, to: 8 },
+      bag: { from: 1, to: 8 },
+      loose: { from: 1, to: 9 },
+      total: { calc: 'box * 100 + bag * 10 + loose' },
+      trapSum: { calc: 'box + bag + loose' },
+      trapShift: { calc: 'box * 100 + bag * 100 + loose' },
+    },
+    words: { item: ['색종이', '단추', '구슬', '스티커', '클립'] },
+    prompt:
+      '{item:을} 100개씩 든 상자 {box}개, 10개씩 든 봉지 {bag}개, 낱개 {loose}개를 창고에 넣었습니다. 창고에 있는 {item:은} 모두 몇 개일까요?',
+    answer: '{total}개',
+    wrongs: ['{trapSum}개', '{trapShift}개', '{total + 10}개'],
+    solution:
+      '100이 {box}개, 10이 {bag}개, 1이 {loose}개이므로 {total}개입니다.',
+  },
+  {
+    id: 'real-threedigit-pay-hundreds',
+    when: /각 자리의 숫자는 얼마를 나타/,
+    semester: '2-1',
+    real: true,
+    demand: 'reason',
+    tag: 'placeValue',
+    strategy: '조건 함께 보기 · 자리의 값으로 필요한 동전 수 판단하기',
+    vars: {
+      hu: { from: 2, to: 8 },
+      te: { from: 1, to: 9 },
+      on: { from: 1, to: 9 },
+      price: { calc: 'hu * 100 + te * 10 + on' },
+      enough: { calc: 'hu + 1' },
+    },
+    words: { thing: ['공책', '지우개', '자', '색연필', '스케치북'] },
+    prompt:
+      '{thing} 값이 {price}원입니다. 100원짜리 동전으로만 내려고 합니다. 적어도 몇 개가 필요할까요?',
+    answer: '{enough}개',
+    wrongs: ['{hu}개', '{enough + 1}개', '{te}개'],
+    solution:
+      '{price}원은 100이 {hu}개이고도 더 남습니다. {hu}개로는 모자라므로 {enough}개가 필요합니다.',
+  },
+  {
+    id: 'real-threedigit-skip-save',
+    when: /뛰어 세어 볼까요/,
+    semester: '2-1',
+    real: true,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '조건 함께 보기 · 뛰어 세어 앞일을 판단하기',
+    vars: {
+      start: { from: 1, to: 4 },
+      weeks: { from: 2, to: 5 },
+      startWon: { calc: 'start * 100' },
+      total: { calc: 'start * 100 + weeks * 100' },
+      onlyOne: { calc: 'start * 100 + 100' },
+      tenTrap: { calc: 'start * 100 + weeks * 10' },
+    },
+    prompt:
+      '저금통에 {startWon}원이 있습니다. 이번 주부터 매주 100원씩 넣으면 {weeks}주 뒤에는 얼마가 될까요?',
+    answer: '{total}원',
+    wrongs: ['{onlyOne}원', '{tenTrap}원', '{startWon}원'],
+    solution: '{startWon}원에서 100씩 {weeks}번 뛰어 세면 {total}원입니다.',
+  },
+  {
+    id: 'real-threedigit-skip-back',
+    when: /뛰어 세어 볼까요/,
+    semester: '2-1',
+    real: true,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '조건 함께 보기 · 지난 일을 거꾸로 판단하기',
+    vars: {
+      nowHu: { from: 4, to: 8 },
+      back: { from: 2, to: 3 },
+      now: { calc: 'nowHu * 100' },
+      then: { calc: 'nowHu * 100 - back * 100' },
+      forward: { calc: 'nowHu * 100 + back * 100' },
+    },
+    prompt:
+      '오늘 저금통에 {now}원이 들어 있습니다. 매주 100원씩 넣어 왔다면 {back}주 전에는 얼마가 들어 있었을까요?',
+    answer: '{then}원',
+    wrongs: ['{now}원', '{forward}원', '{then + 100}원'],
+    solution:
+      '앞으로 갈 때 100씩 커졌으므로 거꾸로 가면 100씩 작아집니다. {back}번 거꾸로 뛰면 {then}원입니다.',
+  },
+  {
+    id: 'real-threedigit-compare-shops',
+    when: /수의 크기를 비교해 볼까요/,
+    semester: '2-1',
+    real: true,
+    demand: 'reason',
+    tag: 'number',
+    strategy: '자료 해석 · 세 곳의 값을 견주어 고르기',
+    vars: {
+      hu: { from: 3, to: 8 },
+      low: { from: 1, to: 3 },
+      high: { from: 5, to: 8 },
+      priceA: { calc: 'hu * 100 + high * 10 + 5' },
+      priceB: { calc: 'hu * 100 + low * 10 + 9' },
+      priceC: { calc: 'hu * 100 + high * 10 + 2' },
+    },
+    words: { thing: ['같은 공책', '같은 지우개', '같은 색연필', '같은 자'] },
+    // 일의 자리만 보면 나 가게가 가장 비싸 보입니다. 십의 자리부터
+    // 보아야 한다는 것을 알아야 풀립니다.
+    prompt:
+      '{thing:을} 세 가게에서 팝니다. 가 가게는 {priceA}원, 나 가게는 {priceB}원, 다 가게는 {priceC}원입니다. 가장 싼 가게는 어디일까요?',
+    answer: '나 가게',
+    wrongs: ['가 가게', '다 가게', '세 곳이 모두 같습니다'],
+    solution:
+      '백의 자리가 모두 같으므로 십의 자리를 봅니다. 나 가게가 {low}로 가장 작아 가장 쌉니다.',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // 2-1 ② 여러 가지 도형 — 실생활 문제 해결
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'real-shape-triangle-count-sides',
+    when: /△을 알아보고 찾아/,
+    real: true,
+    demand: 'reason',
+    tag: 'shape',
+    strategy: '조건 함께 보기 · 곧은 선을 세어 도형을 판단하기',
+    vars: {
+      many: { from: 2, to: 5 },
+      sides: { calc: 'many * 3' },
+      corners: { calc: 'many * 3' },
+    },
+    words: { thing: ['삼각김밥', '삼각자', '교통 표지판', '깃발'] },
+    // 삼각형 하나의 변이 3개라는 것을 알고, 여러 개일 때로 늘려야 합니다.
+    prompt:
+      '{thing} 모양의 삼각형 {many}개를 종이에 그렸습니다. 그린 변은 모두 몇 개일까요?',
+    answer: '{sides}개',
+    wrongs: ['{many}개', '3개', '{sides + 3}개'],
+    solution:
+      '삼각형 하나에 변이 3개이므로 {many}개면 변은 모두 {sides}개입니다.',
+  },
+  {
+    id: 'real-shape-square-in-room',
+    when: /□을 알아보고 찾아/,
+    real: true,
+    demand: 'reason',
+    tag: 'shape',
+    strategy: '자료 해석 · 생활 속 물건을 견주어 도형 판단하기',
+    vars: { any: { from: 1, to: 4 } },
+    words: {
+      four: ['공책', '창문', '책상 윗면', '색종이', '텔레비전 화면'],
+      three: ['삼각김밥', '삼각자'],
+      round: ['동전', '접시', '단추'],
+    },
+    prompt:
+      '교실에서 {four}, {three}, {round}을 찾았습니다. 이 가운데 곧은 선 4개로 둘러싸인 것은 어느 것일까요?',
+    answer: '{four}',
+    wrongs: ['{three}', '{round}', '셋 다 아닙니다'],
+    solution:
+      '{four:은} 곧은 선 4개로 둘러싸여 있어 사각형입니다.',
+  },
+  {
+    id: 'real-shape-circle-rolls',
+    when: /○을 알아보고 찾아/,
+    real: true,
+    demand: 'reason',
+    tag: 'shape',
+    strategy: '조건 함께 보기 · 어느 쪽에서 보아도 둥근지 판단하기',
+    vars: { any: { from: 1, to: 4 } },
+    words: { round: ['접시', '동전', '단추', '시계 앞면'], flat: ['공책', '색종이', '지우개', '필통'] },
+    prompt:
+      '{round:과} {flat:을} 바닥에 대고 본떠 그렸습니다. 어느 쪽에서 대어도 똑같이 둥근 모양이 나오는 것은 어느 것일까요?',
+    answer: '{round}',
+    wrongs: ['{flat}', '둘 다 둥급니다', '둘 다 둥글지 않습니다'],
+    solution:
+      '{round:은} 어느 쪽에서 보아도 둥글어 본뜨면 원이 됩니다.',
+  },
+  {
+    id: 'real-shape-tangram-pieces',
+    when: /칠교판으로 모양을/,
+    real: true,
+    demand: 'reason',
+    tag: 'shape',
+    strategy: '조건 함께 보기 · 칠교 조각의 곧은 선을 판단하기',
+    vars: {
+      tri: { from: 2, to: 4 },
+      sides: { calc: 'tri * 3 + 4' },
+    },
+    prompt:
+      '칠교판에서 삼각형 조각 {tri}개와 사각형 조각 1개를 골랐습니다. 고른 조각의 변은 모두 몇 개일까요?',
+    answer: '{sides}개',
+    wrongs: ['{tri * 3}개', '{tri + 1}개', '{sides + 3}개'],
+    solution:
+      '삼각형은 변이 3개씩이라 {tri}개면 {tri * 3}개이고, 사각형 1개의 변 4개를 더하면 {sides}개입니다.',
+  },
+  {
+    id: 'real-shape-stack-count',
+    when: /쌓은 모양을 알아볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'shape',
+    strategy: '조건 함께 보기 · 층마다 세어 쌓기나무 수를 판단하기',
+    vars: {
+      first: { from: 3, to: 6 },
+      second: { from: 1, to: 3 },
+      total: { calc: 'first + second' },
+    },
+    prompt:
+      '쌓기나무를 1층에 {first}개 놓고 그 위 2층에 {second}개를 올렸습니다. 쌓기나무는 모두 몇 개일까요?',
+    answer: '{total}개',
+    wrongs: ['{first}개', '{second}개', '{total + 1}개'],
+    solution: '1층 {first}개와 2층 {second}개를 더하면 {total}개입니다.',
+  },
+  {
+    id: 'real-shape-stack-need-more',
+    when: /여러 가지 모양으로 쌓아/,
+    real: true,
+    demand: 'reason',
+    tag: 'shape',
+    strategy: '조건 함께 보기 · 몇 개가 더 있어야 하는지 거꾸로 판단하기',
+    vars: {
+      want: { from: 7, to: 12 },
+      have: { from: 3, to: 6 },
+      more: { calc: 'want - have' },
+    },
+    prompt:
+      '쌓기나무 {want}개로 모양을 만들려고 합니다. 지금 {have}개가 있습니다. 몇 개가 더 있어야 할까요?',
+    answer: '{more}개',
+    wrongs: ['{want}개', '{have}개', '{more + 1}개'],
+    solution: '{want}-{have}={more}이므로 {more}개가 더 있어야 합니다.',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // 2-1 ③ 덧셈과 뺄셈 — 실생활 문제 해결
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'real-add-carry-one',
+    when: /덧셈을 해 볼까요 ⑴/,
+    real: true,
+    demand: 'reason',
+    tag: 'addition',
+    strategy: '조건 함께 보기 · 쓰이지 않는 조건을 가려내어 판단하기',
+    vars: {
+      have: { from: 24, to: 58 },
+      got: { from: 4, to: 9 },
+      gave: { from: 2, to: 5 },
+      total: { calc: 'have + got' },
+      trap: { calc: 'have + got + gave' },
+    },
+    words: { item: ['딱지', '구슬', '붙임딱지', '색종이'] },
+    // 친구 수는 답과 상관없습니다.
+    prompt:
+      '{item:을} {have}장 가지고 있었는데 {got}장을 더 받았습니다. 그때 옆에 친구가 {gave}명 있었습니다. {item:은} 모두 몇 장일까요?',
+    answer: '{total}장',
+    wrongs: ['{trap}장', '{have}장', '{total + 1}장'],
+    solution:
+      '친구 수는 {item} 수와 상관이 없습니다. {have}+{got}={total}장입니다.',
+  },
+  {
+    id: 'real-add-two-digit',
+    when: /덧셈을 해 볼까요 ⑵/,
+    real: true,
+    demand: 'reason',
+    tag: 'addition',
+    strategy: '조건 함께 보기 · 두 날의 수를 모아 판단하기',
+    vars: {
+      first: { from: 26, to: 48 },
+      second: { from: 27, to: 49 },
+      total: { calc: 'first + second' },
+      diff: { calc: 'second - first' },
+    },
+    words: { what: ['줄넘기를 넘은 횟수', '읽은 쪽수', '모은 병뚜껑 수', '접은 종이학 수'] },
+    prompt:
+      '어제 {what:은} {first}이고 오늘은 {second}입니다. 이틀 동안 모두 얼마일까요?',
+    answer: '{total}',
+    wrongs: ['{diff}', '{second}', '{total + 10}'],
+    solution: '{first}+{second}={total}입니다.',
+  },
+  {
+    id: 'real-add-choose-way',
+    when: /여러 가지 방법으로 덧셈을/,
+    real: true,
+    demand: 'reason',
+    tag: 'addition',
+    strategy: '자료 해석 · 더 쉬운 계산 방법을 견주어 고르기',
+    vars: {
+      a: { from: 27, to: 48 },
+      b: { from: 19, to: 29 },
+      rounded: { calc: 'b + 1' },
+      total: { calc: 'a + b' },
+      viaRound: { calc: 'a + b + 1' },
+    },
+    // 19를 20으로 보고 더한 뒤 1을 빼는 방법입니다.
+    prompt:
+      '{a}+{b:을} 더 쉽게 계산하려고 합니다. {b:을} {rounded}으로 보고 더한 다음에는 무엇을 해야 할까요?',
+    answer: '1을 뺍니다',
+    wrongs: ['1을 더합니다', '{rounded:을} 뺍니다', '아무것도 하지 않습니다'],
+    solution:
+      '{b} 대신 {rounded:을} 더했으므로 1을 더 많이 더한 셈입니다. 그래서 1을 빼야 {total}이 됩니다.',
+  },
+  {
+    id: 'real-sub-borrow-left',
+    when: /뺄셈을 해 볼까요 ⑴/,
+    real: true,
+    demand: 'reason',
+    tag: 'subtraction',
+    strategy: '조건 함께 보기 · 쓰고 남은 것을 판단하기',
+    vars: {
+      have: { from: 32, to: 65 },
+      used: { from: 4, to: 9 },
+      left: { calc: 'have - used' },
+    },
+    words: { item: ['색종이', '스티커', '풍선', '색연필'] },
+    prompt:
+      '{item:이} {have}장 있었습니다. 만들기를 하며 {used}장을 썼습니다. 남은 {item:은} 몇 장일까요?',
+    answer: '{left}장',
+    wrongs: ['{have}장', '{used}장', '{left + 1}장'],
+    solution: '{have}-{used}={left}장이 남습니다.',
+  },
+  {
+    id: 'real-sub-two-digit-gap',
+    when: /뺄셈을 해 볼까요 ⑵/,
+    real: true,
+    demand: 'reason',
+    tag: 'subtraction',
+    strategy: '자료 해석 · 두 사람의 수를 견주어 판단하기',
+    vars: {
+      more: { from: 52, to: 84 },
+      less: { from: 17, to: 39 },
+      gap: { calc: 'more - less' },
+      sum: { calc: 'more + less' },
+    },
+    words: { who: ['지호', '수아', '민서', '태윤'], item: ['구슬', '딱지', '붙임딱지', '병뚜껑'] },
+    prompt:
+      '{who:은} {item:을} {more}개, 나는 {less}개 모았습니다. {who:이} 나보다 몇 개 더 많을까요?',
+    answer: '{gap}개',
+    wrongs: ['{sum}개', '{more}개', '{gap + 10}개'],
+    solution: '{more}-{less}={gap}개 더 많습니다.',
+  },
+  {
+    id: 'real-sub-choose-way',
+    when: /여러 가지 방법으로 뺄셈을/,
+    real: true,
+    demand: 'reason',
+    tag: 'subtraction',
+    strategy: '자료 해석 · 더 쉬운 빼기 방법을 견주어 고르기',
+    vars: {
+      a: { from: 43, to: 76 },
+      b: { from: 18, to: 29 },
+      rounded: { calc: 'b + 1' },
+      answerValue: { calc: 'a - b' },
+    },
+    prompt:
+      '{a}-{b:을} 더 쉽게 계산하려고 합니다. {b} 대신 {rounded:을} 뺀 다음에는 무엇을 해야 할까요?',
+    answer: '1을 더합니다',
+    wrongs: ['1을 뺍니다', '{rounded:을} 더합니다', '아무것도 하지 않습니다'],
+    solution:
+      '{rounded:은} {b}보다 1 큽니다. 1을 더 많이 뺐으므로 1을 도로 더해야 {answerValue}이 됩니다.',
+  },
+  {
+    id: 'real-three-numbers-shop',
+    when: /세 수의 계산을 해 볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'addition',
+    strategy: '조건 함께 보기 · 세 수를 차례로 셈하여 판단하기',
+    vars: {
+      start: { from: 34, to: 58 },
+      got: { from: 12, to: 26 },
+      used: { from: 8, to: 19 },
+      afterGot: { calc: 'start + got' },
+      left: { calc: 'start + got - used' },
+      wrongOrder: { calc: 'start + got + used' },
+    },
+    words: { item: ['붙임딱지', '구슬', '색종이', '딱지'] },
+    prompt:
+      '{item:을} {start}개 가지고 있었습니다. {got}개를 더 받고 {used}개를 썼습니다. 지금 {item:은} 몇 개일까요?',
+    answer: '{left}개',
+    wrongs: ['{wrongOrder}개', '{afterGot}개', '{start}개'],
+    solution:
+      '앞에서부터 차례로 셈합니다. {start}+{got}={afterGot}, {afterGot}-{used}={left}개입니다.',
+  },
+  {
+    id: 'real-relation-check',
+    when: /덧셈과 뺄셈의 관계를 식으로/,
+    real: true,
+    demand: 'reason',
+    tag: 'addition',
+    strategy: '자료 해석 · 덧셈과 뺄셈이 이어져 있는지 판단하기',
+    vars: {
+      part: { from: 14, to: 38 },
+      other: { from: 12, to: 35 },
+      whole: { calc: 'part + other' },
+    },
+    words: { item: ['사탕', '구슬', '색연필', '붙임딱지'] },
+    prompt:
+      '{item} {whole}개를 두 상자에 나누어 담았더니 한 상자에 {part}개가 들어갔습니다. 다른 상자에 든 수를 구하려면 어떤 식을 세워야 할까요?',
+    answer: '{whole}-{part}',
+    wrongs: ['{whole}+{part}', '{part}+{other}', '{part}-{other}'],
+    solution:
+      '전체에서 아는 부분을 빼면 나머지 부분을 알 수 있습니다. {whole}-{part}={other}개입니다.',
+  },
+  {
+    id: 'real-box-value',
+    when: /□의 값을 구해 볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'subtraction',
+    strategy: '조건 함께 보기 · 빈 곳의 수를 거꾸로 판단하기',
+    vars: {
+      had: { from: 25, to: 48 },
+      now: { from: 51, to: 79 },
+      got: { calc: 'now - had' },
+    },
+    words: { item: ['딱지', '구슬', '붙임딱지', '병뚜껑'] },
+    prompt:
+      '{item:을} {had}개 가지고 있었는데 몇 개를 더 받아 {now}개가 되었습니다. 받은 {item:은} 몇 개일까요?',
+    answer: '{got}개',
+    wrongs: ['{now}개', '{had}개', '{got + 10}개'],
+    solution:
+      '나중 수에서 처음 수를 빼면 받은 수를 알 수 있습니다. {now}-{had}={got}개입니다.',
+  },
 ];
