@@ -13515,18 +13515,21 @@ export const questionBank: Template[] = [
     strategy: '조건 함께 보기 · 두 가지로 읽은 시각이 같은지 판단하기',
     vars: {
       hour: { from: 2, to: 8 },
-      before: { from: 5, to: 15 },
-      minute: { calc: '60 - before' },
+      // 몇 분 전은 5분 단위로만 읽습니다. 교과서가 다루는 자리입니다.
+      step: { from: 1, to: 3 },
+      before: { calc: 'step * 5' },
+      minute: { calc: '60 - step * 5' },
       next: { calc: 'hour + 1' },
     },
     words: { what: ['영화가 시작', '기차가 출발', '수업이 끝', '약속 시각'] },
     prompt:
       '{what}하는 시각을 어떤 사람은 {hour}시 {minute}분이라 하고, 어떤 사람은 {next}시 {before}분 전이라고 했습니다. 두 사람이 말한 시각은 어떤 관계일까요?',
     answer: '같은 시각을 다르게 말한 것입니다',
+    // '1시간'은 5차시에서 배웁니다. 4차시 보기에 쓰면 선행입니다.
     wrongs: [
       '{before}분 차이가 납니다',
       '{minute}분 차이가 납니다',
-      '1시간 차이가 납니다',
+      '뒤에 말한 것이 더 늦은 시각입니다',
     ],
     solution:
       '{hour}시 {minute}분에서 {next}시까지 {before}분이 남았습니다. 그래서 {next}시 {before}분 전과 같은 시각입니다.',
@@ -13633,10 +13636,12 @@ export const questionBank: Template[] = [
     demand: 'reason',
     tag: 'data',
     strategy: '자료 해석 · 합계로 빠진 수를 거꾸로 판단하기',
+    // 답과 같은 수가 문제글에 있으면 아이가 그 수를 그대로 옮겨 적습니다.
+    // 세 수가 서로 다른 자리에서 나오게 합니다.
     vars: {
-      a: { from: 4, to: 8 },
-      b: { from: 2, to: 6 },
-      c: { from: 3, to: 7 },
+      a: { from: 6, to: 9 },
+      b: { from: 1, to: 4 },
+      c: { from: 10, to: 13 },
       total: { calc: 'a + b + c' },
       known: { calc: 'a + c' },
     },
