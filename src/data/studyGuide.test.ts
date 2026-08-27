@@ -76,4 +76,36 @@ describe('공부 안내', () => {
   it('푼 것이 없으면 칭찬도 없다', () => {
     expect(studyGuideFor([], 1).cheer).toBe('');
   });
+
+  it('되풀이된 실수에는 고치는 법을 붙인다', () => {
+    const same = [1, 2, 3].map((no) =>
+      record({
+        questionId: `q${no}`,
+        correct: false,
+        chosen: '8',
+        chosenMeaning: '문제에 나온 수를 그대로 고름',
+      }),
+    );
+    const guide = studyGuideFor(same, 1);
+    expect(guide.habits.length).toBeGreaterThan(0);
+    expect(guide.habits[0].times).toBe(3);
+    // 무엇을 하라는 말이 있어야 합니다.
+    expect(guide.habits[0].fix).toMatch(/세요|니다/);
+  });
+
+  it('한 번뿐인 실수는 버릇이라고 말하지 않는다', () => {
+    const once = [
+      record({ questionId: 'a', correct: false, chosenMeaning: '자리를 한 칸 잘못 봄' }),
+      record({ questionId: 'b', correct: true }),
+    ];
+    expect(studyGuideFor(once, 1).habits).toEqual([]);
+  });
+
+  it('걸린 갈래마다 실제로 틀린 문제를 남긴다', () => {
+    const missed = [record({ questionId: 'a', correct: false, chosen: '8' })];
+    const guide = studyGuideFor(missed, 1);
+    expect(guide.weak.length).toBeGreaterThan(0);
+    expect(guide.weak[0].example?.prompt).toContain('5');
+    expect(guide.weak[0].example?.firstMove.length).toBeGreaterThan(10);
+  });
 });
