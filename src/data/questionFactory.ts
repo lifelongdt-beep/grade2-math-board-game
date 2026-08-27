@@ -47,13 +47,35 @@ const difficultyDesign: Record<Difficulty, { label: string; solutionLead: string
   },
 };
 
+// 한 차시의 문항 생성기는 여러 모양(variant)을 가지고 있고, 이 함수가
+// 난이도마다 어느 모양을 쓸지 정합니다.
+//
+// 예전에는 하가 앞쪽 두세 모양만 쓰고 중은 전체를 돌았습니다. 중이 도는
+// 길에 하의 모양이 그대로 들어 있어, 중의 서른 자리 가운데 열아홉이 하와
+// 똑같은 문항이던 차시가 있었습니다. 수준을 나눈 뜻이 없어집니다.
+//
+// 이제 하와 중이 서로 다른 모양을 씁니다.
+//   하  앞쪽 모양(0 … easyCount-1)   — 개념 하나를 그대로 묻는 자리
+//   중  뒤쪽 모양(easyCount … 끝)     — 그 개념을 상황에 붙이는 자리
+//   상  전체를 돌되 자리를 옮겨       — 중과 같은 자리에서 시작하지 않게
+//
+// 뒤쪽 모양이 없을 만큼 모양이 적은 생성기에서는 나눌 것이 없으므로
+// 예전처럼 전체를 돕니다. 그런 차시는 문제은행의 중 전용 문항이 받습니다.
 const variantForDifficulty = (difficulty: Difficulty, index: number, total: number, easyCount = 2) => {
+  const easySpan = Math.max(1, Math.min(easyCount, total));
+
   if (difficulty === '하') {
-    return index % Math.max(1, Math.min(easyCount, total));
+    return index % easySpan;
   }
 
-  const offset = difficulty === '중' ? Math.max(1, easyCount - 1) : Math.max(2, easyCount);
-  return (index + offset) % total;
+  if (difficulty === '중') {
+    const hardSpan = total - easySpan;
+    if (hardSpan >= 2) return easySpan + (index % hardSpan);
+    // 나눌 만큼 모양이 많지 않습니다.
+    return (index + Math.max(1, easyCount - 1)) % total;
+  }
+
+  return (index + Math.max(2, easyCount)) % total;
 };
 
 const tagLabel: Record<ConceptTag, string> = {
