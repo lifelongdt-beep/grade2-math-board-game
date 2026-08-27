@@ -14738,7 +14738,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'placeValue',
-    strategy: '문장 상황에서 묶음 세기',
+    strategy: '조건 함께 보기 · 문장 상황에서 묶음 세기',
     vars: {
       bags: { from: 3, to: 9 },
       loose: { from: 1, to: 9 },
@@ -14757,7 +14757,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'number',
-    strategy: '문장 상황에서 몇천 읽기',
+    strategy: '조건 함께 보기 · 문장 상황에서 몇천 읽기',
     vars: {
       bills: { from: 2, to: 9 },
       total: { calc: 'bills * 1000' },
@@ -14776,7 +14776,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'multiplication',
-    strategy: '문장 상황에서 묶어 세기',
+    strategy: '조건 함께 보기 · 문장 상황에서 묶어 세기',
     vars: {
       each: { from: 2, to: 5 },
       groups: { from: 3, to: 6 },
@@ -14795,7 +14795,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'multiplication',
-    strategy: '문장 상황에서 1의 곱과 0의 곱 쓰기',
+    strategy: '조건 함께 보기 · 문장 상황에서 1의 곱과 0의 곱 쓰기',
     vars: {
       plates: { from: 4, to: 8 },
       one: { calc: 'plates * 1' },
@@ -14813,7 +14813,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'multiplication',
-    strategy: '문장 상황에서 곱셈표 읽기',
+    strategy: '조건 함께 보기 · 문장 상황에서 곱셈표 읽기',
     vars: {
       dan: { from: 3, to: 8 },
       times: { from: 4, to: 9 },
@@ -14833,7 +14833,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'measurement',
-    strategy: '문장 상황에서 길이 견주기',
+    strategy: '조건 함께 보기 · 문장 상황에서 길이 견주기',
     vars: {
       a: { from: 12, to: 19 },
       b: { from: 4, to: 9 },
@@ -14852,7 +14852,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'measurement',
-    strategy: '문장 상황에서 m와 cm 바꾸기',
+    strategy: '조건 함께 보기 · 문장 상황에서 m와 cm 바꾸기',
     vars: {
       m: { from: 2, to: 8 },
       cm: { calc: 'm * 100' },
@@ -14871,7 +14871,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'time',
-    strategy: '문장 상황에서 시각 읽기',
+    strategy: '조건 함께 보기 · 문장 상황에서 시각 읽기',
     vars: {
       hour: { from: 1, to: 9 },
       next: { calc: 'hour + 1' },
@@ -14892,7 +14892,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'data',
-    strategy: '문장 상황에서 세어 정리하기',
+    strategy: '조건 함께 보기 · 문장 상황에서 세어 정리하기',
     vars: {
       a: { from: 5, to: 9 },
       b: { from: 2, to: 4 },
@@ -14912,7 +14912,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'pattern',
-    strategy: '문장 상황에서 되풀이되는 묶음 찾기',
+    strategy: '조건 함께 보기 · 문장 상황에서 되풀이되는 묶음 찾기',
     vars: {
       unit: { from: 2, to: 4 },
       rounds: { from: 3, to: 5 },
@@ -14935,7 +14935,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'placeValue',
-    strategy: '문장 상황에서 묶음 세기',
+    strategy: '조건 함께 보기 · 문장 상황에서 묶음 세기',
     vars: {
       bags: { from: 3, to: 9 },
       loose: { from: 1, to: 9 },
@@ -14954,7 +14954,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'number',
-    strategy: '문장 상황에서 몇백 읽기',
+    strategy: '조건 함께 보기 · 문장 상황에서 몇백 읽기',
     vars: {
       coins: { from: 2, to: 9 },
       total: { calc: 'coins * 100' },
@@ -14973,7 +14973,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'shape',
-    strategy: '문장 상황에서 곧은 선 세기',
+    strategy: '조건 함께 보기 · 문장 상황에서 곧은 선 세기',
     vars: {
       three: { from: 2, to: 4 },
       four: { from: 2, to: 4 },
@@ -14992,7 +14992,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'shape',
-    strategy: '문장 상황에서 꼭짓점 세기',
+    strategy: '조건 함께 보기 · 문장 상황에서 꼭짓점 세기',
     vars: {
       many: { from: 2, to: 5 },
       corners: { calc: 'many * 3' },
@@ -15010,7 +15010,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'shape',
-    strategy: '문장 상황에서 변 세기',
+    strategy: '조건 함께 보기 · 문장 상황에서 변 세기',
     vars: {
       many: { from: 2, to: 5 },
       sides: { calc: 'many * 4' },
@@ -15028,7 +15028,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'shape',
-    strategy: '문장 상황에서 원의 성질 쓰기',
+    strategy: '조건 함께 보기 · 문장 상황에서 원의 성질 쓰기',
     vars: {
       round: { from: 3, to: 6 },
       other: { from: 2, to: 5 },
@@ -15048,7 +15048,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'addition',
-    strategy: '문장 상황에서 더할지 뺄지 정하기',
+    strategy: '조건 함께 보기 · 문장 상황에서 더할지 뺄지 정하기',
     vars: {
       have: { from: 23, to: 45 },
       more: { from: 12, to: 30 },
@@ -15068,7 +15068,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'addition',
-    strategy: '문장 상황에서 가르고 모아 더하기',
+    strategy: '조건 함께 보기 · 문장 상황에서 가르고 모아 더하기',
     vars: {
       a: { from: 26, to: 48 },
       b: { from: 13, to: 27 },
@@ -15089,7 +15089,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'addition',
-    strategy: '문장 상황에서 세 수를 차례로 셈하기',
+    strategy: '조건 함께 보기 · 문장 상황에서 세 수를 차례로 셈하기',
     vars: {
       start: { from: 22, to: 40 },
       more: { from: 10, to: 22 },
@@ -15111,7 +15111,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'subtraction',
-    strategy: '문장 상황에서 전체와 부분 가르기',
+    strategy: '조건 함께 보기 · 문장 상황에서 전체와 부분 가르기',
     vars: {
       whole: { from: 34, to: 68 },
       part: { from: 12, to: 30 },
@@ -15130,7 +15130,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'subtraction',
-    strategy: '문장 상황에서 빈 곳의 수 찾기',
+    strategy: '조건 함께 보기 · 문장 상황에서 빈 곳의 수 찾기',
     vars: {
       had: { from: 21, to: 44 },
       now: { from: 52, to: 78 },
@@ -15151,7 +15151,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'measurement',
-    strategy: '문장 상황에서 길이 견주기',
+    strategy: '조건 함께 보기 · 문장 상황에서 길이 견주기',
     vars: {
       a: { from: 5, to: 9 },
       b: { from: 10, to: 14 },
@@ -15171,7 +15171,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'measurement',
-    strategy: '문장 상황에서 옮겨 견주기',
+    strategy: '조건 함께 보기 · 문장 상황에서 옮겨 견주기',
     vars: { any: { from: 1, to: 4 } },
     words: { fixed: ['교실 문', '칠판', '창문', '책꽂이'] },
     prompt:
@@ -15191,7 +15191,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'measurement',
-    strategy: '문장 상황에서 자의 눈금 읽기',
+    strategy: '조건 함께 보기 · 문장 상황에서 자의 눈금 읽기',
     vars: {
       cm: { from: 5, to: 13 },
     },
@@ -15209,7 +15209,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'classification',
-    strategy: '문장 상황에서 기준 정하기',
+    strategy: '조건 함께 보기 · 문장 상황에서 기준 정하기',
     vars: { any: { from: 1, to: 4 } },
     words: { place: ['신발장', '학용품 정리함', '책꽂이', '옷장'] },
     prompt:
@@ -15229,7 +15229,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'classification',
-    strategy: '문장 상황에서 기준에 맞게 나누기',
+    strategy: '조건 함께 보기 · 문장 상황에서 기준에 맞게 나누기',
     vars: {
       red: { from: 3, to: 7 },
       blue: { from: 2, to: 6 },
@@ -15248,7 +15248,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'multiplication',
-    strategy: '문장 상황에서 뛰어 세기',
+    strategy: '조건 함께 보기 · 문장 상황에서 뛰어 세기',
     vars: {
       each: { from: 2, to: 5 },
       groups: { from: 3, to: 6 },
@@ -15268,7 +15268,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'multiplication',
-    strategy: '문장 상황을 곱셈식으로 쓰기',
+    strategy: '조건 함께 보기 · 문장 상황을 곱셈식으로 쓰기',
     vars: {
       each: { from: 3, to: 8 },
       groups: { from: 2, to: 6 },
