@@ -51,6 +51,33 @@ const whatWentWell = (strategy: string) => {
   return '수를 빠뜨리지 않고 세고, 자리를 맞추어 계산했어요.';
 };
 
+// 되풀이된 실수를 고치는 법입니다.
+//
+// 아이가 고른 오답에서 이미 무엇을 잘못했는지 읽어 두었습니다
+// (choiceMeaning). 그런데 끝나고 나서 주는 말은 갈래별 일반 문장
+// 하나뿐이었습니다. 무엇을 틀렸는지 아는데 그 이야기를 하지 않은
+// 것입니다.
+//
+// 실수마다 '무엇이 일어났는지'와 '다음에 어떻게 하는지'를 짝지어
+// 둡니다. 두 번 넘게 되풀이된 것만 말합니다 — 한 번은 실수이고
+// 두 번부터가 버릇입니다.
+const habitFix: Record<string, string> = {
+  '문제에 나온 수를 그대로 고름':
+    '보기에서 문제에 있던 수가 보이면 먼저 손이 갑니다. 답을 고르기 전에 종이에 한 번 계산해 보고, 그 값이 보기에 있는지 찾으세요.',
+  '빼야 할 곳에서 더함':
+    '"모두"와 "남은"을 바꾸어 읽고 있습니다. 문장에서 묻는 말에 동그라미를 치고, 늘어나는 이야기인지 줄어드는 이야기인지 먼저 말해 보세요.',
+  '더해야 할 곳에서 뺌':
+    '"모두"와 "남은"을 바꾸어 읽고 있습니다. 문장에서 묻는 말에 동그라미를 치고, 늘어나는 이야기인지 줄어드는 이야기인지 먼저 말해 보세요.',
+  '더해야 할 곳에서 곱함':
+    '묶음이 아닌데 곱하고 있습니다. "몇 개씩"이라는 말이 있는지 먼저 찾으세요. 그 말이 없으면 곱셈이 아닙니다.',
+  '받아올림이나 받아내림을 빠뜨림':
+    '올린 1과 빌려 온 10을 자꾸 잊습니다. 세로로 쓰고 올린 수는 윗자리에 작게 적어 두세요. 적어 두면 잊지 않습니다.',
+  '자리를 한 칸 잘못 봄':
+    '자리를 한 칸씩 밀려 보고 있습니다. 수를 쓸 때 천·백·십·일 이름을 위에 적고 그 아래에 숫자를 쓰세요.',
+  '하나 더 세거나 덜 셈':
+    '셀 때 하나를 겹쳐 세거나 빠뜨립니다. 센 것에는 반드시 표시를 하고, 다 센 뒤에 한 번 더 세어 맞는지 보세요.',
+};
+
 export type StrongKind = {
   kind: string;
   total: number;
@@ -62,6 +89,11 @@ export type WeakKind = {
   kind: string;
   wrong: number;
   total: number;
+  // 그 갈래에서 실제로 틀린 문제 하나입니다. '무엇을 더 공부하라'는
+  // 말만으로는 집에서 무엇을 펼쳐야 할지 알 수 없습니다. 틀린 문제와
+  // 그 문제의 첫 동작을 함께 남겨, 그 자리에서 다시 해 볼 수 있게
+  // 합니다.
+  example: { prompt: string; answer: string; firstMove: string } | null;
 };
 
 export type StudyGuide = {
@@ -78,6 +110,8 @@ export type StudyGuide = {
   // 말합니다. 계산에서 두 갈래가 걸렸다고 같은 말을 두 번 읽힐 이유가
   // 없습니다.
   advice: string[];
+  // 되풀이된 실수와 그것을 고치는 법입니다.
+  habits: Array<{ what: string; times: number; fix: string }>;
   // 이 차시에서 조심할 곳과 다 풀고 확인할 것입니다. 차시마다 하나씩
   // 정해져 있으므로 갈래마다 되풀이하지 않고 아래에 한 번 둡니다.
   watchOut: string;
@@ -129,11 +163,29 @@ export const studyGuideFor = (records: AnswerRecord[], playerId: number): StudyG
     kind,
     wrong: count.wrong,
     total: count.total,
+    example: {
+      prompt: count.sample.prompt,
+      answer: count.sample.answer,
+      firstMove: count.sample.support.studentHint,
+    },
   }));
 
   // 같은 말은 한 번만 합니다. 갈래마다 붙이면 세 갈래가 모두 계산일 때
   // 똑같은 문장을 세 번 읽게 됩니다.
   const advice = [...new Set(missed.map(([, count]) => howToPractise(count.sample.strategy)))];
+
+  // 아이가 고른 오답에서 읽어 둔 실수를 셉니다. 두 번 넘게 되풀이된
+  // 것만 말합니다 — 한 번은 실수이고 두 번부터가 버릇입니다.
+  const habitCount = new Map<string, number>();
+  for (const record of mine) {
+    if (record.correct || !record.chosenMeaning) continue;
+    habitCount.set(record.chosenMeaning, (habitCount.get(record.chosenMeaning) ?? 0) + 1);
+  }
+  const habits = [...habitCount.entries()]
+    .filter(([what, times]) => times >= 2 && habitFix[what])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([what, times]) => ({ what, times, fix: habitFix[what] }));
 
   // 조심할 곳과 확인 질문은 그 차시의 것이라 갈래가 달라도 같습니다.
   // 하나만 골라 아래에 둡니다.
@@ -172,6 +224,7 @@ export const studyGuideFor = (records: AnswerRecord[], playerId: number): StudyG
     weak,
     cheer,
     recovered,
+    habits,
     advice,
     watchOut: first?.support.misconceptionTip ?? '',
     selfCheck: first?.support.selfCheck ?? '',

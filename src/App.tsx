@@ -1592,9 +1592,33 @@ function App() {
                                     <li key={one.kind}>
                                       <strong>{one.kind}</strong>
                                       <span>{one.total}번 중 {one.wrong}번 걸렸어요</span>
+                                      {/* '무엇을 더 공부하라'는 말만으로는
+                                          집에서 무엇을 펼쳐야 할지 알 수
+                                          없습니다. 실제로 틀린 문제와 그
+                                          문제의 첫 동작을 함께 둡니다. */}
+                                      {one.example && (
+                                        <span className="lane-guide-example">
+                                          <em>{one.example.prompt}</em>
+                                          <b>답 {one.example.answer}</b>
+                                          <i>{one.example.firstMove}</i>
+                                        </span>
+                                      )}
                                     </li>
                                   ))}
                                 </ul>
+
+                                {/* 두 번 넘게 되풀이된 실수입니다. 한 번은
+                                    실수이고 두 번부터가 버릇입니다. */}
+                                {guide.habits.length > 0 && (
+                                  <ul className="lane-habits">
+                                    {guide.habits.map((one) => (
+                                      <li key={one.what}>
+                                        <strong>{one.what} {one.times}번</strong>
+                                        <span>{one.fix}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
 
                                 <div className="lane-guide-advice">
                                   {guide.advice.map((line) => (
