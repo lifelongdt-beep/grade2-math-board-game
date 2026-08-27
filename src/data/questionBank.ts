@@ -15608,7 +15608,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'pattern',
-    strategy: '조건 함께 보기 · 문장 상황에서 쌓기 규칙 잇기',
+    strategy: '조건 함께 보기 · 문장 상황에서 다음에 쌓을 수 세기',
     vars: {
       start: { from: 2, to: 4 },
       step: { from: 2, to: 3 },
