@@ -12887,6 +12887,7 @@ export const questionBank: Template[] = [
   // ══════════════════════════════════════════════════════════════
   {
     id: 'real-thousand-coins-together',
+    real: true,
     // '몇천을 알아볼까요'에도 걸리지 않게 앞을 묶어 둡니다.
     when: /^천을 알아볼까요/,
     demand: 'reason',
@@ -12908,6 +12909,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'real-thousand-save-days',
+    real: true,
     // '몇천을 알아볼까요'에도 걸리지 않게 앞을 묶어 둡니다.
     when: /^천을 알아볼까요/,
     demand: 'reason',
@@ -12930,6 +12932,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'real-thousands-buy-with-bills',
+    real: true,
     when: /몇천을 알아볼까요/,
     demand: 'reason',
     tag: 'number',
@@ -12951,6 +12954,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'real-thousands-count-mixed',
+    real: true,
     when: /몇천을 알아볼까요/,
     demand: 'reason',
     tag: 'placeValue',
@@ -12972,6 +12976,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'real-fourdigit-warehouse',
+    real: true,
     when: /네 자리 수를 알아볼까요/,
     demand: 'reason',
     tag: 'placeValue',
@@ -12997,6 +13002,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'real-fourdigit-pay-with-bills',
+    real: true,
     when: /각 자리의 숫자는 얼마를 나타/,
     demand: 'reason',
     tag: 'placeValue',
@@ -13022,6 +13028,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'real-skip-count-saving',
+    real: true,
     when: /뛰어 세어 볼까요/,
     demand: 'reason',
     tag: 'number',
@@ -13042,6 +13049,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'real-skip-count-backwards',
+    real: true,
     when: /뛰어 세어 볼까요/,
     demand: 'reason',
     tag: 'number',
@@ -13063,6 +13071,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'real-compare-shop-middle',
+    real: true,
     when: /수의 크기를 비교해 볼까요/,
     demand: 'reason',
     tag: 'number',
@@ -13087,6 +13096,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'real-compare-shop-last',
+    real: true,
     when: /수의 크기를 비교해 볼까요/,
     demand: 'reason',
     tag: 'number',
@@ -13109,6 +13119,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'real-compare-enough-money',
+    real: true,
     when: /수의 크기를 비교해 볼까요/,
     demand: 'reason',
     tag: 'number',
