@@ -205,7 +205,7 @@ const primaryTag = (lesson: Lesson): ConceptTag => {
 // 문제와 해설이 어긋납니다. 달력 차시만 따로 도움말을 둡니다.
 const calendarLearningSupport = {
   studentConcept: '날짜인지 요일인지 먼저 보세요.',
-  studentHint: '1주일은 7일, 1년은 12개월이라는 점을 떠올려요.',
+  studentHint: '달력에서 같은 요일을 세로로 짚어 보세요. 7일마다 같은 요일이 돌아옵니다.',
   coreConcept: '1주일은 7일, 1년은 12개월이고, 달력에서 같은 요일은 7일마다 되풀이됩니다.',
   readStrategy: '무엇을 구하는지(몇 주, 며칠, 몇 월)를 먼저 나누고, 1주일 7일·1년 12개월 규칙을 적용합니다.',
   misconceptionTip: '12월 다음은 13월이 아니라 다시 1월입니다. 개월 수도 12를 넘기면 다음 해로 넘어갑니다.',
