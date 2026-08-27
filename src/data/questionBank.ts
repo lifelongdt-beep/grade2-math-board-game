@@ -15683,15 +15683,19 @@ export const questionBank: Template[] = [
     demand: 'connect',
     tag: 'data',
     strategy: '조건 함께 보기 · 문장 상황에서 그래프 칸 정하기',
+    // 답과 같은 수가 문제글에 있으면 아이가 그 수를 옮겨 적습니다.
     vars: {
-      count: { from: 3, to: 8 },
+      big: { from: 8, to: 9 },
+      small: { from: 1, to: 2 },
+      gap: { calc: 'big - small' },
     },
     words: { kind: ['사과', '딸기', '포도', '수박'] },
     prompt:
-      '{kind:을} 좋아하는 학생이 {count}명입니다. 한 칸에 한 명씩 그리는 그래프에서 {kind} 줄에는 ○를 몇 개 그려야 할까요?',
-    answer: '{count}개',
-    wrongs: ['1개', '{count + 1}개', '{count - 1}개'],
-    solution: '한 칸이 한 명이므로 {count}명이면 ○를 {count}개 그립니다.',
+      '한 칸에 한 명씩 그리는 그래프입니다. {kind} 줄에 ○가 {big}개, 참외 줄에 ○가 {small}개 있습니다. {kind:을} 좋아하는 학생은 참외보다 몇 명 더 많을까요?',
+    answer: '{gap}명',
+    wrongs: ['{big}명', '{small}명', '{gap + 1}명'],
+    solution:
+      '한 칸이 한 명이므로 ○ 수가 곧 학생 수입니다. {big}-{small}={gap}명 더 많습니다.',
   },
   {
     id: 'mid-stack-build-same',
