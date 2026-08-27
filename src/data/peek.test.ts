@@ -3,15 +3,15 @@ import { lessons } from './curriculum';
 import { generateQuestions } from './questionFactory';
 
 describe('peek', () => {
-  it('shows the new real-life questions', () => {
+  it('shows lesson 4 and 7', () => {
     for (const lesson of lessons) {
       if (lesson.semester !== '2-2' || lesson.unitNo !== 1) continue;
+      if (lesson.lessonNo !== 4 && lesson.lessonNo !== 7 && lesson.lessonNo !== 3) continue;
       const seen = new Set<string>();
       for (const q of generateQuestions(lesson, '상')) {
-        if (!/실생활|견주어|거꾸로 판단|가려내어|살 수 있는지|지폐 수|앞일을/.test(q.strategy)) continue;
-        if (seen.has(q.prompt)) continue;
-        seen.add(q.prompt);
-        console.log(`PEEK|${lesson.lessonNo}|${q.prompt.slice(0, 80)}|=> ${q.answer}`);
+        if (seen.has(q.strategy)) continue;
+        seen.add(q.strategy);
+        console.log(`PEEK|${lesson.lessonNo}|${q.strategy.slice(-30)}|${q.prompt.slice(0, 56)}`);
       }
     }
     expect(true).toBe(true);

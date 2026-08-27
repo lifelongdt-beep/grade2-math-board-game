@@ -12887,7 +12887,8 @@ export const questionBank: Template[] = [
   // ══════════════════════════════════════════════════════════════
   {
     id: 'real-thousand-coins-together',
-    when: /천을 알아볼까요/,
+    // '몇천을 알아볼까요'에도 걸리지 않게 앞을 묶어 둡니다.
+    when: /^천을 알아볼까요/,
     demand: 'reason',
     tag: 'number',
     strategy: '조건 함께 보기 · 얼마가 더 있어야 하는지 거꾸로 판단하기',
@@ -12907,7 +12908,8 @@ export const questionBank: Template[] = [
   },
   {
     id: 'real-thousand-save-days',
-    when: /천을 알아볼까요/,
+    // '몇천을 알아볼까요'에도 걸리지 않게 앞을 묶어 둡니다.
+    when: /^천을 알아볼까요/,
     demand: 'reason',
     tag: 'number',
     strategy: '조건 함께 보기 · 며칠이 걸리는지 거꾸로 판단하기',
@@ -12918,8 +12920,9 @@ export const questionBank: Template[] = [
       now: { calc: '10 - days * each' },
       nowWon: { calc: '1000 - days * each * 100' },
     },
+    words: { jar: ['저금통', '돼지 저금통', '용돈 통', '유리병', '지갑'] },
     prompt:
-      '저금통에 100원짜리 동전이 {now}개 있습니다. 하루에 {each}개씩 넣으면 1000원이 되는 것은 며칠 뒤일까요?',
+      '{jar:에} 100원짜리 동전이 {now}개 있습니다. 하루에 {each}개씩 넣으면 1000원이 되는 것은 며칠 뒤일까요?',
     answer: '{days}일 뒤',
     wrongs: ['{used}일 뒤', '{now}일 뒤', '{days + 1}일 뒤'],
     solution:
