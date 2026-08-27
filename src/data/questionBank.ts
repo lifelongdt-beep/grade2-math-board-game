@@ -13456,4 +13456,401 @@ export const questionBank: Template[] = [
     solution:
       '긴 곳은 걸음처럼 큰 단위로 어림해야 합니다. 손가락 마디로 재면 너무 여러 번 세어야 합니다.',
   },
+  // ══════════════════════════════════════════════════════════════
+  // 2-2 ④ 시각과 시간 — 실생활 문제 해결
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'real-time-read-late',
+    when: /몇 시 몇 분을 읽어 볼까요 ⑴/,
+    real: true,
+    demand: 'reason',
+    tag: 'time',
+    strategy: '조건 함께 보기 · 정한 때에 늦었는지 판단하기',
+    vars: {
+      hour: { from: 2, to: 8 },
+      meet: { from: 2, to: 6 },
+      came: { from: 7, to: 11 },
+      meetMin: { calc: 'meet * 5' },
+      cameMin: { calc: 'came * 5' },
+      lateMin: { calc: 'came * 5 - meet * 5' },
+    },
+    words: { who: ['지호', '수아', '민서', '태윤'] },
+    // 두 시각을 각각 읽은 뒤 견주어야 합니다.
+    prompt:
+      '{hour}시 {meetMin}분에 만나기로 했습니다. {who:은} {hour}시 {cameMin}분에 왔습니다. 몇 분 늦었을까요?',
+    answer: '{lateMin}분',
+    wrongs: ['{cameMin}분', '{meetMin}분', '{lateMin + 5}분'],
+    solution:
+      '시가 같으므로 분만 보면 됩니다. {cameMin}-{meetMin}={lateMin}분 늦었습니다.',
+  },
+  {
+    id: 'real-time-small-marks',
+    when: /몇 시 몇 분을 읽어 볼까요 ⑵/,
+    real: true,
+    demand: 'reason',
+    tag: 'time',
+    strategy: '조건 함께 보기 · 작은 눈금까지 읽어 판단하기',
+    vars: {
+      hour: { from: 1, to: 9 },
+      big: { from: 3, to: 8 },
+      small: { from: 1, to: 4 },
+      minute: { calc: 'big * 5 + small' },
+      onlyBig: { calc: 'big * 5' },
+      wrongAdd: { calc: 'big + small' },
+    },
+    words: { what: ['수업이 시작', '체육 시간이 시작', '급식이 시작', '방과 후 수업이 시작'] },
+    prompt:
+      '{what}할 때 긴바늘이 숫자 {big}을 지나 작은 눈금 {small}칸 더 갔습니다. 시작한 시각은 몇 시 몇 분일까요?',
+    answer: '{hour}시 {minute}분',
+    wrongs: ['{hour}시 {onlyBig}분', '{hour}시 {wrongAdd}분', '{hour}시 {small}분'],
+    solution:
+      '숫자 {big}까지는 5×{big}={onlyBig}분이고, 작은 눈금 한 칸은 1분이므로 {small}분을 더해 {minute}분입니다.',
+  },
+  {
+    id: 'real-time-before-hour',
+    when: /여러 가지 방법으로 시각을/,
+    real: true,
+    demand: 'reason',
+    tag: 'time',
+    strategy: '조건 함께 보기 · 두 가지로 읽은 시각이 같은지 판단하기',
+    vars: {
+      hour: { from: 2, to: 8 },
+      before: { from: 5, to: 15 },
+      minute: { calc: '60 - before' },
+      next: { calc: 'hour + 1' },
+    },
+    words: { what: ['영화가 시작', '기차가 출발', '수업이 끝', '약속 시각'] },
+    prompt:
+      '{what}하는 시각을 어떤 사람은 {hour}시 {minute}분이라 하고, 어떤 사람은 {next}시 {before}분 전이라고 했습니다. 두 사람이 말한 시각은 어떤 관계일까요?',
+    answer: '같은 시각을 다르게 말한 것입니다',
+    wrongs: [
+      '{before}분 차이가 납니다',
+      '{minute}분 차이가 납니다',
+      '1시간 차이가 납니다',
+    ],
+    solution:
+      '{hour}시 {minute}분에서 {next}시까지 {before}분이 남았습니다. 그래서 {next}시 {before}분 전과 같은 시각입니다.',
+  },
+  {
+    id: 'real-time-hour-plan',
+    when: /1시간을 알아볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'time',
+    strategy: '조건 함께 보기 · 두 가지 일에 걸린 시간을 판단하기',
+    vars: {
+      first: { from: 20, to: 40 },
+      second: { from: 25, to: 45 },
+      sum: { calc: 'first + second' },
+      overHour: { calc: 'first + second - 60' },
+    },
+    words: { a: ['숙제', '책 읽기', '그림 그리기'], b: ['줄넘기', '피아노 연습', '방 정리'] },
+    // 60분이 넘으면 시간과 분으로 나누어 말해야 합니다.
+    prompt:
+      '{a:을} {first}분, {b:을} {second}분 했습니다. 모두 몇 시간 몇 분을 했을까요?',
+    answer: '1시간 {overHour}분',
+    wrongs: ['{sum}시간', '1시간 {sum}분', '{overHour}분'],
+    solution:
+      '{first}+{second}={sum}분입니다. 60분은 1시간이므로 1시간 {overHour}분입니다.',
+  },
+  {
+    id: 'real-time-taken-cross-hour',
+    when: /걸린 시간을 알아볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'time',
+    strategy: '조건 함께 보기 · 시를 넘어가는 걸린 시간을 판단하기',
+    vars: {
+      hour: { from: 1, to: 8 },
+      startMin: { from: 30, to: 50 },
+      endMin: { from: 5, to: 25 },
+      toHour: { calc: '60 - startMin' },
+      total: { calc: '60 - startMin + endMin' },
+      nextHour: { calc: 'hour + 1' },
+    },
+    words: { what: ['영화', '체험 활동', '운동회 연습', '독서 시간'] },
+    // 시가 바뀌므로 분끼리 빼면 답이 나오지 않습니다.
+    prompt:
+      '{what:이} {hour}시 {startMin}분에 시작해 {nextHour}시 {endMin}분에 끝났습니다. 걸린 시간은 몇 분일까요?',
+    answer: '{total}분',
+    wrongs: ['{startMin}분', '{endMin}분', '{startMin + endMin}분'],
+    solution:
+      '{hour}시 {startMin}분에서 {nextHour}시까지 {toHour}분, 거기서 {endMin}분 더이므로 {total}분입니다.',
+  },
+  {
+    id: 'real-time-day-cross-noon',
+    when: /하루의 시간을 알아볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'time',
+    strategy: '조건 함께 보기 · 오전과 오후를 넘는 시간을 판단하기',
+    vars: {
+      start: { from: 8, to: 11 },
+      end: { from: 1, to: 5 },
+      toNoon: { calc: '12 - start' },
+      total: { calc: '12 - start + end' },
+    },
+    words: { what: ['현장 체험 학습', '가족 나들이', '할머니 댁 방문', '캠핑'] },
+    prompt:
+      '{what:을} 오전 {start}시에 시작해 오후 {end}시에 마쳤습니다. 몇 시간 걸렸을까요?',
+    answer: '{total}시간',
+    wrongs: ['{toNoon}시간', '{end}시간', '{start + end}시간'],
+    solution:
+      '오전 {start}시에서 낮 12시까지 {toNoon}시간, 낮 12시에서 오후 {end}시까지 {end}시간이므로 모두 {total}시간입니다.',
+  },
+  {
+    id: 'real-calendar-same-weekday',
+    when: /달력을 알아볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'time',
+    strategy: '조건 함께 보기 · 달력의 규칙으로 요일을 판단하기',
+    vars: {
+      day: { from: 1, to: 7 },
+      weeks: { from: 2, to: 3 },
+      later: { calc: 'day + weeks * 7' },
+      gap: { calc: 'weeks * 7' },
+    },
+    words: {
+      name: ['월', '화', '수', '목', '금'],
+      what: ['가족 여행', '학예회', '운동회', '독서 발표회'],
+    },
+    prompt:
+      '이번 달 {day}일이 {name}요일입니다. {what:은} {later}일에 있습니다. {what:은} 무슨 요일일까요?',
+    answer: '{name}요일',
+    wrongs: ['토요일', '일요일', '수요일'],
+    solution:
+      '{later}-{day}={gap}이고 {gap}은 7씩 {weeks}번입니다. 같은 요일은 7일마다 돌아오므로 {name}요일입니다.',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // 2-2 ⑤ 표와 그래프 — 실생활 문제 해결
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'real-data-find-missing',
+    when: /자료를 분류하여 표로/,
+    real: true,
+    demand: 'reason',
+    tag: 'data',
+    strategy: '자료 해석 · 합계로 빠진 수를 거꾸로 판단하기',
+    vars: {
+      a: { from: 4, to: 8 },
+      b: { from: 2, to: 6 },
+      c: { from: 3, to: 7 },
+      total: { calc: 'a + b + c' },
+      known: { calc: 'a + c' },
+    },
+    words: { kind: ['운동', '과일', '색깔', '놀이'] },
+    prompt:
+      '우리 반 학생 {total}명이 좋아하는 {kind:을} 조사했습니다. 첫째는 {a}명, 셋째는 {c}명이고 둘째는 세지 못했습니다. 둘째는 몇 명일까요?',
+    answer: '{b}명',
+    wrongs: ['{total}명', '{known}명', '{b + 1}명'],
+    solution:
+      '{a}+{c}={known}명이 이미 세어졌습니다. {total}-{known}={b}명이 둘째입니다.',
+  },
+  {
+    id: 'real-data-why-survey',
+    when: /자료를 조사하여 표로/,
+    real: true,
+    demand: 'reason',
+    tag: 'data',
+    strategy: '조건 함께 보기 · 조사한 것을 어디에 쓸지 판단하기',
+    vars: { any: { from: 1, to: 4 } },
+    words: { what: ['우유 종류', '체육 시간에 할 운동', '학급 문고에 넣을 책', '현장학습 장소'] },
+    prompt:
+      '우리 반이 좋아하는 {what:을} 조사해 표로 만들었습니다. 이 표를 만든 까닭으로 알맞은 것은 어느 것일까요?',
+    answer: '가장 많은 사람이 좋아하는 것을 골라 정하려고',
+    wrongs: [
+      '누가 무엇을 좋아하는지 이름을 알려고',
+      '조사한 날짜를 남겨 두려고',
+      '글씨를 예쁘게 쓰려고',
+    ],
+    solution:
+      '표는 항목마다 몇 명인지 한자리에 모아 주므로, 무엇을 고를지 정할 때 씁니다.',
+  },
+  {
+    id: 'real-graph-decide-from-shape',
+    when: /자료를 분류하여 그래프로/,
+    real: true,
+    demand: 'reason',
+    tag: 'data',
+    strategy: '자료 해석 · 그래프 모양을 견주어 판단하기',
+    vars: { any: { from: 1, to: 4 } },
+    words: { what: ['간식', '운동', '동물', '색깔'] },
+    prompt:
+      '좋아하는 {what:을} 표와 그래프로 각각 나타냈습니다. 어느 것이 가장 많은지 한눈에 알아보려면 무엇을 보는 것이 좋을까요?',
+    answer: '그래프',
+    wrongs: ['표', '조사한 종이', '이름을 적은 목록'],
+    solution:
+      '그래프는 줄의 길이로 많고 적음이 바로 보입니다. 표는 수를 하나씩 읽어 견주어야 합니다.',
+  },
+  {
+    id: 'real-graph-decide-class',
+    when: /표와 그래프를 보고 무엇을/,
+    real: true,
+    demand: 'reason',
+    tag: 'data',
+    strategy: '자료 해석 · 조사한 것으로 학급 일을 판단하기',
+    vars: {
+      most: { from: 7, to: 9 },
+      mid: { from: 4, to: 6 },
+      least: { from: 1, to: 3 },
+      total: { calc: 'most + mid + least' },
+      gap: { calc: 'most - least' },
+    },
+    words: { a: ['피구', '술래잡기', '줄다리기'], b: ['축구', '달리기', '훌라후프'], c: ['배드민턴', '제기차기', '공기놀이'] },
+    prompt:
+      '체육 시간에 할 놀이를 조사했더니 {a} {most}명, {b} {mid}명, {c} {least}명이었습니다. 조사한 사람은 모두 {total}명입니다. 가장 많은 놀이와 가장 적은 놀이의 차는 몇 명일까요?',
+    answer: '{gap}명',
+    wrongs: ['{most}명', '{total}명', '{mid}명'],
+    solution:
+      '가장 많은 것은 {a} {most}명, 가장 적은 것은 {c} {least}명입니다. {most}-{least}={gap}명입니다.',
+  },
+  {
+    id: 'real-graph-check-mistake',
+    when: /표와 그래프로 나타내 볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'data',
+    strategy: '자료 해석 · 표와 그래프가 맞는지 견주어 판단하기',
+    vars: {
+      a: { from: 3, to: 6 },
+      b: { from: 4, to: 8 },
+      wrongB: { calc: 'b + 1' },
+    },
+    words: { kind: ['사과', '딸기', '포도', '수박'] },
+    prompt:
+      '표에는 {kind:이} {b}명이라고 적혀 있는데 그래프에는 ○를 {wrongB}개 그렸습니다. 무엇이 잘못되었을까요?',
+    answer: '그래프의 ○를 하나 더 그렸습니다',
+    wrongs: [
+      '표의 수를 잘못 세었습니다',
+      '그래프의 ○가 하나 모자랍니다',
+      '잘못된 곳이 없습니다',
+    ],
+    solution:
+      '표가 {b}명이면 ○도 {b}개여야 합니다. {wrongB}개는 하나가 더 그려진 것입니다.',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // 2-2 ⑥ 규칙 찾기 — 실생활 문제 해결
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'real-pattern-tile-plan',
+    when: /무늬에서 규칙을 찾아볼까요 ⑴/,
+    real: true,
+    demand: 'reason',
+    tag: 'pattern',
+    strategy: '조건 함께 보기 · 되풀이되는 묶음으로 앞일을 판단하기',
+    vars: {
+      unit: { from: 2, to: 4 },
+      rounds: { from: 3, to: 6 },
+      total: { calc: 'unit * rounds' },
+    },
+    words: { what: ['색 테이프', '구슬 목걸이', '벽 무늬', '깃발 줄'] },
+    prompt:
+      '{what:을} 만드는데 색이 {unit}개씩 되풀이됩니다. 이 되풀이를 {rounds}번 하면 모두 몇 개가 될까요?',
+    answer: '{total}개',
+    wrongs: ['{unit}개', '{rounds}개', '{unit + rounds}개'],
+    solution:
+      '한 묶음이 {unit}개이고 {rounds}번 되풀이하므로 {unit}×{rounds}={total}개입니다.',
+  },
+  {
+    id: 'real-pattern-direction',
+    when: /무늬에서 규칙을 찾아볼까요 ⑵/,
+    real: true,
+    demand: 'reason',
+    tag: 'pattern',
+    strategy: '자료 해석 · 무엇이 달라지는지 견주어 판단하기',
+    vars: { any: { from: 1, to: 4 } },
+    words: { what: ['바람개비 무늬', '화살표 무늬', '나뭇잎 무늬', '별 무늬'] },
+    prompt:
+      '{what:이} 오른쪽으로 갈수록 조금씩 돌아가며 놓여 있습니다. 모양과 색은 모두 같습니다. 무엇이 달라지는 규칙일까요?',
+    answer: '놓인 방향',
+    wrongs: ['모양', '색깔', '크기'],
+    solution:
+      '모양과 색이 같으므로 달라지는 것은 방향뿐입니다. 방향이 일정하게 바뀌는 규칙입니다.',
+  },
+  {
+    id: 'real-pattern-stack-next',
+    when: /쌓은 모양에서 규칙을/,
+    real: true,
+    demand: 'reason',
+    tag: 'pattern',
+    strategy: '조건 함께 보기 · 쌓는 규칙으로 다음을 판단하기',
+    vars: {
+      start: { from: 1, to: 3 },
+      step: { from: 2, to: 3 },
+      third: { calc: 'start + step + step' },
+      fourth: { calc: 'start + step + step + step' },
+      second: { calc: 'start + step' },
+    },
+    prompt:
+      '쌓기나무를 {start}개, {second}개, {third}개로 쌓아 갔습니다. 같은 규칙으로 한 번 더 쌓으면 몇 개가 될까요?',
+    answer: '{fourth}개',
+    wrongs: ['{third}개', '{fourth + step}개', '{start + step}개'],
+    solution:
+      '{step}개씩 늘어나는 규칙입니다. {third}에 {step}을 더하면 {fourth}개입니다.',
+  },
+  {
+    id: 'real-pattern-addtable-fill',
+    when: /덧셈표에서 규칙을/,
+    real: true,
+    demand: 'reason',
+    tag: 'pattern',
+    strategy: '자료 해석 · 표의 규칙으로 빈칸을 판단하기',
+    vars: {
+      row: { from: 2, to: 7 },
+      col: { from: 2, to: 7 },
+      value: { calc: 'row + col' },
+      right: { calc: 'row + col + 1' },
+      down: { calc: 'row + col + 1' },
+    },
+    prompt:
+      '덧셈표에서 어떤 칸의 수가 {value}입니다. 그 칸에서 오른쪽으로 한 칸 간 자리의 수는 얼마일까요?',
+    answer: '{right}',
+    wrongs: ['{value}', '{value - 1}', '{value + 2}'],
+    solution:
+      '덧셈표는 오른쪽으로 한 칸 갈 때마다 1씩 커집니다. {value}에서 1 커진 {right}입니다.',
+  },
+  {
+    id: 'real-pattern-multable-fill',
+    when: /곱셈표에서 규칙을/,
+    real: true,
+    demand: 'reason',
+    tag: 'pattern',
+    strategy: '자료 해석 · 곱셈표의 규칙으로 빈칸을 판단하기',
+    vars: {
+      dan: { from: 2, to: 6 },
+      times: { from: 2, to: 6 },
+      value: { calc: 'dan * times' },
+      next: { calc: 'dan * times + dan' },
+    },
+    prompt:
+      '곱셈표의 {dan}단 줄에서 어떤 칸의 수가 {value}입니다. 그 칸에서 오른쪽으로 한 칸 간 자리의 수는 얼마일까요?',
+    answer: '{next}',
+    wrongs: ['{value}', '{value + 1}', '{value + times}'],
+    solution:
+      '{dan}단은 오른쪽으로 한 칸 갈 때마다 {dan}씩 커집니다. {value}에 {dan}을 더하면 {next}입니다.',
+  },
+  {
+    id: 'real-pattern-life-seat',
+    when: /생활에서 규칙을 찾아볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'pattern',
+    strategy: '조건 함께 보기 · 생활 속 번호의 규칙으로 판단하기',
+    vars: {
+      first: { from: 1, to: 4 },
+      step: { from: 2, to: 4 },
+      second: { calc: 'first + step' },
+      third: { calc: 'first + step + step' },
+      fourth: { calc: 'first + step + step + step' },
+    },
+    words: { what: ['공연장 의자', '사물함', '주차 자리', '체육관 사물함'] },
+    prompt:
+      '{what} 번호가 {first}, {second}, {third}으로 이어집니다. 다음 번호는 무엇일까요?',
+    answer: '{fourth}',
+    wrongs: ['{third + 1}', '{fourth + step}', '{second}'],
+    solution: '{step}씩 커지는 규칙이므로 다음은 {fourth}입니다.',
+  },
 ];
