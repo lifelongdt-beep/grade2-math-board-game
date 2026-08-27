@@ -6084,3 +6084,32 @@ body::before {
   background: #f2f4f7;
   color: var(--muted);
 }
+
+
+/* 힌트 안의 비쳐 보이는 쌓기나무입니다. 문제 자리의 그림과 같은 크기로
+   두면 힌트 칸이 문제보다 커 보이므로 조금 작게 둡니다. */
+.hint-see-through {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.hint-see-through .question-visual-figure {
+  width: min(100%, 260px);
+  height: auto;
+}
+
+.hint-see-through .question-visual-figure svg {
+  height: auto;
+}
+
+.hint-see-through span {
+  color: #4a5568;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: center;
+}

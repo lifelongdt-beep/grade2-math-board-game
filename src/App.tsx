@@ -1688,6 +1688,18 @@ function App() {
                           <div className="hint-text-panel" aria-label={`${player.name} 힌트`}>
                             <p className="quick-core"><span>핵심</span>{question.support.studentConcept}</p>
                             <p><span>볼 곳</span>{question.support.studentHint}</p>
+                            {/* 쌓은 모양은 앞의 것이 뒤의 것을 가립니다. 개수를
+                                묻는 문제에서 아이가 보이는 것만 세고 숨은 것을
+                                빠뜨립니다. 힌트를 열었을 때만 비쳐 보이게 그려
+                                숨은 쌓기나무까지 세게 합니다. */}
+                            {question.visual?.kind === 'cube-stack' && (
+                              <div className="hint-see-through">
+                                <QuestionVisualGraphic
+                                  visual={{ ...question.visual, seeThrough: true }}
+                                />
+                                <span>뒤에 숨은 쌓기나무까지 비쳐 보입니다. 하나씩 짚어 세어 보세요.</span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
