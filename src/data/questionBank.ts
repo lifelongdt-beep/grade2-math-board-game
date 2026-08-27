@@ -12924,7 +12924,7 @@ export const questionBank: Template[] = [
     },
     words: { jar: ['저금통', '돼지 저금통', '용돈 통', '유리병', '지갑'] },
     prompt:
-      '{jar:에} 100원짜리 동전이 {now}개 있습니다. 하루에 {each}개씩 넣으면 1000원이 되는 것은 며칠 뒤일까요?',
+      '{jar}에 100원짜리 동전이 {now}개 있습니다. 하루에 {each}개씩 넣으면 1000원이 되는 것은 며칠 뒤일까요?',
     answer: '{days}일 뒤',
     wrongs: ['{used}일 뒤', '{now}일 뒤', '{days + 1}일 뒤'],
     solution:
@@ -13138,5 +13138,319 @@ export const questionBank: Template[] = [
     wrongs: ['{big}', '둘 다 살 수 있습니다', '둘 다 살 수 없습니다'],
     solution:
       '{cheap}은 {haveWon}보다 작고 {dear}은 {haveWon}보다 큽니다. 그래서 {small:을} 살 수 있습니다.',
+  },
+  // ══════════════════════════════════════════════════════════════
+  // 2-2 ② 곱셈구구 — 실생활 문제 해결
+  // ──────────────────────────────────────────────────────────────
+  // 곱셈구구는 외우는 것으로 끝나기 쉽습니다. 그래서 '몇 개인가'만
+  // 묻지 않고, 곱셈을 써야 할지 스스로 정하게 하거나 두 단계를 거쳐야
+  // 답이 나오게 합니다.
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'real-mul2-pairs',
+    when: /2단 곱셈구구/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 짝을 이루는 것을 곱셈으로 판단하기',
+    vars: {
+      how: { from: 3, to: 9 },
+      total: { calc: 'how * 2' },
+      wrongSum: { calc: 'how + 2' },
+      wrongOne: { calc: 'how * 2 - 2' },
+    },
+    words: { thing: ['자전거', '안경', '신발', '젓가락 한 벌', '양말 한 켤레'] },
+    prompt:
+      '{thing:이} {how}개 있습니다. 하나에 짝이 되는 것이 2개씩 있다면 모두 몇 개일까요?',
+    answer: '{total}개',
+    wrongs: ['{wrongSum}개', '{wrongOne}개', '{how}개'],
+    solution: '하나에 2개씩 {how}묶음이므로 2×{how}={total}개입니다.',
+  },
+  {
+    id: 'real-mul5-clock-minutes',
+    when: /5단 곱셈구구/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 곱셈으로 시계 눈금을 판단하기',
+    vars: {
+      point: { from: 3, to: 9 },
+      minute: { calc: 'point * 5' },
+      wrongPoint: { calc: 'point + 5' },
+      wrongTen: { calc: 'point * 10' },
+    },
+    // 시계의 큰 눈금 한 칸이 5분이라는 것을 곱셈으로 잇습니다.
+    prompt:
+      '시계의 긴바늘이 12에서 출발해 숫자 {point}까지 갔습니다. 숫자 한 칸은 5분입니다. 몇 분이 지났을까요?',
+    answer: '{minute}분',
+    wrongs: ['{point}분', '{wrongPoint}분', '{wrongTen}분'],
+    solution: '숫자 한 칸이 5분이고 {point}칸을 갔으므로 5×{point}={minute}분입니다.',
+  },
+  {
+    id: 'real-mul36-boxes-and-loose',
+    when: /3단, 6단 곱셈구구/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 묶음과 낱개를 함께 세는 방법 판단하기',
+    vars: {
+      each: { from: 3, to: 6 },
+      boxes: { from: 3, to: 7 },
+      loose: { from: 1, to: 5 },
+      inBox: { calc: 'each * boxes' },
+      total: { calc: 'each * boxes + loose' },
+      forgot: { calc: 'each * boxes' },
+      wrongSum: { calc: 'each + boxes + loose' },
+    },
+    words: { item: ['달걀', '요구르트', '초코볼', '방울토마토', '떡'] },
+    // 낱개를 잊고 곱만 답하는 아이가 많습니다. 두 단계를 거쳐야 합니다.
+    prompt:
+      '{item:이} 한 상자에 {each}개씩 {boxes}상자 있고, 상자에 담기지 않은 것이 {loose}개 더 있습니다. {item:은} 모두 몇 개일까요?',
+    answer: '{total}개',
+    wrongs: ['{forgot}개', '{wrongSum}개', '{total + each}개'],
+    solution:
+      '상자에 든 것은 {each}×{boxes}={inBox}개입니다. 여기에 낱개 {loose}개를 더하면 {total}개입니다.',
+  },
+  {
+    id: 'real-mul48-need-more',
+    when: /4단, 8단 곱셈구구/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 얼마나 더 있어야 하는지 거꾸로 판단하기',
+    vars: {
+      each: { from: 4, to: 8 },
+      people: { from: 4, to: 8 },
+      have: { from: 5, to: 9 },
+      need: { calc: 'each * people' },
+      more: { calc: 'each * people - have' },
+    },
+    words: { item: ['색종이', '붙임딱지', '쿠키', '색연필', '풍선'] },
+    prompt:
+      '친구 {people}명에게 {item:을} {each}개씩 주려고 합니다. 지금 {have}개가 있습니다. 몇 개가 더 있어야 할까요?',
+    answer: '{more}개',
+    wrongs: ['{need}개', '{have}개', '{more + each}개'],
+    solution:
+      '필요한 것은 {each}×{people}={need}개입니다. {have}개가 있으므로 {more}개가 더 있어야 합니다.',
+  },
+  {
+    id: 'real-mul7-weeks',
+    when: /7단 곱셈구구/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 주와 날수를 곱셈으로 판단하기',
+    vars: {
+      weeks: { from: 3, to: 8 },
+      extra: { from: 1, to: 5 },
+      days: { calc: 'weeks * 7' },
+      total: { calc: 'weeks * 7 + extra' },
+      wrongSum: { calc: 'weeks + 7 + extra' },
+    },
+    prompt:
+      '어떤 일을 {weeks}주일 하고 {extra}일을 더 했습니다. 모두 며칠 동안 했을까요?',
+    answer: '{total}일',
+    wrongs: ['{days}일', '{wrongSum}일', '{weeks + extra}일'],
+    solution:
+      '1주일은 7일이므로 {weeks}주일은 7×{weeks}={days}일입니다. {extra}일을 더하면 {total}일입니다.',
+  },
+  {
+    id: 'real-mul9-team',
+    when: /9단 곱셈구구/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 쓰이지 않는 조건을 가려내어 판단하기',
+    vars: {
+      teams: { from: 3, to: 9 },
+      balls: { from: 2, to: 6 },
+      total: { calc: 'teams * 9' },
+      trap: { calc: 'teams * 9 + balls' },
+      trapBall: { calc: 'teams * balls' },
+    },
+    // 공의 수는 사람 수와 상관이 없습니다.
+    prompt:
+      '한 팀이 9명인 경기에 {teams}팀이 나왔습니다. 공은 {balls}개를 준비했습니다. 경기에 나온 사람은 모두 몇 명일까요?',
+    answer: '{total}명',
+    wrongs: ['{trap}명', '{trapBall}명', '{teams}명'],
+    solution:
+      '공의 수는 사람 수와 상관이 없습니다. 9×{teams}={total}명입니다.',
+  },
+  {
+    id: 'real-mul-zero-empty',
+    when: /1단 곱셈구구와 0의 곱/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 아무것도 없는 경우를 판단하기',
+    vars: {
+      boxes: { from: 3, to: 8 },
+      one: { from: 1, to: 1 },
+    },
+    words: { item: ['사탕', '구슬', '딱지', '스티커'] },
+    prompt:
+      '빈 상자 {boxes}개가 있습니다. 한 상자에 {item:이} 하나도 들어 있지 않습니다. 상자에 든 {item:은} 모두 몇 개일까요?',
+    answer: '0개',
+    wrongs: ['{boxes}개', '1개', '{boxes + 1}개'],
+    solution:
+      '한 상자에 0개씩 {boxes}상자이므로 0×{boxes}=0입니다. 아무리 많은 상자라도 0개씩이면 0개입니다.',
+  },
+  {
+    id: 'real-mul-table-same-product',
+    when: /곱셈표를 만들어/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '자료 해석 · 같은 곱이 되는 두 방법을 견주어 고르기',
+    vars: {
+      a: { from: 2, to: 4 },
+      b: { from: 6, to: 9 },
+      product: { calc: 'a * b' },
+      other: { calc: 'a * b + a' },
+    },
+    words: { item: ['사탕', '구슬', '색종이', '딱지'] },
+    // 한 상자에 몇 개씩 몇 상자로 담든 전체 개수가 같을 수 있습니다.
+    prompt:
+      '{item} {product}개를 남김없이 상자에 담으려고 합니다. 한 상자에 {a}개씩 담으면 {b}상자입니다. 한 상자에 {b}개씩 담으면 몇 상자가 될까요?',
+    answer: '{a}상자',
+    wrongs: ['{b}상자', '{product}상자', '{a + b}상자'],
+    solution:
+      '{a}×{b}와 {b}×{a}는 곱이 같습니다. 그래서 {b}개씩 담으면 {a}상자가 됩니다.',
+  },
+  {
+    id: 'real-mul-solve-compare',
+    when: /곱셈구구를 이용하여 문제를 해결/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '자료 해석 · 두 가지 담는 방법을 견주어 판단하기',
+    vars: {
+      aEach: { from: 3, to: 5 },
+      aBox: { from: 4, to: 8 },
+      bEach: { from: 6, to: 9 },
+      bBox: { from: 2, to: 4 },
+      aTotal: { calc: 'aEach * aBox' },
+      bTotal: { calc: 'bEach * bBox' },
+    },
+    words: { who: ['지호', '수아', '민서', '태윤'], item: ['딱지', '구슬', '사탕', '스티커'] },
+    // 두 곱을 각각 구한 뒤 견주어야 합니다. 한 단계로는 풀리지 않습니다.
+    prompt:
+      '{who:은} {item:을} {aEach}개씩 {aBox}묶음 가지고 있고, 나는 {bEach}개씩 {bBox}묶음 가지고 있습니다. 누가 더 많이 가지고 있는지 알아보려면 무엇을 먼저 해야 할까요?',
+    answer: '{aEach}×{aBox}와 {bEach}×{bBox}를 각각 구한다',
+    wrongs: [
+      '{aEach}와 {bEach}를 견준다',
+      '{aBox}와 {bBox}를 견준다',
+      '묶음 수를 모두 더한다',
+    ],
+    solution:
+      '한 묶음의 크기와 묶음 수가 서로 다르므로, 각각의 곱을 구한 뒤에 견주어야 합니다.',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // 2-2 ③ 길이 재기 — 실생활 문제 해결
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'real-len-pick-unit',
+    when: /cm보다 더 큰 단위/,
+    real: true,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '조건 함께 보기 · 알맞은 단위를 판단하기',
+    vars: { any: { from: 1, to: 5 } },
+    words: {
+      long: ['운동장의 긴 쪽', '교실 복도', '학교 담장', '버스 한 대'],
+      short: ['지우개', '색연필', '단추', '동전'],
+    },
+    prompt:
+      '{long:과} {short:의} 길이를 재려고 합니다. {long:은} 어떤 단위로 나타내는 것이 알맞을까요?',
+    answer: 'm',
+    wrongs: ['cm', '개', '분'],
+    solution:
+      '아주 긴 것은 cm로 나타내면 수가 너무 커집니다. m로 나타내는 것이 알맞습니다.',
+  },
+  {
+    id: 'real-len-sum-two',
+    when: /길이의 합을 구해/,
+    real: true,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '조건 함께 보기 · 이어 붙인 길이를 판단하기',
+    vars: {
+      am: { from: 1, to: 3 },
+      acm: { from: 20, to: 60 },
+      bm: { from: 1, to: 2 },
+      bcm: { from: 10, to: 30 },
+      sumM: { calc: 'am + bm' },
+      sumCm: { calc: 'acm + bcm' },
+    },
+    words: { rope: ['빨간 끈', '노란 끈', '파란 리본', '초록 테이프'] },
+    prompt:
+      '{rope:은} {am}m {acm}cm이고 흰 끈은 {bm}m {bcm}cm입니다. 두 끈을 이어 붙이면 몇 m 몇 cm가 될까요?',
+    answer: '{sumM}m {sumCm}cm',
+    wrongs: ['{sumM}m {acm}cm', '{am}m {sumCm}cm', '{sumM + 1}m {sumCm}cm'],
+    solution:
+      'm는 m끼리, cm는 cm끼리 더합니다. {am}+{bm}={sumM}m, {acm}+{bcm}={sumCm}cm입니다.',
+  },
+  {
+    id: 'real-len-cut-rest',
+    when: /길이의 차를 구해/,
+    real: true,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '조건 함께 보기 · 쓰고 남은 길이를 판단하기',
+    vars: {
+      m: { from: 3, to: 6 },
+      cm: { from: 50, to: 80 },
+      useM: { from: 1, to: 2 },
+      useCm: { from: 10, to: 40 },
+      leftM: { calc: 'm - useM' },
+      leftCm: { calc: 'cm - useCm' },
+    },
+    words: { rope: ['색 테이프', '리본', '노끈', '실'] },
+    prompt:
+      '{rope:이} {m}m {cm}cm 있습니다. 상자를 묶는 데 {useM}m {useCm}cm를 썼습니다. 남은 {rope:은} 몇 m 몇 cm일까요?',
+    answer: '{leftM}m {leftCm}cm',
+    wrongs: ['{leftM}m {cm}cm', '{m}m {leftCm}cm', '{leftM + 1}m {leftCm}cm'],
+    solution:
+      'm는 m끼리, cm는 cm끼리 뺍니다. {m}-{useM}={leftM}m, {cm}-{useCm}={leftCm}cm입니다.',
+  },
+  {
+    id: 'real-len-guess-by-body',
+    when: /길이를 어림해 볼까요 ⑴/,
+    real: true,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '조건 함께 보기 · 몸의 길이로 어림하는 방법 판단하기',
+    vars: {
+      step: { from: 40, to: 60 },
+      steps: { from: 3, to: 6 },
+      total: { calc: 'step * steps' },
+    },
+    prompt:
+      '한 걸음이 약 {step}cm입니다. 교실 앞에서 뒤까지 {steps}걸음을 걸었습니다. 교실의 길이는 약 몇 cm일까요?',
+    answer: '약 {total}cm',
+    wrongs: ['약 {step}cm', '약 {step + steps}cm', '약 {steps}cm'],
+    solution:
+      '한 걸음이 {step}cm이고 {steps}걸음이므로 {step}×{steps}={total}cm쯤입니다.',
+  },
+  {
+    id: 'real-len-guess-choose-tool',
+    when: /길이를 어림해 볼까요 ⑵/,
+    real: true,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '조건 함께 보기 · 어림에 알맞은 도구를 판단하기',
+    vars: { any: { from: 1, to: 4 } },
+    words: { place: ['교실의 긴 쪽', '복도의 길이', '운동장의 짧은 쪽', '강당의 긴 쪽'] },
+    prompt:
+      '{place:의} 길이를 자 없이 어림하려고 합니다. 가장 알맞은 방법은 어느 것일까요?',
+    answer: '내 걸음으로 몇 걸음인지 세어 본다',
+    wrongs: [
+      '눈으로 보고 그냥 말한다',
+      '손가락 한 마디로 몇 번인지 센다',
+      '몇 초 걸리는지 시간을 잰다',
+    ],
+    solution:
+      '긴 곳은 걸음처럼 큰 단위로 어림해야 합니다. 손가락 마디로 재면 너무 여러 번 세어야 합니다.',
   },
 ];
