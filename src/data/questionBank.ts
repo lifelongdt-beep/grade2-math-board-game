@@ -14137,18 +14137,18 @@ export const questionBank: Template[] = [
     vars: {
       first: { from: 3, to: 6 },
       second: { from: 1, to: 3 },
-      want: { from: 12, to: 16 },
-      made: { calc: 'first + second' },
-      more: { calc: 'want - first - second' },
+      one: { calc: 'first + second' },
+      both: { calc: 'first + second + first + second' },
     },
     // 그림은 '1층에 N개, 2층에 M개를 쌓았습니다'를 보고 그립니다.
     // 다르게 쓰면 쌓기나무를 말하면서 평면도형 그림이 나옵니다.
+    // 쌓기나무 수를 문장에 더 적어도 그림과 어긋납니다.
     prompt:
-      '1층에 {first}개, 2층에 {second}개를 쌓았습니다. 쌓기나무 {want}개를 남김없이 쓰려면 몇 개를 더 쌓아야 할까요?',
-    answer: '{more}개',
-    wrongs: ['{made}개', '{want}개', '{more + 1}개'],
+      '1층에 {first}개, 2층에 {second}개를 쌓았습니다. 친구도 똑같은 모양으로 쌓으면 두 사람의 쌓기나무는 모두 몇 개일까요?',
+    answer: '{both}개',
+    wrongs: ['{one}개', '{both + 1}개', '{first}개'],
     solution:
-      '지금 쌓은 것은 {first}+{second}={made}개입니다. {want}-{made}={more}개를 더 쌓아야 합니다.',
+      '한 사람이 쌓은 것이 {first}+{second}={one}개입니다. 두 사람이면 {one}+{one}={both}개입니다.',
   },
   {
     id: 'real-shape-stack-need-more',
@@ -14158,17 +14158,16 @@ export const questionBank: Template[] = [
     tag: 'solid',
     strategy: '조건 함께 보기 · 몇 개가 더 있어야 하는지 거꾸로 판단하기',
     vars: {
-      first: { from: 3, to: 6 },
-      second: { from: 1, to: 4 },
-      one: { calc: 'first + second' },
-      both: { calc: 'first + second + first + second' },
+      first: { from: 4, to: 7 },
+      second: { from: 1, to: 3 },
+      gap: { calc: 'first - second' },
+      sum: { calc: 'first + second' },
     },
     prompt:
-      '1층에 {first}개, 2층에 {second}개를 쌓았습니다. 친구도 똑같은 모양으로 쌓으려면 쌓기나무는 모두 몇 개 필요할까요?',
-    answer: '{both}개',
-    wrongs: ['{one}개', '{both + 1}개', '{first}개'],
-    solution:
-      '한 사람이 쌓은 것이 {first}+{second}={one}개입니다. 두 사람이면 {one}+{one}={both}개입니다.',
+      '1층에 {first}개, 2층에 {second}개를 쌓았습니다. 1층은 2층보다 쌓기나무가 몇 개 더 많을까요?',
+    answer: '{gap}개',
+    wrongs: ['{sum}개', '{first}개', '{gap + 1}개'],
+    solution: '{first}-{second}={gap}개 더 많습니다.',
   },
 
   // ══════════════════════════════════════════════════════════════
