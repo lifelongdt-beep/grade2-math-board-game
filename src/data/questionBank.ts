@@ -14833,7 +14833,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'measurement',
-    strategy: '조건 함께 보기 · 문장 상황에서 길이 견주기',
+    strategy: '조건 함께 보기 · 문장 상황에서 더 긴 것 알아보기',
     vars: {
       a: { from: 12, to: 19 },
       b: { from: 4, to: 9 },
@@ -15151,7 +15151,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'measurement',
-    strategy: '조건 함께 보기 · 문장 상황에서 길이 견주기',
+    strategy: '조건 함께 보기 · 문장 상황에서 더 긴 것 알아보기',
     vars: {
       a: { from: 5, to: 9 },
       b: { from: 10, to: 14 },
@@ -15171,7 +15171,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'measurement',
-    strategy: '조건 함께 보기 · 문장 상황에서 옮겨 견주기',
+    strategy: '조건 함께 보기 · 문장 상황에서 끈으로 옮겨 재기',
     vars: { any: { from: 1, to: 4 } },
     words: { fixed: ['교실 문', '칠판', '창문', '책꽂이'] },
     prompt:
@@ -15230,16 +15230,22 @@ export const questionBank: Template[] = [
     demand: 'connect',
     tag: 'classification',
     strategy: '조건 함께 보기 · 문장 상황에서 기준에 맞게 나누기',
-    vars: {
-      red: { from: 3, to: 7 },
-      blue: { from: 2, to: 6 },
-      total: { calc: 'red + blue' },
+    vars: { any: { from: 1, to: 4 } },
+    words: {
+      thing: ['단추', '구슬', '블록', '색종이'],
+      standard: ['색깔', '모양', '크기'],
     },
+    // 세는 것은 4차시입니다. 여기서는 기준에 맞게 나누는 일만 합니다.
     prompt:
-      '단추를 색깔로 나누었더니 빨강이 {red}개, 파랑이 {blue}개였습니다. 단추는 모두 몇 개일까요?',
-    answer: '{total}개',
-    wrongs: ['{red}개', '{blue}개', '{total + 1}개'],
-    solution: '색깔로 나눈 것을 모두 더하면 {red}+{blue}={total}개입니다.',
+      '{thing:을} {standard}로 나누려고 합니다. 어떻게 해야 할까요?',
+    answer: '{standard}이 같은 것끼리 한곳에 모은다',
+    wrongs: [
+      '마음에 드는 것끼리 모은다',
+      '큰 것부터 차례로 늘어놓는다',
+      '섞어서 한 통에 담는다',
+    ],
+    solution:
+      '{standard}로 나누기로 정했으므로 {standard}이 같은 것끼리 모아야 누가 보아도 같게 나뉩니다.',
   },
   {
     id: 'mid-mul-intro-jump',
