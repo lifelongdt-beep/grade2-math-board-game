@@ -207,11 +207,110 @@ const calendarLearningSupport = {
   selfCheck: '1주일 7일, 1년 12개월 규칙으로 다시 확인했나요?',
 };
 
+// 그 문항의 수로 '볼 곳'을 만듭니다.
+//
+// 도움말이 갈래마다 한 문장씩 고정되어 있었습니다. 곱셈이면 어떤
+// 문항이든 '같은 수가 몇 번 있는지 세어 봐요'였습니다. 틀린 아이가
+// 이것을 읽어도 이 문제를 어떻게 풀지는 알 수 없습니다.
+//
+// 문제글에서 실제 수와 셈을 읽어, 그 문제에 손을 대는 말을 만듭니다.
+// 읽어 낼 수 없는 문장은 갈래별 문장을 그대로 씁니다 — 틀린 도움말보다
+// 일반적인 도움말이 낫습니다.
+const specificHint = (prompt: string, tag: ConceptTag): string | null => {
+  // 곱셈: 한 묶음의 크기와 묶음 수를 짚어 줍니다.
+  const grouped = /(\d+)\s*[가-힣]{0,3}씩\s*(\d+)\s*[가-힣]{0,3}/.exec(prompt);
+  if (grouped) {
+    return `한 묶음에 ${grouped[1]}개씩 ${grouped[2]}묶음입니다. ${grouped[1]}씩 ${grouped[2]}번 뛰어 세어 보세요.`;
+  }
+
+  const missing = /(\d+)\s*×\s*□\s*=\s*(\d+)/.exec(prompt);
+  if (missing) {
+    return `${missing[1]}씩 몇 묶음이면 ${missing[2]}이 되는지 세어 보세요.`;
+  }
+
+  const times = /(\d+)\s*×\s*(\d+)/.exec(prompt);
+  if (times) {
+    return `${times[1]}을 ${times[2]}번 더한 것과 같습니다. ${times[1]}단을 차례로 외워 보세요.`;
+  }
+
+  const howMany = /(\d+)의 (\d+)배/.exec(prompt);
+  if (howMany) {
+    return `${howMany[1]}씩 ${howMany[2]}묶음이 얼마인지 세어 보세요.`;
+  }
+
+  // 덧셈과 뺄셈: 어느 수에서 어느 수를 셈하는지 짚어 줍니다.
+  const plus = /(\d+)\s*\+\s*(\d+)/.exec(prompt);
+  if (plus) {
+    return `${plus[1]}과 ${plus[2]}의 일의 자리끼리 먼저 더하고, 10이 넘으면 십의 자리로 하나 올립니다.`;
+  }
+
+  const minus = /(\d+)\s*-\s*(\d+)/.exec(prompt);
+  if (minus) {
+    return `${minus[1]}에서 ${minus[2]}만큼 덜어 냅니다. 일의 자리를 뺄 수 없으면 십의 자리에서 하나 빌려 옵니다.`;
+  }
+
+  // 자리값: 어느 자리를 보아야 하는지 짚어 줍니다.
+  const place = /(\d+)에서 (\d)[은는이가]/.exec(prompt);
+  if (place && (tag === 'placeValue' || tag === 'number')) {
+    return `${place[1]}을 천·백·십·일의 자리로 나누어 쓰고, ${place[2]}이 어느 자리에 있는지 짚어 보세요.`;
+  }
+
+  const bundle = /(\d+)이 (\d+)개/.exec(prompt);
+  if (bundle) {
+    return `${bundle[1]}짜리 묶음이 ${bundle[2]}개입니다. ${bundle[1]}씩 ${bundle[2]}번 세어 보세요.`;
+  }
+
+  // 뛰어 세기
+  const jump = /(\d+)씩 뛰어 세/.exec(prompt);
+  if (jump) {
+    return `${jump[1]}씩 커집니다. 어느 자리 숫자가 바뀌는지 보면서 세어 보세요.`;
+  }
+
+  // 시각: 두 바늘을 나누어 읽게 합니다.
+  const clock = /(\d+)시 (\d+)분/.exec(prompt);
+  if (clock && tag === 'time') {
+    return `짧은바늘로 ${clock[1]}시를 읽고, 긴바늘로 ${clock[2]}분을 읽습니다. 두 바늘을 따로 보세요.`;
+  }
+
+  const hours = /(\d+)시간/.exec(prompt);
+  if (hours && tag === 'time') {
+    return `1시간은 60분입니다. ${hours[1]}시간이 몇 분인지 60씩 세어 보세요.`;
+  }
+
+  // 길이: 두 값을 견주거나 단위를 맞추게 합니다.
+  const twoLengths = /(\d+)\s*cm[^\d]{1,20}(\d+)\s*cm/.exec(prompt);
+  if (twoLengths) {
+    return `${twoLengths[1]}cm와 ${twoLengths[2]}cm를 견줍니다. cm는 cm끼리 맞추어 놓고 보세요.`;
+  }
+
+  const metres = /(\d+)\s*m\s*(\d+)\s*cm/.exec(prompt);
+  if (metres) {
+    return `1m는 100cm입니다. m는 m끼리, cm는 cm끼리 나누어 셈해 보세요.`;
+  }
+
+  // 도형: 무엇을 세어야 하는지 짚어 줍니다.
+  if (/변|꼭짓점/.test(prompt) && (tag === 'shape' || tag === 'solid')) {
+    return '곧은 선(변)과 뾰족한 곳(꼭짓점)을 하나씩 짚으며 세어 보세요. 센 곳에 표시를 하면 두 번 세지 않습니다.';
+  }
+
+  if (/(\d+)층/.test(prompt) && tag === 'solid') {
+    return '층마다 몇 개인지 따로 세어 적은 뒤에 더합니다. 뒤에 숨은 쌓기나무를 빠뜨리지 마세요.';
+  }
+
+  // 표와 그래프
+  if (/표|그래프/.test(prompt) && tag === 'data') {
+    return '묻는 것이 어느 줄, 어느 칸인지 손가락으로 먼저 짚고 그 수만 읽으세요.';
+  }
+
+  return null;
+};
+
 const buildLearningSupport = (
   lesson: Lesson,
   tag: ConceptTag,
   solution: string,
   strategy: string,
+  prompt = '',
 ): LearningSupport => {
   const isCalendar = tag === 'time' && lesson.title.includes('달력');
   const guide = isCalendar
@@ -227,7 +326,8 @@ const buildLearningSupport = (
 
   return {
     studentConcept: guide.studentConcept,
-    studentHint: guide.studentHint,
+    // 이 문항의 수로 만든 볼 곳이 있으면 그것을 씁니다.
+    studentHint: specificHint(prompt, tag) ?? guide.studentHint,
     coreConcept: guide.coreConcept,
     readStrategy: `${strategy}: ${guide.readStrategy}`,
     steps: [
@@ -241,8 +341,14 @@ const buildLearningSupport = (
   };
 };
 
+// 교사용 기록에 남는 해설입니다. 예전에는 갈래별 일반 문장으로만
+// 채워져, 어느 문항의 기록인지 알 수 없었습니다. 그 문항의 풀이를
+// 맨 앞에 둡니다 — 나중에 열어 보는 사람이 가장 먼저 알아야 할
+// 것은 '이 문제를 어떻게 푸는가'입니다.
 const lessonNote = (support: LearningSupport) =>
   [
+    `이 문제의 풀이: ${support.steps[support.steps.length - 1]}`,
+    `볼 곳: ${support.studentHint}`,
     `핵심 개념: ${support.coreConcept}`,
     `읽는 방법: ${support.readStrategy}`,
     `풀이 단계: ${support.steps.join(' → ')}`,
@@ -908,7 +1014,7 @@ const makeQuestion = (
     tuneWrongsForDifficulty(answer, wrongs, difficulty, lesson.scope.maxNumber),
     lesson.unitNo * 101 + lesson.lessonNo * 17 + index * 19 + difficultyIndex[difficulty],
   );
-  const support = buildLearningSupport(lesson, tag, leveledSolution, leveledStrategy);
+  const support = buildLearningSupport(lesson, tag, leveledSolution, leveledStrategy, prompt);
   return enforceSecondGradeLanguage({
     id: `${lesson.id}-${difficulty}-${index + 1}`,
     lessonId: lesson.id,
