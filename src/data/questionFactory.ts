@@ -302,6 +302,89 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
     return '묻는 것이 어느 줄, 어느 칸인지 손가락으로 먼저 짚고 그 수만 읽으세요.';
   }
 
+  // ── 아직 못 읽은 문장들 ──────────────────────────────────────
+  // 위 규칙에 걸리지 않은 문항이 아직 많습니다. 갈래마다 가장 흔한
+  // 모양을 더 읽어 냅니다.
+
+  // 곱셈구구: 몇 단인지 알면 이어 세어 확인할 수 있습니다.
+  const dan = /(\d+)단/.exec(prompt);
+  if (dan) {
+    const size = Number(dan[1]);
+    return `${size}단은 ${size}씩 커집니다. ${size}, ${size * 2}, ${size * 3}…으로 이어 세어 보세요.`;
+  }
+
+  // 수의 크기 견주기: 어느 자리부터 보아야 하는지가 핵심입니다.
+  if (/가장 큰|가장 작은|더 큰 수|더 작은 수|비교/.test(prompt)) {
+    return '가장 높은 자리부터 견줍니다. 그 자리가 같으면 그다음 자리를 보세요.';
+  }
+
+  // 뛰어 세기·수의 자리: 첫 수를 자리별로 갈라 적게 합니다.
+  const firstNumber = /(\d{2,4})/.exec(prompt);
+  if (firstNumber && (tag === 'placeValue' || tag === 'number')) {
+    return `${firstNumber[1]}을 천·백·십·일의 자리로 갈라 적어 보세요. 어느 자리가 바뀌는지 보입니다.`;
+  }
+
+  // 시각: 분을 5분 묶음으로 세게 합니다.
+  const minutes = /(\d+)분/.exec(prompt);
+  if (minutes && tag === 'time') {
+    return `긴바늘이 숫자 한 칸을 지나면 5분입니다. ${minutes[1]}분이 되려면 어디까지 가는지 5씩 세어 보세요.`;
+  }
+
+  if (/요일|며칠|주일|달력/.test(prompt) && tag === 'time') {
+    return '달력에서 같은 요일은 7일마다 돌아옵니다. 7씩 뛰며 짚어 보세요.';
+  }
+
+  // 길이: 재는 단위가 무엇인지 먼저 잡게 합니다.
+  const oneLength = /(\d+)\s*cm/.exec(prompt);
+  if (oneLength) {
+    return `물건의 두 끝이 자의 어느 눈금에 있는지 보고, 그 사이에 1cm가 몇 칸인지 세어 보세요.`;
+  }
+
+  if (/뼘|걸음|클립|연필로|지우개로/.test(prompt) && tag === 'measurement') {
+    return '재는 단위 하나가 얼마만큼인지 먼저 보고, 그것이 몇 번 들어가는지 세어 보세요.';
+  }
+
+  if (/어림/.test(prompt) && tag === 'measurement') {
+    return '아는 길이 하나를 자로 삼으세요. 그것이 몇 번쯤 들어갈지 생각하면 어림할 수 있습니다.';
+  }
+
+  // 규칙: 되풀이되는 한 묶음을 끊어 보게 합니다.
+  const three = /(\d+), (\d+), (\d+)/.exec(prompt);
+  if (three && tag === 'pattern') {
+    const a = Number(three[1]);
+    const b = Number(three[2]);
+    return `${three[1]}에서 ${three[2]}로 ${b - a}만큼 커졌습니다. 그만큼 계속 커지는지 다음 수로 확인해 보세요.`;
+  }
+
+  if (tag === 'pattern') {
+    return '되풀이되는 한 묶음이 어디서 끝나는지 손가락으로 끊어 보세요. 그 묶음을 이어 붙이면 다음이 보입니다.';
+  }
+
+  // 분류: 기준을 먼저 정하는 것이 일의 순서입니다.
+  if (tag === 'classification') {
+    return '무엇으로 나눌지 먼저 정하세요. 그런 다음 그 기준에 맞는 것만 한 곳에 모으고, 센 것에는 표시를 합니다.';
+  }
+
+  // 도형: 무엇을 세어야 하는지 이름으로 짚어 줍니다.
+  const shapeName = /삼각형|사각형|원/.exec(prompt);
+  if (shapeName && (tag === 'shape' || tag === 'solid')) {
+    const name = shapeName[0];
+    const sides = name === '삼각형' ? 3 : name === '사각형' ? 4 : 0;
+    return sides === 0
+      ? '원은 곧은 선도 뾰족한 곳도 없습니다. 굽은 선 하나로 이어지는지 보세요.'
+      : `${name}은 곧은 선이 ${sides}개입니다. 그림의 곧은 선을 하나씩 짚으며 세어 보세요.`;
+  }
+
+  // 뺄셈: 문장에서 두 수를 먼저 꺼내게 합니다.
+  if (/남은|덜어|빼면|주고|먹고|썼/.test(prompt) && tag === 'subtraction') {
+    return '처음에 얼마였고 얼마를 덜어 냈는지 두 수를 문장에서 찾아 적으세요. 큰 수에서 작은 수를 뺍니다.';
+  }
+
+  // 덧셈: 무엇과 무엇을 모으는지 짚게 합니다.
+  if (/모두|합하면|더/.test(prompt) && tag === 'addition') {
+    return '모으는 두 수를 문장에서 찾아 적으세요. 일의 자리끼리 먼저 더하고 10이 넘는지 봅니다.';
+  }
+
   return null;
 };
 
