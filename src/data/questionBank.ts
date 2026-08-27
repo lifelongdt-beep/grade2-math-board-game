@@ -15790,19 +15790,16 @@ export const questionBank: Template[] = [
     tag: 'multiplication',
     strategy: '조건 함께 보기 · 문장 상황에서 곱셈으로 값 구하기',
     vars: {
-      price: { from: 2, to: 9 },
-      count: { from: 2, to: 9 },
-      total: { calc: 'price * count' },
-      priceWon: { calc: 'price * 100' },
-      totalWon: { calc: 'price * count * 100' },
+      each: { from: 2, to: 9 },
+      boxes: { from: 2, to: 9 },
+      total: { calc: 'each * boxes' },
     },
     words: { item: ['공책', '지우개', '색종이', '연필'] },
     prompt:
-      '{item} 한 개가 {priceWon}원입니다. {count}개를 사면 얼마일까요?',
-    answer: '{totalWon}원',
-    wrongs: ['{priceWon}원', '{total}원', '{totalWon + 100}원'],
-    solution:
-      '100원이 {price}개씩 {count}묶음입니다. {price}×{count}={total}이므로 {totalWon}원입니다.',
+      '{item:을} 한 상자에 {each}개씩 담았습니다. {boxes}상자에 담긴 {item:은} 모두 몇 개일까요?',
+    answer: '{total}개',
+    wrongs: ['{each + boxes}개', '{each}개', '{total + each}개'],
+    solution: '{each}씩 {boxes}묶음이므로 {each}×{boxes}={total}개입니다.',
   },
   {
     id: 'mid-len-metre-and-cm',
@@ -15836,12 +15833,13 @@ export const questionBank: Template[] = [
       b: { from: 11, to: 38 },
       total: { calc: 'a + b' },
     },
-    words: { first: ['빨간 끈', '노란 끈', '파란 리본'], second: ['흰 끈', '초록 끈', '검은 리본'] },
+    words: { first: ['빨간 끈', '노란 끈', '파란 리본', '색 테이프'] },
+    // 두 길이를 잇는 것은 4차시입니다. 여기서는 잰 길이를 읽습니다.
     prompt:
-      '{first:은} {a}cm, {second:은} {b}cm입니다. 두 끈을 이어 붙이면 몇 cm가 될까요?',
-    answer: '{total}cm',
-    wrongs: ['{a}cm', '{b}cm', '{total + 10}cm'],
-    solution: '{a}+{b}={total}cm입니다.',
+      '{first:을} 자로 재었더니 {a}cm였습니다. 1cm가 몇 번 들어간 길이일까요?',
+    answer: '{a}번',
+    wrongs: ['1번', '{b}번', '{a + 1}번'],
+    solution: '{a}cm는 1cm가 {a}번 들어간 길이입니다.',
   },
   {
     id: 'mid-len-sum-metre',
@@ -15965,7 +15963,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'data',
-    strategy: '조건 함께 보기 · 문장 상황에서 그래프 줄 견주기',
+    strategy: '조건 함께 보기 · 문장 상황에서 그래프 줄 세어 모으기',
     vars: {
       tall: { from: 7, to: 9 },
       short: { from: 2, to: 4 },
@@ -16027,7 +16025,7 @@ export const questionBank: Template[] = [
     mid: true,
     demand: 'connect',
     tag: 'pattern',
-    strategy: '조건 함께 보기 · 문장 상황에서 번호의 규칙 잇기',
+    strategy: '조건 함께 보기 · 문장 상황에서 다음에 올 번호 찾기',
     vars: {
       first: { from: 1, to: 4 },
       step: { from: 2, to: 5 },
