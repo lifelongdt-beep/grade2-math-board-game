@@ -14360,4 +14360,365 @@ export const questionBank: Template[] = [
     solution:
       '나중 수에서 처음 수를 빼면 받은 수를 알 수 있습니다. {now}-{had}={got}개입니다.',
   },
+  // ══════════════════════════════════════════════════════════════
+  // 2-1 ④ 길이 재기 — 실생활 문제 해결
+  // ──────────────────────────────────────────────────────────────
+  // cm는 4차시, 자의 눈금은 5차시, 어림은 7차시에서 배웁니다.
+  // 앞 차시에서는 이 말을 쓸 수 없어, 직접 대어 보고 단위로 세는
+  // 상황으로만 씁니다.
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'real-len-compare-not-movable',
+    when: /길이를 비교하는 방법을/,
+    real: true,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '조건 함께 보기 · 옮길 수 없는 것을 견주는 방법 판단하기',
+    vars: { any: { from: 1, to: 4 } },
+    words: {
+      fixed: ['교실 문', '칠판', '창문', '사물함'],
+      thing: ['빗자루', '우산', '줄넘기 줄', '긴 막대'],
+    },
+    // 옮길 수 없는 것은 맞대어 볼 수 없습니다. 끈으로 옮겨야 합니다.
+    prompt:
+      '{fixed:의} 긴 쪽과 {thing:의} 길이 가운데 어느 것이 더 긴지 알아보려고 합니다. {fixed:은} 옮길 수 없습니다. 어떻게 하면 좋을까요?',
+    answer: '끈에 {fixed:의} 길이를 옮겨 표시한 뒤 {thing:과} 대어 본다',
+    wrongs: [
+      '{fixed:을} 들고 와서 맞대어 본다',
+      '눈으로 보고 짐작한다',
+      '{thing:의} 무게를 재어 본다',
+    ],
+    solution:
+      '옮길 수 없는 것은 끈에 길이를 옮겨 표시하면, 그 끈을 다른 물건에 대어 견줄 수 있습니다.',
+  },
+  {
+    id: 'real-len-unit-count-differs',
+    when: /여러 가지 단위로 길이를/,
+    real: true,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '자료 해석 · 단위가 다르면 잰 횟수가 달라지는 것을 판단하기',
+    vars: {
+      big: { from: 4, to: 7 },
+      small: { from: 9, to: 14 },
+    },
+    words: { thing: ['책상의 긴 쪽', '칠판의 긴 쪽', '창틀의 긴 쪽', '책꽂이의 긴 쪽'] },
+    // 같은 길이라도 재는 단위가 작으면 횟수가 많아집니다.
+    prompt:
+      '{thing:을} 뼘으로 재니 {big}번, 클립으로 재니 {small}번이었습니다. 뼘과 클립 가운데 어느 것이 더 짧을까요?',
+    answer: '클립',
+    wrongs: ['뼘', '둘의 길이가 같습니다', '알 수 없습니다'],
+    solution:
+      '같은 길이를 잴 때 짧은 단위일수록 여러 번 재야 합니다. 클립으로 더 많이 재었으므로 클립이 더 짧습니다.',
+  },
+  {
+    id: 'real-len-one-cm-count',
+    when: /1cm를 알아볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '조건 함께 보기 · 1cm가 몇 번 들어가는지 판단하기',
+    vars: {
+      cm: { from: 6, to: 14 },
+      other: { from: 3, to: 5 },
+      gap: { calc: 'cm - other' },
+    },
+    words: { thing: ['색연필', '지우개', '풀', '크레파스'] },
+    prompt:
+      '{thing:의} 길이가 {cm}cm입니다. 옆에 있는 지우개는 {other}cm입니다. {thing:은} 지우개보다 몇 cm 더 길까요?',
+    answer: '{gap}cm',
+    wrongs: ['{cm}cm', '{other}cm', '{cm + other}cm'],
+    solution: '{cm}-{other}={gap}cm 더 깁니다.',
+  },
+  {
+    id: 'real-len-ruler-start-not-zero',
+    when: /자로 길이를 재는 방법을/,
+    real: true,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '조건 함께 보기 · 눈금 0이 아닌 곳에서 잰 길이를 판단하기',
+    vars: {
+      start: { from: 2, to: 5 },
+      end: { from: 9, to: 15 },
+      length: { calc: 'end - start' },
+    },
+    words: { thing: ['색연필', '지우개', '나뭇가지', '리본 조각'] },
+    // 눈금 0에 맞추지 않았으므로 끝의 수가 곧 길이가 아닙니다.
+    prompt:
+      '{thing:을} 자에 놓았더니 한쪽 끝이 눈금 {start}에, 다른 쪽 끝이 눈금 {end}에 있습니다. {thing:의} 길이는 몇 cm일까요?',
+    answer: '{length}cm',
+    wrongs: ['{end}cm', '{start}cm', '{length + 1}cm'],
+    solution:
+      '눈금 0에서 시작하지 않았습니다. {end}-{start}={length}이므로 1cm가 {length}번 들어간 길이입니다.',
+  },
+  {
+    id: 'real-len-measure-two-things',
+    when: /자로 길이를 재어 볼까요/,
+    semester: '2-1',
+    real: true,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '자료 해석 · 두 물건의 길이를 견주어 판단하기',
+    vars: {
+      a: { from: 8, to: 15 },
+      b: { from: 3, to: 7 },
+      gap: { calc: 'a - b' },
+      sum: { calc: 'a + b' },
+    },
+    words: { first: ['가위', '풀', '색연필', '자'], second: ['지우개', '단추', '클립', '동전'] },
+    prompt:
+      '{first:의} 길이는 {a}cm, {second:의} 길이는 {b}cm입니다. 두 물건의 길이의 차는 몇 cm일까요?',
+    answer: '{gap}cm',
+    wrongs: ['{sum}cm', '{a}cm', '{gap + 1}cm'],
+    solution: '{a}-{b}={gap}cm입니다.',
+  },
+  {
+    id: 'real-len-estimate-check',
+    when: /길이를 어림하고 어떻게 어림했는지/,
+    real: true,
+    demand: 'reason',
+    tag: 'measurement',
+    strategy: '자료 해석 · 어림한 값과 잰 값을 견주어 판단하기',
+    vars: {
+      guess: { from: 8, to: 14 },
+      real: { from: 15, to: 20 },
+      gap: { calc: 'real - guess' },
+    },
+    words: { thing: ['색연필', '가위', '풀', '자'] },
+    prompt:
+      '{thing:의} 길이를 약 {guess}cm로 어림했는데 자로 재어 보니 {real}cm였습니다. 어림한 길이는 잰 길이보다 몇 cm 짧았을까요?',
+    answer: '{gap}cm',
+    wrongs: ['{guess}cm', '{real}cm', '{gap + 1}cm'],
+    solution: '{real}-{guess}={gap}cm만큼 짧게 어림했습니다.',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // 2-1 ⑤ 분류하기 — 실생활 문제 해결
+  // ──────────────────────────────────────────────────────────────
+  // 세는 것은 4차시부터입니다. 2·3차시에서는 기준을 정하는 일만
+  // 다룹니다.
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'real-sort-pick-standard',
+    when: /분류는 어떻게 할까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'classification',
+    strategy: '조건 함께 보기 · 누가 보아도 같게 나뉘는 기준 판단하기',
+    vars: { any: { from: 1, to: 4 } },
+    words: { place: ['신발장', '학용품 정리함', '책꽂이', '냉장고 칸'] },
+    prompt:
+      '{place:을} 정리하려고 합니다. 누가 정리해도 같은 자리에 들어가게 하려면 어떤 기준으로 나누어야 할까요?',
+    answer: '누가 보아도 똑같이 나뉘는 기준',
+    wrongs: [
+      '내가 좋아하는 정도',
+      '내가 자주 쓰는 순서',
+      '보기에 예쁜 순서',
+    ],
+    solution:
+      '좋아하는 정도나 예쁜 정도는 사람마다 달라 다르게 나뉩니다. 누가 보아도 같게 나뉘는 기준이어야 합니다.',
+  },
+  {
+    id: 'real-sort-two-standards',
+    when: /기준에 따라 분류해 볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'classification',
+    strategy: '자료 해석 · 두 가지 기준을 견주어 고르기',
+    vars: { any: { from: 1, to: 4 } },
+    words: {
+      things: ['빨간 단추와 파란 단추', '큰 공과 작은 공', '동그란 접시와 네모난 접시'],
+      use: ['색깔', '크기', '모양'],
+    },
+    prompt:
+      '상자에 {things:이} 섞여 있습니다. 색깔로도 나눌 수 있고 크기로도 나눌 수 있습니다. 두 가지 기준으로 나눈 결과에 대해 알맞은 말은 어느 것일까요?',
+    answer: '기준이 달라지면 나뉘는 묶음도 달라집니다',
+    wrongs: [
+      '기준이 달라도 늘 같게 나뉩니다',
+      '기준은 하나만 쓸 수 있습니다',
+      '기준을 정하지 않아도 됩니다',
+    ],
+    solution:
+      '같은 물건이라도 색깔로 나눌 때와 크기로 나눌 때 서로 다른 묶음이 됩니다.',
+  },
+  {
+    id: 'real-sort-count-missing',
+    when: /분류하고 세어 볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'classification',
+    strategy: '자료 해석 · 합계로 빠진 수를 거꾸로 판단하기',
+    vars: {
+      total: { from: 18, to: 26 },
+      a: { from: 6, to: 9 },
+      b: { from: 2, to: 5 },
+      known: { calc: 'a + b' },
+      rest: { calc: 'total - a - b' },
+    },
+    words: { kind: ['딱지', '단추', '구슬', '색종이'] },
+    prompt:
+      '{kind:이} 모두 {total}개 있습니다. 빨강이 {a}개, 파랑이 {b}개이고 남은 것은 모두 초록입니다. 초록은 몇 개일까요?',
+    answer: '{rest}개',
+    wrongs: ['{known}개', '{total}개', '{rest + 1}개'],
+    solution:
+      '{a}+{b}={known}개를 빼면 됩니다. {total}-{known}={rest}개가 초록입니다.',
+  },
+  {
+    id: 'real-sort-tell-result',
+    when: /분류한 결과를 말해 볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'classification',
+    strategy: '자료 해석 · 나눈 결과로 학급 일을 판단하기',
+    vars: {
+      most: { from: 8, to: 11 },
+      mid: { from: 4, to: 6 },
+      least: { from: 1, to: 3 },
+      gap: { calc: 'most - least' },
+    },
+    words: { a: ['축구공', '농구공', '피구공'], b: ['훌라후프', '줄넘기', '배드민턴채'], c: ['제기', '공기', '딱지'] },
+    prompt:
+      '체육 창고의 물건을 종류별로 나누어 세었더니 {a} {most}개, {b} {mid}개, {c} {least}개였습니다. 가장 많은 것과 가장 적은 것의 차는 몇 개일까요?',
+    answer: '{gap}개',
+    wrongs: ['{most}개', '{least}개', '{mid}개'],
+    solution:
+      '가장 많은 것은 {a} {most}개, 가장 적은 것은 {c} {least}개입니다. {most}-{least}={gap}개입니다.',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // 2-1 ⑥ 곱셈 — 실생활 문제 해결
+  // ──────────────────────────────────────────────────────────────
+  // '몇 배'는 4차시, '곱셈'과 '×'는 6차시부터입니다. 앞 차시에서는
+  // 묶어 세고 뛰어 세는 말로만 씁니다.
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'real-count-ways-faster',
+    when: /여러 가지 방법으로 세어/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '자료 해석 · 세는 방법을 견주어 고르기',
+    vars: {
+      each: { from: 2, to: 5 },
+      groups: { from: 4, to: 7 },
+      total: { calc: 'each * groups' },
+    },
+    words: { item: ['달걀', '요구르트', '사탕', '방울토마토'] },
+    // 하나씩 세는 것과 묶어 세는 것을 견주게 합니다.
+    prompt:
+      '{item:이} {each}개씩 {groups}줄로 놓여 있습니다. 하나씩 세는 것보다 빠르게 세려면 어떻게 하면 좋을까요?',
+    answer: '{each}씩 뛰어 센다',
+    wrongs: ['하나씩 끝까지 센다', '눈으로 어림한다', '줄 수만 센다'],
+    solution:
+      '한 줄에 {each}개씩 있으므로 {each}씩 뛰어 세면 {total}개를 빠르게 셀 수 있습니다.',
+  },
+  {
+    id: 'real-group-count-left',
+    when: /묶어 세어 볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 묶음과 낱개를 함께 세어 판단하기',
+    vars: {
+      each: { from: 3, to: 6 },
+      groups: { from: 3, to: 6 },
+      loose: { from: 1, to: 4 },
+      inGroups: { calc: 'each * groups' },
+      total: { calc: 'each * groups + loose' },
+    },
+    words: { item: ['사탕', '구슬', '딱지', '초코볼'] },
+    prompt:
+      '{item:을} {each}개씩 {groups}묶음으로 묶었더니 {loose}개가 남았습니다. {item:은} 모두 몇 개일까요?',
+    answer: '{total}개',
+    wrongs: ['{inGroups}개', '{loose}개', '{total + each}개'],
+    solution:
+      '묶음에 든 것은 {each}씩 {groups}묶음이라 {inGroups}개입니다. 남은 {loose}개를 더하면 {total}개입니다.',
+  },
+  {
+    id: 'real-times-compare',
+    when: /몇의 몇 배를 알아볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '자료 해석 · 두 사람의 수를 견주어 몇 배인지 판단하기',
+    vars: {
+      mine: { from: 2, to: 5 },
+      times: { from: 2, to: 4 },
+      yours: { calc: 'mine * times' },
+      gap: { calc: 'mine * times - mine' },
+    },
+    words: { who: ['지호', '수아', '민서', '태윤'], item: ['구슬', '딱지', '붙임딱지', '색종이'] },
+    prompt:
+      '나는 {item:을} {mine}개 가지고 있고 {who:은} {yours}개 가지고 있습니다. {who:이} 가진 것은 내가 가진 것의 몇 배일까요?',
+    answer: '{times}배',
+    wrongs: ['{gap}배', '{yours}배', '{times + 1}배'],
+    solution:
+      '{mine}씩 몇 묶음이면 {yours}이 되는지 세어 봅니다. {mine}씩 {times}묶음이므로 {times}배입니다.',
+  },
+  {
+    id: 'real-times-write',
+    when: /몇의 몇 배로 나타내 볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 몇 배가 되는 수를 판단하기',
+    vars: {
+      base: { from: 3, to: 7 },
+      times: { from: 2, to: 4 },
+      total: { calc: 'base * times' },
+      wrongSum: { calc: 'base + times' },
+    },
+    words: { item: ['색연필', '연필', '자', '지우개'] },
+    prompt:
+      '{item:이} 한 통에 {base}개씩 들어 있습니다. 이런 통이 {times}개 있으면 {item:은} {base}의 몇 배가 되고, 모두 몇 개일까요?',
+    answer: '{times}배, {total}개',
+    wrongs: ['{base}배, {total}개', '{times}배, {wrongSum}개', '{total}배, {total}개'],
+    solution:
+      '{base}씩 {times}묶음이므로 {base}의 {times}배이고, 모두 {total}개입니다.',
+  },
+  {
+    id: 'real-mul-know-when',
+    when: /곱셈을 알아볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '자료 해석 · 곱셈을 쓸 상황인지 견주어 판단하기',
+    vars: {
+      each: { from: 3, to: 6 },
+      groups: { from: 3, to: 6 },
+      total: { calc: 'each * groups' },
+    },
+    words: { item: ['사탕', '구슬', '떡', '쿠키'] },
+    // 같은 수씩 묶여 있어야 곱셈으로 셀 수 있습니다.
+    prompt:
+      '{item:을} 한 접시에 {each}개씩 {groups}접시에 담았습니다. 모두 몇 개인지 구할 때 곱셈을 쓸 수 있는 까닭은 무엇일까요?',
+    answer: '접시마다 든 수가 같기 때문입니다',
+    wrongs: [
+      '접시가 여러 개이기 때문입니다',
+      '{item:이} 많기 때문입니다',
+      '{item:을} 셀 수 있기 때문입니다',
+    ],
+    solution:
+      '같은 수씩 묶여 있을 때만 곱셈으로 셀 수 있습니다. {each}씩 {groups}묶음이라 {total}개입니다.',
+  },
+  {
+    id: 'real-mul-write-sentence',
+    when: /곱셈식으로 나타내 볼까요/,
+    real: true,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 상황에 맞는 곱셈식을 판단하기',
+    vars: {
+      each: { from: 4, to: 8 },
+      groups: { from: 3, to: 6 },
+      total: { calc: 'each * groups' },
+    },
+    words: { item: ['색종이', '붙임딱지', '연필', '쿠키'] },
+    prompt:
+      '{item:을} 친구 {groups}명에게 {each}장씩 나누어 주려고 합니다. 필요한 {item} 수를 구하는 곱셈식은 어느 것일까요?',
+    answer: '{each}×{groups}',
+    wrongs: ['{each}+{groups}', '{groups}+{groups}', '{each}-{groups}'],
+    solution:
+      '한 사람에게 {each}장씩 {groups}명이므로 {each}×{groups}={total}장이 필요합니다.',
+  },
 ];
