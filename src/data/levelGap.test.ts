@@ -9,7 +9,7 @@ const shapeOf = (prompt: string) => prompt.replace(/\d+/g, '#').replace(/\s+/g, 
 //
 // 둘 다 같은 생성기가 채우고 있어, 한 차시에서 서른 문항 가운데 열아홉이
 // 똑같은 모양이던 곳이 있었습니다. 중이 먼저 가져갈 자리(midQuestion)를
-// 만들고 차시마다 문장제를 써 넣어 509곳에서 322곳으로 줄였습니다.
+// 만들고 차시마다 문장제를 두 벌씩 써 넣어 509곳에서 286곳으로 줄였습니다.
 describe('수준 사이의 거리', () => {
   it('한 차시에서 중이 하를 그대로 되풀이하지 않는다', () => {
     const worst: string[] = [];
@@ -19,7 +19,7 @@ describe('수준 사이의 거리', () => {
       const same = generateQuestions(lesson, '중').filter((q) => low.has(shapeOf(q.prompt)));
 
       // 서른 문항 가운데 절반을 넘게 겹치면 두 수준이 같은 것입니다.
-      if (same.length > 14) {
+      if (same.length > 12) {
         worst.push(`${lesson.semester} ${lesson.unitNo}-${lesson.lessonNo} ${lesson.title}: ${same.length}/30`);
       }
     }
@@ -38,8 +38,8 @@ describe('수준 사이의 거리', () => {
       all += mid.length;
     }
 
-    // 지금은 322곳입니다. 더 늘지 않게 막아 둡니다.
-    expect(same).toBeLessThanOrEqual(340);
+    // 지금은 286곳입니다. 더 늘지 않게 막아 둡니다.
+    expect(same).toBeLessThanOrEqual(300);
     expect(all).toBeGreaterThan(2000);
   });
 });
