@@ -5,21 +5,22 @@ import { generateQuestions } from './questionFactory';
 const shapeOf = (prompt: string) => prompt.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
 
 describe('peek', () => {
-  it('worst lessons now', () => {
-    const rows: Array<{ at: string; same: number; kinds: string[] }> = [];
+  it('final overlap', () => {
+    let same = 0;
+    let all = 0;
+    let worst = 0;
+    let thinnest = 99;
     for (const lesson of lessons) {
       const low = new Set(generateQuestions(lesson, '하').map((q) => shapeOf(q.prompt)));
-      const dup = generateQuestions(lesson, '중').filter((q) => low.has(shapeOf(q.prompt)));
-      if (dup.length >= 5) {
-        rows.push({
-          at: `${lesson.semester} ${lesson.unitNo}-${lesson.lessonNo} ${lesson.title.slice(0, 15)}`,
-          same: dup.length,
-          kinds: [...new Set(dup.map((q) => q.strategy.split(' · ').slice(-1)[0]))].slice(0, 3),
-        });
-      }
+      const mid = generateQuestions(lesson, '중');
+      const dup = mid.filter((q) => low.has(shapeOf(q.prompt))).length;
+      same += dup;
+      all += mid.length;
+      if (dup > worst) worst = dup;
+      const kinds = new Set(mid.map((q) => shapeOf(q.prompt))).size;
+      if (kinds < thinnest) thinnest = kinds;
     }
-    rows.sort((a, b) => b.same - a.same);
-    for (const one of rows) console.log(`SAME|${one.same}|${one.at}|${one.kinds.join(' / ')}`);
+    console.log(`PEEK|겹침 ${same}/${all} · 한 차시 최대 ${worst} · 중 최소 모양 ${thinnest}가지`);
     expect(true).toBe(true);
   });
 });
