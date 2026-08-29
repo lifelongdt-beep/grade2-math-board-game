@@ -16476,24 +16476,4 @@ export const questionBank: Template[] = [
     wrongs: ['{each}번', '{total}번', '{groups + 1}번'],
     solution: '{each}씩 뛰어 세어 {total}이 될 때까지 세면 {groups}번입니다.',
   },
-  {
-    id: 'mid-graph-make-check',
-    when: /표와 그래프로 나타내 볼까요/,
-    mid: true,
-    demand: 'connect',
-    tag: 'data',
-    strategy: '조건 함께 보기 · 문장 상황에서 그래프 그리는 차례 알기',
-    vars: { any: { from: 1, to: 4 } },
-    words: { kind: ['좋아하는 과일', '좋아하는 운동', '기르고 싶은 동물', '가고 싶은 곳'] },
-    prompt:
-      '{kind:을} 조사해 그래프로 나타내려고 합니다. 표를 만든 다음에 할 일로 알맞은 것은 어느 것일까요?',
-    answer: '표의 수만큼 아래에서부터 한 칸씩 채운다',
-    wrongs: [
-      '가장 많은 것부터 위에서 채운다',
-      '빈칸을 남기지 않고 모두 채운다',
-      '눈에 띄는 것만 골라 채운다',
-    ],
-    solution:
-      '그래프는 아래에서부터 한 칸씩 빠짐없이 채워야 줄의 길이로 많고 적음을 볼 수 있습니다.',
-  },
 ];
