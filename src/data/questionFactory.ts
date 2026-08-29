@@ -15560,7 +15560,7 @@ const buildQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number):
           // 중은 자기 몫의 문장제를 먼저 가져갑니다. 서른 자리 가운데
           // 열 자리입니다. 이 자리가 없으면 하와 같은 생성기가 채워
           // 두 수준이 같은 문항을 나눠 갖게 됩니다.
-          : (difficulty === '중' && index % 3 === 1
+          : (difficulty === '중' && index % 3 !== 0
               ? midQuestion(lesson, difficulty, index)
               : null)
             ?? (index % 5 === 2
