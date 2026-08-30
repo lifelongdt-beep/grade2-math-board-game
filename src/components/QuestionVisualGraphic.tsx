@@ -393,7 +393,16 @@ function NumberLineGraphic({ visual }: { visual: Extract<QuestionVisual, { kind:
           </g>
         );
       })}
-      {visual.marks.map((mark, index) => (
+      {(visual.jumpsShown === undefined
+        ? visual.marks
+        // 한 번씩 뛰어 보는 중입니다. 처음 자리에서 뛴 만큼만 점을
+        // 찍고, 지금 서 있는 자리를 굵게 표시합니다.
+        : Array.from({ length: visual.jumpsShown + 1 }, (_, step) => ({
+            value: visual.start + visual.step * step,
+            active: step === visual.jumpsShown,
+            label: undefined as string | undefined,
+          }))
+      ).map((mark, index) => (
         <g key={`${mark.value}-${index}`}>
           <circle cx={toX(mark.value)} cy="76" r={mark.active ? 11 : 8} fill={mark.active ? '#18a7a7' : '#fff4bd'} stroke="#0f7175" strokeWidth="3" />
           {mark.label && (
