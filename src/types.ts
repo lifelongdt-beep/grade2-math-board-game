@@ -186,6 +186,14 @@ export interface GridTableVisual {
 
 export interface NumberLineVisual {
   kind: 'number-line';
+  /**
+   * 지금까지 몇 번 뛰었는지입니다.
+   *
+   * 자세히 보기에서 한 번씩 뛰어 볼 때 씁니다. 이 값이 있으면 적어 둔
+   * 점 대신, 처음 자리에서 이만큼 뛴 자리까지만 점을 찍습니다.
+   * 묶음 그림에서 한 묶음씩 나타나는 것과 같은 일을 수직선에서 합니다.
+   */
+  jumpsShown?: number;
   label: string;
   start: number;
   end: number;

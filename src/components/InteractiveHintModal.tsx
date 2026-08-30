@@ -242,6 +242,52 @@ function InteractiveCounter({ visual }: { visual: QuestionVisual }) {
   );
 }
 
+// 수직선은 한 번씩 뛰어 봅니다.
+//
+// 곱셈에서 묶음이 늘어나는 것과 수직선에서 한 번씩 뛰는 것은 같은
+// 일입니다. 묶음 그림은 탭할 때마다 한 묶음이 나타나는데 수직선만
+// 가만히 있으면, 아이는 수직선을 '읽는 그림'으로만 보게 됩니다.
+// 여기서도 탭할 때마다 한 번씩 뛰게 해서, 몇 번 뛰었는지가 곧 몇
+// 묶음인지를 손으로 세어 보게 합니다.
+function InteractiveJumps({ visual }: { visual: Extract<QuestionVisual, { kind: 'number-line' }> }) {
+  const [jumps, setJumps] = useState(0);
+
+  const step = Math.max(1, visual.step);
+  const most = Math.max(1, Math.floor((visual.end - visual.start) / step));
+  const at = visual.start + step * jumps;
+
+  const tap = () => {
+    playTapSound();
+    setJumps((value) => Math.min(most, value + 1));
+  };
+
+  return (
+    <div className="interactive-counter-widget">
+      <div className="interactive-counter-visual">
+        <QuestionVisualGraphic visual={{ ...visual, jumpsShown: jumps }} />
+      </div>
+      <button type="button" className="interactive-counter-button" onClick={tap}>
+        <span className="interactive-counter-number">{at}</span>
+        <span className="interactive-counter-step">
+          {step}씩 <strong>{jumps}</strong>번 뛰었어요
+        </span>
+        <span>
+          {jumps >= most
+            ? '끝까지 왔어요. 몇 번 뛰었는지 세어 보세요'
+            : jumps === 0
+              ? '탭하면 한 번씩 뛰어요'
+              : '탭하면 한 번 더 뛰어요'}
+        </span>
+      </button>
+      {jumps > 0 && (
+        <button type="button" className="interactive-counter-reset" onClick={() => setJumps(0)}>
+          다시 뛰기
+        </button>
+      )}
+    </div>
+  );
+}
+
 // 낱개 물건을 하나씩 짚어 세는 그림만 탭 카운터가 맞습니다. 달력·
 // 수직선·자·막대·표·규칙·칠교판은 세는 것이 아니라 읽거나 견주는
 // 그림이라, 탭 카운터를 붙이면 문제와 상관없는 숫자만 늘어납니다.
@@ -376,6 +422,7 @@ function EnlargedVisual({ visual }: { visual: QuestionVisual }) {
 const widgetTitleFor = (visual: QuestionVisual) => {
   if (visual.kind === 'clock') return '시계를 움직여 보세요';
   if (visual.kind === 'place-value') return '수 모형을 모으거나 지워 보세요';
+  if (visual.kind === 'number-line') return '한 번씩 뛰어 보세요';
   if (COUNTABLE_KINDS.has(visual.kind)) return '하나씩 짚어 세어 보세요';
   return enlargedCaptionFor(visual);
 };
@@ -393,10 +440,11 @@ export function InteractiveHintModal({ visual, onClose }: InteractiveHintModalPr
         </header>
         {visual.kind === 'clock' && <InteractiveClock />}
         {visual.kind === 'place-value' && <InteractivePlaceValue visual={visual} />}
-        {visual.kind !== 'clock' && visual.kind !== 'place-value' && isCountable && (
+        {visual.kind === 'number-line' && <InteractiveJumps visual={visual} />}
+        {visual.kind !== 'clock' && visual.kind !== 'place-value' && visual.kind !== 'number-line' && isCountable && (
           <InteractiveCounter visual={visual} />
         )}
-        {visual.kind !== 'clock' && visual.kind !== 'place-value' && !isCountable && (
+        {visual.kind !== 'clock' && visual.kind !== 'place-value' && visual.kind !== 'number-line' && !isCountable && (
           <EnlargedVisual visual={visual} />
         )}
         <PictureReadingSteps visual={visual} />
