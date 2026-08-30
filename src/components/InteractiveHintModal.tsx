@@ -177,7 +177,13 @@ function InteractivePlaceValue({ visual }: { visual: Extract<QuestionVisual, { k
 }
 
 function InteractiveCounter({ visual }: { visual: QuestionVisual }) {
-  const [count, setCount] = useState(0);
+  // 묶음 그림은 한 묶음이 이미 놓인 데서 시작합니다.
+  //
+  // '5+5+5+5를 곱셈식으로'를 열었을 때 0에서 시작하면 아무것도 없는
+  // 화면을 보게 됩니다. 동그라미 5개가 놓여 있고 탭할 때마다 5개씩
+  // 늘어나야, 더하는 일이 곧 묶음이 늘어나는 일이라는 것이 보입니다.
+  const first = visual.kind === 'array' && visual.plainCount === undefined ? visual.columns : 0;
+  const [count, setCount] = useState(first);
 
   // 묶음 그림에서는 한 묶음씩 셉니다.
   //
@@ -193,7 +199,7 @@ function InteractiveCounter({ visual }: { visual: QuestionVisual }) {
 
   // 센 만큼만 진하게 남기고 아직 세지 않은 묶음은 흐리게 둡니다.
   // 어디까지 세었는지 손가락으로 짚지 않아도 보입니다.
-  const shown: QuestionVisual = grouped && count > 0
+  const shown: QuestionVisual = grouped
     ? { ...grouped, fadedRows: Math.max(0, grouped.rows - bundles) }
     : visual;
 
@@ -218,8 +224,8 @@ function InteractiveCounter({ visual }: { visual: QuestionVisual }) {
           <span>탭해서 하나씩 세어 보세요</span>
         )}
       </button>
-      {count > 0 && (
-        <button type="button" className="interactive-counter-reset" onClick={() => setCount(0)}>
+      {count > first && (
+        <button type="button" className="interactive-counter-reset" onClick={() => setCount(first)}>
           다시 세기
         </button>
       )}
