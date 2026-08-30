@@ -2259,6 +2259,19 @@ button:disabled {
   font-weight: 950;
 }
 
+/* '몇 묶음째'가 곧 □에 들어갈 수입니다. 총합만 크게 두면 아이가
+   그 수를 어디에 쓰는지 모릅니다. */
+.interactive-counter-step {
+  color: var(--teal-dark);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.interactive-counter-step strong {
+  font-size: 22px;
+  font-weight: 950;
+}
+
 .interactive-counter-reset {
   border: 0;
   background: none;

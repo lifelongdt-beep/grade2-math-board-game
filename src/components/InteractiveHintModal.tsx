@@ -214,10 +214,21 @@ function InteractiveCounter({ visual }: { visual: QuestionVisual }) {
       <button type="button" className="interactive-counter-button" onClick={tap}>
         <span className="interactive-counter-number">{count}</span>
         {bundle > 1 ? (
-          <span>
-            {bundles > 0 && <strong className="interactive-counter-bundles">{bundles}묶음 </strong>}
-            {bundles === 0 ? '탭하면 한 묶음씩 나타나요' : '탭해서 한 묶음씩 세어 보세요'}
-          </span>
+          <>
+            {/* '3×□=12에서 □는?'을 푸는 아이에게 필요한 것은 지금까지
+                센 수만이 아니라 '몇 묶음째인가'입니다. 그것이 곧 □에
+                들어갈 수입니다. 그래서 묶음 수를 큰 줄로 따로 둡니다. */}
+            <span className="interactive-counter-step">
+              {bundle}씩 <strong>{bundles}</strong>묶음째
+            </span>
+            <span>
+              {count >= most
+                ? '다 나왔어요. 몇 묶음이었는지 세어 보세요'
+                : bundles === 0
+                  ? '탭하면 한 묶음씩 나타나요'
+                  : '탭하면 한 묶음 더 나타나요'}
+            </span>
+          </>
         ) : (
           <span>탭해서 하나씩 세어 보세요</span>
         )}
