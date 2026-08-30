@@ -16499,7 +16499,7 @@ export const questionBank: Template[] = [
     when: /2단 곱셈구구/,
     demand: 'recall',
     tag: 'multiplication',
-    strategy: '앞의 곱에 한 묶음 더하기',
+    strategy: '앞의 곱에서 한 번 더 더하기',
     vars: {
       times: { from: 2, to: 8 },
       known: { calc: '2 * times' },
@@ -16517,7 +16517,7 @@ export const questionBank: Template[] = [
     when: /5단 곱셈구구/,
     demand: 'recall',
     tag: 'multiplication',
-    strategy: '앞의 곱에 한 묶음 더하기',
+    strategy: '앞의 곱에서 한 번 더 더하기',
     vars: {
       times: { from: 2, to: 8 },
       known: { calc: '5 * times' },
@@ -16572,15 +16572,14 @@ export const questionBank: Template[] = [
     tag: 'multiplication',
     strategy: '자료 해석 · 두 단 사이의 관계 판단하기',
     vars: { times: { from: 2, to: 9 } },
-    prompt: '6단의 곱은 3단의 곱과 어떤 관계일까요?',
-    answer: '3단의 곱을 두 배 한 것과 같습니다',
-    wrongs: [
-      '3단의 곱에 3을 더한 것과 같습니다',
-      '3단의 곱을 반으로 나눈 것과 같습니다',
-      '아무 관계가 없습니다',
-    ],
+    // 보기를 다시 만드는 단계가 '3단'의 수를 바꾸어 '4단'을 만들어
+    // 냈습니다. 4단은 5차시라 여기서는 쓸 수 없습니다. 단 이름을 쓰지
+    // 않고 같은 것을 묻습니다.
+    prompt: '6은 3의 두 배입니다. 그러면 6×{times}는 3×{times}의 몇 배일까요?',
+    answer: '2배',
+    wrongs: ['3배', '6배', '{times}배'],
     solution:
-      '6은 3의 두 배입니다. 한 묶음의 크기가 두 배이므로 같은 묶음 수라면 곱도 두 배가 됩니다.',
+      '한 묶음의 크기가 두 배가 되었습니다. 묶음 수가 같으므로 곱도 두 배가 됩니다.',
   },
   {
     id: 'mul-rule-eight-double-four',
@@ -16604,7 +16603,7 @@ export const questionBank: Template[] = [
     when: /4단, 8단 곱셈구구/,
     demand: 'recall',
     tag: 'multiplication',
-    strategy: '앞의 곱에 한 묶음 더하기',
+    strategy: '앞의 곱에서 한 번 더 더하기',
     vars: {
       times: { from: 2, to: 8 },
       known: { calc: '4 * times' },
@@ -16621,7 +16620,7 @@ export const questionBank: Template[] = [
     when: /7단 곱셈구구/,
     demand: 'recall',
     tag: 'multiplication',
-    strategy: '앞의 곱에 한 묶음 더하기',
+    strategy: '앞의 곱에서 한 번 더 더하기',
     vars: {
       times: { from: 2, to: 8 },
       known: { calc: '7 * times' },
