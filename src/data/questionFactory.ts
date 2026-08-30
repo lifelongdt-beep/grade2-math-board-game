@@ -10133,7 +10133,14 @@ const visualForGeneratedQuestion = (
       const each = Number(repeated[1]);
       const times = repeated[0].split('+').length;
       if (each >= 1 && each <= 9 && times >= 2 && times <= 9) {
-        return arrayVisualFor(times, each, `${each}씩 ${times}묶음`);
+        // 같은 수를 여러 번 더하는 것은 두 가지로 볼 수 있습니다.
+        //   묶음  — 3개씩 4줄이 놓여 있는 모습
+        //   뛰기  — 0에서 3씩 네 번 뛰어 12에 닿는 모습
+        // 둘은 같은 이야기의 다른 그림입니다. 한 가지만 계속 보여 주면
+        // 그 그림에서만 곱셈을 알아보게 되므로 번갈아 냅니다.
+        return index % 2 === 0
+          ? arrayVisualFor(times, each, `${each}씩 ${times}묶음`)
+          : numberLineVisualFor([0, each * times], each, `${each}씩 뛰어 세기`, -1);
       }
     }
 
