@@ -3,20 +3,13 @@ import { lessons } from './curriculum';
 import { generateQuestions } from './questionFactory';
 
 describe('peek', () => {
-  it('dumps 2-2 unit 2', () => {
+  it('shows the flagged question in full', () => {
     for (const lesson of lessons) {
-      if (lesson.semester !== '2-2' || lesson.unitNo !== 2) continue;
-      console.log(`LESSON|${lesson.lessonNo}|${lesson.title}|${lesson.objective}`);
-      for (const level of ['하', '중', '상'] as const) {
-        const made = generateQuestions(lesson, level);
-        const kinds = new Map<string, string>();
-        for (const q of made) {
-          const kind = q.strategy.split(' · ').slice(-1)[0];
-          if (!kinds.has(kind)) kinds.set(kind, q.prompt.slice(0, 52));
-        }
-        for (const [kind, sample] of kinds) {
-          console.log(`Q|${lesson.lessonNo}|${level}|${kind}|${sample}`);
-        }
+      if (lesson.semester !== '2-2' || lesson.unitNo !== 2 || lesson.lessonNo !== 4) continue;
+      for (const q of generateQuestions(lesson, '상')) {
+        if (!q.prompt.includes('6단의 곱은')) continue;
+        console.log(`FULL|${q.prompt}|보기: ${q.choices.join(' / ')}|전략: ${q.strategy}`);
+        break;
       }
     }
     expect(true).toBe(true);
