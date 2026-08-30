@@ -177,13 +177,7 @@ function InteractivePlaceValue({ visual }: { visual: Extract<QuestionVisual, { k
 }
 
 function InteractiveCounter({ visual }: { visual: QuestionVisual }) {
-  // 묶음 그림은 한 묶음이 이미 놓인 데서 시작합니다.
-  //
-  // '5+5+5+5를 곱셈식으로'를 열었을 때 0에서 시작하면 아무것도 없는
-  // 화면을 보게 됩니다. 동그라미 5개가 놓여 있고 탭할 때마다 5개씩
-  // 늘어나야, 더하는 일이 곧 묶음이 늘어나는 일이라는 것이 보입니다.
-  const first = visual.kind === 'array' && visual.plainCount === undefined ? visual.columns : 0;
-  const [count, setCount] = useState(first);
+  const [count, setCount] = useState(0);
 
   // 묶음 그림에서는 한 묶음씩 셉니다.
   //
@@ -197,10 +191,14 @@ function InteractiveCounter({ visual }: { visual: QuestionVisual }) {
   const most = grouped ? grouped.rows * grouped.columns : Number.POSITIVE_INFINITY;
   const bundles = count / bundle;
 
-  // 센 만큼만 진하게 남기고 아직 세지 않은 묶음은 흐리게 둡니다.
-  // 어디까지 세었는지 손가락으로 짚지 않아도 보입니다.
+  // 센 묶음만 나타납니다.
+  //
+  // 처음에는 흐리게만 두었습니다. 그런데 흐린 것도 보이는 것이라,
+  // 아이 눈에는 스무 개가 처음부터 다 놓여 있고 색만 바뀌는 것으로
+  // 보였습니다. 없다가 한 묶음씩 나타나야 '한 번 더 더하는 일'이
+  // 눈에 들어옵니다.
   const shown: QuestionVisual = grouped
-    ? { ...grouped, fadedRows: Math.max(0, grouped.rows - bundles) }
+    ? { ...grouped, shownRows: bundles }
     : visual;
 
   const tap = () => {
@@ -218,14 +216,14 @@ function InteractiveCounter({ visual }: { visual: QuestionVisual }) {
         {bundle > 1 ? (
           <span>
             {bundles > 0 && <strong className="interactive-counter-bundles">{bundles}묶음 </strong>}
-            탭해서 한 묶음씩 세어 보세요
+            {bundles === 0 ? '탭하면 한 묶음씩 나타나요' : '탭해서 한 묶음씩 세어 보세요'}
           </span>
         ) : (
           <span>탭해서 하나씩 세어 보세요</span>
         )}
       </button>
-      {count > first && (
-        <button type="button" className="interactive-counter-reset" onClick={() => setCount(first)}>
+      {count > 0 && (
+        <button type="button" className="interactive-counter-reset" onClick={() => setCount(0)}>
           다시 세기
         </button>
       )}
