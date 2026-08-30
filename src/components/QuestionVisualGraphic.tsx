@@ -1010,6 +1010,9 @@ function ArrayGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'arr
       {Array.from({ length: visual.rows }).map((_, row) =>
         Array.from({ length: visual.columns }).map((__, column) => {
           const faded = visual.fadedRows != null && row >= visual.rows - visual.fadedRows;
+          // 아직 세지 않은 묶음은 그리지 않습니다. 자리는 그대로 두어
+          // 그림의 크기가 탭할 때마다 들썩이지 않게 합니다.
+          if (visual.shownRows !== undefined && row >= visual.shownRows) return null;
           // 묶지 않은 물건은 적힌 개수만큼만 그립니다. 마지막 줄이 다
           // 차지 않으면 남는 자리는 비워 둡니다 — 7개라고 적어 놓고
           // 다섯 개짜리 두 줄(열 개)을 그리면 말과 그림이 어긋납니다.
