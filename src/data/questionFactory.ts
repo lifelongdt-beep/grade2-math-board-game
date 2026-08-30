@@ -10119,6 +10119,24 @@ const visualForGeneratedQuestion = (
     // 동그라미 다섯 개를 늘어놓으면 '5'만 보이고 '2배'가 보이지
     // 않습니다. 5씩 눈금이 있는 수의 길에 5를 짚어 주면, 아이가
     // 거기서 두 번 뛰어 보며 답을 찾습니다.
+    // '3+3+3+3을 곱셈식으로 나타낸 것은?' — 같은 수를 여러 번 더한
+    // 것입니다. 더하기만 있고 '씩'도 '×'도 없어 묶음을 읽지 못했고,
+    // 첫 수 3만 집어 동그라미 세 개를 그렸습니다.
+    //
+    // 더한 횟수가 곧 묶음 수입니다. 3씩 4줄을 그려 주면 아이가 그림을
+    // 보고 3×4라는 식을 세웁니다.
+    const repeated = /(\d+)(?:\s*\+\s*)+/.exec(question.prompt);
+    // 앞에 숫자가 더 붙어 있으면 '13+3'의 3을 잡은 것입니다.
+    const wholeNumber = repeated
+      && (repeated.index === 0 || !/\d/.test(question.prompt[repeated.index - 1]));
+    if (repeated && wholeNumber) {
+      const each = Number(repeated[1]);
+      const times = repeated[0].split('+').length;
+      if (each >= 1 && each <= 9 && times >= 2 && times <= 9) {
+        return arrayVisualFor(times, each, `${each}씩 ${times}묶음`);
+      }
+    }
+
     const timesOf = /(\d+)의 (\d+)배/.exec(question.prompt);
     if (timesOf) {
       const base = Number(timesOf[1]);
