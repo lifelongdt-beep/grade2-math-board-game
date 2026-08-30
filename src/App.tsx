@@ -896,6 +896,11 @@ function App() {
     // 가릴 수 없습니다.
     setTeacherOpen(false);
     setOpenResults({});
+    // 열어 두었던 힌트와 자세히 보기 창을 닫습니다. 닫지 않으면 다시
+    // 시작한 첫 화면에 남의 창이 열린 채로 떠서, 아이가 문제를 보기도
+    // 전에 그림부터 보게 됩니다.
+    setHintTextOpen({});
+    setHintModalOpen({});
     setRound((value) => value + 1);
     setBonusUsed(0);
     setBonusFlash(0);
