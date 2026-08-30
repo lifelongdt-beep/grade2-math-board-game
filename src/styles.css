@@ -3809,7 +3809,7 @@ body::before {
    무엇을 맞고 틀렸는지 아이가 되짚어 읽는 곳입니다. 문제 화면과 마찬가지로
    밝은 종이에 진한 글씨 그대로 두고, 포드 테두리로만 우주 느낌을 냅니다. */
 .student-result-summary,
-.student-result-summary strong,
+.student-result-summary > strong,
 .student-result-list,
 .student-result-list li {
   color: #17202a;
@@ -4038,9 +4038,14 @@ select:focus {
   border-color: rgba(120, 170, 255, 0.35);
 }
 
+/* 이 칸 안에는 밝은 카드가 여럿 들어 있습니다 — 칭찬 한 줄, 우리 반
+   기여도, 걸린 갈래, 되풀이된 실수. 여기서 p와 strong을 통째로 흰색으로
+   칠하면 그 카드들이 흰 바탕에 흰 글씨가 됩니다.
+   칸 자신의 글자(제목·안내)만 흰색으로 두고, 안에 든 카드는 제 색을
+   쓰게 바로 아래 자식만 짚습니다. */
 .student-result-summary,
-.student-result-summary strong,
-.student-result-summary p,
+.student-result-summary > strong,
+.student-result-summary > p,
 .student-result-list,
 .student-result-list li {
   color: #ffffff;
