@@ -16476,4 +16476,285 @@ export const questionBank: Template[] = [
     wrongs: ['{each}번', '{total}번', '{groups + 1}번'],
     solution: '{each}씩 뛰어 세어 {total}이 될 때까지 세면 {groups}번입니다.',
   },
+  // ══════════════════════════════════════════════════════════════
+  // 2-2 ② 곱셈구구 — 구성 원리로 곱을 만들어 내기
+  // ──────────────────────────────────────────────────────────────
+  // 차시 목표가 모두 '~단 곱셈구구의 구성 원리를 안다'입니다. 그런데
+  // 문항은 묶어 세기·반복 덧셈·빈칸 채우기에 몰려 있어, 원리를 쓰는
+  // 자리가 없었습니다. 외우거나 처음부터 다시 세는 것 말고는 길이
+  // 없었던 것입니다.
+  //
+  // 곱셈구구 지도에서 가장 힘이 센 것은 '아는 곱에서 만들어 내기'로,
+  // 여기서는 세 가지를 씁니다.
+  //
+  //   한 묶음 더   5×6을 알면 5×7은 5만 더하면 됩니다
+  //   두 배        3×4를 알면 6×4는 그 두 배입니다 (6은 3의 두 배)
+  //   한 묶음 덜   10씩 4묶음이 40이면 9×4는 4를 덜어 낸 36입니다
+  //
+  // 교과서가 3단과 6단을, 4단과 8단을 한 차시에 묶어 둔 까닭이 바로
+  // 두 배 관계입니다.
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'mul-rule-two-one-more',
+    when: /2단 곱셈구구/,
+    demand: 'recall',
+    tag: 'multiplication',
+    strategy: '앞의 곱에 한 묶음 더하기',
+    vars: {
+      times: { from: 2, to: 8 },
+      known: { calc: '2 * times' },
+      next: { calc: '2 * times + 2' },
+      nextTimes: { calc: 'times + 1' },
+    },
+    prompt: '2×{times}={known}입니다. 2×{nextTimes}는 얼마일까요?',
+    answer: '{next}',
+    wrongs: ['{known}', '{known + 1}', '{next + 2}'],
+    solution:
+      '묶음이 하나 늘었으므로 2를 한 번 더 더합니다. {known}+2={next}입니다.',
+  },
+  {
+    id: 'mul-rule-five-one-more',
+    when: /5단 곱셈구구/,
+    demand: 'recall',
+    tag: 'multiplication',
+    strategy: '앞의 곱에 한 묶음 더하기',
+    vars: {
+      times: { from: 2, to: 8 },
+      known: { calc: '5 * times' },
+      next: { calc: '5 * times + 5' },
+      nextTimes: { calc: 'times + 1' },
+    },
+    prompt: '5×{times}={known}입니다. 5×{nextTimes}는 얼마일까요?',
+    answer: '{next}',
+    wrongs: ['{known}', '{known + 1}', '{next + 5}'],
+    solution: '묶음이 하나 늘었으므로 5를 한 번 더 더합니다. {known}+5={next}입니다.',
+  },
+  {
+    id: 'mul-rule-five-how-much-more',
+    when: /5단 곱셈구구/,
+    demand: 'connect',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 문장 상황에서 얼마를 더할지 정하기',
+    vars: {
+      times: { from: 3, to: 8 },
+      known: { calc: '5 * times' },
+      nextTimes: { calc: 'times + 1' },
+    },
+    prompt:
+      '5×{times}={known}인 것을 알고 있습니다. 여기서 5×{nextTimes}를 구하려면 얼마를 더해야 할까요?',
+    answer: '5',
+    wrongs: ['1', '{times}', '{known}'],
+    solution:
+      '{nextTimes}묶음은 {times}묶음보다 한 묶음 많습니다. 한 묶음이 5이므로 5를 더합니다.',
+  },
+  {
+    id: 'mul-rule-six-double-three',
+    when: /3단, 6단 곱셈구구/,
+    demand: 'connect',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 문장 상황에서 두 배 관계로 곱 구하기',
+    vars: {
+      times: { from: 2, to: 9 },
+      three: { calc: '3 * times' },
+      six: { calc: '6 * times' },
+    },
+    // 6은 3의 두 배이므로 6단의 곱도 3단의 곱을 두 배 한 것입니다.
+    prompt: '3×{times}={three}입니다. 6×{times}는 얼마일까요?',
+    answer: '{six}',
+    wrongs: ['{three}', '{three + 3}', '{six + 6}'],
+    solution:
+      '6은 3의 두 배입니다. 한 묶음이 두 배가 되었으므로 곱도 두 배가 되어 {three}+{three}={six}입니다.',
+  },
+  {
+    id: 'mul-rule-six-why-double',
+    when: /3단, 6단 곱셈구구/,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '자료 해석 · 두 단 사이의 관계 판단하기',
+    vars: { times: { from: 2, to: 9 } },
+    prompt: '6단의 곱은 3단의 곱과 어떤 관계일까요?',
+    answer: '3단의 곱을 두 배 한 것과 같습니다',
+    wrongs: [
+      '3단의 곱에 3을 더한 것과 같습니다',
+      '3단의 곱을 반으로 나눈 것과 같습니다',
+      '아무 관계가 없습니다',
+    ],
+    solution:
+      '6은 3의 두 배입니다. 한 묶음의 크기가 두 배이므로 같은 묶음 수라면 곱도 두 배가 됩니다.',
+  },
+  {
+    id: 'mul-rule-eight-double-four',
+    when: /4단, 8단 곱셈구구/,
+    demand: 'connect',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 문장 상황에서 두 배 관계로 곱 구하기',
+    vars: {
+      times: { from: 2, to: 9 },
+      four: { calc: '4 * times' },
+      eight: { calc: '8 * times' },
+    },
+    prompt: '4×{times}={four}입니다. 8×{times}는 얼마일까요?',
+    answer: '{eight}',
+    wrongs: ['{four}', '{four + 4}', '{eight + 8}'],
+    solution:
+      '8은 4의 두 배입니다. 한 묶음이 두 배가 되었으므로 곱도 두 배가 되어 {four}+{four}={eight}입니다.',
+  },
+  {
+    id: 'mul-rule-four-one-more',
+    when: /4단, 8단 곱셈구구/,
+    demand: 'recall',
+    tag: 'multiplication',
+    strategy: '앞의 곱에 한 묶음 더하기',
+    vars: {
+      times: { from: 2, to: 8 },
+      known: { calc: '4 * times' },
+      next: { calc: '4 * times + 4' },
+      nextTimes: { calc: 'times + 1' },
+    },
+    prompt: '4×{times}={known}입니다. 4×{nextTimes}는 얼마일까요?',
+    answer: '{next}',
+    wrongs: ['{known}', '{known + 1}', '{next + 4}'],
+    solution: '묶음이 하나 늘었으므로 4를 한 번 더 더합니다. {known}+4={next}입니다.',
+  },
+  {
+    id: 'mul-rule-seven-one-more',
+    when: /7단 곱셈구구/,
+    demand: 'recall',
+    tag: 'multiplication',
+    strategy: '앞의 곱에 한 묶음 더하기',
+    vars: {
+      times: { from: 2, to: 8 },
+      known: { calc: '7 * times' },
+      next: { calc: '7 * times + 7' },
+      nextTimes: { calc: 'times + 1' },
+    },
+    prompt: '7×{times}={known}입니다. 7×{nextTimes}는 얼마일까요?',
+    answer: '{next}',
+    wrongs: ['{known}', '{known + 1}', '{next + 7}'],
+    solution: '묶음이 하나 늘었으므로 7을 한 번 더 더합니다. {known}+7={next}입니다.',
+  },
+  {
+    id: 'mul-rule-seven-split',
+    when: /7단 곱셈구구/,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '자료 해석 · 아는 두 단으로 갈라 판단하기',
+    vars: {
+      times: { from: 2, to: 9 },
+      five: { calc: '5 * times' },
+      two: { calc: '2 * times' },
+      seven: { calc: '7 * times' },
+    },
+    // 7씩 묶은 것을 5씩과 2씩으로 갈라 볼 수 있습니다. 아는 단으로
+    // 갈라 만드는 것은 곱셈구구를 외우지 않고도 구하는 길입니다.
+    prompt:
+      '7×{times}를 구하려고 합니다. 7을 5와 2로 갈라서 구하면 어떻게 될까요?',
+    answer: '5×{times}={five}, 2×{times}={two}이므로 {five}+{two}={seven}',
+    wrongs: [
+      '5×{times}={five}, 2×{times}={two}이므로 {five}-{two}',
+      '5+2=7이므로 7×{times}={times}',
+      '5×2=10이므로 7×{times}=10',
+    ],
+    solution:
+      '7씩 {times}묶음은 5씩 {times}묶음과 2씩 {times}묶음을 합한 것과 같습니다. {five}+{two}={seven}입니다.',
+  },
+  {
+    id: 'mul-rule-nine-from-ten',
+    when: /9단 곱셈구구/,
+    demand: 'connect',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 문장 상황에서 한 묶음 덜어 내어 구하기',
+    vars: {
+      times: { from: 2, to: 9 },
+      ten: { calc: '10 * times' },
+      nine: { calc: '9 * times' },
+    },
+    // 10씩 묶은 것에서 묶음마다 하나씩 빼면 9씩 묶은 것이 됩니다.
+    prompt:
+      '10개씩 {times}묶음이면 {ten}개입니다. 여기서 각 묶음에서 한 개씩 빼면 9×{times}는 얼마일까요?',
+    answer: '{nine}',
+    wrongs: ['{ten}', '{ten - 1}', '{nine - 9}'],
+    solution:
+      '묶음마다 한 개씩 빼면 모두 {times}개를 빼는 것입니다. {ten}-{times}={nine}입니다.',
+  },
+  {
+    id: 'mul-rule-nine-digits',
+    when: /9단 곱셈구구/,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '자료 해석 · 9단의 자리 규칙 판단하기',
+    vars: { times: { from: 2, to: 8 } },
+    prompt: '9단의 곱을 차례로 늘어놓으면 9, 18, 27, 36…입니다. 어떤 규칙이 있을까요?',
+    answer: '십의 자리는 1씩 커지고 일의 자리는 1씩 작아집니다',
+    wrongs: [
+      '십의 자리와 일의 자리가 모두 1씩 커집니다',
+      '십의 자리는 1씩 작아지고 일의 자리는 1씩 커집니다',
+      '두 자리가 늘 같습니다',
+    ],
+    solution:
+      '9씩 커지는 것은 10을 더하고 1을 빼는 것과 같습니다. 그래서 십의 자리는 1 커지고 일의 자리는 1 작아집니다.',
+  },
+  {
+    id: 'mul-rule-one-times',
+    when: /1단 곱셈구구와 0의 곱/,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '자료 해석 · 1을 곱한 결과 판단하기',
+    vars: { times: { from: 2, to: 9 } },
+    prompt: '어떤 수에 1을 곱하면 어떻게 될까요?',
+    answer: '그 수가 그대로 나옵니다',
+    wrongs: ['1이 됩니다', '0이 됩니다', '그 수보다 1 커집니다'],
+    solution:
+      '1씩 몇 묶음이면 묶음 수만큼입니다. 한 묶음에 하나씩이므로 곱은 묶음 수 그대로입니다.',
+  },
+  {
+    id: 'mul-rule-zero-times',
+    when: /1단 곱셈구구와 0의 곱/,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '자료 해석 · 0을 곱한 결과 판단하기',
+    vars: { times: { from: 2, to: 9 } },
+    prompt: '0×{times}와 {times}×0의 결과를 견주면 어떨까요?',
+    answer: '둘 다 0입니다',
+    wrongs: ['0×{times}만 0입니다', '{times}×0만 0입니다', '둘 다 {times}입니다'],
+    solution:
+      '0씩 {times}묶음도 0이고, {times}씩 0묶음도 아무것도 없어 0입니다.',
+  },
+  {
+    id: 'mul-table-diagonal',
+    when: /곱셈표를 만들어/,
+    demand: 'reason',
+    tag: 'multiplication',
+    strategy: '자료 해석 · 곱셈표가 접히는 규칙 판단하기',
+    vars: {
+      a: { from: 2, to: 5 },
+      b: { from: 6, to: 9 },
+      product: { calc: 'a * b' },
+    },
+    prompt:
+      '곱셈표에서 {a}×{b}가 있는 칸을 찾았습니다. 이 칸과 곱이 같은 칸은 어디에 있을까요?',
+    answer: '{b}단 줄의 {a}번째 칸',
+    wrongs: ['{a}단 줄의 {a}번째 칸', '{b}단 줄의 {b}번째 칸', '같은 곱이 있는 칸은 없습니다'],
+    solution:
+      '{a}×{b}와 {b}×{a}는 곱이 같습니다. 곱셈표를 대각선으로 접으면 두 칸이 겹칩니다.',
+  },
+  {
+    id: 'mul-table-row-step',
+    when: /곱셈표를 만들어/,
+    demand: 'connect',
+    tag: 'multiplication',
+    strategy: '조건 함께 보기 · 문장 상황에서 표가 커지는 폭 읽기',
+    vars: {
+      dan: { from: 2, to: 9 },
+      times: { from: 2, to: 7 },
+      value: { calc: 'dan * times' },
+      next: { calc: 'dan * times + dan' },
+    },
+    prompt:
+      '곱셈표의 {dan}단 줄을 오른쪽으로 한 칸 갈 때마다 수가 얼마씩 커질까요?',
+    answer: '{dan}씩',
+    wrongs: ['1씩', '{times}씩', '{value}씩'],
+    solution:
+      '오른쪽으로 한 칸 가면 묶음이 하나 늘어납니다. 한 묶음이 {dan}이므로 {dan}씩 커집니다.',
+  },
 ];
