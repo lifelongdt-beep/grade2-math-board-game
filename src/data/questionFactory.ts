@@ -250,6 +250,27 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
     return `한 묶음에 ${grouped[1]}개씩 ${grouped[2]}묶음입니다. ${grouped[1]}씩 ${grouped[2]}번 뛰어 세어 보세요.`;
   }
 
+  // '5×6=30입니다. 5×7은?' — 아는 곱에서 한 묶음만 더하면 됩니다.
+  // 곱셈구구를 처음부터 다시 세지 않고 만들어 내는 길입니다.
+  const oneMore = /(\d+)×(\d+)=(\d+)입니다\. ×(\d+)/.exec(prompt);
+  if (oneMore) {
+    const each = oneMore[1];
+    const known = oneMore[3];
+    return `묶음이 하나 늘었을 뿐입니다. ${known}에 ${each}를 한 번 더 더해 보세요.`;
+  }
+
+  // '3×4=12입니다. 6×4는?' — 한 묶음이 두 배가 되면 곱도 두 배입니다.
+  const doubled = /(\d+)×(\d+)=(\d+)입니다\. (\d+)×/.exec(prompt);
+  if (doubled && Number(doubled[4]) === Number(doubled[1]) * 2) {
+    return `${doubled[4]}은 ${doubled[1]}의 두 배입니다. 한 묶음이 두 배가 되었으니 ${doubled[3]}을 두 번 더해 보세요.`;
+  }
+
+  // '10개씩 4묶음이면 40개입니다. 9×4는?' — 묶음마다 하나씩 덜어 냅니다.
+  const oneLess = /10개씩 (\d+)묶음이면 (\d+)개/.exec(prompt);
+  if (oneLess) {
+    return `묶음마다 한 개씩 빼면 모두 ${oneLess[1]}개를 빼는 것입니다. ${oneLess[2]}에서 ${oneLess[1]}을 빼 보세요.`;
+  }
+
   const missing = /(\d+)\s*×\s*□\s*=\s*(\d+)/.exec(prompt);
   if (missing) {
     return `${missing[1]}씩 몇 묶음이면 ${missing[2]}이 되는지 세어 보세요.`;
