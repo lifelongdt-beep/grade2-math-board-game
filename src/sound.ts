@@ -433,28 +433,31 @@ export const playFinishSound = () => {
 // 반이 함께 채운 목표에 닿는 순간입니다. 한 아이가 맞힌 소리와는 달라야
 // 합니다 — 서른 개를 같이 채워야 한 번 울리는 소리라, 교실 전체가 고개를
 // 들 만큼 크고 화려해도 됩니다. 나팔 셋이 겹쳐 올라간 뒤 종이 울립니다.
+// 목표를 채운 순간의 팡파르입니다. 아이들이 성공을 알아채고 화면을
+// 볼 시간을 주려고, 원래 가락(1.84초)의 자리마다 시각을 두 배로 늘려
+// 절반 빠르기로(3.68초) 울립니다 — 음은 그대로, 길이만 두 배입니다.
 export const playGoalFanfare = () => {
   playBlips([
     // 나팔 신호 — 솔 솔 솔 도
-    { frequency: 783.99, at: 0, length: 0.12, volume: 0.12, type: 'square' },
-    { frequency: 783.99, at: 0.15, length: 0.12, volume: 0.12, type: 'square' },
-    { frequency: 783.99, at: 0.3, length: 0.12, volume: 0.12, type: 'square' },
-    { frequency: 1046.5, at: 0.45, length: 0.34, volume: 0.13, type: 'square' },
+    { frequency: 783.99, at: 0, length: 0.24, volume: 0.12, type: 'square' },
+    { frequency: 783.99, at: 0.3, length: 0.24, volume: 0.12, type: 'square' },
+    { frequency: 783.99, at: 0.6, length: 0.24, volume: 0.12, type: 'square' },
+    { frequency: 1046.5, at: 0.9, length: 0.68, volume: 0.13, type: 'square' },
     // 아래에서 받쳐 주는 화음
-    { frequency: 392, at: 0.45, length: 0.36, volume: 0.06, type: 'triangle' },
-    { frequency: 523.25, at: 0.45, length: 0.36, volume: 0.05, type: 'triangle' },
+    { frequency: 392, at: 0.9, length: 0.72, volume: 0.06, type: 'triangle' },
+    { frequency: 523.25, at: 0.9, length: 0.72, volume: 0.05, type: 'triangle' },
 
     // 올라가는 계단 — 도 미 솔 도
-    { frequency: 523.25, at: 0.86, length: 0.11, volume: 0.11, type: 'triangle' },
-    { frequency: 659.25, at: 0.97, length: 0.11, volume: 0.115, type: 'triangle' },
-    { frequency: 783.99, at: 1.08, length: 0.11, volume: 0.12, type: 'triangle' },
-    { frequency: 1046.5, at: 1.19, length: 0.5, volume: 0.13, type: 'triangle' },
-    { frequency: 1318.51, at: 1.19, length: 0.5, volume: 0.075, type: 'triangle' },
-    { frequency: 1567.98, at: 1.21, length: 0.48, volume: 0.055, type: 'triangle' },
+    { frequency: 523.25, at: 1.72, length: 0.22, volume: 0.11, type: 'triangle' },
+    { frequency: 659.25, at: 1.94, length: 0.22, volume: 0.115, type: 'triangle' },
+    { frequency: 783.99, at: 2.16, length: 0.22, volume: 0.12, type: 'triangle' },
+    { frequency: 1046.5, at: 2.38, length: 1.0, volume: 0.13, type: 'triangle' },
+    { frequency: 1318.51, at: 2.38, length: 1.0, volume: 0.075, type: 'triangle' },
+    { frequency: 1567.98, at: 2.42, length: 0.96, volume: 0.055, type: 'triangle' },
 
     // 종처럼 위에서 반짝입니다.
-    { frequency: 2093, at: 1.24, length: 0.6, volume: 0.04, type: 'sine' },
-    { frequency: 2637.02, at: 1.32, length: 0.52, volume: 0.028, type: 'sine', glide: [3135.96, 2637.02] },
+    { frequency: 2093, at: 2.48, length: 1.2, volume: 0.04, type: 'sine' },
+    { frequency: 2637.02, at: 2.64, length: 1.04, volume: 0.028, type: 'sine', glide: [3135.96, 2637.02] },
   ]);
 };
 
