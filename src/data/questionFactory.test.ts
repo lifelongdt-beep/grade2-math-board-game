@@ -5,6 +5,13 @@ import type { Difficulty, QuestionVisual } from '../types';
 
 const levels: Difficulty[] = ['하', '중', '상'];
 
+// '구구단, 몬스터를 막아라!'는 곱셈 단원 맨 앞의 흥미 유발 차시입니다.
+// 여러 모양을 섞어 내는 일반 문항 생성 파이프라인을 일부러 타지 않고
+// '단 × 수 = ?' 한 모양만 30개 냅니다(questionFactory.ts 참고). 그래서
+// 이 차시는 '여러 모양·그림·자료 해석 문항을 갖춘 차시'를 검사하는
+// 아래 규칙에서는 뺍니다.
+const GAME_LESSON_TITLES = new Set<string>(['구구단, 몬스터를 막아라!']);
+
 const advancedTermsForSecondGrade = [
   '나눗셈',
   '몫',
@@ -169,7 +176,9 @@ describe('questionFactory', () => {
         const questions = generateQuestions(lesson, level);
         const strategies = new Set(questions.map((question) => question.strategy));
 
-        expect(strategies.size, `${lesson.id} ${level} strategy variety`).toBeGreaterThanOrEqual(5);
+        if (!GAME_LESSON_TITLES.has(lesson.title)) {
+          expect(strategies.size, `${lesson.id} ${level} strategy variety`).toBeGreaterThanOrEqual(5);
+        }
 
         for (const question of questions) {
           const allowedTypes = new Set(lesson.tags);
@@ -221,6 +230,8 @@ describe('questionFactory', () => {
     const visualKinds = new Set<string>();
 
     for (const lesson of lessons) {
+      if (GAME_LESSON_TITLES.has(lesson.title)) continue;
+
       for (const level of levels) {
         const questions = generateQuestions(lesson, level);
         const visualCount = questions.filter((question) => question.visual).length;
