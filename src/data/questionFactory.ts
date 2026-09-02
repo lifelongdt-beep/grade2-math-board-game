@@ -444,16 +444,29 @@ const buildLearningSupport = (
   prompt = '',
 ): LearningSupport => {
   const isCalendar = tag === 'time' && lesson.title.includes('달력');
+  // '육천백사십오를 수로 쓰면?'은 tag가 number이지만, 실제로 풀어야 할 것은
+  // 뛰어 세기가 아니라 자리마다 숫자를 나누어 적는 일입니다. number 갈래의
+  // 도움말(수직선·앞뒤 수 세기)을 붙이면 풀이와 다른 말이 나옵니다.
+  const isNumberWriting = tag === 'number' && strategy.includes('읽은 것을 수로 쓰기');
   const guide = isCalendar
     ? calendarLearningSupport
-    : {
-        studentConcept: studentConceptGuide[tag],
-        studentHint: studentHintGuide[tag],
-        coreConcept: coreConceptGuide[tag],
-        readStrategy: readStrategyGuide[tag],
-        misconceptionTip: misconceptionGuide[tag],
-        selfCheck: selfCheckGuide[tag],
-      };
+    : isNumberWriting
+      ? {
+          studentConcept: studentConceptGuide.placeValue,
+          studentHint: studentHintGuide.placeValue,
+          coreConcept: coreConceptGuide.placeValue,
+          readStrategy: readStrategyGuide.placeValue,
+          misconceptionTip: misconceptionGuide.placeValue,
+          selfCheck: selfCheckGuide.placeValue,
+        }
+      : {
+          studentConcept: studentConceptGuide[tag],
+          studentHint: studentHintGuide[tag],
+          coreConcept: coreConceptGuide[tag],
+          readStrategy: readStrategyGuide[tag],
+          misconceptionTip: misconceptionGuide[tag],
+          selfCheck: selfCheckGuide[tag],
+        };
 
   return {
     studentConcept: guide.studentConcept,
@@ -9873,6 +9886,12 @@ const visualForGeneratedQuestion = (
   }
 
   if (question.type === 'number') {
+    // 문제글에 적힌 수가 하나도 없으면('육천백사십오를 수로 쓰면 얼마일까요?'
+    // 처럼 한글로만 적힌 문제) 수직선에 찍을 수 있는 값은 답뿐입니다.
+    // 답을 눈금 숫자로 그대로 찍으면 문제를 풀기 전에 답이 보입니다.
+    // 이런 문항은 그림 없이 글로만 풉니다.
+    if (promptNumbers.length === 0) return undefined;
+
     // 답이 '이천'처럼 수가 아니면 수직선을 만들 수 없습니다.
     // 예전에는 NaN으로 그려져 점 하나와 선만 남은 그림이 나왔습니다.
     const values = promptNumbers.length >= 2
