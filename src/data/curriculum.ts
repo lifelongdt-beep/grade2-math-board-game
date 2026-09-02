@@ -563,6 +563,14 @@ export const curriculum: Unit[] = [
   ]),
   unit('2-2', 2, '곱셈구구', [
     {
+      title: '구구단, 몬스터를 막아라!',
+      objective: '2~9단 곱셈구구 값을 빠르게 떠올리며 곱셈구구 학습에 대한 흥미와 자신감을 갖는다.',
+      achievement: '[2수01-11] 곱셈구구의 필요성을 인식한다.',
+      tags: ['multiplication'],
+      textbookFocus: '성벽으로 다가오는 몬스터의 곱셈 문제를 빠르게 풀어 막아 낸다.',
+      workbookFocus: '단원을 시작하며 곱셈구구에 흥미를 갖고 몸을 푼다.',
+    },
+    {
       title: '단원 도입',
       objective: '곱셈구구가 필요한 실생활 상황을 통해 곱셈구구의 뜻을 안다.',
       achievement: '[2수01-11] 곱셈구구의 필요성을 인식한다.',

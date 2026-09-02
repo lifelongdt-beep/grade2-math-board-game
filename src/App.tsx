@@ -40,6 +40,7 @@ import {
 } from './sound';
 import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
 import { HighlightedPrompt } from './components/HighlightedPrompt';
+import { CastleDefenseScene } from './components/CastleDefenseScene';
 import { InteractiveHintModal } from './components/InteractiveHintModal';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
@@ -749,6 +750,10 @@ function App() {
   const correctCount = sessionRecords.filter((record) => record.correct).length;
   const wrongCount = sessionRecords.filter((record) => !record.correct).length;
   const accuracy = sessionRecords.length === 0 ? 0 : Math.round((correctCount / sessionRecords.length) * 100);
+  // '구구단, 몬스터를 막아라!'만 문제 자리를 성벽·몬스터 그림으로 바꿉니다.
+  // 정답을 고르고 다음 문제로 넘어가는 방식은 다른 차시와 똑같습니다.
+  const isCastleDefense = lesson.title === '구구단, 몬스터를 막아라!';
+  const CASTLE_HEARTS_MAX = 8;
 
   // 한 단계는 아이 한 명당 네 문제입니다.
   //
@@ -1674,8 +1679,21 @@ function App() {
                           {state.activeRetry !== null && <span className="retry-tag">다시 도전</span>}
                           <span>{question.strategy}</span>
                         </div>
-                        <QuestionVisualGraphic visual={question.visual} />
-                        <HighlightedPrompt text={question.prompt} />
+                        {isCastleDefense ? (
+                          <CastleDefenseScene
+                            questionKey={question.id}
+                            prompt={question.prompt}
+                            heartsMax={CASTLE_HEARTS_MAX}
+                            heartsLost={result.wrong}
+                            solved={result.correct}
+                            total={playerQuestions.length}
+                          />
+                        ) : (
+                          <>
+                            <QuestionVisualGraphic visual={question.visual} />
+                            <HighlightedPrompt text={question.prompt} />
+                          </>
+                        )}
 
                         {/* 힌트 스캐폴딩: 1단계(핵심 말 강조)는 위 문제글에
                             이미 켜져 있고, 2단계(정지된 그림)도 이미
@@ -1742,7 +1760,7 @@ function App() {
 
                       {state.feedback === 'explain' && (
                         <div className="student-feedback wrong-feedback">
-                          <strong><XCircle size={18} /> 짧은 도움</strong>
+                          <strong><XCircle size={18} /> {isCastleDefense ? '성벽이 흔들렸어요!' : '짧은 도움'}</strong>
                           <div className="support-card quick-support-card" aria-label={`${player.name} 오답 도움`}>
                             <p className="quick-core"><span>핵심</span>{question.support.studentConcept}</p>
                             <p><span>볼 곳</span>{question.support.studentHint}</p>

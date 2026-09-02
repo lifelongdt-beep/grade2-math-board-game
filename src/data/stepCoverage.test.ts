@@ -27,12 +27,18 @@ import type { Difficulty } from '../types';
 const expectedSteps: Record<Difficulty, number> = { 하: 3, 중: 5, 상: 20 };
 const leastSteps: Record<Difficulty, number> = { 하: 0, 중: 5, 상: 10 };
 
+// '구구단, 몬스터를 막아라!'는 곱셈 단원 맨 앞의 흥미 유발 차시로, 풀이
+// 과정을 나눠 보여 주는 문항 없이 '단 × 수 = ?' 사실 회상만 냅니다.
+const GAME_LESSON_TITLES = new Set<string>(['구구단, 몬스터를 막아라!']);
+
 describe('step coverage', () => {
   it('gives each difficulty the share of working-out questions it should have', () => {
     const wrong: string[] = [];
 
     for (const unit of curriculum) {
       for (const lesson of unit.lessons) {
+        if (GAME_LESSON_TITLES.has(lesson.title)) continue;
+
         for (const level of Object.keys(expectedSteps) as Difficulty[]) {
           const questions = generateQuestions(lesson, level);
           // 빈칸 기호(□)는 보통 문항도 쓰므로 그것만으로는 셀 수 없습니다.

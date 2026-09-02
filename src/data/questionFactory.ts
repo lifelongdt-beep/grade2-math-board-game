@@ -15790,7 +15790,44 @@ const questionsFor = (
   }));
 };
 
+// '구구단, 몬스터를 막아라!'는 곱셈구구 단원 맨 앞에 두는 흥미 유발 차시로,
+// 성벽으로 다가오는 몬스터가 낸 곱셈 하나를 빠르게 푸는 게임입니다.
+// 문장제나 조건 판단 문항이 섞이는 일반 파이프라인(buildQuestionAt)을 타면
+// 태그(multiplication)만 보고 붙는 생성기들이 긴 문장제를 끼워 넣어, 몬스터
+// 그림에 어울리지 않는 문제가 나옵니다. 그래서 이 차시만 여기서 바로
+// '단 × 수 = ?' 30문항을 만듭니다.
+const castleDefenseDans: Record<Difficulty, number[]> = {
+  하: [2, 3, 4, 5],
+  중: [2, 3, 4, 5, 6, 7],
+  상: [2, 3, 4, 5, 6, 7, 8, 9],
+};
+
+const generateCastleDefenseQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] => {
+  const dans = castleDefenseDans[difficulty];
+  const combos: Array<[number, number]> = [];
+  for (const a of dans) {
+    for (let b = 1; b <= 9; b += 1) combos.push([a, b]);
+  }
+  // 난이도마다 다른 문제 순서가 나오도록 씨앗에 난이도를 함께 넣습니다.
+  const seed = lesson.unitNo * 101 + lesson.lessonNo * 17 + difficultyIndex[difficulty] * 13;
+  const picks = pickSome(combos, seed, 30);
+
+  return picks.map(([a, b], slot) => {
+    const answer = a * b;
+    const question = makeQuestion(
+      lesson, difficulty, slot,
+      `${a} × ${b} = 얼마일까요?`,
+      answer,
+      [answer + a, Math.max(1, answer - a), answer + 1],
+      `${a}단은 ${a}씩 커집니다. ${a} × ${b} = ${answer}입니다.`,
+      'multiplication', '구구단 빠르게 떠올리기',
+    );
+    return { ...question, id: `${lesson.id}-${difficulty}-${slot}`, basePrompt: question.prompt };
+  });
+};
+
 export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] => {
+  if (lesson.title === '구구단, 몬스터를 막아라!') return generateCastleDefenseQuestions(lesson, difficulty);
   if (difficulty !== '상') return questionsFor(lesson, difficulty);
 
   // 피할 모양이 없으면 그대로 고르므로, 상에만 있는 문항이 모자란
