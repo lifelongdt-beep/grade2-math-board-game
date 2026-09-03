@@ -12,7 +12,7 @@ import type { Difficulty } from '../types';
 const MONSTER_EMOJI = ['👻', '🦇', '👹', '👾', '🐲', '🧟'];
 
 const FALL_SECONDS: Record<Difficulty, number> = {
-  하: 8,
+  하: 9,
   중: 5,
   상: 3,
 };
