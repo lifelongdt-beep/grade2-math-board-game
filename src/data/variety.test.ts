@@ -38,8 +38,11 @@ const shapeOf = (prompt: string) =>
 const stillThin = new Set<string>([
 ]);
 
+// '구구단, 몬스터를 막아라!'도 단원 도입과 같은 이유로 뺍니다 — 여러
+// 모양을 섞는 일반 생성기 대신 '단 × 수 = ?' 사실 회상 한 모양만 30개
+// 일부러 내는 흥미 유발 차시입니다(questionFactory.ts 참고).
 const covered = lessons.filter(
-  (lesson) => lesson.title !== '단원 도입' && !stillThin.has(lesson.id));
+  (lesson) => lesson.title !== '단원 도입' && lesson.title !== '구구단, 몬스터를 막아라!' && !stillThin.has(lesson.id));
 
 describe('question variety', () => {
   it('does not serve one lesson the same question shape over and over', () => {
