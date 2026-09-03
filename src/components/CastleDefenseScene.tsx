@@ -13,8 +13,8 @@ const MONSTER_EMOJI = ['👻', '🦇', '👹', '👾', '🐲', '🧟'];
 
 const FALL_SECONDS: Record<Difficulty, number> = {
   하: 8,
-  중: 4,
-  상: 1,
+  중: 5,
+  상: 3,
 };
 
 const hashOf = (text: string) => text.split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
