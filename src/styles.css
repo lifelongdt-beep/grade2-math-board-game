@@ -1374,8 +1374,11 @@ button:disabled {
    다시 나타나는 몬스터 카드로 이루어집니다. */
 .castle-defense-scene {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 6px;
   justify-items: center;
+  height: 100%;
+  min-height: 0;
 }
 
 .castle-status-bar {
@@ -1423,7 +1426,8 @@ button:disabled {
 .castle-monster-track {
   position: relative;
   width: 100%;
-  height: clamp(84px, 11vh, 120px);
+  height: 100%;
+  min-height: clamp(84px, 11vh, 120px);
   overflow: hidden;
   border-radius: 10px;
   background: radial-gradient(ellipse at center, #241a3d 0%, #120e1f 100%);
@@ -6051,6 +6055,20 @@ body::before {
 
 .player-lane.student-question:not(.finished-result) > .student-answer-dock {
   grid-row: 6;
+}
+
+/* '구구단, 몬스터를 막아라!'는 위 규칙과 반대로 갑니다. 다른 차시는 남는
+   자리를 문제 위로 보내 보기 판을 눌러 닿기 쉬운 자리에 묶어 두지만,
+   이 차시는 몬스터가 실제로 떨어지는 그림이 볼거리입니다. 자리를 문제
+   위에 비워 두면 몬스터가 나오기도 전에 우리 반 줄 바로 아래가 빈
+   검은 칸이 됩니다. 그 자리를 문제 칸이 그대로 이어받아, 몬스터가
+   우리 반 줄 바로 아래에서부터 떨어지게 합니다. */
+.player-lane.student-question:not(.finished-result):has(.castle-defense-scene) > .student-question-body {
+  grid-row: 3 / span 2;
+}
+
+.student-question-body:has(.castle-defense-scene) {
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
 /* ── 자리끼리 서로 밀지 않게 ────────────────────────────────────────
