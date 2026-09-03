@@ -588,15 +588,17 @@ function App() {
   const players = useMemo(() => createPlayers(playerCount, studentConfigs), [playerCount, studentConfigs]);
   const [bankSeed, setBankSeed] = useState(0);
   // '구구단, 몬스터를 막아라!'에서 학생이 스스로 고르는 구구단입니다.
-  // 기본은 전체(2~9단)입니다.
-  const [castleDans, setCastleDans] = useState<number[]>(ALL_CASTLE_DEFENSE_DANS);
+  // 아무것도 고르지 않은 채 시작하면(전부 꺼진 상태) 문제 생성기가
+  // 전체(2~9단)로 채웁니다 — questionFactory.ts의 fallback 참고.
+  const [castleDans, setCastleDans] = useState<number[]>([]);
   const toggleCastleDan = (dan: number) => {
     setCastleDans((prev) => {
       const has = prev.includes(dan);
-      // 하나는 남겨 둡니다 — 다 꺼 버리면 낼 문제가 없어집니다.
-      if (has && prev.length === 1) return prev;
       return has ? prev.filter((value) => value !== dan) : [...prev, dan].sort((a, b) => a - b);
     });
+  };
+  const toggleAllCastleDans = () => {
+    setCastleDans((prev) => (prev.length === ALL_CASTLE_DEFENSE_DANS.length ? [] : ALL_CASTLE_DEFENSE_DANS));
   };
   const questionBanks = useMemo<Record<Difficulty, Question[]>>(
     () => ({
@@ -1231,7 +1233,8 @@ function App() {
               <button
                 type="button"
                 className={castleDans.length === ALL_CASTLE_DEFENSE_DANS.length ? 'active' : ''}
-                onClick={() => setCastleDans(ALL_CASTLE_DEFENSE_DANS)}
+                onClick={toggleAllCastleDans}
+                aria-pressed={castleDans.length === ALL_CASTLE_DEFENSE_DANS.length}
               >
                 전체
               </button>
