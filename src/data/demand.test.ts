@@ -21,8 +21,14 @@ const shapeOf = (prompt: string) =>
 // 넣는 대로 이 목록에서 지워야 합니다.
 const sameAsMiddle = new Set<string>([]);
 
+// '구구단, 몬스터를 막아라!'는 흥미 유발 차시로, 난이도가 문장 모양이
+// 아니라 '어느 단까지 내는가'로만 갈립니다(하 2~5단, 중 2~7단, 상
+// 2~9단 — questionFactory.ts 참고). 숫자를 지운 모양은 세 수준 모두
+// 똑같은 '# × # = 얼마일까요?'라 이 검사와는 다른 축입니다.
 const covered = lessons.filter(
-  (lesson) => lesson.title !== '단원 도입' && !sameAsMiddle.has(lesson.id));
+  (lesson) => lesson.title !== '단원 도입'
+    && lesson.title !== '구구단, 몬스터를 막아라!'
+    && !sameAsMiddle.has(lesson.id));
 
 describe('difficulty is a difference in what the question asks', () => {
   it('does not hand 중 and 상 the same questions', () => {

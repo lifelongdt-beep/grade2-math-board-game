@@ -1370,6 +1370,101 @@ button:disabled {
   margin: 2px auto 4px;
 }
 
+/* '구구단, 몬스터를 막아라!' 전용 그림입니다. 성벽 상태 줄과, 문제마다
+   다시 나타나는 몬스터 카드로 이루어집니다. */
+.castle-defense-scene {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+}
+
+.castle-status-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  justify-content: space-between;
+  background: #171326;
+  border: 1px solid #3a2f57;
+  border-radius: 10px;
+  padding: 5px 8px;
+}
+
+.castle-icon {
+  font-size: 16px;
+}
+
+.castle-hearts {
+  display: inline-flex;
+  gap: 1px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.castle-hearts .heart-full {
+  color: #ff5d7a;
+}
+
+.castle-hearts .heart-lost {
+  color: #443a5c;
+}
+
+.castle-remaining {
+  font-size: 11px;
+  font-weight: 900;
+  color: #d9d0f5;
+  background: #2a2140;
+  border-radius: 6px;
+  padding: 3px 6px;
+  white-space: nowrap;
+}
+
+.castle-monster-track {
+  position: relative;
+  width: 100%;
+  height: clamp(84px, 11vh, 120px);
+  overflow: hidden;
+  border-radius: 10px;
+  background: radial-gradient(ellipse at center, #241a3d 0%, #120e1f 100%);
+}
+
+.castle-monster-card {
+  position: absolute;
+  left: 50%;
+  top: -18%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  animation: castle-monster-fall 5.5s linear forwards;
+}
+
+.castle-monster-emoji {
+  font-size: clamp(28px, 4vw, 40px);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+}
+
+.castle-monster-fact {
+  color: #fff6d6;
+  font-size: clamp(16px, 1.6vw, 22px);
+  font-weight: 950;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes castle-monster-fall {
+  from { top: -18%; }
+  to { top: 78%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .castle-monster-card {
+    animation: none;
+    top: 30%;
+  }
+}
+
 .student-answer-dock {
   align-self: end;
   display: grid;

@@ -15790,7 +15790,54 @@ const questionsFor = (
   }));
 };
 
-export const generateQuestions = (lesson: Lesson, difficulty: Difficulty): Question[] => {
+// '구구단, 몬스터를 막아라!'는 곱셈구구 단원 맨 앞에 두는 흥미 유발 차시로,
+// 성벽으로 다가오는 몬스터가 낸 곱셈 하나를 빠르게 푸는 게임입니다.
+// 문장제나 조건 판단 문항이 섞이는 일반 파이프라인(buildQuestionAt)을 타면
+// 태그(multiplication)만 보고 붙는 생성기들이 긴 문장제를 끼워 넣어, 몬스터
+// 그림에 어울리지 않는 문제가 나옵니다. 그래서 이 차시만 여기서 바로
+// '단 × 수 = ?' 30문항을 만듭니다.
+//
+// 이 차시의 난이도(하/중/상)는 몬스터가 내려오는 빠르기입니다(App.tsx의
+// CastleDefenseScene 참고). 어느 단을 낼지는 학생이 직접 고르고, 아무 것도
+// 고르지 않았거나 모두 고르면 2~9단이 전부 나옵니다.
+export const ALL_CASTLE_DEFENSE_DANS = [2, 3, 4, 5, 6, 7, 8, 9];
+
+export interface GenerateQuestionsOptions {
+  castleDans?: number[];
+}
+
+const generateCastleDefenseQuestions = (lesson: Lesson, difficulty: Difficulty, dans: number[]): Question[] => {
+  const combos: Array<[number, number]> = [];
+  for (const a of dans) {
+    for (let b = 1; b <= 9; b += 1) combos.push([a, b]);
+  }
+  // 난이도마다 다른 문제 순서가 나오도록 씨앗에 난이도를 함께 넣습니다.
+  const seed = lesson.unitNo * 101 + lesson.lessonNo * 17 + difficultyIndex[difficulty] * 13;
+  const picks = pickSome(combos, seed, Math.min(30, combos.length));
+
+  return picks.map(([a, b], slot) => {
+    const answer = a * b;
+    const question = makeQuestion(
+      lesson, difficulty, slot,
+      `${a} × ${b} = 얼마일까요?`,
+      answer,
+      [answer + a, Math.max(1, answer - a), answer + 1],
+      `${a}단은 ${a}씩 커집니다. ${a} × ${b} = ${answer}입니다.`,
+      'multiplication', '구구단 빠르게 떠올리기',
+    );
+    return { ...question, id: `${lesson.id}-${difficulty}-${slot}`, basePrompt: question.prompt };
+  });
+};
+
+export const generateQuestions = (
+  lesson: Lesson,
+  difficulty: Difficulty,
+  options?: GenerateQuestionsOptions,
+): Question[] => {
+  if (lesson.title === '구구단, 몬스터를 막아라!') {
+    const dans = options?.castleDans?.length ? options.castleDans : ALL_CASTLE_DEFENSE_DANS;
+    return generateCastleDefenseQuestions(lesson, difficulty, dans);
+  }
   if (difficulty !== '상') return questionsFor(lesson, difficulty);
 
   // 피할 모양이 없으면 그대로 고르므로, 상에만 있는 문항이 모자란

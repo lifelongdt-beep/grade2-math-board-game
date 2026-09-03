@@ -40,13 +40,14 @@ import {
 } from './sound';
 import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
 import { HighlightedPrompt } from './components/HighlightedPrompt';
+import { CastleDefenseScene } from './components/CastleDefenseScene';
 import { InteractiveHintModal } from './components/InteractiveHintModal';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
 import { TeacherPanel } from './components/TeacherPanel';
 import { curriculum } from './data/curriculum';
-import { generateQuestions } from './data/questionFactory';
+import { generateQuestions, ALL_CASTLE_DEFENSE_DANS } from './data/questionFactory';
 import type { AnswerRecord, ConceptTag, Difficulty, Lesson, Player, PlayerQuestionState, Question, SessionDuration, Unit } from './types';
 
 // 자리 색은 빨강·주황·노랑·초록·파랑 순서입니다. 아이들이 "나는 노랑" 하고
@@ -309,15 +310,18 @@ const buildScopedQuestions = (
   difficulty: Difficulty,
   scope: ReviewScope,
   bankSeed: number,
+  castleDans: number[],
 ): Question[] => {
-  const questions = lessons.flatMap((sourceLesson) => generateQuestions(sourceLesson, difficulty));
+  // castleDans는 '구구단, 몬스터를 막아라!'만 읽습니다. 다른 차시는
+  // generateQuestions 안에서 조용히 무시합니다.
+  const questions = lessons.flatMap((sourceLesson) => generateQuestions(sourceLesson, difficulty, { castleDans }));
 
   // 한 차시를 고른 경우에도 순서를 섞습니다. 섞지 않으면 수업을 다시 해도
   // 늘 같은 순서로 나와 학생이 순서를 외워 버립니다.
   // bankSeed는 수업을 시작할 때마다 새로 정해지므로 매번 순서가 달라집니다.
   const shuffled = shuffledBySeed(
     questions,
-    `${scope}-${difficulty}-${bankSeed}-${lessons.map((item) => item.id).join('|')}`,
+    `${scope}-${difficulty}-${bankSeed}-${castleDans.join(',')}-${lessons.map((item) => item.id).join('|')}`,
   );
 
   // 앞의 두 문제와 겹치지 않게 벌려 둡니다. 두 칸이면 혼자 풀 때도,
@@ -583,13 +587,24 @@ function App() {
   const [bonusFlash, setBonusFlash] = useState(0);
   const players = useMemo(() => createPlayers(playerCount, studentConfigs), [playerCount, studentConfigs]);
   const [bankSeed, setBankSeed] = useState(0);
+  // '구구단, 몬스터를 막아라!'에서 학생이 스스로 고르는 구구단입니다.
+  // 기본은 전체(2~9단)입니다.
+  const [castleDans, setCastleDans] = useState<number[]>(ALL_CASTLE_DEFENSE_DANS);
+  const toggleCastleDan = (dan: number) => {
+    setCastleDans((prev) => {
+      const has = prev.includes(dan);
+      // 하나는 남겨 둡니다 — 다 꺼 버리면 낼 문제가 없어집니다.
+      if (has && prev.length === 1) return prev;
+      return has ? prev.filter((value) => value !== dan) : [...prev, dan].sort((a, b) => a - b);
+    });
+  };
   const questionBanks = useMemo<Record<Difficulty, Question[]>>(
     () => ({
-      하: buildScopedQuestions(scopedLessons, '하', reviewScope, bankSeed),
-      중: buildScopedQuestions(scopedLessons, '중', reviewScope, bankSeed),
-      상: buildScopedQuestions(scopedLessons, '상', reviewScope, bankSeed),
+      하: buildScopedQuestions(scopedLessons, '하', reviewScope, bankSeed, castleDans),
+      중: buildScopedQuestions(scopedLessons, '중', reviewScope, bankSeed, castleDans),
+      상: buildScopedQuestions(scopedLessons, '상', reviewScope, bankSeed, castleDans),
     }),
-    [bankSeed, reviewScope, scopedLessons],
+    [bankSeed, reviewScope, scopedLessons, castleDans],
   );
   const [remainingSeconds, setRemainingSeconds] = useState<SessionDuration | number>(sessionDuration);
   const [playerStates, setPlayerStates] = useState<Record<number, PlayerQuestionState>>(() => createQuestionState(players));
@@ -749,6 +764,10 @@ function App() {
   const correctCount = sessionRecords.filter((record) => record.correct).length;
   const wrongCount = sessionRecords.filter((record) => !record.correct).length;
   const accuracy = sessionRecords.length === 0 ? 0 : Math.round((correctCount / sessionRecords.length) * 100);
+  // '구구단, 몬스터를 막아라!'만 문제 자리를 성벽·몬스터 그림으로 바꿉니다.
+  // 정답을 고르고 다음 문제로 넘어가는 방식은 다른 차시와 똑같습니다.
+  const isCastleDefense = lesson.title === '구구단, 몬스터를 막아라!';
+  const CASTLE_HEARTS_MAX = 8;
 
   // 한 단계는 아이 한 명당 네 문제입니다.
   //
@@ -1194,6 +1213,31 @@ function App() {
             ))}
           </div>
         </section>
+        {isCastleDefense && (
+          <section>
+            <h3>출제할 구구단</h3>
+            <div className="big-segmented castle-dan-options">
+              {ALL_CASTLE_DEFENSE_DANS.map((dan) => (
+                <button
+                  type="button"
+                  className={castleDans.includes(dan) ? 'active' : ''}
+                  key={dan}
+                  onClick={() => toggleCastleDan(dan)}
+                  aria-pressed={castleDans.includes(dan)}
+                >
+                  {dan}단
+                </button>
+              ))}
+              <button
+                type="button"
+                className={castleDans.length === ALL_CASTLE_DEFENSE_DANS.length ? 'active' : ''}
+                onClick={() => setCastleDans(ALL_CASTLE_DEFENSE_DANS)}
+              >
+                전체
+              </button>
+            </div>
+          </section>
+        )}
       </div>
 
       <section
@@ -1674,8 +1718,23 @@ function App() {
                           {state.activeRetry !== null && <span className="retry-tag">다시 도전</span>}
                           <span>{question.strategy}</span>
                         </div>
-                        <QuestionVisualGraphic visual={question.visual} />
-                        <HighlightedPrompt text={question.prompt} />
+                        {isCastleDefense ? (
+                          <CastleDefenseScene
+                            questionKey={question.id}
+                            prompt={question.prompt}
+                            heartsMax={CASTLE_HEARTS_MAX}
+                            heartsLost={result.wrong}
+                            solved={result.correct}
+                            total={playerQuestions.length}
+                            level={state.activeRetry?.level ?? state.level}
+                            onTimeout={() => answerQuestion(player, question, -1)}
+                          />
+                        ) : (
+                          <>
+                            <QuestionVisualGraphic visual={question.visual} />
+                            <HighlightedPrompt text={question.prompt} />
+                          </>
+                        )}
 
                         {/* 힌트 스캐폴딩: 1단계(핵심 말 강조)는 위 문제글에
                             이미 켜져 있고, 2단계(정지된 그림)도 이미
@@ -1742,7 +1801,7 @@ function App() {
 
                       {state.feedback === 'explain' && (
                         <div className="student-feedback wrong-feedback">
-                          <strong><XCircle size={18} /> 짧은 도움</strong>
+                          <strong><XCircle size={18} /> {isCastleDefense ? '성벽이 흔들렸어요!' : '짧은 도움'}</strong>
                           <div className="support-card quick-support-card" aria-label={`${player.name} 오답 도움`}>
                             <p className="quick-core"><span>핵심</span>{question.support.studentConcept}</p>
                             <p><span>볼 곳</span>{question.support.studentHint}</p>
