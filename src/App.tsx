@@ -661,6 +661,11 @@ function App() {
   const [mobileJoinOpen, setMobileJoinOpen] = useState(false);
   const [mobileUrlCopied, setMobileUrlCopied] = useState(false);
   const [mobileJoinOrigin, setMobileJoinOrigin] = useState('');
+  // 이 QR 화면을 열 때, 연동에 꼭 필요한 서버(published-server)가 지금
+  // 실제로 켜져 있는지 살짝 찔러 봅니다. null=확인 중, true=서버 응답함,
+  // false=응답 없음(예: 그냥 배포된 github.io 사이트만 켜져 있는 경우 —
+  // 이때는 체크박스를 켜도 연동될 방법이 없으므로 미리 알려 줘야 합니다.
+  const [relayAvailable, setRelayAvailable] = useState<boolean | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenFallback, setFullscreenFallback] = useState(false);
   const [successSignals, setSuccessSignals] = useState<Record<number, number>>({});
@@ -789,6 +794,25 @@ function App() {
       if (retryTimer) window.clearInterval(retryTimer);
     };
   }, []);
+
+  // 큐알 화면을 열 때마다, 연동에 꼭 필요한 서버가 지금 응답하는지 한 번
+  // 찔러 봅니다. 그냥 배포된 github.io 사이트만 켜 둔 채로는 체크박스를
+  // 켜도 학생 결과가 절대 넘어오지 않으므로, 열 때마다 다시 확인해 미리
+  // 알려 줍니다.
+  useEffect(() => {
+    if (!mobileJoinOpen) {
+      setRelayAvailable(null);
+      return;
+    }
+    let active = true;
+    setRelayAvailable(null);
+    void getJson('/api/state').then((data) => {
+      if (active) setRelayAvailable(data !== null);
+    });
+    return () => {
+      active = false;
+    };
+  }, [mobileJoinOpen]);
 
   // 선생님 화면에서만 큐알 학생 폰의 결과를 받아 옵니다. 서버가 없으면
   // (평범한 배포본) getJson이 조용히 null을 돌려주므로 그냥 아무 일도
@@ -1498,6 +1522,18 @@ function App() {
                 ? '체크하면 이 QR로 들어온 학생의 풀이 결과가 선생님 분석 화면에 함께 보입니다.'
                 : '체크를 끄면 이 QR로 들어온 학생은 선생님 화면과 연동되지 않고 혼자 풉니다.'}
             </p>
+            {qrSyncEnabled && relayAvailable === false && (
+              <p className="mobile-join-warning">
+                지금 이 화면은 그냥 배포된 웹사이트(github.io)라, 체크박스를 켜도 학생 결과가
+                선생님 화면으로 넘어올 방법이 없습니다. 연동하려면 scripts 폴더의
+                start-published-local-game.cmd(같은 와이파이일 때) 또는
+                start-published-game.cmd(교사·학생이 다른 네트워크일 때)로 이 앱을 다시 켠 뒤,
+                거기서 뜨는 주소로 접속한 상태에서 QR을 다시 만들어 주세요.
+              </p>
+            )}
+            {qrSyncEnabled && relayAvailable === true && (
+              <p className="mobile-join-sync-ok">연동 서버 연결을 확인했습니다 — 이 QR로 들어온 학생 결과가 선생님 화면에 보입니다.</p>
+            )}
             {mobileJoinUrl ? (
               <>
                 <ClassroomQrCode value={mobileJoinUrl} />
