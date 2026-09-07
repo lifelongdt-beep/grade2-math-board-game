@@ -8,6 +8,7 @@ import {
   Download,
   FileDown,
   ListChecks,
+  Smartphone,
   TimerReset,
   X,
   XCircle,
@@ -389,6 +390,11 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
   const [wrongRecordFilter, setWrongRecordFilter] = useState<number | 'all'>('all');
   const [excelStatus, setExcelStatus] = useState('');
   const analytics = useAnalytics(records, players);
+  // 큐알로 다른 기기에서 들어와 연동된 학생은 아래에서 따로 묶어
+  // 보여 줍니다 — 교실 컴퓨터로 참여한 학생과 한눈에 구분되어야
+  // 선생님이 누가 큐알로 개별 참여했는지 바로 알 수 있습니다.
+  const localAnalytics = analytics.filter((item) => !item.player.remote);
+  const remoteAnalytics = analytics.filter((item) => item.player.remote);
   const shares = contributionsFor(records, goalStep);
   const classCorrect = records.filter((record) => record.correct).length;
   const stagesDone = Math.floor(classCorrect / goalStep);
@@ -453,6 +459,79 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
     pdf.save(`${lesson.semester}-${lesson.unitTitle}-${lessonFileLabel(lesson)}-${player.name}-틀린문제.pdf`);
   };
 
+  const renderStudentCard = (item: ReturnType<typeof useAnalytics>[number]) => (
+    <article className="student-analytics" key={item.player.id}>
+      <div className="student-analytics-head">
+        <span className="player-dot" style={{ background: item.player.color }} />
+        <strong>{item.player.name}</strong>
+      </div>
+      <dl>
+        <div>
+          <dt>푼 문제</dt>
+          <dd>{item.total}개</dd>
+        </div>
+        <div>
+          <dt>정답</dt>
+          <dd>{item.correct}개</dd>
+        </div>
+        <div>
+          <dt>오답</dt>
+          <dd>{item.wrong}개</dd>
+        </div>
+        <div>
+          <dt>평균 시간</dt>
+          <dd>{formatMs(item.averageMs)}</dd>
+        </div>
+        <div>
+          <dt>취약 유형</dt>
+          <dd>{item.weakest}</dd>
+        </div>
+        <div>
+          <dt>취약 전략</dt>
+          <dd>{item.weakStrategy}</dd>
+        </div>
+        <div>
+          <dt>되풀이되는 실수</dt>
+          <dd>{item.commonMistake ? `${item.commonMistake.what} ${item.commonMistake.times}회` : '아직 없음'}</dd>
+        </div>
+        <div>
+          <dt>우리 반에 보탬</dt>
+          <dd>
+            {shares.get(item.player.id)?.gave ?? 0}개
+            {classCorrect > 0 && ` · ${shares.get(item.player.id)?.percent ?? 0}%`}
+          </dd>
+        </div>
+        <div>
+          <dt>단계를 채운 칸</dt>
+          <dd>
+            {(shares.get(item.player.id)?.finished ?? 0) > 0
+              ? `${shares.get(item.player.id)?.finished}번`
+              : '아직 없음'}
+          </dd>
+        </div>
+      </dl>
+      <p className="student-narrative">{narrativeFor(item, lesson)}</p>
+      <div className="type-chips">
+        {Object.entries(item.typeCounts).length === 0 ? (
+          <span>아직 누적 오답 없음</span>
+        ) : (
+          Object.entries(item.typeCounts).map(([type, count]) => (
+            <span key={type}>{type} {count}</span>
+          ))
+        )}
+      </div>
+      <button
+        className="student-pdf-button"
+        type="button"
+        onClick={() => downloadWrongPdf(item.player)}
+        disabled={item.wrong === 0}
+      >
+        <Download size={16} />
+        {item.player.name} PDF
+      </button>
+    </article>
+  );
+
   if (!isOpen) return null;
 
   return (
@@ -499,80 +578,19 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
           </article>
         </div>
 
-        <div className="teacher-grid">
-          {analytics.map((item) => (
-            <article className="student-analytics" key={item.player.id}>
-              <div className="student-analytics-head">
-                <span className="player-dot" style={{ background: item.player.color }} />
-                <strong>{item.player.name}</strong>
-              </div>
-              <dl>
-                <div>
-                  <dt>푼 문제</dt>
-                  <dd>{item.total}개</dd>
-                </div>
-                <div>
-                  <dt>정답</dt>
-                  <dd>{item.correct}개</dd>
-                </div>
-                <div>
-                  <dt>오답</dt>
-                  <dd>{item.wrong}개</dd>
-                </div>
-                <div>
-                  <dt>평균 시간</dt>
-                  <dd>{formatMs(item.averageMs)}</dd>
-                </div>
-                <div>
-                  <dt>취약 유형</dt>
-                  <dd>{item.weakest}</dd>
-                </div>
-                <div>
-                  <dt>취약 전략</dt>
-                  <dd>{item.weakStrategy}</dd>
-                </div>
-                <div>
-                  <dt>되풀이되는 실수</dt>
-                  <dd>{item.commonMistake ? `${item.commonMistake.what} ${item.commonMistake.times}회` : '아직 없음'}</dd>
-                </div>
-                <div>
-                  <dt>우리 반에 보탬</dt>
-                  <dd>
-                    {shares.get(item.player.id)?.gave ?? 0}개
-                    {classCorrect > 0 && ` · ${shares.get(item.player.id)?.percent ?? 0}%`}
-                  </dd>
-                </div>
-                <div>
-                  <dt>단계를 채운 칸</dt>
-                  <dd>
-                    {(shares.get(item.player.id)?.finished ?? 0) > 0
-                      ? `${shares.get(item.player.id)?.finished}번`
-                      : '아직 없음'}
-                  </dd>
-                </div>
-              </dl>
-              <p className="student-narrative">{narrativeFor(item, lesson)}</p>
-              <div className="type-chips">
-                {Object.entries(item.typeCounts).length === 0 ? (
-                  <span>아직 누적 오답 없음</span>
-                ) : (
-                  Object.entries(item.typeCounts).map(([type, count]) => (
-                    <span key={type}>{type} {count}</span>
-                  ))
-                )}
-              </div>
-              <button
-                className="student-pdf-button"
-                type="button"
-                onClick={() => downloadWrongPdf(item.player)}
-                disabled={item.wrong === 0}
-              >
-                <Download size={16} />
-                {item.player.name} PDF
-              </button>
-            </article>
-          ))}
-        </div>
+        <div className="teacher-grid">{localAnalytics.map((item) => renderStudentCard(item))}</div>
+
+        {remoteAnalytics.length > 0 && (
+          <>
+            <div className="teacher-grid-divider">
+              <Smartphone size={18} />
+              <span>큐알로 참여한 학생 ({remoteAnalytics.length}명)</span>
+            </div>
+            <div className="teacher-grid teacher-grid-remote">
+              {remoteAnalytics.map((item) => renderStudentCard(item))}
+            </div>
+          </>
+        )}
 
         {/* 우리 반 목표에 누가 얼마나 보탰는지입니다.
             길은 모두의 정답을 시간 순서대로 이어 붙여 채웁니다. 그래서
