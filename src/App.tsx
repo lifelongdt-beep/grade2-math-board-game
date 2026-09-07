@@ -329,6 +329,34 @@ const buildScopedQuestions = (
   return spaceOutRepeats(shuffled, 2);
 };
 
+// 큐알 학생 폰과 선생님 화면을 잇는 아주 작은 통신입니다. published-server
+// (또는 인터넷 실행 도구)가 켜져 있을 때만 /api/* 가 응답합니다. 평범한
+// 정적 배포본(github.io)에는 이 자리가 없으므로, 실패는 항상 조용히
+// 넘어갑니다 — 이 통신이 없어도 앱은 원래대로 잘 동작해야 합니다.
+const postJson = async (path: string, body: unknown): Promise<{ id?: number } | null> => {
+  try {
+    const response = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as { id?: number };
+  } catch {
+    return null;
+  }
+};
+
+const getJson = async (path: string): Promise<{ players?: unknown; records?: unknown } | null> => {
+  try {
+    const response = await fetch(path, { cache: 'no-store' });
+    if (!response.ok) return null;
+    return (await response.json()) as { players?: unknown; records?: unknown };
+  } catch {
+    return null;
+  }
+};
+
 const writeAscii = (view: DataView, offset: number, value: string) => {
   for (let index = 0; index < value.length; index += 1) {
     view.setUint8(offset + index, value.charCodeAt(index));
@@ -611,6 +639,12 @@ function App() {
   const [remainingSeconds, setRemainingSeconds] = useState<SessionDuration | number>(sessionDuration);
   const [playerStates, setPlayerStates] = useState<Record<number, PlayerQuestionState>>(() => createQuestionState(players));
   const [records, setRecords] = useState<AnswerRecord[]>([]);
+  // 큐알로 들어온 학생 폰의 결과입니다. 폰은 자기 답을 서버에 올리고,
+  // 선생님 화면은 이 자리로 주기적으로 받아 옵니다(server가 없으면
+  // 그냥 비어 있습니다 — 평소처럼 동작합니다).
+  const [remotePlayers, setRemotePlayers] = useState<Player[]>([]);
+  const [remoteRecords, setRemoteRecords] = useState<AnswerRecord[]>([]);
+  const remotePlayerIdRef = useRef<number | null>(null);
   const [teacherOpen, setTeacherOpen] = useState(false);
   const [mobileJoinOpen, setMobileJoinOpen] = useState(false);
   const [mobileUrlCopied, setMobileUrlCopied] = useState(false);
@@ -743,6 +777,37 @@ function App() {
       if (retryTimer) window.clearInterval(retryTimer);
     };
   }, []);
+
+  // 선생님 화면에서만 큐알 학생 폰의 결과를 받아 옵니다. 서버가 없으면
+  // (평범한 배포본) getJson이 조용히 null을 돌려주므로 그냥 아무 일도
+  // 일어나지 않습니다.
+  useEffect(() => {
+    if (isMobileEntry || mode === 'setup') return;
+    let active = true;
+
+    const pull = async () => {
+      const data = await getJson('/api/state');
+      if (!active || !data) return;
+
+      if (Array.isArray(data.players)) {
+        setRemotePlayers(
+          (data.players as Player[]).filter(
+            (item) => item && typeof item.id === 'number' && typeof item.name === 'string',
+          ),
+        );
+      }
+      if (Array.isArray(data.records)) {
+        setRemoteRecords(data.records as AnswerRecord[]);
+      }
+    };
+
+    void pull();
+    const intervalId = window.setInterval(pull, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, [isMobileEntry, mode]);
 
   const sessionRecords = useMemo(() => records.filter((record) => record.lessonId === lesson.id), [records, lesson.id]);
   const playerResults = useMemo<Record<number, PlayerResult>>(() => {
@@ -877,6 +942,30 @@ function App() {
     setRemainingSeconds(sessionDuration);
     setTeacherOpen(false);
     setMode('playing');
+
+    if (isMobileEntry) {
+      // 이 폰의 학생을 서버에 새로 등록합니다. 서버가 없으면(평범한
+      // 배포본) 조용히 실패하고, 이 폰은 원래처럼 혼자 풉니다.
+      const solo = players[0];
+      if (solo) {
+        remotePlayerIdRef.current = null;
+        void postJson('/api/join', {
+          name: solo.name,
+          attendanceNo: solo.attendanceNo,
+          avatar: solo.avatar,
+          difficulty: solo.difficulty,
+        }).then((result) => {
+          if (typeof result?.id === 'number') remotePlayerIdRef.current = result.id;
+        });
+      }
+    } else {
+      // 새 판이 시작되었으니, 지난 판에서 큐알로 들어왔던 학생 기록은
+      // 서버에서도 비웁니다 — 안 그러면 다음 번 받아올 때 지난 판 학생이
+      // 이번 판 분석에 섞여 들어옵니다.
+      setRemotePlayers([]);
+      setRemoteRecords([]);
+      void postJson('/api/reset', {});
+    }
   };
 
   useEffect(() => {
@@ -905,6 +994,11 @@ function App() {
     setPlayerStates(createQuestionState(players));
     setRemainingSeconds(sessionDuration);
     setStudentSetupSteps(createStudentSetupSteps(playerCount));
+    if (!isMobileEntry) {
+      setRemotePlayers([]);
+      setRemoteRecords([]);
+    }
+    remotePlayerIdRef.current = null;
   };
 
   const resetSession = () => {
@@ -1063,6 +1157,12 @@ function App() {
     }
 
     setRecords((prev) => [...prev, record]);
+    // 큐알로 들어온 폰은 선생님 화면과 다른 기기입니다. 로컬 상태만으로는
+    // 선생님이 볼 수 없으므로, 서버가 있으면(published-server) 그쪽에도
+    // 올려 둡니다. 서버가 없는 보통 배포본에서는 조용히 실패하고 넘어갑니다.
+    if (isMobileEntry && remotePlayerIdRef.current !== null) {
+      void postJson('/api/record', { ...record, playerId: remotePlayerIdRef.current });
+    }
     if (isCorrect) {
       // 맞히면 바로 다음 문제로 넘어가므로, 여기서 곧장 힌트 상태를 접습니다.
       resetHintState(player.id);
@@ -1911,8 +2011,8 @@ function App() {
       <TeacherPanel
         isOpen={teacherOpen}
         onClose={() => setTeacherOpen(false)}
-        records={records}
-        players={players}
+        records={[...records, ...remoteRecords]}
+        players={[...players, ...remotePlayers]}
         lesson={lesson}
         currentQuestion={sampleQuestion}
         goalStep={goalStep}
