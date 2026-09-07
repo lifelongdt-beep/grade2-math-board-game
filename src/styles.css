@@ -2620,6 +2620,33 @@ button:disabled {
   font-weight: 850;
 }
 
+.mobile-join-sync-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #f8fbfd;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.mobile-join-sync-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--teal);
+}
+
+.mobile-join-sync-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--muted);
+  font-weight: 750;
+}
+
 .teacher-overlay {
   position: fixed;
   inset: 0;
@@ -2700,6 +2727,24 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 10px;
+}
+
+.teacher-grid-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 4px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.teacher-grid-remote .student-analytics {
+  border-color: #a5b4fc;
+  background: #f5f6ff;
 }
 
 .student-analytics {
