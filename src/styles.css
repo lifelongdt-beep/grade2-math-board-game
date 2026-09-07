@@ -2647,6 +2647,17 @@ button:disabled {
   font-weight: 750;
 }
 
+.mobile-join-sync-ok {
+  margin: 0;
+  border-radius: var(--radius);
+  background: #e3f8ec;
+  color: #1b6b3f;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 850;
+}
+
 .teacher-overlay {
   position: fixed;
   inset: 0;
