@@ -97,6 +97,9 @@ type UnitSelection = number | typeof semesterReviewUnitValue;
 
 type InitialRoute = {
   isMobileEntry: boolean;
+  // 선생님이 큐알을 만들 때 정합니다 — 이 폰의 답을 선생님 화면과
+  // 연동할지입니다. 값이 없으면(예전 큐알) 연동을 켠 것으로 봅니다.
+  syncEnabled: boolean;
   semester: Unit['semester'];
   unitSelection?: UnitSelection;
   lessonId?: string;
@@ -126,6 +129,7 @@ const readInitialRoute = (): InitialRoute => {
 
   return {
     isMobileEntry: params.get('mobile') === '1' || params.get('m') === '1',
+    syncEnabled: params.get('sync') !== '0',
     semester: isSemesterValue(semesterParam) ? semesterParam : '2-1',
     unitSelection: parseUnitSelection(unitParam),
     lessonId: lessonParam ?? undefined,
@@ -553,6 +557,11 @@ function App() {
   const [mode, setMode] = useState<'setup' | 'playing' | 'finished'>('setup');
   const initialRoute = useMemo(() => readInitialRoute(), []);
   const isMobileEntry = initialRoute.isMobileEntry;
+  // 이 폰의 답을 선생님 화면과 연동할지입니다 — 선생님이 큐알을 만들 때
+  // 정한 값을 그대로 물려받습니다(모바일이 아니면 뜻이 없습니다).
+  const mobileSyncEnabled = isMobileEntry && initialRoute.syncEnabled;
+  // 선생님 화면에서, 새로 보여 줄 큐알에 연동을 켤지 끌지 고르는 자리입니다.
+  const [qrSyncEnabled, setQrSyncEnabled] = useState(true);
   const skipInitialSemesterReset = useRef(true);
   const skipInitialUnitReset = useRef(true);
   const [semester, setSemester] = useState<'2-1' | '2-2'>(initialRoute.semester);
@@ -645,6 +654,9 @@ function App() {
   const [remotePlayers, setRemotePlayers] = useState<Player[]>([]);
   const [remoteRecords, setRemoteRecords] = useState<AnswerRecord[]>([]);
   const remotePlayerIdRef = useRef<number | null>(null);
+  // 등록(/api/join)이 끝나기 전에 이미 푼 문제가 있을 때 잠깐 담아 두는
+  // 자리입니다. 등록이 끝나면 여기 담긴 것부터 마저 올려 보냅니다.
+  const pendingRemoteRecordsRef = useRef<AnswerRecord[]>([]);
   const [teacherOpen, setTeacherOpen] = useState(false);
   const [mobileJoinOpen, setMobileJoinOpen] = useState(false);
   const [mobileUrlCopied, setMobileUrlCopied] = useState(false);
@@ -791,9 +803,9 @@ function App() {
 
       if (Array.isArray(data.players)) {
         setRemotePlayers(
-          (data.players as Player[]).filter(
-            (item) => item && typeof item.id === 'number' && typeof item.name === 'string',
-          ),
+          (data.players as Player[])
+            .filter((item) => item && typeof item.id === 'number' && typeof item.name === 'string')
+            .map((item) => ({ ...item, remote: true })),
         );
       }
       if (Array.isArray(data.records)) {
@@ -873,8 +885,11 @@ function App() {
     url.searchParams.set('u', isSemesterReviewSelected ? semesterReviewUnitValue : String(selectedUnit.unitNo));
     url.searchParams.set('l', lesson.id);
     url.searchParams.set('t', String(sessionDuration));
+    // 선생님이 체크박스로 고른 연동 여부를 큐알 주소에 그대로 담아 둡니다
+    // — 학생 폰이 이 값을 읽어서 서버에 답을 보낼지 말지를 정합니다.
+    url.searchParams.set('sync', qrSyncEnabled ? '1' : '0');
     return url.toString();
-  }, [isSemesterReviewSelected, lesson.id, mobileJoinOrigin, selectedUnit.unitNo, semester, sessionDuration]);
+  }, [isSemesterReviewSelected, lesson.id, mobileJoinOrigin, qrSyncEnabled, selectedUnit.unitNo, semester, sessionDuration]);
   const mobileJoinNeedsLanAddress = !isMobileEntry && !mobileJoinUrl;
 
   const copyMobileJoinUrl = async () => {
@@ -943,22 +958,31 @@ function App() {
     setTeacherOpen(false);
     setMode('playing');
 
-    if (isMobileEntry) {
+    if (mobileSyncEnabled) {
       // 이 폰의 학생을 서버에 새로 등록합니다. 서버가 없으면(평범한
       // 배포본) 조용히 실패하고, 이 폰은 원래처럼 혼자 풉니다.
       const solo = players[0];
       if (solo) {
         remotePlayerIdRef.current = null;
+        pendingRemoteRecordsRef.current = [];
         void postJson('/api/join', {
           name: solo.name,
           attendanceNo: solo.attendanceNo,
           avatar: solo.avatar,
           difficulty: solo.difficulty,
         }).then((result) => {
-          if (typeof result?.id === 'number') remotePlayerIdRef.current = result.id;
+          if (typeof result?.id !== 'number') return;
+          remotePlayerIdRef.current = result.id;
+          // 등록이 끝나기 전에 이미 답한 문제가 있으면(빠르게 첫 문제를
+          // 맞힌 경우) 여기서 한꺼번에 올려 보냅니다 — 놓치지 않습니다.
+          const queued = pendingRemoteRecordsRef.current;
+          pendingRemoteRecordsRef.current = [];
+          for (const queuedRecord of queued) {
+            void postJson('/api/record', { ...queuedRecord, playerId: result.id });
+          }
         });
       }
-    } else {
+    } else if (!isMobileEntry) {
       // 새 판이 시작되었으니, 지난 판에서 큐알로 들어왔던 학생 기록은
       // 서버에서도 비웁니다 — 안 그러면 다음 번 받아올 때 지난 판 학생이
       // 이번 판 분석에 섞여 들어옵니다.
@@ -966,6 +990,8 @@ function App() {
       setRemoteRecords([]);
       void postJson('/api/reset', {});
     }
+    // (연동을 끈 큐알 폰은 여기서 할 일이 없습니다 — 서버에 아무것도
+    // 보내지 않고, 이 폰 혼자만의 화면으로 풉니다.)
   };
 
   useEffect(() => {
@@ -999,6 +1025,7 @@ function App() {
       setRemoteRecords([]);
     }
     remotePlayerIdRef.current = null;
+    pendingRemoteRecordsRef.current = [];
   };
 
   const resetSession = () => {
@@ -1160,8 +1187,15 @@ function App() {
     // 큐알로 들어온 폰은 선생님 화면과 다른 기기입니다. 로컬 상태만으로는
     // 선생님이 볼 수 없으므로, 서버가 있으면(published-server) 그쪽에도
     // 올려 둡니다. 서버가 없는 보통 배포본에서는 조용히 실패하고 넘어갑니다.
-    if (isMobileEntry && remotePlayerIdRef.current !== null) {
-      void postJson('/api/record', { ...record, playerId: remotePlayerIdRef.current });
+    if (mobileSyncEnabled) {
+      if (remotePlayerIdRef.current !== null) {
+        void postJson('/api/record', { ...record, playerId: remotePlayerIdRef.current });
+      } else {
+        // 등록(/api/join)이 아직 끝나지 않았습니다 — 첫 문제를 아주
+        // 빠르게 맞히면 이 순간이 생길 수 있습니다. 잃어버리지 않도록
+        // 담아 두었다가 등록이 끝나는 대로 마저 올려 보냅니다.
+        pendingRemoteRecordsRef.current.push(record);
+      }
     }
     if (isCorrect) {
       // 맞히면 바로 다음 문제로 넘어가므로, 여기서 곧장 힌트 상태를 접습니다.
@@ -1451,6 +1485,19 @@ function App() {
                 <XCircle size={21} />
               </button>
             </header>
+            <label className="mobile-join-sync-toggle">
+              <input
+                type="checkbox"
+                checked={qrSyncEnabled}
+                onChange={(event) => setQrSyncEnabled(event.target.checked)}
+              />
+              <span>평가 결과를 선생님 화면과 연동하기</span>
+            </label>
+            <p className="mobile-join-sync-hint">
+              {qrSyncEnabled
+                ? '체크하면 이 QR로 들어온 학생의 풀이 결과가 선생님 분석 화면에 함께 보입니다.'
+                : '체크를 끄면 이 QR로 들어온 학생은 선생님 화면과 연동되지 않고 혼자 풉니다.'}
+            </p>
             {mobileJoinUrl ? (
               <>
                 <ClassroomQrCode value={mobileJoinUrl} />

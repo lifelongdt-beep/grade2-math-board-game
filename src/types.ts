@@ -376,6 +376,9 @@ export interface Player {
   // 아이가 고른 동물입니다. 자리 색만으로는 "빨강 자리"라고 부르게 되는데,
   // 아이들은 "내 여우"라고 부르는 쪽을 훨씬 좋아합니다.
   avatar: string;
+  // 큐알로 다른 기기(휴대폰)에서 들어와 서버로 연동된 학생이면 true입니다.
+  // 선생님 화면에서 이 학생을 따로 구분해 보여 줄 때 씁니다.
+  remote?: boolean;
 }
 
 export interface PlayerQuestionState {
