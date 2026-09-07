@@ -645,6 +645,9 @@ function App() {
   const [remotePlayers, setRemotePlayers] = useState<Player[]>([]);
   const [remoteRecords, setRemoteRecords] = useState<AnswerRecord[]>([]);
   const remotePlayerIdRef = useRef<number | null>(null);
+  // 등록(/api/join)이 끝나기 전에 이미 푼 문제가 있을 때 잠깐 담아 두는
+  // 자리입니다. 등록이 끝나면 여기 담긴 것부터 마저 올려 보냅니다.
+  const pendingRemoteRecordsRef = useRef<AnswerRecord[]>([]);
   const [teacherOpen, setTeacherOpen] = useState(false);
   const [mobileJoinOpen, setMobileJoinOpen] = useState(false);
   const [mobileUrlCopied, setMobileUrlCopied] = useState(false);
@@ -949,13 +952,22 @@ function App() {
       const solo = players[0];
       if (solo) {
         remotePlayerIdRef.current = null;
+        pendingRemoteRecordsRef.current = [];
         void postJson('/api/join', {
           name: solo.name,
           attendanceNo: solo.attendanceNo,
           avatar: solo.avatar,
           difficulty: solo.difficulty,
         }).then((result) => {
-          if (typeof result?.id === 'number') remotePlayerIdRef.current = result.id;
+          if (typeof result?.id !== 'number') return;
+          remotePlayerIdRef.current = result.id;
+          // 등록이 끝나기 전에 이미 답한 문제가 있으면(빠르게 첫 문제를
+          // 맞힌 경우) 여기서 한꺼번에 올려 보냅니다 — 놓치지 않습니다.
+          const queued = pendingRemoteRecordsRef.current;
+          pendingRemoteRecordsRef.current = [];
+          for (const queuedRecord of queued) {
+            void postJson('/api/record', { ...queuedRecord, playerId: result.id });
+          }
         });
       }
     } else {
@@ -999,6 +1011,7 @@ function App() {
       setRemoteRecords([]);
     }
     remotePlayerIdRef.current = null;
+    pendingRemoteRecordsRef.current = [];
   };
 
   const resetSession = () => {
@@ -1160,8 +1173,15 @@ function App() {
     // 큐알로 들어온 폰은 선생님 화면과 다른 기기입니다. 로컬 상태만으로는
     // 선생님이 볼 수 없으므로, 서버가 있으면(published-server) 그쪽에도
     // 올려 둡니다. 서버가 없는 보통 배포본에서는 조용히 실패하고 넘어갑니다.
-    if (isMobileEntry && remotePlayerIdRef.current !== null) {
-      void postJson('/api/record', { ...record, playerId: remotePlayerIdRef.current });
+    if (isMobileEntry) {
+      if (remotePlayerIdRef.current !== null) {
+        void postJson('/api/record', { ...record, playerId: remotePlayerIdRef.current });
+      } else {
+        // 등록(/api/join)이 아직 끝나지 않았습니다 — 첫 문제를 아주
+        // 빠르게 맞히면 이 순간이 생길 수 있습니다. 잃어버리지 않도록
+        // 담아 두었다가 등록이 끝나는 대로 마저 올려 보냅니다.
+        pendingRemoteRecordsRef.current.push(record);
+      }
     }
     if (isCorrect) {
       // 맞히면 바로 다음 문제로 넘어가므로, 여기서 곧장 힌트 상태를 접습니다.
