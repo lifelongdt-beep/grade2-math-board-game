@@ -179,4 +179,65 @@ describe('ruler visual', () => {
 
     expect(shown).toEqual([]);
   });
+
+  // 같은 물음에 두 가지 답이 있으면 아이는 무엇을 배워야 할지 알 수
+  // 없습니다. '2547은 100이 몇 개인 수일까요?'의 답은 25(통째로 센 것)
+  // 였고 '5941은 10이 몇 개인 수일까요?'의 답은 4(자리의 숫자)였습니다.
+  // 같은 4차시 안에서였습니다.
+  it('never asks the same place-value question two different ways', () => {
+    const mixed: string[] = [];
+
+    for (const lesson of lessons) {
+      for (const level of levels) {
+        for (const question of generateQuestions(lesson, level)) {
+          const asked = /^(\d+)[은는]\s*(\d+)이 몇 개인 수일까요\?$/.exec(question.prompt);
+          if (!asked) continue;
+
+          const value = Number(asked[1]);
+          const unit = Number(asked[2]);
+          const answer = Number(String(question.answer).replace(/[^\d]/g, ''));
+          const whole = Math.floor(value / unit);
+          const digit = whole % 10;
+          // 두 읽기가 갈리는 수에서는 이 물음을 쓰지 않습니다. 자리별로
+          // 가르는 문항은 네 자리를 모두 늘어놓고 한 자리만 비웁니다.
+          //
+          // 다만 자리의 숫자가 0이면 그 읽기는 뜻이 없습니다 — '100은
+          // 10이 몇 개인 수일까요?'를 '0개'라고 답할 아이는 없습니다.
+          // 100을 처음 배울 때 쓰는 교과서 문장이므로 그대로 둡니다.
+          if (whole !== digit && digit !== 0) {
+            mixed.push(`${question.id}: '${question.prompt}' → ${question.answer} (통째로 ${whole} / 자리 ${digit})`);
+          }
+        }
+      }
+    }
+
+    expect(mixed).toEqual([]);
+  });
+
+  // 셈하는 문항의 막대그림이 답까지 그리고 있었습니다. '39+24+6은
+  // 얼마일까요?' 옆에 69짜리 막대가 놓여, 더할 것 없이 그것만 읽으면
+  // 되었습니다.
+  it('does not draw the answer as one of the calculation bars', () => {
+    const gaveItAway: string[] = [];
+
+    for (const lesson of lessons) {
+      for (const level of levels) {
+        for (const question of generateQuestions(lesson, level)) {
+          if (question.type !== 'addition' && question.type !== 'subtraction') continue;
+          if (question.visual?.kind !== 'bar-model') continue;
+
+          const answer = Number(String(question.answer).replace(/[^\d]/g, ''));
+          if (!Number.isFinite(answer)) continue;
+          const inPrompt = (question.prompt.match(/\d+/g) ?? []).map(Number);
+          if (inPrompt.includes(answer)) continue;
+
+          if (question.visual.bars.some((bar) => bar.value === answer)) {
+            gaveItAway.push(`${question.id}: '${question.prompt}' → ${question.answer} 인데 막대에 ${answer}`);
+          }
+        }
+      }
+    }
+
+    expect(gaveItAway).toEqual([]);
+  });
 });
