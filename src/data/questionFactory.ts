@@ -1862,12 +1862,19 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       );
     }
     if (variant === 1) {
+      // 여기서는 100을 통째로 세어 2547을 '100이 25개'라고 했습니다.
+      // 같은 차시의 다른 문항은 같은 물음에 자리의 숫자로 답하고 있어
+      // 서로 어긋났고, 2547에 100이 몇 개 들어가는지는 나눗셈이라
+      // 2학년이 배우는 것도 아닙니다. 자리별로 가르는 쪽으로 맞춥니다.
+      const parts = four
+        ? `1000이 ${th}개, 100이 □개, 10이 ${t}개, 1이 ${o}개`
+        : `100이 □개, 10이 ${t}개, 1이 ${o}개`;
       return makeQuestion(
         lesson, difficulty, index,
-        `${value}은 100이 몇 개인 수일까요?`,
-        `${four ? th * 10 + h : h}개`,
+        `${value}은 ${parts}인 수입니다. □에 알맞은 수는?`,
+        `${h}개`,
         [`${h + 1}개`, `${t}개`, `${o}개`],
-        `${value}에서 100의 자리까지 보면 100이 ${four ? th * 10 + h : h}개입니다.`,
+        `백의 자리 숫자가 ${h}이므로 100이 ${h}개입니다.`,
         'placeValue', '수를 자리별 묶음으로 나누기',
       );
     }
@@ -8179,12 +8186,13 @@ const richOperationQuestion = (lesson: Lesson, difficulty: Difficulty, index: nu
     `변한 순서대로 계산합니다. ${mode === 'addition' ? `${start}+${added}-${used}` : `${start}-${used}+${added}`}=${answer}입니다.`,
     mode === 'addition' ? 'addition' : 'subtraction',
     '조건 조합 · 변화 상황을 막대모델로 계산',
+    // 결과 막대를 함께 그리면 그것이 곧 답입니다. 아이는 세 번 셈할 것
+    // 없이 마지막 막대만 읽으면 되었습니다. 변한 것들만 그립니다.
     barModelVisualFor(
       [
         { label: '처음', value: start },
         { label: mode === 'addition' ? '더 옴' : '사용', value: mode === 'addition' ? added : used },
         { label: mode === 'addition' ? '사용' : '채움', value: mode === 'addition' ? used : added },
-        { label: '결과', value: answer },
       ],
       '변화가 있는 막대모델',
     ),
@@ -10191,6 +10199,19 @@ const visualForGeneratedQuestion = (
     // 말하는 수와 다른 수를 그린 것이라, 그림을 믿은 아이는 100이라고
     // 답하게 됩니다. 그렇다고 400을 그리면 그것이 곧 답입니다. 그리지 않습니다.
     if (!fromPrompt.length) return undefined;
+
+    // '1000이 4개, 100이 2개, 10이 5개, 1이 7개인 수는?'(답 4257)에
+    // 1000을 나타내는 자리값표가 놓였습니다. 아래 규칙이 문제에 적힌 수
+    // 가운데 가장 큰 것을 그리는데, 여기서는 그것이 1000이었습니다 —
+    // 만들라는 수는 4257인데 그림은 1000이라고 말하고 있었습니다.
+    //
+    // 그렇다고 4257을 그리면 그것이 곧 답입니다. 자리마다 몇 개인지를
+    // 모아 한 수로 적는 것이 이 문항의 할 일이므로, 모아 놓은 그림은
+    // 그 일을 대신해 버립니다. 그리지 않습니다.
+    const partsSaid = [...question.prompt.matchAll(/(\d+)이\s*(\d+)개/g)];
+    const built = partsSaid.reduce((sum, one) => sum + Number(one[1]) * Number(one[2]), 0);
+    if (partsSaid.length >= 2 && built === answerNumber) return undefined;
+
     const shown = Math.max(...fromPrompt);
     if (Number.isFinite(answerNumber) && shown === answerNumber) return undefined;
 
@@ -10357,9 +10378,34 @@ const visualForGeneratedQuestion = (
   }
 
   if (question.type === 'addition' || question.type === 'subtraction') {
-    const bars = promptNumbers.slice(0, 3).map((value, valueIndex) => ({ label: valueIndex === 0 ? '처음' : valueIndex === 1 ? '변화' : '다음', value }));
-    if (!Number.isNaN(answerNumber)) bars.push({ label: '답', value: answerNumber });
-    return barModelVisualFor(bars.length ? bars : [{ label: '부분', value: 1 }, { label: '전체', value: 2 }], '계산 관계 자료');
+    // 문제에 적힌 식을 그대로 막대로 놓습니다.
+    //
+    // 예전에는 문제에 나온 앞 세 수를 '처음·변화·다음'으로 놓고 그 뒤에
+    // '답' 막대까지 붙였습니다. 두 가지가 잘못이었습니다.
+    //
+    // 첫째, 답 막대가 답을 그대로 그려 주었습니다. '39+24+6은 얼마일까요?'
+    // 옆에 69짜리 막대가 놓여 있어, 더할 것 없이 그 막대만 읽으면
+    // 되었습니다.
+    //
+    // 둘째, 셈하는 문제가 아닌데도 막대가 붙었습니다. '45+20을 쉽게
+    // 계산하려고 합니다. 20을 어떻게 가르면 좋을까요?'(답 '5와 15')에
+    // 처음 45, 변화 20, 다음 20, 답 5짜리 막대가 놓였습니다. 20이 두 번
+    // 그려지고, '답 5'는 '5와 15'에서 앞 숫자만 떼어 온 것입니다.
+    // 가르는 방법을 묻는 문제에 아무 말도 해 주지 못하는 그림입니다.
+    // 셈해서 수를 내는 문항일 때만 그립니다. 답이 '5와 15'나 '1을 뺍니다'
+    // 처럼 방법이면, 앞 숫자만 떼어 온 '답 5' 막대가 붙어 아무 말도
+    // 해 주지 못했습니다.
+    const answersWithANumber = /^\d+\s*[가-힣]{0,3}$/.test(question.answer.trim());
+    if (!answersWithANumber || promptNumbers.length === 0) return undefined;
+
+    // 같은 수가 문제에 두 번 적히기도 합니다('20을 어떻게 가르면').
+    // 막대를 두 번 그리면 없는 양이 하나 더 있는 것처럼 보입니다.
+    const operands = [...new Set(promptNumbers)].slice(0, 3);
+    const names = ['처음', '다음', '그다음'];
+    return barModelVisualFor(
+      operands.map((value, at) => ({ label: names[at] ?? `${at + 1}`, value })),
+      '계산할 수',
+    );
   }
 
   if (question.type === 'measurement') {
@@ -14335,12 +14381,24 @@ const numberShapes: Shape[] = [
       // 묻는 자리를 슬롯 순번으로 돌려 모든 자리가 나오게 합니다.
       const at = Math.floor(index / 2) % units.length;
       const value = digits.reduce((sum, digit, position) => sum + digit * units[position], 0);
+      // '5941은 10이 몇 개인 수일까요?'라고만 물으면 두 가지로 읽힙니다 —
+      // 자리의 숫자로 4, 통째로 세면 594. 실제로 같은 4차시 안에서
+      // '2547은 100이 몇 개인 수일까요?'의 답은 25(통째로 센 것)였고
+      // 이 문항의 답은 자리의 숫자였습니다. 아이가 한 가지로 일관되게
+      // 답하면 반드시 하나는 틀립니다.
+      //
+      // 교과서가 쓰는 대로 네 자리를 모두 늘어놓고 한 자리만 비웁니다.
+      // 그러면 묻는 것이 '그 자리의 숫자'임이 문장만으로 정해집니다.
+      const names = four ? ['천', '백', '십', '일'] : ['백', '십', '일'];
+      const parts = units
+        .map((unit, position) => `${unit}이 ${position === at ? '□' : digits[position]}개`)
+        .join(', ');
       return makeQuestion(
         lesson, difficulty, index,
-        `${value}는 ${units[at]}이 몇 개인 수일까요?`,
+        `${value}는 ${parts}인 수입니다. □에 알맞은 수는?`,
         `${digits[at]}개`,
         [`${digits[(at + 1) % digits.length]}개`, `${value}개`, `${digits[at] + 1}개`],
-        `${units[at]}의 자리 숫자가 ${digits[at]}이므로 ${units[at]}이 ${digits[at]}개입니다.`,
+        `${names[at]}의 자리 숫자가 ${digits[at]}이므로 ${units[at]}이 ${digits[at]}개입니다.`,
         'placeValue',
         shapeStrategy(difficulty, '자료 해석 · 자리별 묶음 수 구하기', '자리별 묶음 수 구하기'),
       );
