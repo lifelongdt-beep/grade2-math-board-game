@@ -7824,7 +7824,12 @@ const numberFromAnswer = (answer: string | number) => Number(String(answer).matc
 // places를 주면 그 자리 수만큼 칸을 만듭니다. 네 자리 수 단원에서는
 // 보여 주는 수가 100이더라도 천의 자리 칸이 있어야 합니다. 칸이 없으면
 // '100이 70개면 7000'을 천의 자리 없이 생각하게 됩니다.
-const placeValueVisualFor = (value: number, label = '자리값표', places?: number): QuestionVisual => {
+const placeValueVisualFor = (
+  value: number,
+  label = '자리값표',
+  places?: number,
+  countOnly = false,
+): QuestionVisual => {
   const safe = Math.max(0, Math.floor(value));
   const thousands = Math.floor(safe / 1000);
   const hundreds = Math.floor((safe % 1000) / 100);
@@ -7838,7 +7843,7 @@ const placeValueVisualFor = (value: number, label = '자리값표', places?: num
     { label: '일', value: ones, blocks: ones },
   ];
 
-  return { kind: 'place-value', label, columns };
+  return { kind: 'place-value', label, columns, ...(countOnly ? { countOnly: true } : {}) };
 };
 
 // activeIndex를 -1로 주면 아무 점도 강조하지 않습니다.
@@ -10210,7 +10215,30 @@ const visualForGeneratedQuestion = (
     // 그 일을 대신해 버립니다. 그리지 않습니다.
     const partsSaid = [...question.prompt.matchAll(/(\d+)이\s*(\d+)개/g)];
     const built = partsSaid.reduce((sum, one) => sum + Number(one[1]) * Number(one[2]), 0);
-    if (partsSaid.length >= 2 && built === answerNumber) return undefined;
+    if (partsSaid.length >= 2 && built === answerNumber) {
+      // 자리마다 몇 개인지를 모아 한 수로 적는 문항입니다. 숫자가 적힌
+      // 자리값표를 그리면 그것이 곧 답이라 그리지 않고 있었는데,
+      // 그러면 이 차시의 하 수준이 우리말 수를 숫자로 옮기는 문항만
+      // 남아 그림이 하나도 없게 됩니다.
+      //
+      // 숫자를 빼고 모형만 그리면 세어 보는 일이 남습니다 — 교과서가
+      // 수 모형으로 하는 바로 그 일입니다.
+      return placeValueVisualFor(built, '수 모형', places, true);
+    }
+
+    // '수 모형을 세어 보니 백 모형 4개, 일 모형 6개가 있고 십 모형은
+    // 하나도 없었습니다. 이 모형이 나타내는 수는?'(답 406)에 6을
+    // 나타내는 자리값표가 놓여 있었습니다 — 문제에 적힌 수 가운데 가장
+    // 큰 것을 그린 탓입니다. 말로 적힌 모형을 그대로 그립니다.
+    const modelSaid = [...question.prompt.matchAll(/(천|백|십|일)\s*모형[이은는]?\s*(\d+)개/g)];
+    if (modelSaid.length >= 2) {
+      const worth = { 천: 1000, 백: 100, 십: 10, 일: 1 } as const;
+      const fromModel = modelSaid.reduce(
+        (sum, one) => sum + worth[one[1] as keyof typeof worth] * Number(one[2]),
+        0,
+      );
+      if (fromModel > 0) return placeValueVisualFor(fromModel, '수 모형', places, true);
+    }
 
     const shown = Math.max(...fromPrompt);
     if (Number.isFinite(answerNumber) && shown === answerNumber) return undefined;
@@ -10375,6 +10403,107 @@ const visualForGeneratedQuestion = (
       '수의 위치 자료',
       answerShown ? -1 : values.length - 1,
     );
+  }
+
+  // 덧셈과 뺄셈의 관계를 식으로 나타내는 문항입니다. '20+25=45를
+  // 뺄셈식으로 나타내면?'(답 45-25=20)에는 그림이 없었습니다. 전체와
+  // 두 부분을 막대로 놓으면 왜 한 식이 다른 식이 되는지가 눈에 보입니다.
+  // 답은 식의 모양이므로, 막대가 답을 적어 주지도 않습니다.
+  // '38+25=63입니다. 이것을 이용하면 63-25는 얼마일까요?'도 같은 관계
+  // 문항입니다. 예전에는 처음 38, 다음 25, 그다음 63으로 이름 붙어
+  // 63이 셋째 더할 수처럼 보였습니다 — 63은 더할 수가 아니라 전체입니다.
+  const relation =
+    /^(\d+)\s*([+\-])\s*(\d+)\s*=\s*(\d+)[을를]\s*(덧셈식|뺄셈식)/.exec(question.prompt) ??
+    /^(\d+)\s*([+\-])\s*(\d+)\s*=\s*(\d+)입니다\./.exec(question.prompt);
+  if (relation) {
+    const [, first, sign, second, result] = relation;
+    const whole = sign === '+' ? Number(result) : Number(first);
+    const parts = sign === '+' ? [Number(first), Number(second)] : [Number(result), Number(second)];
+    return barModelVisualFor(
+      [
+        { label: '전체', value: whole },
+        { label: '부분', value: parts[0] },
+        { label: '부분', value: parts[1] },
+      ],
+      '전체와 부분',
+    );
+  }
+
+  // '45+20을 쉽게 계산하려고 합니다. 20을 어떻게 가르면 좋을까요?'
+  // (답 5와 15) — 앞의 수가 몇십까지 얼마나 남았는지를 보아야 푸는
+  // 문항입니다. 몇십마다 눈금을 긋고 그 수를 짚어 주면, 다음 몇십까지
+  // 얼마나 남았는지 아이가 세어 볼 수 있습니다. 눈금을 5씩 그으면
+  // 세어 볼 것 없이 답이 보이므로 10씩 긋습니다.
+  // '61+63을 쉽게 계산하려고 63을 60과 3으로 나누었습니다. 다음에 할
+  // 일은?'(답 '61에 60을 먼저 더한다') — 이미 가른 결과가 문제에 적혀
+  // 있습니다. 그것을 막대로 놓으면 63이 60과 3으로 갈라진 모습이 눈에
+  // 보여, 어느 것부터 더할지 생각할 거리가 생깁니다. 답은 문장이므로
+  // 막대가 답을 적어 주지도 않습니다.
+  const alreadySplit = /^(\d+)\s*[+\-]\s*(\d+)[을를] (?:더 )?쉽게 계산하려고 \d+[을를] (\d+)[과와] (\d+)[으로]* 나누었습니다/.exec(
+    question.prompt,
+  );
+  if (alreadySplit) {
+    const [, first, , partA, partB] = alreadySplit;
+    if (Number(partA) > 0 && Number(partB) > 0) {
+      return barModelVisualFor(
+        [
+          { label: '처음 수', value: Number(first) },
+          { label: '가른 것', value: Number(partA) },
+          { label: '가른 것', value: Number(partB) },
+        ],
+        '가른 수',
+      );
+    }
+  }
+
+  // '43+32를 갈라서 계산하는 과정입니다. ㄷ 32를 30과 2로 가릅니다…
+  // 바른 차례로 놓으면?'(답 ㄷ→ㄴ→ㄱ) — 가른 결과가 이미 적혀 있으므로
+  // 막대로 놓아도 답(차례)을 알려 주지 않습니다. 32가 30과 2로 갈라진
+  // 모습이 보이면 어느 것을 먼저 더하는지 생각하기 쉬워집니다.
+  const splitInSteps = /^(\d+)\s*[+\-]\s*(\d+)[을를] 갈라서 계산하는 과정/.test(question.prompt)
+    ? /(\d+)[을를] (\d+)[과와] (\d+)[으로]* 가릅니다/.exec(question.prompt)
+    : null;
+  if (splitInSteps) {
+    const first = Number(/^(\d+)/.exec(question.prompt)?.[1]);
+    const partA = Number(splitInSteps[2]);
+    const partB = Number(splitInSteps[3]);
+    if (first > 0 && partA > 0 && partB > 0) {
+      return barModelVisualFor(
+        [
+          { label: '처음 수', value: first },
+          { label: '가른 것', value: partA },
+          { label: '가른 것', value: partB },
+        ],
+        '가른 수',
+      );
+    }
+  }
+
+  // '56+24를 계산할 때 56을 몇십으로 만들어 더하려고 합니다. 알맞은
+  // 식은?'(답 60+20) — 56이 몇십까지 얼마나 남았는지를 보아야 합니다.
+  // 몇십마다 눈금을 긋고 56을 짚어 주면 그것이 눈에 보입니다. 답은
+  // 식이고 짚는 수는 56이므로 답을 짚어 주지 않습니다.
+  const toRoundUp = /^(\d+)\s*[+\-]\s*\d+[을를] 계산할 때 (\d+)[을를] 몇십으로 만들어/.exec(
+    question.prompt,
+  );
+  if (toRoundUp) {
+    const marked = Number(toRoundUp[2]);
+    if (marked > 0 && marked % 10 !== 0) {
+      return numberLineVisualFor([marked], 10, '몇십까지 얼마나 남았을까', 0);
+    }
+  }
+
+  // '다음에 할 일은?'처럼 답이 문장인 문항까지 붙이면, 그 문장 첫머리에
+  // 적힌 수(‘61에 60을 먼저 더한다’의 61)가 수직선에 짚여 있게 됩니다.
+  // 가르는 방법을 묻는 문항만 봅니다.
+  const toTheNextTen = /^(\d+)\s*[+\-]\s*\d+[을를] (?:더 )?쉽게 계산하려고 합니다\. \d+[을를] 어떻게 가르면/.exec(
+    question.prompt,
+  );
+  if (toTheNextTen) {
+    const from = Number(toTheNextTen[1]);
+    if (from > 0 && from % 10 !== 0) {
+      return numberLineVisualFor([from], 10, '몇십까지 얼마나 남았을까', 0);
+    }
   }
 
   if (question.type === 'addition' || question.type === 'subtraction') {
