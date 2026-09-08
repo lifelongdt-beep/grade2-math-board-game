@@ -216,6 +216,13 @@ export interface PlaceValueVisual {
     value: number;
     blocks?: number;
   }>;
+  /**
+   * 자리마다 숫자를 적지 않고 모형만 그립니다. '수 모형을 세어 보니
+   * 백 모형 4개, 일 모형 6개…  이 모형이 나타내는 수는?'처럼 모형을
+   * 세어 수를 쓰는 문항에서 씁니다. 숫자를 함께 적으면 세어 볼 것 없이
+   * 그대로 옮겨 적으면 되어 문항이 사라집니다.
+   */
+  countOnly?: boolean;
 }
 
 export interface BarModelVisual {
