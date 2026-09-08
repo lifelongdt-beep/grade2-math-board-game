@@ -14,6 +14,17 @@ export type RelayTarget =
   | { kind: 'local' }
   | { kind: 'cloud'; dbUrl: string; room: string };
 
+// 앱에 미리 넣어 둔 공용 저장소 주소입니다. 이 값이 있으면 선생님은
+// 아무 설정도 하지 않고 큐알만 띄우면 됩니다 — 반마다 다른 방 이름으로
+// 갈라 두므로 다른 학교 기록과 섞이지 않습니다.
+//
+// 비어 있으면 예전처럼 선생님이 직접 주소를 넣어야 연동됩니다.
+//
+// 이 주소는 웹앱에 그대로 실려 나가는 값이라 숨길 수 있는 것이 아닙니다.
+// 대신 저장소 규칙에서 방 이름($room)을 아는 사람만 그 방을 읽고 쓰도록
+// 막아 두었습니다 — 주소만으로는 다른 반 기록을 볼 수 없습니다.
+export const DEFAULT_DB_URL = 'https://grade-c0262-default-rtdb.firebaseio.com';
+
 // 큐알 주소에 담겨 오는 값이므로, 아무 주소나 받으면 학생 폰이 엉뚱한
 // 곳으로 답을 보내게 됩니다. 무료 실시간 저장소의 주소 모양만 받습니다.
 const ALLOWED_HOST_SUFFIXES = ['.firebaseio.com', '.firebasedatabase.app'];
@@ -35,12 +46,17 @@ export const normalizeDbUrl = (value: string): string | null => {
   return `https://${parsed.host}`;
 };
 
-// 반마다 다른 방을 씁니다. 옆 반이 같은 주소를 쓰더라도 서로의 기록이
-// 섞이지 않습니다. 읽기 쉬운 글자만 씁니다(0/O, 1/I 같은 혼동 없이).
+// 반마다 다른 방을 씁니다. 여러 학교가 한 저장소를 같이 쓰더라도 서로의
+// 기록이 섞이지 않습니다. 읽기 쉬운 글자만 씁니다(0/O, 1/I 혼동 없이).
 const ROOM_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
+// 여덟 자리면 32^8 = 약 1조 가지입니다. 전국에서 오천 학급이 동시에
+// 열어도 방 이름이 겹칠 확률이 십만분의 일쯤이라, 사실상 겹치지 않습니다.
+// 방 이름은 곧 그 방을 열어 볼 수 있는 열쇠이기도 하므로, 넉넉히 둡니다.
+const ROOM_CODE_LENGTH = 8;
+
 export const makeRoomCode = (): string => {
-  const values = new Uint32Array(6);
+  const values = new Uint32Array(ROOM_CODE_LENGTH);
   crypto.getRandomValues(values);
   return Array.from(values, (value) => ROOM_ALPHABET[value % ROOM_ALPHABET.length]).join('');
 };
