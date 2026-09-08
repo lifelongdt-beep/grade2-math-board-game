@@ -334,6 +334,43 @@ describe('the maths in each question is true', () => {
     expect([...new Set(marked)]).toEqual([]);
   });
 
+  it('그림에 붙은 글자가 답을 말하지 않는다', () => {
+    // '곧은 선 3개로 둘러싸인 모양은?' 옆 그림에 '삼각형 모양'이라고
+    // 적혀 있었고, '2×□=18일 때 □는?'의 묶음 그림에는 '2개씩 9묶음'이
+    // 적혀 있었습니다. 볼 곳은 단추를 눌러야 열리지만 그림은 늘 떠
+    // 있으므로, 아이는 셀 것도 없이 글자만 읽고 답을 골랐습니다.
+    //
+    // 그림에 실제로 그려지는 글자를 그대로 만들어 봅니다. 묶음 그림은
+    // 이름표를 쓰지 않고 rows·columns로 글자를 그 자리에서 만들기 때문에,
+    // 이름표만 보면 화면에 무엇이 적히는지 알 수 없습니다.
+    const drawnText = (visual: Question['visual']): string => {
+      if (!visual) return '';
+      if (visual.kind === 'array') {
+        if (visual.hideCaption) return '';
+        return visual.plainCount === undefined
+          ? `${visual.columns}개씩 ${visual.rows}묶음`
+          : `${visual.plainCount}개`;
+      }
+      return 'label' in visual ? String(visual.label ?? '') : '';
+    };
+
+    const tells: string[] = [];
+
+    for (const { lessonId, level, question } of all) {
+      const text = drawnText(question.visual);
+      const answer = question.answer.trim();
+      if (!text || !answer) continue;
+      const escaped = answer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // 한글이 든 답은 낱말 경계로, 숫자만인 답은 수의 경계로 봅니다.
+      const boundary = /[가-힣]/.test(answer) ? '가-힣0-9' : '0-9';
+      if (new RegExp(`(^|[^${boundary}])${escaped}([^${boundary}]|$)`).test(text)) {
+        tells.push(`${lessonId} ${level} ${question.id}: 그림 글자 "${text}"가 답 "${answer}"을 말함 — ${question.prompt.slice(0, 40)}`);
+      }
+    }
+
+    expect(tells.slice(0, 5)).toEqual([]);
+  });
+
   it('draws the thing the question names', () => {
     // '쌓은 모양에서 규칙을 찾아볼까요' 차시에 무늬 문항의 ○△□가 붙어
     // 나왔습니다. 쌓기나무를 말하는 문제 옆에 도형 무늬가 있으면 아이는
