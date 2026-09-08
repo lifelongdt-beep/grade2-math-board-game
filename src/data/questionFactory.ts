@@ -7804,7 +7804,10 @@ const unitMeasureVisualFor = (object: string, unit: string, count: number): Ques
   count,
 });
 
-const barModelVisualFor = (bars: Array<{ label: string; value: number }>, label = '막대모델 자료'): QuestionVisual => ({
+const barModelVisualFor = (
+  bars: Array<{ label: string; value: number; text?: string }>,
+  label = '막대모델 자료',
+): QuestionVisual => ({
   kind: 'bar-model',
   label,
   bars,
@@ -10239,6 +10242,52 @@ const visualForGeneratedQuestion = (
       );
     }
 
+    // 위의 규칙은 '32cm+16cm'처럼 기호로 적은 것만 잡습니다. 그런데
+    // 같은 셈이 문장으로도 나옵니다 — '길이가 4cm인 막대와 5cm인 막대를
+    // 겹치지 않게 이었습니다. 이은 길이는?' 이런 문장은 그대로 빠져나가
+    // 맨 아래 규칙까지 내려갔고, 거기서 답(9cm)만큼의 자가 그려졌습니다.
+    // 아이는 더할 것도 없이 눈금을 세면 되었습니다.
+    //
+    // 기호든 문장이든 셈은 셈이므로, 문제에 나온 두 길이만 막대로 그립니다.
+    const combines = /이었습니다|이어 붙|합은|합을|더하면|더한|남은|잘라|잘랐|빼면|차는|차를|차가/.test(
+      question.prompt,
+    );
+    // 길이는 '35cm'로도 '1m 35cm'로도 적힙니다. cm만 집으면 1m 35cm가
+    // 35짜리 막대가 되어, 2m 15cm(15)보다 길게 그려집니다 — 문제와
+    // 정반대인 그림입니다. m와 cm를 함께 읽어 cm로 셈해 둡니다.
+    const lengthsInPrompt = [...question.prompt.matchAll(/(?:(\d+)\s*m(?!m))?\s*(?:(\d+)\s*cm)?/g)]
+      .map((one) => ({
+        value: (one[1] ? Number(one[1]) * 100 : 0) + (one[2] ? Number(one[2]) : 0),
+        // 문제가 쓴 대로 적습니다 — '1m 53cm'를 153으로 바꿔 적으면
+        // 아이 눈에는 문제에 없던 수가 그림에 떠 있는 것이 됩니다.
+        text: [one[1] ? `${one[1]}m` : '', one[2] ? `${one[2]}cm` : ''].filter(Boolean).join(' '),
+      }))
+      .filter((one) => one.value > 0);
+    if (lengthsInPrompt.length >= 2 && combines) {
+      return barModelVisualFor(
+        [
+          { label: '①', value: lengthsInPrompt[0].value, text: lengthsInPrompt[0].text },
+          { label: '②', value: lengthsInPrompt[1].value, text: lengthsInPrompt[1].text },
+        ],
+        '문제에 나온 두 길이',
+      );
+    }
+
+    // '길이가 5cm인 막대 2개를 이어 붙이면?' — 길이는 한 번만 적혀 있고
+    // 개수가 따로 있습니다. 위 규칙이 cm을 둘 찾다 놓쳐서, 답인 10cm짜리
+    // 자가 그려졌습니다. 이어 붙일 막대를 개수만큼 그립니다.
+    const copies = question.prompt.match(/(\d+)\s*cm[^\d]{0,10}?(\d+)\s*개/);
+    if (copies && combines) {
+      const each = Number(copies[1]);
+      const count = Number(copies[2]);
+      if (each > 0 && count >= 2 && count <= 4) {
+        return barModelVisualFor(
+          Array.from({ length: count }, (_, at) => ({ label: `${at + 1}`, value: each })),
+          '이어 붙일 막대',
+        );
+      }
+    }
+
     // '{start}부터 {end}까지 놓인'처럼 두 눈금이 문제에 그대로 나오는
     // 문항은 그 구간을 그대로 그립니다. 답(끝-시작)만 보고 0부터 그리면
     // 문제에 적힌 시작 눈금과 그림이 어긋납니다.
@@ -10251,7 +10300,15 @@ const visualForGeneratedQuestion = (
 
     // 눈금 0이 아닌 곳에 대고 잰 문항은 두 눈금이 문제에 그대로
     // 나옵니다. 이때만 그 구간을 그립니다.
-    const broken = /눈금 \d+에 맞추|눈금 \d+에서 시작|앞부분이 깨져/.test(question.prompt);
+    //
+    // 문구를 좁게 잡아 두었더니 '한쪽 끝이 눈금 2에, 다른 쪽 끝이 눈금
+    // 11에 있습니다'가 빠져나갔습니다. 그 문항들은 맨 아래로 내려가
+    // 0부터 답(9cm)까지의 자로 그려졌습니다. 답을 보여 줄 뿐 아니라
+    // 문제가 말한 자리(2와 11)와도 어긋난 그림이었습니다.
+    // 눈금이나 자의 자리를 두 번 말하면 그 구간을 그립니다.
+    const broken =
+      /눈금 \d+에 맞추|눈금 \d+에서 시작|앞부분이 깨져|자의 \d+에 맞추/.test(question.prompt) ||
+      (question.prompt.match(/눈금[은는이가]?\s*\d+/g)?.length ?? 0) >= 2;
     if (broken && promptNumbers.length >= 2 && promptNumbers[1] > promptNumbers[0]) {
       return rulerVisualFor(promptNumbers[0], promptNumbers[1], '자로 잰 길이');
     }
