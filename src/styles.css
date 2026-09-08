@@ -2620,6 +2620,9 @@ button:disabled {
   font-weight: 850;
 }
 
+/* 이 창은 어두운 바탕입니다. 밝은 칸을 얹을 때는 글자색도 함께 어둡게
+   적어 두어야 합니다 — 적지 않으면 창의 흰 글씨를 물려받아 흰 바탕에
+   흰 글씨가 되어 사라집니다. */
 .mobile-join-sync-toggle {
   display: flex;
   align-items: center;
@@ -2627,6 +2630,7 @@ button:disabled {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #f8fbfd;
+  color: var(--ink);
   padding: 10px 12px;
   font-size: 13px;
   font-weight: 850;
@@ -2717,6 +2721,7 @@ button:disabled {
   gap: 8px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  background: #f8fbfd;
   padding: 12px;
   font-size: 12px;
   line-height: 1.45;
