@@ -6682,7 +6682,10 @@ export const questionBank: Template[] = [
       minute: { calc: '60 - before' },
       prev: { calc: 'hour - 1' },
     },
-    visual: { kind: 'clock', hour: 'prev', minute: 'minute', label: '시계' },
+    // 답인 6시 45분을 그려 놓고 '7시 15분 전은 몇 시 몇 분일까요?'라고
+    // 물었습니다. 아이는 되짚어 볼 것 없이 바늘만 읽으면 되었습니다.
+    // 기준이 되는 7시 정각을 그려, 거기서 15분을 되돌리게 합니다.
+    visual: { kind: 'clock', hour: 'hour', minute: '0', label: '기준이 되는 시각' },
     prompt: '{hour}시 {before}분 전은 몇 시 몇 분일까요?',
     answer: '{prev}시 {minute}분',
     wrongs: ['{hour}시 {before}분', '{prev}시 {before}분', '{hour}시 {minute}분'],
@@ -13504,8 +13507,11 @@ export const questionBank: Template[] = [
       wrongAdd: { calc: 'big + small' },
     },
     words: { what: ['수업이 시작', '체육 시간이 시작', '급식이 시작', '방과 후 수업이 시작'] },
+    // 짧은바늘 이야기가 빠져 있었습니다. 그래서 '긴바늘이 숫자 5를 지나
+    // 작은 눈금 2칸 더 갔습니다'만 적어 놓고 답은 '1시 27분'이었습니다.
+    // 아이가 문제에서 '1시'를 알아낼 길이 없었습니다.
     prompt:
-      '{what}할 때 긴바늘이 숫자 {big}을 지나 작은 눈금 {small}칸 더 갔습니다. 시작한 시각은 몇 시 몇 분일까요?',
+      '{what}할 때 짧은바늘은 {hour}을 조금 지났고 긴바늘이 숫자 {big}을 지나 작은 눈금 {small}칸 더 갔습니다. 시작한 시각은 몇 시 몇 분일까요?',
     answer: '{hour}시 {minute}분',
     wrongs: ['{hour}시 {onlyBig}분', '{hour}시 {wrongAdd}분', '{hour}시 {small}분'],
     solution:
