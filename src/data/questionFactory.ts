@@ -130,7 +130,10 @@ const studentConceptGuide: Record<ConceptTag, string> = {
   subtraction: '같은 자리끼리 빼세요.',
   shape: '변과 꼭짓점을 세어 보세요.',
   solid: '보이는 방향과 숨은 부분을 같이 보세요.',
-  measurement: '시작 눈금과 끝 눈금의 차를 보세요.',
+  // '시작 눈금과 끝 눈금의 차를 보세요'라고 적어 두었더니, 자를 쓰지
+  // 않는 문항 — '1m 22cm는 몇 cm일까요?', '두 뼘은 약 몇 cm일까요?' —
+  // 에도 눈금을 보라는 말이 붙었습니다. 이 갈래 전부에 맞는 말로 둡니다.
+  measurement: '같은 단위로 맞추어 놓고, 어디서 시작해 어디서 끝나는지 보세요.',
   classification: '나누는 기준을 하나만 정하세요.',
   multiplication: '한 묶음의 수와 묶음 수를 찾으세요.',
   time: '시각인지 시간인지 먼저 보세요.',
@@ -371,9 +374,27 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
   }
 
   // 길이: 두 값을 견주거나 단위를 맞추게 합니다.
-  const twoLengths = /(\d+)\s*cm[^\d]{1,20}(\d+)\s*cm/.exec(prompt);
-  if (twoLengths) {
-    return `${twoLengths[1]}cm와 ${twoLengths[2]}cm를 견줍니다. cm는 cm끼리 맞추어 놓고 보세요.`;
+  //
+  // 예전에는 cm만 집었습니다. 그래서 '2m 64cm와 256cm 중 더 긴 길이는?'의
+  // 볼 곳이 '64cm와 256cm를 견줍니다'가 되었습니다 — m를 떼고 견주라는
+  // 말이라, 그대로 따르면 답이 뒤집힙니다. 또 무엇을 하든 '견줍니다'라고
+  // 적어, 더하는 문항에도 견주라고 했습니다. m와 cm를 함께 읽고, 문제가
+  // 시키는 일에 맞추어 적습니다.
+  const twoLengths = [...prompt.matchAll(/(?:(\d+)\s*m(?!m))?\s*(?:(\d+)\s*cm)?/g)]
+    .map((one) => [one[1] ? `${one[1]}m` : '', one[2] ? `${one[2]}cm` : ''].filter(Boolean).join(' '))
+    .filter(Boolean);
+  if (twoLengths.length >= 2 && tag === 'measurement') {
+    const [first, second] = twoLengths;
+    if (/더 긴|더 짧은|어느 것이|비교|견주/.test(prompt)) {
+      return `${first}와 ${second}를 견줍니다. m는 m끼리, cm는 cm끼리 맞추어 놓고 보세요.`;
+    }
+    if (/더하|합|이었|이으면|이어/.test(prompt)) {
+      return `${first}와 ${second}를 더합니다. m는 m끼리, cm는 cm끼리 모아 보세요.`;
+    }
+    if (/빼|차|잘라|남은/.test(prompt)) {
+      return `${first}에서 ${second}를 뺍니다. m는 m끼리, cm는 cm끼리 덜어 보세요.`;
+    }
+    return `${first}와 ${second}를 같은 단위로 맞추어 놓고 보세요.`;
   }
 
   const metres = /(\d+)\s*m\s*(\d+)\s*cm/.exec(prompt);
@@ -420,8 +441,19 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
     return `${size}단은 ${size}씩 커집니다. ${size}, ${size * 2}, ${size * 3}…으로 이어 세어 보세요.`;
   }
 
+  // '개수를 비교할 때 쓰는 말로 알맞은 것은?'(답: 더 많다, 더 적다)은
+  // 수를 견주는 문항이 아니라 견주는 '말'을 고르는 문항입니다. 아래
+  // 규칙이 '비교'라는 낱말만 보고 자리값 이야기를 붙이고 있었습니다.
+  if (/비교할 때 쓰는 말/.test(prompt)) {
+    return '무엇을 견주고 있는지 먼저 보세요. 길이인지, 무게인지, 개수인지에 따라 쓰는 말이 다릅니다.';
+  }
+
   // 수의 크기 견주기: 어느 자리부터 보아야 하는지가 핵심입니다.
-  if (/가장 큰|가장 작은|더 큰 수|더 작은 수|비교/.test(prompt)) {
+  // 길이·무게를 견주는 문항까지 끌어오지 않도록 갈래를 함께 봅니다.
+  if (
+    /가장 큰|가장 작은|더 큰 수|더 작은 수|비교/.test(prompt) &&
+    (tag === 'number' || tag === 'placeValue')
+  ) {
     return '가장 높은 자리부터 견줍니다. 그 자리가 같으면 그다음 자리를 보세요.';
   }
 
@@ -3958,7 +3990,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
         lesson, difficulty, index,
         secondSemester
           ? '교실의 긴 벽처럼 아주 긴 길이를 잴 때 어떤 점이 불편할까요?'
-          : `${pickBySeed(LENGTH_PAIRS, seed)[0]}과 ${pickBySeed(LENGTH_PAIRS, seed)[1]} 중 어느 것이 더 긴지 알아보려면 어떻게 할까요?`,
+          : `${josa(pickBySeed(LENGTH_PAIRS, seed)[0], '과', '와')} ${pickBySeed(LENGTH_PAIRS, seed)[1]} 중 어느 것이 더 긴지 알아보려면 어떻게 할까요?`,
         secondSemester ? '짧은 자로는 여러 번 재어야 해서 불편하다' : '두 물건을 나란히 맞대어 본다',
         secondSemester
           ? ['한 번에 잴 수 있다', '길이를 알 수 없다', '무게를 재면 된다']
@@ -3972,10 +4004,10 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${pickBySeed(COMPARE_WORDS, seed).what}을 비교할 때 쓰는 말로 알맞은 것은?`,
+        `${josa(pickBySeed(COMPARE_WORDS, seed).what, '을', '를')} 비교할 때 쓰는 말로 알맞은 것은?`,
         pickBySeed(COMPARE_WORDS, seed).right,
         pickBySeed(COMPARE_WORDS, seed).wrong,
-        `${pickBySeed(COMPARE_WORDS, seed).what}은 ${pickBySeed(COMPARE_WORDS, seed).right}로 비교해서 말합니다.`,
+        `${josa(pickBySeed(COMPARE_WORDS, seed).what, '은', '는')} ${pickBySeed(COMPARE_WORDS, seed).right}로 비교해서 말합니다.`,
         'measurement', '견주는 말 알기',
       );
     }
@@ -7813,6 +7845,16 @@ const barModelVisualFor = (
   bars,
 });
 
+// '두 뼘', '세 번'처럼 우리말로 적은 횟수를 수로 읽습니다.
+const KOREAN_REPEAT_COUNTS: Record<string, number> = {
+  한: 1,
+  두: 2,
+  세: 3,
+  네: 4,
+  다섯: 5,
+  여섯: 6,
+};
+
 const rulerVisualFor = (start: number, end: number, label = '자 눈금 자료'): QuestionVisual => ({
   kind: 'ruler',
   label,
@@ -10249,9 +10291,14 @@ const visualForGeneratedQuestion = (
     // 아이는 더할 것도 없이 눈금을 세면 되었습니다.
     //
     // 기호든 문장이든 셈은 셈이므로, 문제에 나온 두 길이만 막대로 그립니다.
-    const combines = /이었습니다|이어 붙|합은|합을|더하면|더한|남은|잘라|잘랐|빼면|차는|차를|차가/.test(
-      question.prompt,
-    );
+    const combines =
+      /이었습니다|이어 붙|이으면|이어서|합은|합을|더하면|더한|더하는|남은|잘라|잘랐|빼면|빼는|차는|차를|차가/.test(
+        question.prompt,
+      ) ||
+      // '2m 30cm + 2m 29cm는 몇 m 몇 cm일까요?' — 위의 cm끼리 셈 규칙은
+      // m가 앞에 붙으면 잡지 못해, 답인 4m 59cm짜리 자가 그려졌습니다.
+      // 기호로 적은 셈도 셈이므로 여기서 함께 잡습니다.
+      /\d\s*c?m\s*[+\-]/.test(question.prompt);
     // 길이는 '35cm'로도 '1m 35cm'로도 적힙니다. cm만 집으면 1m 35cm가
     // 35짜리 막대가 되어, 2m 15cm(15)보다 길게 그려집니다 — 문제와
     // 정반대인 그림입니다. m와 cm를 함께 읽어 cm로 셈해 둡니다.
@@ -10313,6 +10360,77 @@ const visualForGeneratedQuestion = (
       return rulerVisualFor(promptNumbers[0], promptNumbers[1], '자로 잰 길이');
     }
 
+    // 자를 그리지 않기로 한 자리입니다. 자를 아직 배우지 않은 차시
+    // (2학년 1학기 길이 재기 앞부분)는 이 자리에 자 대신 클립으로 재는
+    // 그림을 그려 왔습니다 — 그 차시가 실제로 쓰는 도구입니다. 자를
+    // 배운 차시에서는, 상관없는 그림보다 없는 편이 낫습니다.
+    const insteadOfRuler = (): QuestionVisual | undefined =>
+      lesson.scope.forbidVisuals?.includes('ruler')
+        ? unitMeasureVisualFor('연필', '클립', 4 + (index % 5))
+        : undefined;
+
+    // '2m 22cm와 214cm 중 더 긴 길이는?' — 단위를 맞추어 견주는
+    // 문항입니다. 여기까지 오면 답(2m 22cm)만큼의 자 하나가 그려졌는데,
+    // 견주는 그림도 아닐뿐더러 그 길이가 곧 답이었습니다. 그렇다고 두
+    // 막대로 그리면 어느 쪽이 긴지 눈으로 보여 주게 되어, 'm를 cm로
+    // 바꾸어 견준다'는 이 차시의 할 일이 사라집니다. 그리지 않습니다.
+    //
+    // 눈으로 바로 견주는 2학년 1학기 차시('어느 것이 더 길까요?')는
+    // 그림이 곧 문제이므로 건드리지 않습니다. 한쪽은 m로, 다른 쪽은
+    // cm로 적힌 문항만 골라 냅니다.
+    const comparesAcrossUnits =
+      /중 더 (긴|짧은)|더 긴 것은|더 짧은 것은/.test(question.prompt) &&
+      /\d+\s*m\s+\d+\s*cm/.test(question.prompt) &&
+      /(?:^|[^m\d])\d{3,}\s*cm/.test(question.prompt);
+    if (comparesAcrossUnits) return insteadOfRuler();
+
+    // '2m 63cm는 몇 cm일까요?' — m를 cm로 바꾸는 문항입니다. 0에서
+    // 263까지 그린 자는 끝 눈금이 곧 답이어서, 아이는 1m가 100cm임을
+    // 쓸 것 없이 눈금만 읽으면 되었습니다. 1m짜리와 남은 길이로 나누어
+    // 그려, 100+100+63을 아이가 스스로 모으게 합니다.
+    if (/cm로만|몇 cm/.test(question.prompt) && lengthsInPrompt.length === 1) {
+      const whole = lengthsInPrompt[0].value;
+      const metreSticks = Math.floor(whole / 100);
+      const leftOver = whole % 100;
+      if (metreSticks >= 1 && metreSticks <= 5) {
+        return barModelVisualFor(
+          [
+            ...Array.from({ length: metreSticks }, () => ({
+              label: '1m',
+              value: 100,
+              text: '100cm',
+            })),
+            ...(leftOver > 0 ? [{ label: '남은 길이', value: leftOver, text: `${leftOver}cm` }] : []),
+          ],
+          '1m씩 나누어 보기',
+        );
+      }
+    }
+
+    // '한 뼘이 약 18cm인 사람이 두 뼘으로 잰 길이는?' — 한 번의 길이를
+    // 몇 번 이어 어림하는 문항입니다. 여기까지 내려오면 답(18+18=36)
+    // 만큼의 자가 그려졌고, 아이는 이어 볼 것도 없이 자의 끝 눈금만
+    // 읽으면 되었습니다. 어림은 '내 뼘을 몇 번 이었나'를 세는 일이므로,
+    // 이어 놓을 한 번의 길이를 그 횟수만큼 막대로 그립니다.
+    const repeats = [...question.prompt.matchAll(/(한|두|세|네|다섯|여섯|\d+)\s*(?:뼘|번|걸음)/g)]
+      .map((one) => KOREAN_REPEAT_COUNTS[one[1]] ?? Number(one[1]))
+      .filter((count) => count >= 2 && count <= 6);
+    const onceLong = question.prompt.match(/(\d+)\s*cm/);
+    if (repeats.length && onceLong) {
+      const each = Number(onceLong[1]);
+      const times = repeats[repeats.length - 1];
+      if (each > 0) {
+        return barModelVisualFor(
+          Array.from({ length: times }, (_, at) => ({
+            label: `${at + 1}`,
+            value: each,
+            text: `${each}cm`,
+          })),
+          '이어 놓을 한 번의 길이',
+        );
+      }
+    }
+
     // 그 밖에는 잰 길이를 0에서부터 그립니다. 예전에는 문제에 나온
     // 첫 두 수를 눈금으로 삼아, '1m 눈금을 지나 77cm'가 1에서 77까지로
     // 그려졌습니다. 답에 적힌 길이가 그림이 보여야 할 길이입니다.
@@ -10322,9 +10440,30 @@ const visualForGeneratedQuestion = (
       ? Number(cmFromAnswer[1]) * 100 + Number(cmFromAnswer[2])
       : metres
         ? Number(metres[1]) * 100
-        : answerNumber || promptNumbers[promptNumbers.length - 1] || 8;
+        : answerNumber || promptNumbers[promptNumbers.length - 1] || 0;
+    // 여기까지 온 자의 길이가 곧 답이고, 그 길이가 문제에 적혀 있지도
+    // 않다면, 자가 답을 대신 재어 준 것입니다 — '끝 눈금이 330cm였습니다.
+    // 3m □cm라고 씁니다'(답 30)에 0~30짜리 자가 그려지던 자리입니다.
+    // 이 단원이 스스로 적어 둔 규칙 그대로, 답은 그리지 않습니다.
+    const answerAsCm = cmFromAnswer
+      ? Number(cmFromAnswer[1]) * 100 + Number(cmFromAnswer[2])
+      : metres
+        ? Number(metres[1]) * 100
+        : answerNumber;
+    const promptSaysThatLength =
+      promptNumbers.includes(measured) ||
+      promptNumbers.some((first, at) =>
+        promptNumbers.some((second, other) => at !== other && first * 100 + second === measured),
+      );
+    if (measured > 0 && measured === answerAsCm && !promptSaysThatLength) return insteadOfRuler();
+
     if (measured > 0) return measuredRulerFor(measured, '자로 잰 길이');
-    return rulerVisualFor(0, 8, '길이 측정 자료');
+
+    // 잴 길이가 문제에도 답에도 없는 문항입니다 — '자로 길이를 잴 때
+    // 물건의 한쪽 끝을 어디에 맞출까요?'처럼 방법을 묻는 문항입니다.
+    // 예전에는 여기서 0~8cm짜리 자를 그렸습니다. 8은 문제 어디에도
+    // 없는 수여서, 아이가 그림과 문제를 이어 붙일 데가 없었습니다.
+    return insteadOfRuler();
   }
 
   if (question.type === 'data' || question.type === 'classification') {
@@ -12563,8 +12702,10 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
     if (second && no >= 4) {
       const am = 1 + (seed % 3);
-      const acm = 20 + (seed % 5) * 10;
-      const bcm = 100 + (seed % 4) * 50;
+      // 여기서도 cm끼리 더해 100을 넘지 않게 둡니다. 예전에는
+      // 1m 50cm와 150cm가 '3m 0cm'가 되었습니다.
+      const acm = 20 + (seed % 4) * 10;
+      const bcm = 100 * (1 + (seed % 3)) + (seed % 5) * 10;
 
       if (pick === 0) {
         const totalCm = am * 100 + acm + bcm;
@@ -14512,10 +14653,16 @@ const lengthShapes: Shape[] = [
     fits: (lesson) => /길이의 합|길이의 차/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 19 + lesson.lessonNo;
-      const a = 1 + (seed % 3);
-      const acm = 20 + (seed % 60);
-      const b = 1 + ((seed + 1) % 3);
-      const bcm = 10 + ((seed + 20) % 30);
+      // 2학년이 배우는 m·cm 계산은 받아올림·받아내림이 없는 것뿐입니다.
+      // 예전 수들은 cm끼리 더해 100을 넘기도 하고(2m 75cm+3m 25cm이
+      // '6m 0cm'가 되었습니다) 빼서 모자라기도 했습니다(‘0m 81cm’).
+      // 배운 범위 밖인 데다 답 적는 법도 2학년 것이 아닙니다.
+      // m는 언제나 앞이 크게, cm는 더해도 100이 되지 않고 빼도
+      // 모자라지 않게 고릅니다.
+      const a = 3 + (seed % 3);
+      const b = 1 + (seed % 2);
+      const acm = 40 + (seed % 4) * 10;
+      const bcm = 10 + ((seed + 1) % 3) * 5;
       const plus = lesson.title.includes('합');
       const total = plus ? (a + b) * 100 + acm + bcm : (a - b) * 100 + acm - bcm;
       const m = Math.floor(total / 100);
@@ -14527,7 +14674,7 @@ const lengthShapes: Shape[] = [
           ? `${a}m ${acm}cm인 끈과 ${b}m ${bcm}cm인 끈을 이었습니다. 이은 끈의 길이는?`
           : `${a}m ${acm}cm인 끈에서 ${b}m ${bcm}cm를 잘랐습니다. 남은 끈의 길이는?`,
         `${m}m ${cm}cm`,
-        [`${m + 1}m ${cm}cm`, `${m}m ${cm + 10}cm`, `${m}m ${Math.max(0, cm - 10)}cm`],
+        [`${m + 1}m ${cm}cm`, `${m}m ${cm + 10 > 99 ? cm - 20 : cm + 10}cm`, `${m}m ${Math.max(5, cm - 10)}cm`],
         `m는 m끼리, cm는 cm끼리 ${plus ? '더하면' : '빼면'} ${m}m ${cm}cm입니다.`,
         'measurement',
         shapeStrategy(difficulty, '조건 함께 보기 · 단위끼리 맞추어 계산하기', '단위끼리 맞추어 계산하기'),
