@@ -2647,6 +2647,94 @@ button:disabled {
   font-weight: 750;
 }
 
+.relay-setup {
+  display: grid;
+  gap: 8px;
+}
+
+.relay-setup-toggle {
+  justify-self: start;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #f8fbfd;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+.relay-setup-body {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.relay-setup-body p {
+  margin: 0;
+}
+
+.relay-setup-body ol {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.relay-setup-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.relay-setup-input input {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.relay-setup-input button {
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--teal);
+  color: white;
+  padding: 0 16px;
+  font-weight: 950;
+}
+
+.relay-setup-rules {
+  display: block;
+  margin-top: 4px;
+  border-radius: var(--radius);
+  background: #f1f5f9;
+  color: var(--ink);
+  padding: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.relay-setup-error {
+  margin: 0;
+  color: #b02a2a;
+  font-weight: 850;
+}
+
+.relay-setup-note {
+  margin: 0;
+  font-size: 11px;
+}
+
 .mobile-join-sync-ok {
   margin: 0;
   border-radius: var(--radius);
