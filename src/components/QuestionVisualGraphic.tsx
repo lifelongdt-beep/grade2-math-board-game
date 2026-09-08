@@ -462,24 +462,36 @@ function BarModelGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: '
   // 두고, 남는 만큼만 막대를 늘립니다.
   const longest = Math.max(...visual.bars.map((bar) => String(bar.text ?? bar.value).length), 1);
   // 굵은 14px에서 숫자는 8px, m은 11px쯤 됩니다. 넉넉히 잡지 않으면
-  // 마지막 글자가 그림 테두리에 걸립니다.
-  const textRoom = longest * 9 + 16;
+  // 마지막 글자가 그림 테두리에 걸립니다 — 한 글자에 9px로 잡았더니
+  // '3m 21cm'의 끝 m이 테두리에 닿았습니다.
+  const textRoom = longest * 11 + 16;
   const barRoom = Math.max(60, 372 - 104 - textRoom);
 
+  // 막대를 넉 줄까지만 그리고 있었습니다. 그래서 '한 뼘이 약 12cm입니다.
+  // 6뼘은 약 몇 cm일까요?'에 막대가 네 개만 놓였고, 아이가 그림을 세면
+  // 문제가 말한 여섯 번이 아니라 네 번이 되었습니다. 그림이 문제와
+  // 다른 말을 하고 있었던 것입니다. 여섯 줄까지 그리고, 줄이 많으면
+  // 그림 높이를 늘려 아래 줄이 테두리 밖으로 나가지 않게 합니다.
+  const bars = visual.bars.slice(0, 6);
+  const crowded = bars.length > 4;
+  const rowHeight = crowded ? 24 : 28;
+  const barHeight = crowded ? 18 : 22;
+  const height = crowded ? 28 + bars.length * rowHeight + 12 : 150;
+
   return (
-    <svg viewBox="0 0 376 150" role="img" aria-label={visual.label}>
-      <rect x="4" y="6" width="368" height="138" rx="14" fill="#f6fcff" stroke="#d7edf2" />
-      {visual.bars.slice(0, 4).map((bar, index) => {
-        const y = 28 + index * 28;
+    <svg viewBox={`0 0 376 ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="6" width="368" height={height - 12} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {bars.map((bar, index) => {
+        const y = 28 + index * rowHeight;
         const width = Math.max(24, (bar.value / maxValue) * barRoom);
         return (
           <g key={`${bar.label}-${index}`}>
-            <text x="28" y={y + 18} fill="#24364a" fontSize="14" fontWeight="900">
+            <text x="28" y={y + barHeight - 4} fill="#24364a" fontSize="14" fontWeight="900">
               {bar.label}
             </text>
-            <rect x="104" y={y} width={barRoom} height="22" rx="7" fill="#eef6f8" />
-            <rect x="104" y={y} width={width} height="22" rx="7" fill={index % 2 === 0 ? '#dffafa' : '#fff4bd'} stroke="#0f9f9f" />
-            <text x={114 + barRoom} y={y + 17} fill="#182433" fontSize="14" fontWeight="900">
+            <rect x="104" y={y} width={barRoom} height={barHeight} rx="7" fill="#eef6f8" />
+            <rect x="104" y={y} width={width} height={barHeight} rx="7" fill={index % 2 === 0 ? '#dffafa' : '#fff4bd'} stroke="#0f9f9f" />
+            <text x={114 + barRoom} y={y + barHeight - 5} fill="#182433" fontSize="14" fontWeight="900">
               {bar.text ?? bar.value}
             </text>
           </g>

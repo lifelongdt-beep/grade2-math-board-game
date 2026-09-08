@@ -84,8 +84,11 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '자료 해석 · 몸의 부분으로 어림한 과정 판단하기',
     vars: {
+      // 2학년 곱셈구구는 한 자리 수끼리입니다. 15뼘 × 6처럼 두 자리 수에
+      // 곱하는 셈은 3학년 것이라, 뼘으로 어림하는 이 차시의 할 일보다
+      // 계산이 앞서 버립니다. 뼘 수를 줄여 더해서 셀 수 있게 둡니다.
       span: { from: 12, to: 15 },
-      times: { from: 3, to: 6 },
+      times: { from: 2, to: 4 },
       total: { calc: 'span * times' },
     },
     prompt: '뼘으로 책상의 길이를 어림하는 과정입니다. □에 알맞은 수는 얼마일까요?',
@@ -10006,7 +10009,9 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '한 뼘으로 잰 길이 알기',
     vars: {
-      spans: { from: 3, to: 8 },
+      // 위와 같은 까닭으로 뼘 수를 줄입니다. 15cm씩 8뼘(120cm)은 2학년이
+      // 더해서 셀 수 있는 크기를 넘습니다.
+      spans: { from: 2, to: 4 },
       each: { from: 12, to: 15 },
       total: { calc: 'spans * each' },
     },
