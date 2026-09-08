@@ -432,21 +432,37 @@ function PlaceValueGraphic({ visual }: { visual: Extract<QuestionVisual, { kind:
             <text x={x + (cellWidth - 8) / 2} y="45" textAnchor="middle" fill="#0f7175" fontSize="15" fontWeight="900">
               {column.label}
             </text>
-            <text x={x + (cellWidth - 8) / 2} y="106" textAnchor="middle" fill="#182433" fontSize="24" fontWeight="900">
-              {column.value}
-            </text>
-            {Array.from({ length: blockCount }).map((_, blockIndex) => (
-              <rect
-                key={blockIndex}
-                x={x + 12 + (blockIndex % 6) * 10}
-                y={56 + Math.floor(blockIndex / 6) * 12}
-                width="7"
-                height="7"
-                rx="2"
-                fill="#dffafa"
-                stroke="#0f9f9f"
-              />
-            ))}
+            {/* 모형을 세어 수를 쓰는 문항에서는 숫자를 적지 않습니다.
+                적어 두면 세어 볼 것 없이 그대로 옮기면 됩니다. */}
+            {!visual.countOnly && (
+              <text x={x + (cellWidth - 8) / 2} y="106" textAnchor="middle" fill="#182433" fontSize="24" fontWeight="900">
+                {column.value}
+              </text>
+            )}
+            {/* 숫자를 지운 그림에서는 모형이 곧 읽을 것입니다. 작게
+                구석에 몰아 두면 세기 어려우므로 크게, 칸 가운데에
+                놓습니다. */}
+            {Array.from({ length: blockCount }).map((_, blockIndex) => {
+              const perRow = visual.countOnly ? 3 : 6;
+              const size = visual.countOnly ? 13 : 7;
+              const gap = visual.countOnly ? 17 : 10;
+              const rows = Math.ceil(Math.min(blockCount, 12) / perRow);
+              const inRow = Math.min(blockCount - Math.floor(blockIndex / perRow) * perRow, perRow);
+              const left = x + (cellWidth - 8) / 2 - (inRow * gap - (gap - size)) / 2;
+              const top = visual.countOnly ? 88 - ((rows - 1) * (size + 4)) / 2 : 56;
+              return (
+                <rect
+                  key={blockIndex}
+                  x={left + (blockIndex % perRow) * gap}
+                  y={top + Math.floor(blockIndex / perRow) * (size + 4)}
+                  width={size}
+                  height={size}
+                  rx="2"
+                  fill="#dffafa"
+                  stroke="#0f9f9f"
+                />
+              );
+            })}
           </g>
         );
       })}

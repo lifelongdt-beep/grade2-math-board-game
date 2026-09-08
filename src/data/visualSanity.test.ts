@@ -109,7 +109,12 @@ describe('question visuals', () => {
           }
 
           // 자리값 표에 적힌 수가 곧 정답이면 표만 읽고 답을 쓸 수 있습니다.
-          if (visual.kind === 'place-value') {
+          //
+          // 다만 숫자를 적지 않고 모형만 그린 것(countOnly)은 다릅니다.
+          // '수 모형을 세어 보니 백 모형 4개, 일 모형 6개…'의 그림은
+          // 세어 보아야 수가 나옵니다 — 세는 것이 곧 이 문항의 할 일이라,
+          // 답을 적어 준 것이 아니라 셀 것을 준 것입니다.
+          if (visual.kind === 'place-value' && !visual.countOnly) {
             const shown = visual.columns.reduce((total, column) => total * 10 + column.value, 0);
             if (shown === answer) {
               gives.push(`${question.id} (자리값 표 ${shown}): ${question.prompt.slice(0, 30)}`);
