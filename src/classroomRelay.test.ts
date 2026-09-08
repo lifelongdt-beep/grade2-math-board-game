@@ -61,9 +61,16 @@ describe('연동 주소 확인', () => {
 
   it('방 이름은 읽기 쉬운 글자로만 만든다', () => {
     const room = makeRoomCode();
-    expect(room).toHaveLength(6);
+    expect(room).toHaveLength(8);
     expect(isRoomCode(room)).toBe(true);
     expect(room).not.toMatch(/[OI01]/);
+  });
+
+  it('방 이름이 매번 새로 나온다', () => {
+    // 여러 학교가 한 저장소를 같이 쓰므로, 방 이름이 겹치면 다른 반
+    // 기록이 섞여 보입니다. 같은 값이 연달아 나오면 안 됩니다.
+    const rooms = new Set(Array.from({ length: 200 }, () => makeRoomCode()));
+    expect(rooms.size).toBe(200);
   });
 
   it('이상한 방 이름은 받지 않는다', () => {

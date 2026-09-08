@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { meaningOfChoice } from './data/choiceMeaning';
 import {
+  DEFAULT_DB_URL,
   isRoomCode,
   loadOrCreateRoom,
   loadSavedDbUrl,
@@ -566,7 +567,11 @@ function App() {
   // 이 기기가 어디로 답을 주고받을지입니다. 저장소 주소가 있으면 그쪽을,
   // 없으면 선생님 컴퓨터에서 켠 서버(/api/*)를 씁니다.
   const relayTarget = useMemo<RelayTarget>(() => {
-    const dbUrl = isMobileEntry ? initialRoute.cloudDbUrl : normalizeDbUrl(relayDbUrl);
+    // 선생님이 따로 넣은 주소가 있으면 그것을, 없으면 앱에 미리 넣어 둔
+    // 공용 저장소를 씁니다. 그래서 보통은 아무 설정도 필요 없습니다.
+    const dbUrl = isMobileEntry
+      ? initialRoute.cloudDbUrl
+      : (normalizeDbUrl(relayDbUrl) ?? normalizeDbUrl(DEFAULT_DB_URL));
     const room = isMobileEntry ? initialRoute.cloudRoom : relayRoom;
     if (dbUrl && room) return { kind: 'cloud', dbUrl, room };
     return { kind: 'local' };
@@ -1581,30 +1586,32 @@ function App() {
             </p>
             {qrSyncEnabled && relayAvailable === false && (
               <p className="mobile-join-warning">
-                아직 연동할 곳이 없습니다. 아래 &lsquo;연동 서버 설정&rsquo;에서 무료 저장소 주소를 한 번만
-                넣어 두면, 지금 쓰시는 이 주소 그대로 학생 결과가 선생님 화면에 들어옵니다.
+                지금은 연동할 곳에 닿지 않습니다. 인터넷 연결을 확인해 주세요. 학교에서 따로 쓰는
+                저장소가 있으면 아래에서 주소를 넣어 두셔도 됩니다.
               </p>
             )}
             {qrSyncEnabled && relayAvailable === true && (
               <p className="mobile-join-sync-ok">
                 연동 준비가 되었습니다 — 이 QR로 들어온 학생 결과가 선생님 화면에 보입니다.
-                {relayTarget.kind === 'cloud' && ` (방 이름 ${relayTarget.room})`}
+                {relayTarget.kind === 'cloud' && ` (우리 반 방 이름 ${relayTarget.room})`}
               </p>
             )}
             {qrSyncEnabled && !isMobileEntry && (
               <div className="relay-setup">
+                {/* 보통은 아무 설정도 필요 없으므로 작게 접어 둡니다.
+                    학교가 자기 저장소를 쓰고 싶을 때만 펼치면 됩니다. */}
                 <button
                   className="relay-setup-toggle"
                   type="button"
                   onClick={() => setRelaySetupOpen((prev) => !prev)}
                 >
-                  연동 서버 설정 {relaySetupOpen ? '접기' : '열기'}
+                  {relaySetupOpen ? '저장소 설정 접기' : '학교 저장소 따로 쓰기'}
                 </button>
-                {relaySetupOpen && (
+                {(relaySetupOpen || relayAvailable === false) && (
                   <div className="relay-setup-body">
                     <p>
-                      학생 폰과 선생님 화면은 서로 다른 기기라, 둘 사이에 결과를 옮겨 줄 자리가
-                      하나 있어야 합니다. 무료로 만들 수 있고, 한 번만 해 두면 계속 씁니다.
+                      보통은 이 설정을 하지 않아도 연동됩니다. 학교에서 기록을 자기 저장소에만
+                      두고 싶을 때만 아래대로 한 번 만들어 넣으시면 됩니다.
                     </p>
                     <ol>
                       <li>console.firebase.google.com 에 접속해 프로젝트를 하나 만듭니다.</li>
@@ -1612,8 +1619,12 @@ function App() {
                       <li>
                         &lsquo;규칙&rsquo; 탭에서 아래 내용을 그대로 붙여 넣고 게시합니다.
                         <code className="relay-setup-rules">
-                          {'{ "rules": { "rooms": { ".read": true, ".write": true } } }'}
+                          {'{ "rules": { "rooms": { "$room": { ".read": true, ".write": true } } } }'}
                         </code>
+                        <span className="relay-setup-note">
+                          $room 이 있어야 방 이름을 아는 사람만 그 방을 볼 수 있습니다. 이게 빠지면
+                          주소만 알아도 모든 학급 기록이 한 번에 열립니다.
+                        </span>
                       </li>
                       <li>&lsquo;데이터&rsquo; 탭 위쪽에 보이는 https://... 주소를 그대로 아래 칸에 붙여 넣습니다.</li>
                     </ol>
