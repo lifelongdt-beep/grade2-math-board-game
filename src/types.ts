@@ -223,7 +223,16 @@ export interface BarModelVisual {
   label: string;
   bars: Array<{
     label: string;
+    /** 막대의 길이를 정하는 값입니다. 견주려면 같은 단위여야 하므로 cm로 셉니다. */
     value: number;
+    /**
+     * 막대 옆에 적을 글자입니다.
+     *
+     * '1m 53cm인 끈'을 cm로 셈해 153으로 적어 두었더니, 문제에는 없는
+     * 수가 그림에 떠 있었습니다. 2학년에게 1m 53cm와 153은 아직 같은
+     * 것이 아닙니다. 막대 길이는 153으로 재고, 글자는 문제가 쓴 대로 답니다.
+     */
+    text?: string;
   }>;
 }
 
