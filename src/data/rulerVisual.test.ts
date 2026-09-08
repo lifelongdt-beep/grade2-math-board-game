@@ -119,4 +119,64 @@ describe('ruler visual', () => {
 
     expect(tooMany).toEqual([]);
   });
+
+  // 문제가 되풀이하는 무늬를 이름 대어 말했으면, 그림도 그 무늬여야
+  // 합니다. '○△△가 되풀이됩니다'(답 △)에 ○△□가 놓여 있었고,
+  // '빨강과 파랑이 되풀이될 때'에도 ○△□가 놓였습니다. 그림을 믿고 센
+  // 아이는 문제와 다른 답에 이릅니다.
+  it('repeats the pattern the question names, not a stock one', () => {
+    const wrong: string[] = [];
+
+    for (const lesson of lessons) {
+      for (const level of levels) {
+        for (const question of generateQuestions(lesson, level)) {
+          if (question.visual?.kind !== 'pattern') continue;
+
+          const shapes = /([○△◇☆●▲■♥]{2,6})[이가을를]?\s*(?:되풀이|반복)/.exec(question.prompt);
+          const named = /([가-힣]{1,4})(?:과|와)\s*([가-힣]{1,4}?)[이가]?\s*(?:되풀이|반복)/.exec(
+            question.prompt,
+          );
+          if (!shapes && !named) continue;
+
+          const said = shapes
+            ? new Set(shapes[1].split(''))
+            : new Set([named![1], named![2].replace(/(?:이|가)$/, '')]);
+          const drawn = new Set(question.visual.items.filter((one) => one !== '?'));
+          const same = said.size === drawn.size && [...said].every((one) => drawn.has(one));
+          if (!same) {
+            wrong.push(
+              `${question.id}: '${question.prompt}' 인데 그림은 ${question.visual.items.join('')}`,
+            );
+          }
+        }
+      }
+    }
+
+    expect(wrong).toEqual([]);
+  });
+
+  // 자리값표는 문제가 묻는 자리를 가려야 합니다. 맨 앞 자리를 가리던
+  // 때에는 '8541의 일의 자리 숫자는 무엇일까요?'(답 1)의 일 칸에 1이
+  // 그대로 적혀 있어, 수를 읽어 볼 것 없이 표만 보면 되었습니다.
+  it('hides the place the question asks about', () => {
+    const shown: string[] = [];
+
+    for (const lesson of lessons) {
+      for (const level of levels) {
+        for (const question of generateQuestions(lesson, level)) {
+          const visual = question.visual;
+          if (visual?.kind !== 'table' || visual.label !== '자리값 표') continue;
+
+          const asked = /(천|백|십|일)의 자리/.exec(question.prompt)?.[1];
+          if (!asked) continue;
+          const cell = visual.columns.find((one) => one.name === asked);
+          if (cell && cell.value !== null) {
+            shown.push(`${question.id}: '${question.prompt}' 인데 ${asked} 칸에 ${cell.value}`);
+          }
+        }
+      }
+    }
+
+    expect(shown).toEqual([]);
+  });
 });
