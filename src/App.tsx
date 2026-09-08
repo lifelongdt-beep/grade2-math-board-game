@@ -834,8 +834,13 @@ function App() {
   // 선생님 화면에서만 큐알 학생 폰의 결과를 받아 옵니다. 연결할 곳이
   // 없으면(그냥 배포된 사이트에 저장소 주소도 안 넣은 경우) 조용히 null이
   // 오므로 아무 일도 일어나지 않습니다.
+  //
+  // 설정 화면에서도 받아 옵니다. 큐알로만 수업할 때는 선생님이 자기
+  // 수업을 시작하지 않고 QR만 띄워 두는데, 그때 아무것도 가져오지 않으면
+  // 학생이 아무리 풀어도 선생님 화면에는 영영 나타나지 않습니다.
   useEffect(() => {
-    if (isMobileEntry || mode === 'setup') return;
+    if (isMobileEntry) return;
+    if (mode === 'setup' && relayTarget.kind !== 'cloud') return;
     let active = true;
 
     const pull = async () => {
@@ -962,6 +967,20 @@ function App() {
     }
   };
 
+  // 큐알로 들어온 학생 기록을 이 화면에서도, 저장소에서도 비웁니다.
+  // 지우는 사이에 오간 대답이 지운 것을 되살리지 못하도록 판 번호를
+  // 앞뒤로 한 번씩 올려 둡니다.
+  const clearRemoteResults = () => {
+    remoteEpochRef.current += 1;
+    setRemotePlayers([]);
+    setRemoteRecords([]);
+    void relayReset(relayTarget).then(() => {
+      remoteEpochRef.current += 1;
+      setRemotePlayers([]);
+      setRemoteRecords([]);
+    });
+  };
+
   const saveRelayDbUrl = () => {
     const trimmed = relayDbInput.trim();
     if (!trimmed) {
@@ -1064,15 +1083,7 @@ function App() {
       // 새 판이 시작되었으니, 지난 판에서 큐알로 들어왔던 학생 기록은
       // 저장소에서도 비웁니다 — 안 그러면 다음 번 받아올 때 지난 판 학생이
       // 이번 판 분석에 섞여 들어옵니다.
-      remoteEpochRef.current += 1;
-      setRemotePlayers([]);
-      setRemoteRecords([]);
-      void relayReset(relayTarget).then(() => {
-        // 지우는 동안 오간 대답도 지난 판 것이므로 한 번 더 버립니다.
-        remoteEpochRef.current += 1;
-        setRemotePlayers([]);
-        setRemoteRecords([]);
-      });
+      clearRemoteResults();
     }
     // (연동을 끈 큐알 폰은 여기서 할 일이 없습니다 — 서버에 아무것도
     // 보내지 않고, 이 폰 혼자만의 화면으로 풉니다.)
@@ -1592,9 +1603,34 @@ function App() {
             )}
             {qrSyncEnabled && relayAvailable === true && (
               <p className="mobile-join-sync-ok">
-                연동 준비가 되었습니다 — 이 QR로 들어온 학생 결과가 선생님 화면에 보입니다.
+                연동 준비가 되었습니다 — 이 QR로 들어온 학생 결과가 아래 &lsquo;결과 보기&rsquo;에 쌓입니다.
                 {relayTarget.kind === 'cloud' && ` (우리 반 방 이름 ${relayTarget.room})`}
               </p>
+            )}
+            {/* 큐알로만 수업할 때는 선생님이 자기 수업을 시작하지 않습니다.
+                그래서 이 창 안에서 바로 몇 명이 들어와 얼마나 풀었는지 보이고,
+                분석 화면도 여기서 열 수 있어야 합니다. */}
+            {qrSyncEnabled && relayTarget.kind === 'cloud' && (
+              <div className="relay-live">
+                <span className="relay-live-count">
+                  지금까지 학생 <strong>{remotePlayers.length}명</strong> · 푼 문제{' '}
+                  <strong>{remoteRecords.length}개</strong>
+                </span>
+                <div className="relay-live-actions">
+                  <button type="button" onClick={() => setTeacherOpen(true)}>
+                    <BarChart3 size={16} />
+                    결과 보기
+                  </button>
+                  <button
+                    type="button"
+                    className="relay-live-clear"
+                    onClick={clearRemoteResults}
+                    disabled={remotePlayers.length === 0 && remoteRecords.length === 0}
+                  >
+                    결과 지우기
+                  </button>
+                </div>
+              </div>
             )}
             {qrSyncEnabled && !isMobileEntry && (
               <div className="relay-setup">
@@ -2209,8 +2245,12 @@ function App() {
       <TeacherPanel
         isOpen={teacherOpen}
         onClose={() => setTeacherOpen(false)}
-        records={[...records, ...remoteRecords]}
-        players={[...players, ...remotePlayers]}
+        {...(mode === 'setup'
+          ? // 아직 교실 수업을 시작하지 않았으므로, 큐알로 들어온 학생만
+            // 보여 줍니다. 빈 자리 카드가 앞에 늘어서면 정작 봐야 할
+            // 학생이 묻힙니다.
+            { records: remoteRecords, players: remotePlayers }
+          : { records: [...records, ...remoteRecords], players: [...players, ...remotePlayers] })}
         lesson={lesson}
         currentQuestion={sampleQuestion}
         goalStep={goalStep}
