@@ -688,7 +688,18 @@ function ClockGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'clo
         hour={visual.hour}
         minute={visual.minute}
         x={hasEnd ? 80 : frameWidth / 2}
-        label={visual.blank ? '어느 수를 가리킬까요' : example ? '바늘 위치는 바뀔 수 있어요' : '시작'}
+        // '시작'은 끝 시계가 나란히 있을 때만 뜻이 있는 말입니다. 시계가
+        // 하나뿐인데 '시작'이라고 적으면, 무엇이 시작한다는 것인지 알 수
+        // 없는 글자가 문제 밑에 붙습니다.
+        label={
+          visual.blank
+            ? '어느 수를 가리킬까요'
+            : example
+              ? '바늘 위치는 바뀔 수 있어요'
+              : hasEnd
+                ? '시작'
+                : ''
+        }
         example={example}
         blank={visual.blank === true}
       />

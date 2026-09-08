@@ -7926,6 +7926,53 @@ const clockVisualFor = (
   ...(blank ? { blank: true } : {}),
 });
 
+// 문장이 바늘 자리를 말해 주면 그대로 읽습니다.
+//
+// 예전에는 문제에 나온 첫 두 수를 시·분으로 삼았습니다. 그래서
+// '긴바늘이 12를 가리키고 짧은바늘이 4를 가리킵니다. 몇 시일까요?'
+// (답 4시)에 12시 4분짜리 시계가 놓였습니다. 그림이 문제와 정반대인
+// 시각을 가리켜, 문장을 읽은 아이와 그림을 본 아이가 서로 다른 답에
+// 이르렀습니다.
+const handsInPrompt = (prompt: string): { hour: number; minute: number } | null => {
+  // 긴바늘은 '7을 가리킵니다'로도, '숫자 4에서 작은 눈금으로 1칸 더
+  // 갔습니다'로도 적힙니다. 뒤엣것이 3차시가 가르치는 읽기입니다 —
+  // 숫자까지 5씩 세고, 남은 칸을 1분씩 더합니다.
+  const ticks = /긴바늘[이은는]?\s*(?:숫자\s*)?(\d+)(?:에서|을 지나|를 지나)\s*작은 눈금(?:으로)?\s*(\d+)\s*칸/.exec(
+    prompt,
+  );
+  const longHand = /긴바늘[이은는]?\s*(?:숫자\s*)?(\d+)[을를]?\s*가리/.exec(prompt);
+  const minute = ticks
+    ? (Number(ticks[1]) % 12) * 5 + Number(ticks[2])
+    : longHand
+      ? (Number(longHand[1]) % 12) * 5
+      : null;
+  if (minute === null || minute > 59) return null;
+
+  // 짧은바늘은 '4를 가리킵니다', '4와 5 사이에 있습니다', '2를 지났습니다',
+  // '1을 조금 지났고'로 적힙니다.
+  const between = /짧은바늘[이은는]?\s*(\d+)[과와]\s*(?:\d+|다음 수)\s*사이/.exec(prompt);
+  const pointsAt = /짧은바늘[이은는]?\s*(\d+)[을를]?\s*(?:조금\s*)?(?:가리|지났)/.exec(prompt);
+  // '짧은바늘이 8 바로 앞까지 왔고'는 아직 8이 되지 않았다는 말이므로 7시입니다.
+  const justBefore = /짧은바늘[이은는]?\s*(\d+)\s*바로 앞/.exec(prompt);
+  const shortHand = between ?? pointsAt ?? justBefore;
+  if (!shortHand) return null;
+  const hour = justBefore && !between && !pointsAt
+    ? ((Number(justBefore[1]) + 10) % 12) + 1
+    : Number(shortHand[1]);
+  if (hour < 1 || hour > 12) return null;
+  return { hour, minute };
+};
+
+// 문장에 적힌 시각을 차례대로 읽습니다. '5시간'의 '시'까지 시각으로
+// 읽지 않도록 뒤에 '간'이 오면 건너뜁니다.
+const timesInPrompt = (prompt: string): Array<{ hour: number; minute: number }> =>
+  [...prompt.matchAll(/(\d+)\s*시(?!간)(?:\s*(\d+)\s*분)?/g)]
+    .map((one) => ({
+      hour: Number(one[1]),
+      minute: one[2] === undefined ? 0 : Number(one[2]),
+    }))
+    .filter((one) => one.hour >= 1 && one.hour <= 12 && one.minute <= 59);
+
 // 1일을 일요일에 두면 같은 세로줄이 곧 같은 요일이 되어 "7일마다 반복"이 눈에 보입니다.
 // 다만 문제가 '8일이 월요일입니다'처럼 어떤 날의 요일을 정해 버렸으면,
 // 1일을 일요일에 고정한 그림은 문제와 어긋납니다. 그때는 startWeekday를
@@ -10695,23 +10742,146 @@ const visualForGeneratedQuestion = (
       return calendarVisualForPrompt(question.prompt);
     }
 
-    // 문제에 적힌 숫자를 그대로 시·분으로 읽은 값이라 실제 답과 다릅니다.
-    // (예: "긴바늘이 9를 가리키고 짧은바늘이 2와 3 사이" -> 답은 2시 45분인데 9시 2분이 됩니다.)
-    // 그래서 시계 모양을 보여 주는 예시로만 표시하고 바늘은 점선으로 그립니다.
-    const hour = promptNumbers[0] ?? 3;
-    const minute = promptNumbers[1] ?? 0;
+    // '시간 띠에서 한 칸이 10분입니다. 3칸은 몇 분일까요?' — 문제가
+    // 시간 띠를 가리키는데 정작 띠가 없었습니다. 아이는 보이지 않는
+    // 그림을 두고 칸을 세어야 했습니다. 한 칸이 10분인 띠를 그 칸 수만큼
+    // 그립니다.
+    const timeBand = /한 칸이 (\d+)분입니다\.\s*(\d+)칸/.exec(question.prompt);
+    if (timeBand) {
+      const perCell = Number(timeBand[1]);
+      const cells = Number(timeBand[2]);
+      if (perCell > 0 && cells >= 2 && cells <= 6) {
+        return barModelVisualFor(
+          Array.from({ length: cells }, () => ({
+            label: '한 칸',
+            value: perCell,
+            text: `${perCell}분`,
+          })),
+          '시간 띠',
+        );
+      }
+    }
+
     // 바늘이 어느 수를 가리키느냐가 곧 답인 문제에는 판만 그립니다.
     // 바늘을 그리면 답을 그려 주는 셈입니다.
-    const asksWhereHandsPoint = /바늘은? (?:어느|몇)|가리킬까요/.test(question.prompt);
-    return clockVisualFor(
-      Math.max(1, Math.min(hour, 12)),
-      Math.max(0, Math.min(minute, 55)),
-      asksWhereHandsPoint ? '시계판' : '시계 모양 예시',
-      undefined,
-      undefined,
-      !asksWhereHandsPoint,
-      asksWhereHandsPoint,
-    );
+    // '18분은 숫자 3에서 작은 눈금 몇 칸을 더 간 것일까요?'도 바늘 자리를
+    // 묻는 문항입니다. 바늘을 그리면 세어 볼 것 없이 답이 보입니다.
+    const asksWhereHandsPoint = /바늘은? (?:어느|몇)|가리킬까요|몇 칸/.test(question.prompt);
+    if (asksWhereHandsPoint) {
+      return clockVisualFor(12, 0, '시계판', undefined, undefined, false, true);
+    }
+
+    // ① 문장이 바늘 자리를 말해 주면 그대로 그립니다.
+    //
+    // 예전에는 여기서 문제에 나온 첫 두 수를 시·분으로 삼았습니다.
+    // '긴바늘이 12를 가리키고 짧은바늘이 4를 가리킵니다. 몇 시일까요?'
+    // (답 4시)에 12시 4분짜리 시계가 놓였습니다. 바늘을 점선으로 그리고
+    // '시계 모양 예시'라 적어 두었지만, 2학년 아이에게 그것은 '이 바늘은
+    // 무시하라'는 말로 읽히지 않습니다. 문장이 말한 그대로 그립니다.
+    const described = handsInPrompt(question.prompt);
+    if (described) {
+      return clockVisualFor(described.hour, described.minute, '시각 자료');
+    }
+
+    const namedTimes = timesInPrompt(question.prompt);
+
+    // ② '시계의 긴바늘이 한 바퀴 돌면 몇 분이 지날까요?' — 눈금을 세어
+    //    보면 알 수 있는 문항입니다. 바늘을 그리면 셀 것이 없어지므로
+    //    판만 그립니다.
+    if (/바퀴/.test(question.prompt)) {
+      return clockVisualFor(12, 0, '시계판', undefined, undefined, false, true);
+    }
+
+    // ③ '1시간 30분은 몇 분일까요?', '하루는 몇 시간일까요?' — 이것은
+    //    시각이 아니라 시간의 길이입니다. 이 단원이 스스로 적어 둔 대로
+    //    '시각은 어느 한 순간이고, 시간은 두 시각 사이의 길이'입니다.
+    //    길이를 시계 하나로 그리면 1시간 30분이 '1시 30분'이 되어,
+    //    이 차시가 갈라 주려는 것을 그림이 도로 붙여 놓습니다.
+    const startsAndEnds = /시작|부터|에서|까지|마쳤|끝냈|돌아왔|나가/.test(question.prompt);
+    const aboutLength = /\d+\s*시간|하루|오전|오후/.test(question.prompt) && !startsAndEnds;
+
+    // 하루를 오전 12시간과 오후 12시간으로 가른 띠입니다. 시계판은
+    // 오전과 오후를 갈라 보여 주지 못합니다 — 8시는 아침도 저녁도
+    // 같은 자리에 그려집니다. 그래서 예전에는 이 차시 문항마다 12시 12분
+    // 같은 뜻 없는 시계가 붙어 있었습니다.
+    const answerText = question.answer.trim();
+    if (/하루|오전|오후/.test(question.prompt)) {
+      // 띠에 적히는 말이 곧 답인 문항에는 그리지 않습니다.
+      if (/^(오전|오후|오전 \d+시|오후 \d+시|12시간|낮 12시)$/.test(answerText)) return undefined;
+      return barModelVisualFor(
+        [
+          { label: '오전', value: 12, text: '12시간' },
+          { label: '오후', value: 12, text: '12시간' },
+        ],
+        '하루를 오전과 오후로 나누어 보기',
+      );
+    }
+
+    if (aboutLength) {
+      // 다만 '1시간 30분은 몇 분일까요?'처럼 몇 시간 몇 분을 분으로
+      // 바꾸는 문항은, 1시간짜리 띠와 남은 분으로 나누어 그리면
+      // 60+30을 아이가 스스로 모읍니다. 답(90)은 적지 않습니다.
+      const hoursAndMinutes = /(\d+)\s*시간\s*(\d+)\s*분/.exec(question.prompt);
+      const asksMinutes = /몇 분/.test(question.prompt) && !/몇 시간/.test(question.prompt);
+      if (hoursAndMinutes && asksMinutes) {
+        const wholeHours = Number(hoursAndMinutes[1]);
+        const leftOver = Number(hoursAndMinutes[2]);
+        if (wholeHours >= 1 && wholeHours <= 4 && leftOver > 0) {
+          return barModelVisualFor(
+            [
+              ...Array.from({ length: wholeHours }, () => ({
+                label: '1시간',
+                value: 60,
+                text: '60분',
+              })),
+              { label: '남은 시간', value: leftOver, text: `${leftOver}분` },
+            ],
+            '1시간씩 나누어 보기',
+          );
+        }
+      }
+
+      // 그 밖의 시간 문항에는 '1시간은 이만큼'이라는 자를 하나 놓아 줍니다.
+      // '120분은 몇 시간일까요?'는 이 띠가 몇 번 들어가는지 세면 되고,
+      // '1시간의 반은 몇 분일까요?'는 이 띠를 반으로 접으면 됩니다.
+      // 60분이 곧 답인 문항에는 그리지 않습니다.
+      if (!/^60분$/.test(answerText)) {
+        return barModelVisualFor([{ label: '1시간', value: 60, text: '60분' }], '1시간의 길이');
+      }
+      return undefined;
+    }
+
+    // ③ '7시에 시작해 7시 20분에 마쳤습니다', '3시부터 7시까지' —
+    //    걸린 시간을 묻는 문항입니다. 두 시각을 나란히 그려야 아이가
+    //    그 사이를 셀 수 있습니다. 예전에는 7시 7분짜리 시계 하나였습니다.
+    if (startsAndEnds && namedTimes.length >= 2) {
+      const [from, to] = namedTimes;
+      const sameFace = from.hour % 12 === to.hour % 12 && from.minute === to.minute;
+      // 오전 8시와 오후 8시는 시계판에서 똑같이 그려집니다. 같은 그림
+      // 두 개를 놓으면 '걸린 시간이 없다'는 말이 되어 버립니다.
+      if (!sameFace) {
+        return clockVisualFor(from.hour, from.minute, '시작과 끝 시각', to.hour, to.minute);
+      }
+      return undefined;
+    }
+
+    // ④ 시각이 하나만 적힌 문항은 그 시각을 그립니다. 다만 그것이 곧
+    //    답이라면 그리지 않습니다 — 시계가 답을 대신 읽어 줍니다.
+    if (namedTimes.length >= 1) {
+      const shown = namedTimes[namedTimes.length - 1];
+      const answered = timesInPrompt(question.answer)[0];
+      const showsAnswer =
+        answered !== undefined &&
+        answered.hour % 12 === shown.hour % 12 &&
+        answered.minute === shown.minute;
+      if (!showsAnswer) return clockVisualFor(shown.hour, shown.minute, '시각 자료');
+      return undefined;
+    }
+
+    // ⑤ 시각이 아예 없는 문항 — '시계를 꼭 보아야 하는 때는 언제일까요?'
+    //    같은 말 문제입니다. 예전에는 3시짜리 시계를 붙였습니다. 3시는
+    //    문제와 아무 상관이 없는 시각입니다. 그리지 않습니다.
+    return undefined;
   }
 
   if (question.type === 'pattern') {
@@ -14773,7 +14943,10 @@ const timeShapes: Shape[] = [
         [`${hour}시 ${from}분`, `${hour + 1}시 ${from + add}분`, `${hour}시 ${add}분`],
         `분끼리 더하면 ${from}+${add}=${from + add}분이므로 ${hour}시 ${from + add}분입니다.`,
         'time', '몇 분 뒤의 시각 구하기',
-        clockVisualFor(hour, from + add, '지난 뒤의 시각'),
+        // 지난 뒤의 시각을 그리면 그것이 곧 답입니다. 아이는 더할 것 없이
+        // 바늘만 읽으면 되었습니다. 출발한 시각을 그려, 거기서부터
+        // 분을 세어 나가게 합니다.
+        clockVisualFor(hour, from, '출발한 시각'),
       );
     } },
 
@@ -14801,7 +14974,10 @@ const timeShapes: Shape[] = [
         `${hour + 1}시가 되기 ${before}분 전이므로 ${hour}시 ${60 - before}분입니다.`,
         'time',
         shapeStrategy(difficulty, '자료 해석 · 같은 시각을 다르게 읽기', '같은 시각 다르게 읽기'),
-        clockVisualFor(hour, 60 - before, '같은 시각 읽기'),
+        // 답인 6시 45분을 그려 놓고 '7시 15분 전은 몇 시 몇 분일까요?'라고
+        // 물었습니다. 기준이 되는 7시 정각을 그려, 거기서 15분을 되짚어
+        // 가게 합니다.
+        clockVisualFor(hour + 1, 0, '기준이 되는 시각'),
       );
     } },
 
