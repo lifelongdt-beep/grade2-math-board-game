@@ -24,6 +24,19 @@ import {
 } from 'lucide-react';
 import { meaningOfChoice } from './data/choiceMeaning';
 import {
+  isRoomCode,
+  loadOrCreateRoom,
+  loadSavedDbUrl,
+  normalizeDbUrl,
+  relayJoin,
+  relayPing,
+  relayRecord,
+  relayReset,
+  relayState,
+  saveDbUrl,
+  type RelayTarget,
+} from './classroomRelay';
+import {
   isMuted,
   playAnimalSound,
   playFinishSound,
@@ -100,6 +113,10 @@ type InitialRoute = {
   // 선생님이 큐알을 만들 때 정합니다 — 이 폰의 답을 선생님 화면과
   // 연동할지입니다. 값이 없으면(예전 큐알) 연동을 켠 것으로 봅니다.
   syncEnabled: boolean;
+  // 선생님이 무료 실시간 저장소를 쓰기로 한 경우, 그 주소와 방 이름이
+  // 큐알에 함께 담겨 옵니다. 없으면 선생님 컴퓨터에서 켠 서버를 씁니다.
+  cloudDbUrl?: string;
+  cloudRoom?: string;
   semester: Unit['semester'];
   unitSelection?: UnitSelection;
   lessonId?: string;
@@ -126,10 +143,14 @@ const readInitialRoute = (): InitialRoute => {
   const unitParam = params.get('u') ?? params.get('unit');
   const lessonParam = params.get('l') ?? params.get('lesson');
   const durationParam = params.get('t') ?? params.get('duration');
+  const dbParam = params.get('db');
+  const roomParam = params.get('room');
 
   return {
     isMobileEntry: params.get('mobile') === '1' || params.get('m') === '1',
     syncEnabled: params.get('sync') !== '0',
+    cloudDbUrl: (dbParam && normalizeDbUrl(dbParam)) || undefined,
+    cloudRoom: roomParam && isRoomCode(roomParam) ? roomParam : undefined,
     semester: isSemesterValue(semesterParam) ? semesterParam : '2-1',
     unitSelection: parseUnitSelection(unitParam),
     lessonId: lessonParam ?? undefined,
@@ -333,34 +354,6 @@ const buildScopedQuestions = (
   return spaceOutRepeats(shuffled, 2);
 };
 
-// 큐알 학생 폰과 선생님 화면을 잇는 아주 작은 통신입니다. published-server
-// (또는 인터넷 실행 도구)가 켜져 있을 때만 /api/* 가 응답합니다. 평범한
-// 정적 배포본(github.io)에는 이 자리가 없으므로, 실패는 항상 조용히
-// 넘어갑니다 — 이 통신이 없어도 앱은 원래대로 잘 동작해야 합니다.
-const postJson = async (path: string, body: unknown): Promise<{ id?: number } | null> => {
-  try {
-    const response = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) return null;
-    return (await response.json()) as { id?: number };
-  } catch {
-    return null;
-  }
-};
-
-const getJson = async (path: string): Promise<{ players?: unknown; records?: unknown } | null> => {
-  try {
-    const response = await fetch(path, { cache: 'no-store' });
-    if (!response.ok) return null;
-    return (await response.json()) as { players?: unknown; records?: unknown };
-  } catch {
-    return null;
-  }
-};
-
 const writeAscii = (view: DataView, offset: number, value: string) => {
   for (let index = 0; index < value.length; index += 1) {
     view.setUint8(offset + index, value.charCodeAt(index));
@@ -562,6 +555,22 @@ function App() {
   const mobileSyncEnabled = isMobileEntry && initialRoute.syncEnabled;
   // 선생님 화면에서, 새로 보여 줄 큐알에 연동을 켤지 끌지 고르는 자리입니다.
   const [qrSyncEnabled, setQrSyncEnabled] = useState(true);
+  // 선생님이 한 번 넣어 둔 무료 실시간 저장소 주소입니다. 학생 폰은 이
+  // 값을 큐알로 물려받고, 선생님 화면은 자기 컴퓨터에 적어 둔 값을 씁니다.
+  const [relayDbUrl, setRelayDbUrl] = useState(() => (isMobileEntry ? '' : loadSavedDbUrl()));
+  const [relayRoom] = useState(() => (isMobileEntry ? '' : loadOrCreateRoom()));
+  // 주소를 넣는 칸과, 잘못 넣었을 때 알려 줄 자리입니다.
+  const [relayDbInput, setRelayDbInput] = useState(relayDbUrl);
+  const [relaySetupOpen, setRelaySetupOpen] = useState(false);
+  const [relayDbError, setRelayDbError] = useState('');
+  // 이 기기가 어디로 답을 주고받을지입니다. 저장소 주소가 있으면 그쪽을,
+  // 없으면 선생님 컴퓨터에서 켠 서버(/api/*)를 씁니다.
+  const relayTarget = useMemo<RelayTarget>(() => {
+    const dbUrl = isMobileEntry ? initialRoute.cloudDbUrl : normalizeDbUrl(relayDbUrl);
+    const room = isMobileEntry ? initialRoute.cloudRoom : relayRoom;
+    if (dbUrl && room) return { kind: 'cloud', dbUrl, room };
+    return { kind: 'local' };
+  }, [initialRoute.cloudDbUrl, initialRoute.cloudRoom, isMobileEntry, relayDbUrl, relayRoom]);
   const skipInitialSemesterReset = useRef(true);
   const skipInitialUnitReset = useRef(true);
   const [semester, setSemester] = useState<'2-1' | '2-2'>(initialRoute.semester);
@@ -657,6 +666,9 @@ function App() {
   // 등록(/api/join)이 끝나기 전에 이미 푼 문제가 있을 때 잠깐 담아 두는
   // 자리입니다. 등록이 끝나면 여기 담긴 것부터 마저 올려 보냅니다.
   const pendingRemoteRecordsRef = useRef<AnswerRecord[]>([]);
+  // 몇 번째 판인지입니다. 판을 새로 시작하면 하나 올라가고, 그보다 앞선
+  // 판에서 떠난 물음의 대답은 버립니다(지운 기록이 되살아나지 않게).
+  const remoteEpochRef = useRef(0);
   const [teacherOpen, setTeacherOpen] = useState(false);
   const [mobileJoinOpen, setMobileJoinOpen] = useState(false);
   const [mobileUrlCopied, setMobileUrlCopied] = useState(false);
@@ -806,35 +818,37 @@ function App() {
     }
     let active = true;
     setRelayAvailable(null);
-    void getJson('/api/state').then((data) => {
-      if (active) setRelayAvailable(data !== null);
+    void relayPing(relayTarget).then((reachable) => {
+      if (active) setRelayAvailable(reachable);
     });
     return () => {
       active = false;
     };
-  }, [mobileJoinOpen]);
+  }, [mobileJoinOpen, relayTarget]);
 
-  // 선생님 화면에서만 큐알 학생 폰의 결과를 받아 옵니다. 서버가 없으면
-  // (평범한 배포본) getJson이 조용히 null을 돌려주므로 그냥 아무 일도
-  // 일어나지 않습니다.
+  // 선생님 화면에서만 큐알 학생 폰의 결과를 받아 옵니다. 연결할 곳이
+  // 없으면(그냥 배포된 사이트에 저장소 주소도 안 넣은 경우) 조용히 null이
+  // 오므로 아무 일도 일어나지 않습니다.
   useEffect(() => {
     if (isMobileEntry || mode === 'setup') return;
     let active = true;
 
     const pull = async () => {
-      const data = await getJson('/api/state');
-      if (!active || !data) return;
+      // 새 판이 시작되면 지난 판 기록을 지웁니다. 그런데 지우기 직전에
+      // 떠난 물음이 지운 뒤에 대답으로 돌아오면, 지운 기록이 되살아납니다.
+      // 몇 번째 판의 물음이었는지를 적어 두었다가, 지난 판 것이면 버립니다.
+      const epoch = remoteEpochRef.current;
+      const data = await relayState(relayTarget);
+      if (!active || !data || epoch !== remoteEpochRef.current) return;
 
-      if (Array.isArray(data.players)) {
-        setRemotePlayers(
-          (data.players as Player[])
-            .filter((item) => item && typeof item.id === 'number' && typeof item.name === 'string')
-            .map((item) => ({ ...item, remote: true })),
-        );
-      }
-      if (Array.isArray(data.records)) {
-        setRemoteRecords(data.records as AnswerRecord[]);
-      }
+      setRemotePlayers(data.players.map((item) => ({ ...item, remote: true })));
+      // 실시간 저장소에서는 매번 가장 나중 몇 개만 받아 옵니다. 이미 받아
+      // 둔 기록과 합쳐야 앞부분이 사라지지 않습니다(같은 기록은 한 번만).
+      setRemoteRecords((prev) => {
+        const merged = new Map(prev.map((record) => [record.id, record]));
+        for (const record of data.records) merged.set(record.id, record);
+        return merged.size === prev.length ? prev : [...merged.values()];
+      });
     };
 
     void pull();
@@ -843,7 +857,7 @@ function App() {
       active = false;
       window.clearInterval(intervalId);
     };
-  }, [isMobileEntry, mode]);
+  }, [isMobileEntry, mode, relayTarget]);
 
   const sessionRecords = useMemo(() => records.filter((record) => record.lessonId === lesson.id), [records, lesson.id]);
   const playerResults = useMemo<Record<number, PlayerResult>>(() => {
@@ -912,8 +926,24 @@ function App() {
     // 선생님이 체크박스로 고른 연동 여부를 큐알 주소에 그대로 담아 둡니다
     // — 학생 폰이 이 값을 읽어서 서버에 답을 보낼지 말지를 정합니다.
     url.searchParams.set('sync', qrSyncEnabled ? '1' : '0');
+    // 무료 실시간 저장소를 쓰기로 했으면, 학생 폰이 어디로 답을 보낼지도
+    // 큐알에 함께 담습니다. 이게 있어야 선생님 컴퓨터에 아무것도 깔지 않고
+    // 배포된 주소 그대로 연동이 됩니다.
+    if (qrSyncEnabled && relayTarget.kind === 'cloud') {
+      url.searchParams.set('db', relayTarget.dbUrl);
+      url.searchParams.set('room', relayTarget.room);
+    }
     return url.toString();
-  }, [isSemesterReviewSelected, lesson.id, mobileJoinOrigin, qrSyncEnabled, selectedUnit.unitNo, semester, sessionDuration]);
+  }, [
+    isSemesterReviewSelected,
+    lesson.id,
+    mobileJoinOrigin,
+    qrSyncEnabled,
+    relayTarget,
+    selectedUnit.unitNo,
+    semester,
+    sessionDuration,
+  ]);
   const mobileJoinNeedsLanAddress = !isMobileEntry && !mobileJoinUrl;
 
   const copyMobileJoinUrl = async () => {
@@ -925,6 +955,25 @@ function App() {
     } catch {
       setMobileUrlCopied(false);
     }
+  };
+
+  const saveRelayDbUrl = () => {
+    const trimmed = relayDbInput.trim();
+    if (!trimmed) {
+      saveDbUrl('');
+      setRelayDbUrl('');
+      setRelayDbError('');
+      return;
+    }
+    const normalized = normalizeDbUrl(trimmed);
+    if (!normalized) {
+      setRelayDbError('주소를 다시 확인해 주세요. https://... 로 시작하고 firebasedatabase.app 또는 firebaseio.com 으로 끝나야 합니다.');
+      return;
+    }
+    saveDbUrl(normalized);
+    setRelayDbUrl(normalized);
+    setRelayDbInput(normalized);
+    setRelayDbError('');
   };
 
   const updateStudentConfig = (studentId: number, nextConfig: Partial<StudentConfig>) => {
@@ -989,30 +1038,36 @@ function App() {
       if (solo) {
         remotePlayerIdRef.current = null;
         pendingRemoteRecordsRef.current = [];
-        void postJson('/api/join', {
+        void relayJoin(relayTarget, {
           name: solo.name,
           attendanceNo: solo.attendanceNo,
           avatar: solo.avatar,
           difficulty: solo.difficulty,
-        }).then((result) => {
-          if (typeof result?.id !== 'number') return;
-          remotePlayerIdRef.current = result.id;
+        }).then((joinedId) => {
+          if (joinedId === null) return;
+          remotePlayerIdRef.current = joinedId;
           // 등록이 끝나기 전에 이미 답한 문제가 있으면(빠르게 첫 문제를
           // 맞힌 경우) 여기서 한꺼번에 올려 보냅니다 — 놓치지 않습니다.
           const queued = pendingRemoteRecordsRef.current;
           pendingRemoteRecordsRef.current = [];
           for (const queuedRecord of queued) {
-            void postJson('/api/record', { ...queuedRecord, playerId: result.id });
+            void relayRecord(relayTarget, { ...queuedRecord, playerId: joinedId });
           }
         });
       }
     } else if (!isMobileEntry) {
       // 새 판이 시작되었으니, 지난 판에서 큐알로 들어왔던 학생 기록은
-      // 서버에서도 비웁니다 — 안 그러면 다음 번 받아올 때 지난 판 학생이
+      // 저장소에서도 비웁니다 — 안 그러면 다음 번 받아올 때 지난 판 학생이
       // 이번 판 분석에 섞여 들어옵니다.
+      remoteEpochRef.current += 1;
       setRemotePlayers([]);
       setRemoteRecords([]);
-      void postJson('/api/reset', {});
+      void relayReset(relayTarget).then(() => {
+        // 지우는 동안 오간 대답도 지난 판 것이므로 한 번 더 버립니다.
+        remoteEpochRef.current += 1;
+        setRemotePlayers([]);
+        setRemoteRecords([]);
+      });
     }
     // (연동을 끈 큐알 폰은 여기서 할 일이 없습니다 — 서버에 아무것도
     // 보내지 않고, 이 폰 혼자만의 화면으로 풉니다.)
@@ -1045,6 +1100,8 @@ function App() {
     setRemainingSeconds(sessionDuration);
     setStudentSetupSteps(createStudentSetupSteps(playerCount));
     if (!isMobileEntry) {
+      // 아직 돌아오지 않은 물음의 대답이 이 비움을 되돌리지 못하게 합니다.
+      remoteEpochRef.current += 1;
       setRemotePlayers([]);
       setRemoteRecords([]);
     }
@@ -1209,15 +1266,15 @@ function App() {
 
     setRecords((prev) => [...prev, record]);
     // 큐알로 들어온 폰은 선생님 화면과 다른 기기입니다. 로컬 상태만으로는
-    // 선생님이 볼 수 없으므로, 서버가 있으면(published-server) 그쪽에도
-    // 올려 둡니다. 서버가 없는 보통 배포본에서는 조용히 실패하고 넘어갑니다.
+    // 선생님이 볼 수 없으므로 연결된 곳에도 올려 둡니다. 연결할 곳이 없는
+    // 보통 배포본에서는 조용히 실패하고 넘어갑니다.
     if (mobileSyncEnabled) {
       if (remotePlayerIdRef.current !== null) {
-        void postJson('/api/record', { ...record, playerId: remotePlayerIdRef.current });
+        void relayRecord(relayTarget, { ...record, playerId: remotePlayerIdRef.current });
       } else {
-        // 등록(/api/join)이 아직 끝나지 않았습니다 — 첫 문제를 아주
-        // 빠르게 맞히면 이 순간이 생길 수 있습니다. 잃어버리지 않도록
-        // 담아 두었다가 등록이 끝나는 대로 마저 올려 보냅니다.
+        // 등록이 아직 끝나지 않았습니다 — 첫 문제를 아주 빠르게 맞히면
+        // 이 순간이 생길 수 있습니다. 잃어버리지 않도록 담아 두었다가
+        // 등록이 끝나는 대로 마저 올려 보냅니다.
         pendingRemoteRecordsRef.current.push(record);
       }
     }
@@ -1524,15 +1581,62 @@ function App() {
             </p>
             {qrSyncEnabled && relayAvailable === false && (
               <p className="mobile-join-warning">
-                지금 이 화면은 그냥 배포된 웹사이트(github.io)라, 체크박스를 켜도 학생 결과가
-                선생님 화면으로 넘어올 방법이 없습니다. 연동하려면 scripts 폴더의
-                start-published-local-game.cmd(같은 와이파이일 때) 또는
-                start-published-game.cmd(교사·학생이 다른 네트워크일 때)로 이 앱을 다시 켠 뒤,
-                거기서 뜨는 주소로 접속한 상태에서 QR을 다시 만들어 주세요.
+                아직 연동할 곳이 없습니다. 아래 &lsquo;연동 서버 설정&rsquo;에서 무료 저장소 주소를 한 번만
+                넣어 두면, 지금 쓰시는 이 주소 그대로 학생 결과가 선생님 화면에 들어옵니다.
               </p>
             )}
             {qrSyncEnabled && relayAvailable === true && (
-              <p className="mobile-join-sync-ok">연동 서버 연결을 확인했습니다 — 이 QR로 들어온 학생 결과가 선생님 화면에 보입니다.</p>
+              <p className="mobile-join-sync-ok">
+                연동 준비가 되었습니다 — 이 QR로 들어온 학생 결과가 선생님 화면에 보입니다.
+                {relayTarget.kind === 'cloud' && ` (방 이름 ${relayTarget.room})`}
+              </p>
+            )}
+            {qrSyncEnabled && !isMobileEntry && (
+              <div className="relay-setup">
+                <button
+                  className="relay-setup-toggle"
+                  type="button"
+                  onClick={() => setRelaySetupOpen((prev) => !prev)}
+                >
+                  연동 서버 설정 {relaySetupOpen ? '접기' : '열기'}
+                </button>
+                {relaySetupOpen && (
+                  <div className="relay-setup-body">
+                    <p>
+                      학생 폰과 선생님 화면은 서로 다른 기기라, 둘 사이에 결과를 옮겨 줄 자리가
+                      하나 있어야 합니다. 무료로 만들 수 있고, 한 번만 해 두면 계속 씁니다.
+                    </p>
+                    <ol>
+                      <li>console.firebase.google.com 에 접속해 프로젝트를 하나 만듭니다.</li>
+                      <li>왼쪽 메뉴 &lsquo;빌드 &gt; Realtime Database&rsquo;에서 데이터베이스를 만듭니다(위치는 아무 곳이나 괜찮습니다).</li>
+                      <li>
+                        &lsquo;규칙&rsquo; 탭에서 아래 내용을 그대로 붙여 넣고 게시합니다.
+                        <code className="relay-setup-rules">
+                          {'{ "rules": { "rooms": { ".read": true, ".write": true } } }'}
+                        </code>
+                      </li>
+                      <li>&lsquo;데이터&rsquo; 탭 위쪽에 보이는 https://... 주소를 그대로 아래 칸에 붙여 넣습니다.</li>
+                    </ol>
+                    <div className="relay-setup-input">
+                      <input
+                        type="url"
+                        inputMode="url"
+                        placeholder="https://내프로젝트-default-rtdb.firebasedatabase.app"
+                        value={relayDbInput}
+                        onChange={(event) => setRelayDbInput(event.target.value)}
+                      />
+                      <button type="button" onClick={saveRelayDbUrl}>
+                        저장
+                      </button>
+                    </div>
+                    {relayDbError && <p className="relay-setup-error">{relayDbError}</p>}
+                    <p className="relay-setup-note">
+                      이 주소를 아는 사람은 저장된 기록을 볼 수 있으니, 학생 이름은 번호나 별명으로
+                      두는 편이 좋습니다. 기록은 새 판을 시작할 때마다 지워집니다.
+                    </p>
+                  </div>
+                )}
+              </div>
             )}
             {mobileJoinUrl ? (
               <>
