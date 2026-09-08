@@ -456,22 +456,31 @@ function PlaceValueGraphic({ visual }: { visual: Extract<QuestionVisual, { kind:
 
 function BarModelGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'bar-model' }> }) {
   const maxValue = Math.max(...visual.bars.map((bar) => bar.value), 1);
+  // 막대 옆 글자는 '9'처럼 짧기도 하고 '2m 15cm'처럼 길기도 합니다.
+  // 짧은 것에 맞춰 자리를 잡아 두었더니 긴 글자가 그림 밖으로 잘려
+  // '2m 1'까지만 보였습니다. 가장 긴 글자가 들어갈 자리를 먼저 떼어
+  // 두고, 남는 만큼만 막대를 늘립니다.
+  const longest = Math.max(...visual.bars.map((bar) => String(bar.text ?? bar.value).length), 1);
+  // 굵은 14px에서 숫자는 8px, m은 11px쯤 됩니다. 넉넉히 잡지 않으면
+  // 마지막 글자가 그림 테두리에 걸립니다.
+  const textRoom = longest * 9 + 16;
+  const barRoom = Math.max(60, 372 - 104 - textRoom);
 
   return (
     <svg viewBox="0 0 376 150" role="img" aria-label={visual.label}>
       <rect x="4" y="6" width="368" height="138" rx="14" fill="#f6fcff" stroke="#d7edf2" />
       {visual.bars.slice(0, 4).map((bar, index) => {
         const y = 28 + index * 28;
-        const width = Math.max(24, (bar.value / maxValue) * 220);
+        const width = Math.max(24, (bar.value / maxValue) * barRoom);
         return (
           <g key={`${bar.label}-${index}`}>
             <text x="28" y={y + 18} fill="#24364a" fontSize="14" fontWeight="900">
               {bar.label}
             </text>
-            <rect x="104" y={y} width="230" height="22" rx="7" fill="#eef6f8" />
+            <rect x="104" y={y} width={barRoom} height="22" rx="7" fill="#eef6f8" />
             <rect x="104" y={y} width={width} height="22" rx="7" fill={index % 2 === 0 ? '#dffafa' : '#fff4bd'} stroke="#0f9f9f" />
-            <text x={Math.min(344, 114 + width)} y={y + 17} fill="#182433" fontSize="14" fontWeight="900">
-              {bar.value}
+            <text x={114 + barRoom} y={y + 17} fill="#182433" fontSize="14" fontWeight="900">
+              {bar.text ?? bar.value}
             </text>
           </g>
         );
