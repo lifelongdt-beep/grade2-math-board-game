@@ -2647,6 +2647,55 @@ button:disabled {
   font-weight: 750;
 }
 
+.relay-live {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #f8fbfd;
+  padding: 10px 12px;
+}
+
+.relay-live-count {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.relay-live-count strong {
+  color: var(--ink);
+  font-weight: 950;
+}
+
+.relay-live-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.relay-live-actions button {
+  flex: 1;
+  min-height: 40px;
+  border: 0;
+  border-radius: var(--radius);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--teal);
+  color: white;
+  font-weight: 950;
+  font-size: 13px;
+}
+
+.relay-live-actions .relay-live-clear {
+  background: #eef2f6;
+  color: var(--muted);
+}
+
+.relay-live-actions button:disabled {
+  opacity: 0.5;
+}
+
 .relay-setup {
   display: grid;
   gap: 8px;
