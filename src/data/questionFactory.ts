@@ -675,15 +675,40 @@ const josaPairs: Array<[withFinal: string, withoutFinal: string]> = [
   ['이', '가'],
   ['은', '는'],
   ['과', '와'],
+  // '10×3=30로 곱이 같습니다'처럼 로/으로도 어긋나 있었습니다.
+  // 받침이 있으면 '으로', 없으면 '로'입니다. 다만 ㄹ 받침은 '로'인데,
+  // 우리말로 읽은 수에서 ㄹ로 끝나는 것은 없습니다(일·팔은 ㄹ이지만
+  // 1과 8은 '일로/팔로'가 아니라 자릿수로 읽혀 여기 오지 않습니다).
+  ['으로', '로'],
 ];
 
-const fixJosaAfterNumbers = (text: string): string =>
-  text.replace(/(\d)(을|를|이|가|은|는|과|와)(?=[\s.,?!)]|$)/g, (match, digit: string, josa: string) => {
-    const hasFinal = digitHasFinalConsonant[digit];
-    const pair = josaPairs.find(([withFinal, withoutFinal]) => josa === withFinal || josa === withoutFinal);
-    if (!pair) return match;
-    return `${digit}${hasFinal ? pair[0] : pair[1]}`;
-  });
+// 수 뒤에 붙는 단위입니다. '42개과 배 34개이 있어'처럼 단위 뒤에서도
+// 조사가 어긋나 있었습니다. 수만 보고 고치면 이런 자리는 그대로
+// 남습니다 — 아이가 소리 내어 읽을 때 바로 걸립니다.
+//
+// 받침은 손으로 적지 않고 hasBatchim으로 셉니다. 손으로 적었더니
+// '시간'을 받침 없는 쪽에 넣어 '1시간는 몇 분일까요?'가 되었습니다.
+const COUNTERS = [
+  '명', '장', '권', '번', '살', '분', '칸', '줄', '묶음', '판', '병',
+  '개', '자루', '마리', '송이', '조각', '가지', '시간', '켤레',
+];
+
+const fixJosaAfterNumbers = (text: string): string => {
+  const fixOne = (josaText: string, hasFinal: boolean) => {
+    const pair = josaPairs.find(([withFinal, withoutFinal]) => josaText === withFinal || josaText === withoutFinal);
+    return pair ? (hasFinal ? pair[0] : pair[1]) : josaText;
+  };
+
+  return text
+    .replace(
+      new RegExp(`(\\d\\s*)(${COUNTERS.join('|')})(으로|로|을|를|이|가|은|는|과|와)(?=[\\s.,?!)]|$)`, 'g'),
+      (match, before: string, counter: string, josaText: string) =>
+        `${before}${counter}${fixOne(josaText, hasBatchim(counter))}`,
+    )
+    .replace(/(\d)(으로|로|을|를|이|가|은|는|과|와)(?=[\s.,?!)]|$)/g, (match, digit: string, josaText: string) =>
+      `${digit}${fixOne(josaText, digitHasFinalConsonant[digit])}`,
+    );
+};
 
 const hasBatchim = (word: string): boolean => {
   const last = word.trim().slice(-1);
@@ -835,6 +860,11 @@ const saysAnswer = (text: string, answer: string): boolean => {
   // (우리말은 수와 셈낱말이 '9묶음'처럼 붙으므로 숫자에 한글 경계를
   //  쓰면 정작 잡아야 할 것을 놓칩니다.)
   const boundary = /[가-힣]/.test(target) ? '가-힣0-9' : '0-9';
+  // 조사가 붙은 답('클립으로')까지 잡으려고 넓혀 보았지만, 그렇게 걸린
+  // 것은 모두 답이 이미 문제글에 적힌 문항이었습니다 — '뼘과 클립
+  // 가운데 어느 것이 더 짧을까요?'의 이름표에 클립이 있다고 해서 어느
+  // 쪽이 짧은지 알려 주지는 않습니다. 멀쩡한 이름표만 지워졌으므로
+  // 낱말 경계 그대로 둡니다.
   return new RegExp(`(^|[^${boundary}])${escaped}([^${boundary}]|$)`).test(text);
 };
 
@@ -7891,12 +7921,16 @@ const pictographVisualFor = (
   unit = 1,
   label = '그림그래프 자료',
   orientation: 'up' | 'right' = 'up',
+  // 아직 채우지 않은 줄입니다. 그 줄은 칸 대신 물음표만 두어
+  // '여기를 네가 채워라'로 보이게 합니다.
+  blankAt?: number,
 ): QuestionVisual => ({
   kind: 'pictograph',
   label,
   unit,
   items,
   orientation,
+  ...(blankAt !== undefined ? { blankAt } : {}),
 });
 
 const arrayVisualFor = (rows: number, columns: number, label = '배열 자료', fadedRows?: number): QuestionVisual => ({
@@ -10073,7 +10107,13 @@ const namedSubjectVisual = (question: Question, index: number): QuestionVisual |
   }
 
   // 쌓기나무가 차례로 늘어나는 문제입니다. 적힌 수를 그대로 쌓아 줍니다.
-  if (/쌓기나무|쌓은 모양/.test(asked) && /규칙|늘어|줄어|다음/.test(asked)) {
+  //
+  // 예전에는 '규칙·늘어·줄어·다음'이라는 말이 있을 때만 보았습니다.
+  // 그래서 '쌓기나무를 3개, 5개, 7개로 세 번 쌓았습니다. 쓴 쌓기나무는
+  // 모두 몇 개일까요?'가 빠져나가 수 규칙 그림을 받았습니다 — 쌓기나무를
+  // 말하는데 쌓기나무가 없는 그림입니다. 쌓은 수가 적혀 있으면 그것만으로
+  // 쌓아 줍니다.
+  if (/쌓기나무|쌓은 모양/.test(asked) && /규칙|늘어|줄어|다음|쌓았|쌓아/.test(asked)) {
     const run = asked.match(/(\d+)개,\s*(\d+)개,\s*(\d+)개/);
     if (run) {
       const steps = [Number(run[1]), Number(run[2]), Number(run[3])];
@@ -10124,10 +10164,17 @@ const visualForGeneratedQuestion = (
       const names = places >= 4 ? ['천', '백', '십', '일'] : ['백', '십', '일'];
       if (digits.length !== names.length) return undefined;
 
-      // 앞자리를 0으로 채워 칸을 맞췄으므로, 가릴 자리도 그만큼 밀립니다.
-      // 맨 앞 칸을 가리면 0을 가리는 셈이 되어 정답이 그대로 보입니다.
+      // 문제가 묻는 그 자리를 가립니다. 예전에는 맨 앞 자리를 가렸는데,
+      // '8541의 일의 자리 숫자는 무엇일까요?'(답 1)에서 가려진 것은
+      // 천의 자리였고 일의 자리에는 1이 그대로 적혀 있었습니다. 표를
+      // 보면 답이 바로 보여, 수를 읽어 볼 일이 없었습니다.
+      const asked = /(천|백|십|일)의 자리/.exec(question.prompt)?.[1];
+      const askedAt = asked ? names.indexOf(asked) : -1;
+      // 자리를 이름 대지 않는 문항('6000은 1000이 몇 개인 수일까요?')은
+      // 앞자리를 가립니다. 0으로 채운 칸을 가리면 아무것도 가리지 못하므로
+      // 0이 아닌 첫 자리를 찾습니다.
       const leading = digits.findIndex((digit) => digit > 0);
-      const blankAt = leading === -1 ? 0 : leading;
+      const blankAt = askedAt >= 0 ? askedAt : leading === -1 ? 0 : leading;
 
       return tableVisualFor(
         names.map((name, position) => ({ name, value: position === blankAt ? null : digits[position] })),
@@ -10139,7 +10186,12 @@ const visualForGeneratedQuestion = (
     // 표는 문제에 나온 수로만 만듭니다. 정답으로 만들면 '1000이 4개, 10이 4개인
     // 수는?' 같은 문제에서 표가 곧 답(4040)이 되어 버립니다.
     const fromPrompt = promptNumbers.filter((value) => Number.isFinite(value));
-    const shown = fromPrompt.length ? Math.max(...fromPrompt) : 100;
+    // 문제에 수가 하나도 없으면 100을 그려 왔습니다. '사백을 숫자로 바르게
+    // 쓴 것은?'(답 400) 옆에 100을 나타내는 자리값표가 놓였습니다. 문제가
+    // 말하는 수와 다른 수를 그린 것이라, 그림을 믿은 아이는 100이라고
+    // 답하게 됩니다. 그렇다고 400을 그리면 그것이 곧 답입니다. 그리지 않습니다.
+    if (!fromPrompt.length) return undefined;
+    const shown = Math.max(...fromPrompt);
     if (Number.isFinite(answerNumber) && shown === answerNumber) return undefined;
 
     return placeValueVisualFor(shown, '자리값 시각자료', places);
@@ -10514,6 +10566,17 @@ const visualForGeneratedQuestion = (
   }
 
   if (question.type === 'data' || question.type === 'classification') {
+    // '그래프에서 고양이 줄에 ○가 9개, 금붕어 줄에 ○가 4개…' — 문제가
+    // 그래프를 말로 그려 놓고 정작 그래프는 없었습니다. 말한 대로
+    // 그려 줍니다. 아래 규칙은 이름 바로 뒤에 수가 오는 꼴만 잡아서
+    // ('고양이 줄에 ○가 9개'는 사이에 '줄에 ○가'가 끼어 있어) 놓쳤습니다.
+    const rowsInPrompt = [...question.prompt.matchAll(/([가-힣]{1,5})\s*줄에\s*○가\s*(\d+)\s*개/g)].map(
+      (one) => ({ label: one[1], count: Number(one[2]) }),
+    );
+    if (rowsInPrompt.length >= 2 && rowsInPrompt.length <= 4) {
+      return pictographVisualFor(rowsInPrompt, 1, '자료 조사 그림그래프');
+    }
+
     const labeledCounts = question.prompt
       .match(/[가-힣]{1,4}\s*\d+(?:명|개)/g)
       ?.map((chunk) => {
@@ -10540,20 +10603,66 @@ const visualForGeneratedQuestion = (
     // 나왔습니다. 아이가 그래프를 세어 낸 답과 정답이 달라집니다.
     // 다 그릴 수 없으면 아예 그리지 않습니다 — 없는 그림보다 반만 그린
     // 그림이 훨씬 나쁩니다.
-    if (labeledCounts.length > 4) return undefined;
+    // '모두 13명'은 항목이 아니라 합계입니다. 항목으로 두었더니 표에
+    // '모두 13'이라는 줄이 사과·귤과 나란히 놓였습니다. 아이 눈에는
+    // '모두'라는 과일이 하나 더 있는 표입니다. 항목을 세기 전에 먼저
+    // 걸러 냅니다 — 그러지 않으면 '모두'가 자리를 차지해 항목이 넷을
+    // 넘은 것처럼 보여, 그릴 수 있는 표까지 그리지 못했습니다.
+    const TOTAL_WORDS = ['모두', '합계', '전체'];
+    const totalsSaid = [
+      ...new Set(labeledCounts.filter((item) => TOTAL_WORDS.includes(item.label)).map((item) => item.count)),
+    ];
+    // '센 단추는 모두 13개입니다 / 모두 7개입니다'처럼 보기마다 다른
+    // 합계를 말하는 문항이 있습니다. 어느 것이 참인지 그림이 정해 줄
+    // 수는 없으므로, 합계가 하나로 정해질 때만 씁니다.
+    const totalCount = totalsSaid.length === 1 ? totalsSaid[0] : undefined;
+    const named = labeledCounts.filter((item) => !TOTAL_WORDS.includes(item.label));
+    if (named.length < 2 || named.length > 4) return undefined;
+
+    // 합계가 항목의 합보다 크면 아직 적히지 않은 항목이 하나 있습니다.
+    // '13-5-4=□명이 딸기를 좋아합니다'의 딸기, '남은 것은 모두 초록입니다'의
+    // 초록이 그것인데, 표에는 그 줄이 아예 없었습니다. 묻는 것이 그림에
+    // 없으니 아이는 표를 보고도 답할 수 없었습니다. 문제글에서 그 이름을
+    // 찾아 빈칸으로 둡니다.
+    const countedSoFar = named.reduce((sum, item) => sum + item.count, 0);
+    let blankName: string | null = null;
+    if (totalCount !== undefined && totalCount > countedSoFar) {
+      const mentioned = [
+        ...question.prompt.matchAll(/남은 것은 모두 ([가-힣]{1,5})입니다/g),
+        ...question.prompt.matchAll(/([가-힣]{1,5})[을를]\s*(?:좋아|고른|골랐)/g),
+      ]
+        .map((one) => one[1])
+        .find((name) => !named.some((item) => item.label === name));
+      // 이름을 찾지 못하면 그리지 않습니다. 이 자리가 스스로 적어 둔 대로,
+      // 없는 그림보다 반만 그린 그림이 훨씬 나쁩니다.
+      if (!mentioned) return undefined;
+      blankName = mentioned;
+    }
 
     // '표에서 강아지는 4명…'이라고 해 놓고 그래프를 그려 주면, 아이가
     // 보라는 것과 보이는 것이 다릅니다. 문제가 부르는 이름대로 그립니다.
-    const shown = labeledCounts;
     if (/표에서|표를 보고|표의 /.test(question.prompt) && !/그래프/.test(question.prompt)) {
       return tableVisualFor(
-        shown.map((item) => ({ name: item.label, value: item.count })),
+        [
+          ...named.map((item) => ({ name: item.label, value: item.count as number | null })),
+          ...(blankName ? [{ name: blankName, value: null }] : []),
+        ],
         '조사한 자료를 나타낸 표',
-        { categoryLabel: '항목', valueLabel: '학생 수(명)' },
+        {
+          categoryLabel: '항목',
+          valueLabel: '학생 수(명)',
+          ...(totalCount !== undefined ? { totalLabel: '합계', total: totalCount } : {}),
+        },
       );
     }
 
-    return pictographVisualFor(shown, 1, '자료 조사 그림그래프');
+    return pictographVisualFor(
+      [...named, ...(blankName ? [{ label: blankName, count: 0 }] : [])],
+      1,
+      '자료 조사 그림그래프',
+      'up',
+      blankName ? named.length : undefined,
+    );
   }
 
   if (question.type === 'multiplication') {
@@ -10942,7 +11051,12 @@ const visualForGeneratedQuestion = (
     // ③ '4, 6, 8, 10, □ 에서 □는?' 같은 수 규칙입니다. 늘어놓은 수를 그대로
     //    칸에 적고 마지막을 물음표로 둡니다. 아이가 칸을 짚어 가며 얼마씩
     //    커지는지 셀 수 있습니다.
-    const numberRun = question.prompt.match(/\d+\s*(?:,\s*\d+\s*){2,}/);
+    // '3개, 5개, 7개로 놓였습니다'처럼 수 사이에 단위가 끼기도 합니다.
+    // 단위를 셈에 넣지 않았더니 이런 문항이 무늬 그림(○△□)을 받았습니다 —
+    // 늘어나는 수를 묻는데 되풀이 무늬가 놓였습니다.
+    const numberRun =
+      question.prompt.match(/\d+\s*(?:,\s*\d+\s*){2,}/) ??
+      question.prompt.match(/\d+\s*[가-힣]{1,2}(?:,\s*\d+\s*[가-힣]{1,2}){2,}/);
     if (numberRun) {
       const drawn = numberRun[0].match(/\d+/g) ?? [];
       return patternVisualFor([...drawn, '?'], '수 규칙 자료', drawn.length);
@@ -10978,11 +11092,50 @@ const visualForGeneratedQuestion = (
     //    놓여 있었습니다. '규칙'이라는 말만 보고 붙였는데, 규칙 찾기
     //    단원의 모든 문제에 그 말이 있습니다.
     //    곱셈표·덧셈표는 위(②)에서 이미 자기 표를 받았으므로 여기 오지 않습니다.
-    if (!OTHER_SUBJECTS.test(question.prompt) && /무늬|도형|모양|규칙|되풀이|반복/.test(question.prompt)) {
+    // ⑥ '○△△가 되풀이됩니다'처럼 쉼표 없이 붙여 쓴 무늬입니다. 위 ①은
+    //    쉼표로 이어진 것만 보아 이런 문제를 놓쳤습니다. 되풀이하는 한
+    //    묶음을 두 번 늘어놓아 규칙이 눈에 보이게 하고, 그다음은 아이가
+    //    이어 세게 물음표로 둡니다. 답인 아홉째까지 그려 주지는 않습니다.
+    const cycleRun = /([○△◇☆●▲■♥]{2,6})[이가을를]?\s*(?:되풀이|반복)/.exec(question.prompt);
+    if (cycleRun) {
+      const cycle = cycleRun[1].split('');
+      const run = [...cycle, ...cycle];
+      return patternVisualFor([...run, '?'], '되풀이하는 한 묶음', run.length);
+    }
+
+    // '빨강과 파랑이 되풀이될 때 10번째는?'처럼 되풀이하는 것을 이름으로
+    //  적은 문제입니다. 여기까지 오면 ○△□가 붙었습니다 — 두 가지가
+    //  되풀이된다는 문제 옆에 세 가지 무늬가 놓여, 아이가 그림을 세면
+    //  문제와 다른 답이 나옵니다.
+    const namedCycle = /([가-힣]{1,4})(?:과|와)\s*([가-힣]{1,4}?)[이가]?\s*(?:되풀이|반복)/.exec(
+      question.prompt,
+    );
+    if (namedCycle) {
+      // '파랑이 되풀이'에서 이름은 '파랑'입니다. 조사를 떼지 않으면
+      // 그림에 '파랑이'라고 적힙니다.
+      const cycle = [namedCycle[1], namedCycle[2].replace(/(?:이|가)$/, '')];
+      const run = [...cycle, ...cycle, ...cycle];
+      return patternVisualFor([...run, '?'], '되풀이하는 한 묶음', run.length);
+    }
+
+    //    무늬를 이름 대어 말한 문제에는 붙이지 않습니다. '○△△가
+    //    되풀이됩니다. 9번째에 오는 모양은?'(답 △)에 ○△□가 놓여 있었습니다.
+    //    문제는 ○△△라는데 그림은 ○△□라, 그림을 믿고 센 아이는 □라고
+    //    답하게 됩니다. 아래 ⑦에서 그런 문제는 제 무늬를 받습니다.
+    // 돌아가며 놓이는 규칙은 우리가 가진 그림으로 그릴 수 없습니다.
+    // '△이 오른쪽으로 조금씩 돌아가며 놓였습니다' 옆에 ○△□를 놓으면
+    // 돌아가는 것이 하나도 보이지 않는 그림이 됩니다.
+    if (/돌아가며|돌려|방향이 바뀌|뒤집/.test(question.prompt)) return undefined;
+
+    if (
+      !OTHER_SUBJECTS.test(question.prompt) &&
+      !/[○△◇☆●▲■♥]{2,}/.test(question.prompt) &&
+      /무늬|도형|모양|규칙|되풀이|반복/.test(question.prompt)
+    ) {
       return patternVisualFor(['○', '△', '□', '○', '△', '□', '○'], '무늬 규칙 자료', 6);
     }
 
-    // ⑤ 그 밖에는 그림 없이 둡니다. 상관없는 그림보다 없는 편이 낫습니다.
+    // ⑧ 그 밖에는 그림 없이 둡니다. 상관없는 그림보다 없는 편이 낫습니다.
     return undefined;
   }
 
@@ -11773,18 +11926,26 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       // 셉니다'라고만 하고 셀 것을 주지 않아, 답을 찍는 수밖에 없었습니다.
       // 그 뒤에는 '축구 5명, 줄넘기 3명'처럼 이미 센 결과를 적어 두어,
       // 이번에는 셀 것이 없어졌습니다. 대답한 것을 그대로 늘어놓습니다.
-      const answers = tallyLine(
-        { subject: '좋아하는 운동', categoryLabel: '운동', items: [
-          { name: '축구', count: a }, { name: '줄넘기', count: b }, { name: '술래잡기', count: c },
-        ] },
-        index,
-      );
+      const surveyed = {
+        subject: '좋아하는 운동',
+        categoryLabel: '운동',
+        items: [
+          { name: '축구', count: a },
+          { name: '줄넘기', count: b },
+          { name: '술래잡기', count: c },
+        ],
+      };
+      const answers = tallyLine(surveyed, index);
       return makeQuestion(
         lesson, difficulty, index,
         `좋아하는 운동을 조사한 대답입니다. ${answers} 이것을 표로 옮기는 과정입니다. □에 알맞은 수는? ① 축구를 고른 사람을 셉니다. ② 센 것에 표시하며 빠뜨리지 않습니다. ③ 표의 축구 칸에 □을 씁니다.`,
         `${a}`, [`${b}`, `${c}`, `${a + b}`],
         `축구를 고른 사람을 세면 ${a}명이므로 표의 축구 칸에는 ${a}을 씁니다.`,
         'data', '세어서 표의 칸을 채우는 과정',
+        // '표의 축구 칸에 □을 씁니다'라고 해 놓고 표가 없었습니다. 아이는
+        // 보이지 않는 표에 수를 써 넣어야 했습니다. 축구 칸을 비운 표를
+        // 함께 보여 줍니다.
+        surveyTable(surveyed, { blankIndex: 0 }),
       );
     }
     if (title.includes('조사하여 표로')) {
