@@ -244,6 +244,27 @@ const calendarLearningSupport = {
 // 읽어 낼 수 없는 문장은 갈래별 문장을 그대로 씁니다 — 틀린 도움말보다
 // 일반적인 도움말이 낫습니다.
 const specificHint = (prompt: string, tag: ConceptTag): string | null => {
+  // ── 사실 자체를 묻는 문항 ────────────────────────────────────
+  // '일주일은 며칠일까요?'처럼 규칙을 그대로 묻는 문항이 있습니다.
+  // 이런 문항에는 갈래별 안내문이 하필 그 사실을 적고 있어서, 볼 곳이
+  // 곧 답이 되어 버렸습니다('긴바늘이 한 칸 지나면 5분입니다' ← 답 5분).
+  // 사실을 말해 주는 대신, 그 사실을 아이가 세어서 알아내는 길을 적습니다.
+  if (/긴바늘.*(몇 분|몇분)/.test(prompt)) {
+    return '시계에서 숫자와 숫자 사이의 작은 눈금을 하나씩 세어 보세요. 한 칸이 몇 분인지 그렇게 알 수 있습니다.';
+  }
+  if (/같은 요일.*며칠마다|며칠마다.*요일/.test(prompt)) {
+    return '달력에서 같은 요일을 위에서 아래로 짚으며 날짜가 얼마씩 벌어지는지 세어 보세요.';
+  }
+  if (/세로로 같은 줄/.test(prompt)) {
+    return '달력의 맨 윗줄을 먼저 읽고, 한 줄을 따라 아래로 내려가며 무엇이 되풀이되는지 보세요.';
+  }
+  if (/일주일은 며칠/.test(prompt)) {
+    return '달력에서 어느 요일 하나를 고르고, 그다음 같은 요일 바로 앞날까지 하루씩 세어 보세요.';
+  }
+  if (/견줄 때 어디를 맞추어/.test(prompt)) {
+    return '두 물건을 나란히 놓아 보세요. 어느 쪽이 어긋나 있으면 길이를 잘못 재게 되는지 보면 됩니다.';
+  }
+
   // 곱셈: 한 묶음의 크기와 묶음 수를 짚어 줍니다.
   const grouped = /(\d+)\s*[가-힣]{0,3}씩\s*(\d+)\s*[가-힣]{0,3}/.exec(prompt);
   if (grouped) {
@@ -252,11 +273,18 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
 
   // '5×6=30입니다. 5×7은?' — 아는 곱에서 한 묶음만 더하면 됩니다.
   // 곱셈구구를 처음부터 다시 세지 않고 만들어 내는 길입니다.
-  const oneMore = /(\d+)×(\d+)=(\d+)입니다\. ×(\d+)/.exec(prompt);
+  //
+  // 예전 정규식은 '입니다. ' 바로 뒤에 ×가 오기를 기다렸는데, 실제
+  // 문장은 '입니다. 5×7은'이라 한 번도 걸리지 않았습니다. 그동안 이
+  // 문항들은 아래 일반 규칙으로 내려가 '주어진 식'을 설명받았습니다 —
+  // 묻는 것은 5×7인데 볼 곳은 5×6을 이야기했습니다.
+  const oneMore = /(\d+)×(\d+)=(\d+)입니다\.\s*(\d+)×(\d+)/.exec(prompt);
   if (oneMore) {
-    const each = oneMore[1];
-    const known = oneMore[3];
-    return `묶음이 하나 늘었을 뿐입니다. ${known}에 ${each}를 한 번 더 더해 보세요.`;
+    const [, each, knownTimes, known, nextEach, nextTimes] = oneMore;
+    // 같은 단에서 묶음만 하나 늘어난 때만 이 길을 안내합니다.
+    if (Number(nextEach) === Number(each) && Number(nextTimes) === Number(knownTimes) + 1) {
+      return `묶음이 하나 늘었을 뿐입니다. ${known}에 ${each}를 한 번 더 더해 보세요.`;
+    }
   }
 
   // '3×4=12입니다. 6×4는?' — 한 묶음이 두 배가 되면 곱도 두 배입니다.
@@ -274,6 +302,23 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
   const missing = /(\d+)\s*×\s*□\s*=\s*(\d+)/.exec(prompt);
   if (missing) {
     return `${missing[1]}씩 몇 묶음이면 ${missing[2]}이 되는지 세어 보세요.`;
+  }
+
+  // '2×4를 덧셈식으로 나타낸 것은?'의 답은 2+2+2+2입니다. 여기에
+  // '2를 4번 더한 것과 같습니다'라고 적어 주면 답을 말로 불러 준 것과
+  // 같습니다. 대신 보기를 세어 보게 합니다 — 그것이 이 문제를 푸는 일입니다.
+  if (/덧셈식/.test(prompt) && tag === 'multiplication') {
+    return '보기의 식마다 같은 수를 몇 번 더했는지 세어 보세요. 곱셈식의 두 수와 견주면 됩니다.';
+  }
+
+  // 곱셈식이 둘 이상 있으면 어느 것을 설명할지 정해야 합니다.
+  // '㉠ 6×3, ㉡ 3×3 중 더 큰 것은?'에서 앞의 식만 설명하면, 견주어야
+  // 할 두 식 가운데 하나만 알려 주는 셈이 됩니다. 둘 다 구해 보라고
+  // 말해 주어야 아이가 견줄 수 있습니다.
+  const allTimes = [...prompt.matchAll(/(\d+)\s*×\s*(\d+)/g)];
+  if (allTimes.length >= 2) {
+    const shown = allTimes.slice(0, 2).map((one) => `${one[1]}×${one[2]}`);
+    return `${shown[0]}과 ${shown[1]}을 각각 구해 적어 보세요. 두 수를 나란히 놓고 견주면 됩니다.`;
   }
 
   const times = /(\d+)\s*×\s*(\d+)/.exec(prompt);
@@ -341,6 +386,13 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
     return '곧은 선(변)과 뾰족한 곳(꼭짓점)을 하나씩 짚으며 세어 보세요. 센 곳에 표시를 하면 두 번 세지 않습니다.';
   }
 
+  // '몇 층일까요?'는 층수 자체를 묻습니다. 갈래별 안내문이 '1층을 먼저
+  // 세고…'로 시작하는 탓에, 답이 1층인 문항에서 볼 곳이 곧 답이 되었습니다.
+  // 숫자를 말하지 않고 어디를 보아야 하는지만 적습니다.
+  if (/몇 층/.test(prompt) && tag === 'solid') {
+    return '쌓기나무가 위로 몇 개나 포개져 있는지 옆에서 보고 세어 보세요. 옆으로만 늘어놓으면 위로는 포개지지 않습니다.';
+  }
+
   if (/(\d+)층/.test(prompt) && tag === 'solid') {
     return '층마다 몇 개인지 따로 세어 적은 뒤에 더합니다. 뒤에 숨은 쌓기나무를 빠뜨리지 마세요.';
   }
@@ -358,6 +410,13 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
   const dan = /(\d+)단/.exec(prompt);
   if (dan) {
     const size = Number(dan[1]);
+    // '몇씩 커질까요'는 커지는 크기 자체를 묻는 문제입니다. 여기에
+    // '2단은 2씩 커집니다'라고 적어 주면 답을 그대로 주는 셈입니다.
+    // 대신 이웃한 두 곱을 직접 구해 견주게 합니다 — 그것이 이 문제를
+    // 푸는 방법이고, 답은 아이가 세어서 알아냅니다.
+    if (/몇씩/.test(prompt)) {
+      return `${size}×1과 ${size}×2를 차례로 구해 보세요. 두 곱이 얼마나 벌어지는지 보면 됩니다.`;
+    }
     return `${size}단은 ${size}씩 커집니다. ${size}, ${size * 2}, ${size * 3}…으로 이어 세어 보세요.`;
   }
 
@@ -436,12 +495,32 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
   return null;
 };
 
+// 답을 말해 버리지 않는 '볼 곳'을 고릅니다.
+//
+// 볼 곳은 아이가 답을 고르기 전에도 힌트 단추로 열어 볼 수 있는 자리입니다.
+// 그런데 이 문항의 수로 만든 문장이 하필 그 문항의 답과 같아지는 일이
+// 있었습니다. '2단 곱셈구구는 몇씩 커질까요?'의 볼 곳이 '2단은 2씩
+// 커집니다'였습니다. 도움이 아니라 답을 준 것이고, 아이는 아무것도
+// 알아내지 않은 채 넘어갑니다.
+//
+// 그럴 때는 방법만 말하는 갈래별 문장으로 바꿉니다. 틀린 뒤 화면에는
+// '정답' 줄이 따로 있으므로, 거기서 알아야 할 것은 그대로 알게 됩니다.
+const hintWithoutAnswer = (tailored: string | null, guide: string, answer: string): string => {
+  const target = answer.trim();
+  // 한 글자 답(2, 3…)까지 막으면 멀쩡한 볼 곳이 거의 다 걸립니다.
+  // 답이 그대로 문장에 들어앉는 경우만 봅니다.
+  const tellsAnswer = (hint: string) => target.length >= 2 && hint.includes(target);
+  const candidates = tailored ? [tailored, guide] : [guide];
+  return candidates.find((hint) => !tellsAnswer(hint)) ?? guide;
+};
+
 const buildLearningSupport = (
   lesson: Lesson,
   tag: ConceptTag,
   solution: string,
   strategy: string,
   prompt = '',
+  answer = '',
 ): LearningSupport => {
   const isCalendar = tag === 'time' && lesson.title.includes('달력');
   // '육천백사십오를 수로 쓰면?'은 tag가 number이지만, 실제로 풀어야 할 것은
@@ -470,8 +549,9 @@ const buildLearningSupport = (
 
   return {
     studentConcept: guide.studentConcept,
-    // 이 문항의 수로 만든 볼 곳이 있으면 그것을 씁니다.
-    studentHint: specificHint(prompt, tag) ?? guide.studentHint,
+    // 이 문항의 수로 만든 볼 곳이 있으면 그것을 씁니다. 다만 그것이
+    // 답을 그대로 말해 버리면 쓰지 않습니다.
+    studentHint: hintWithoutAnswer(specificHint(prompt, tag), guide.studentHint, answer),
     coreConcept: guide.coreConcept,
     readStrategy: `${strategy}: ${guide.readStrategy}`,
     steps: [
@@ -675,6 +755,85 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
   };
 };
 
+// 그림 밑에 붙는 이름표가 답을 그대로 적고 있는 일이 있었습니다.
+// '곧은 선 3개로 둘러싸인 모양은?' 옆 그림에는 '삼각형 모양'이라고,
+// '2×□=18일 때 □는?'의 그림에는 '2개씩 9묶음'이라고 적혀 있었습니다.
+//
+// 볼 곳은 단추를 눌러야 열리지만 그림은 늘 떠 있습니다. 그래서 이쪽이
+// 더 셉니다 — 아이는 그림만 읽고 답을 고를 수 있었습니다. 그림은 그대로
+// 두고 이름표만 지웁니다. 세어야 할 것은 그림 안에 그대로 있습니다.
+// 답을 적지 않으면서도 그림이 무엇인지는 알려 주는 이름입니다.
+// 화면 낭독기가 이 이름을 읽어 줍니다.
+const neutralVisualLabel = (kind: QuestionVisual['kind']): string => {
+  switch (kind) {
+    case 'plane-shapes':
+      return '여러 가지 모양';
+    case 'cube-stack':
+    case 'cube-pattern':
+      return '쌓은 모양';
+    case 'array':
+      return '묶어 놓은 물건';
+    case 'ruler':
+      return '자에 대어 놓은 물건';
+    case 'clock':
+      return '시계';
+    case 'calendar':
+    case 'year-calendar':
+      return '달력';
+    case 'pictograph':
+      return '그림그래프';
+    case 'grid-table':
+      return '표';
+    case 'pattern':
+      return '무늬';
+    default:
+      return '문제 그림';
+  }
+};
+
+const saysAnswer = (text: string, answer: string): boolean => {
+  const target = answer.trim();
+  if (!text || !target) return false;
+  const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // 답이 낱말 한가운데에 우연히 들어앉은 것까지 답을 말한 것으로 보면
+  // 멀쩡한 이름표가 지워집니다. 답 '시'는 '시계'에 들어 있지만 시계라는
+  // 낱말이 답을 알려 주지는 않습니다. 반대로 '9묶음'의 9는 답입니다.
+  //
+  // 그래서 한글이 든 답은 낱말 경계로, 숫자만인 답은 수의 경계로 봅니다.
+  // (우리말은 수와 셈낱말이 '9묶음'처럼 붙으므로 숫자에 한글 경계를
+  //  쓰면 정작 잡아야 할 것을 놓칩니다.)
+  const boundary = /[가-힣]/.test(target) ? '가-힣0-9' : '0-9';
+  return new RegExp(`(^|[^${boundary}])${escaped}([^${boundary}]|$)`).test(text);
+};
+
+const hideAnswerInLabel = <T extends QuestionVisual>(visual: T, answer: string): T => {
+  let next = visual;
+
+  // 묶음 그림은 이름표를 쓰지 않고 rows·columns로 '2개씩 4묶음'을 그
+  // 자리에서 만들어 붙입니다. 그래서 이름표만 지워서는 화면이 그대로입니다.
+  if (next.kind === 'array') {
+    const caption =
+      next.plainCount === undefined
+        ? `${next.columns}개씩 ${next.rows}묶음`
+        : `${next.plainCount}개`;
+    if (saysAnswer(caption, answer)) {
+      next = { ...next, hideCaption: true };
+    }
+  }
+
+  if ('label' in next) {
+    const label = (next as { label?: string }).label;
+    if (label && saysAnswer(label, answer)) {
+      // 비워 버리면 안 됩니다. 이 이름표는 화면 낭독기가 그림을 소개할
+      // 때 읽는 이름이기도 해서, 지우면 눈으로 못 보는 아이에게는 그림이
+      // 통째로 사라집니다. 답을 뺀 이름으로 바꿔 답니다.
+      next = { ...next, label: neutralVisualLabel(next.kind) };
+    }
+  }
+
+  return next;
+};
+
 const enforceSecondGradeLanguage = (question: Question): Question => {
   const choices = question.choices.map(cleanGrade2Text);
   const answer = cleanGrade2Text(question.answer);
@@ -700,7 +859,9 @@ const enforceSecondGradeLanguage = (question: Question): Question => {
     misconception: cleanGrade2Text(question.misconception),
     strategy: cleanGrade2Text(question.strategy),
     support,
-    ...(question.visual ? { visual: cleanGrade2Visual(question.visual) } : {}),
+    ...(question.visual
+      ? { visual: hideAnswerInLabel(cleanGrade2Visual(question.visual)!, answer) }
+      : {}),
   };
 };
 
@@ -1158,7 +1319,14 @@ const makeQuestion = (
     tuneWrongsForDifficulty(answer, wrongs, difficulty, lesson.scope.maxNumber),
     lesson.unitNo * 101 + lesson.lessonNo * 17 + index * 19 + difficultyIndex[difficulty],
   );
-  const support = buildLearningSupport(lesson, tag, leveledSolution, leveledStrategy, prompt);
+  const support = buildLearningSupport(
+    lesson,
+    tag,
+    leveledSolution,
+    leveledStrategy,
+    prompt,
+    madeChoices.answer,
+  );
   return enforceSecondGradeLanguage({
     id: `${lesson.id}-${difficulty}-${index + 1}`,
     lessonId: lesson.id,
@@ -10296,7 +10464,16 @@ const visualForGeneratedQuestion = (
     if (loose && !groupable) {
       const many = Number(loose[1]);
       if (many >= 2 && many <= 30) {
-        const wide = Math.min(5, many);
+        // 몇 개씩 묶으라는 문제라면 그 수만큼 한 줄에 놓습니다.
+        // '16개를 4개씩 묶으면 몇 묶음?'에 5개씩 늘어놓았더니, 4씩
+        // 묶어 세어야 하는 아이 앞에 5줄이 놓였습니다. 그림이 문제를
+        // 돕기는커녕 다른 묶음을 먼저 보여 준 셈입니다.
+        const per = /(\d+)\s*[가-힣]{0,3}씩/.exec(question.prompt);
+        const grouping = per ? Number(per[1]) : 0;
+        const wide =
+          grouping >= 2 && grouping <= 9 && many % grouping === 0 && many / grouping <= 9
+            ? grouping
+            : Math.min(5, many);
         return {
           kind: 'array',
           label: '세어 볼 물건',
@@ -10457,11 +10634,16 @@ const withRichVisual = (question: Question, index: number, lesson: Lesson): Ques
     // 놓은 그림 — 을 그립니다.
     if (visual.kind === 'ruler' && lesson.unitTitle === '길이 재기') {
       const clips = 4 + (index % 5);
-      return { ...question, visual: unitMeasureVisualFor('연필', '클립', clips) };
+      return {
+        ...question,
+        visual: hideAnswerInLabel(unitMeasureVisualFor('연필', '클립', clips), question.answer),
+      };
     }
     return question;
   }
-  return visual ? { ...question, visual } : question;
+  // 그림은 여기서 마지막으로 정해집니다. 이름표가 답을 적고 있으면
+  // 여기서 지웁니다 — 앞 단계에서 지워도 이 자리에서 다시 붙습니다.
+  return visual ? { ...question, visual: hideAnswerInLabel(visual, question.answer) } : question;
 };
 
 const addAssessmentLayer = (question: Question, index: number): Question => {

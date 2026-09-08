@@ -44,4 +44,32 @@ describe('틀렸을 때 주는 볼 곳', () => {
     // 없습니다. 절반은 그 문항의 수로 짚어 주어야 합니다.
     expect(useful * 3).toBeGreaterThan(all);
   });
+
+  it('답을 그대로 적어 두지 않는다', () => {
+    // 볼 곳은 아이가 답을 고르기 전에도 힌트 단추로 열 수 있습니다.
+    // 그런데 볼 곳이 답을 그대로 적고 있는 문항이 8010개 가운데 211개
+    // 있었습니다. '2단 곱셈구구는 몇씩 커질까요?'의 볼 곳이 '2단은 2씩
+    // 커집니다'였고, '긴바늘이 한 칸 지나면 몇 분?'의 볼 곳이 '한 칸을
+    // 지나면 5분입니다'였습니다. 힌트를 연 아이는 아무것도 알아내지
+    // 않은 채 답만 베껴 적게 됩니다.
+    //
+    // 틀린 뒤 화면에는 '정답' 줄이 따로 있으므로, 알아야 할 것은 그때
+    // 그대로 알게 됩니다. 여기서 막는 것은 '풀기 전에 답을 주는 일'뿐입니다.
+    const tells: string[] = [];
+
+    for (const lesson of lessons) {
+      for (const level of ['하', '중', '상'] as const) {
+        for (const question of generateQuestions(lesson, level)) {
+          const answer = question.answer.trim();
+          // 한 글자 답(2, 3…)은 멀쩡한 문장에도 우연히 들어갑니다.
+          if (answer.length < 2) continue;
+          if (question.support.studentHint.includes(answer)) {
+            tells.push(`${question.id}\n   문제: ${question.prompt}\n   답: ${answer}\n   볼 곳: ${question.support.studentHint}`);
+          }
+        }
+      }
+    }
+
+    expect(tells.slice(0, 5)).toEqual([]);
+  });
 });
