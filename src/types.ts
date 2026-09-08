@@ -338,6 +338,15 @@ export interface ArrayVisual {
    * 대신 전체 개수만 적습니다.
    */
   plainCount?: number;
+  /**
+   * 그림 밑의 '2개씩 4묶음' 설명을 지웁니다.
+   *
+   * '2×□=8일 때 □는?'의 답은 4인데, 그림에 '2개씩 4묶음'이라고 적혀
+   * 있었습니다. 아이는 동그라미를 셀 것도 없이 설명만 읽고 답을 골랐고,
+   * 그 문항은 아무것도 재지 못했습니다. 그림은 그대로 두고 설명만
+   * 지웁니다 — 세어야 할 것은 동그라미 안에 그대로 있습니다.
+   */
+  hideCaption?: boolean;
 }
 
 export interface PatternVisual {

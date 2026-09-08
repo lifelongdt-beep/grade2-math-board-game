@@ -1041,15 +1041,21 @@ function ArrayGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'arr
           );
         }),
       )}
-      <rect x="112" y="121" width="152" height="20" rx="10" fill="#e8fbfb" />
-      <text x="188" y="136" textAnchor="middle" fill="#0f7175" fontSize="13" fontWeight="900">
-        {/* 우리말은 '한 묶음의 크기'를 먼저 말합니다 — 5개씩 2묶음.
-            '2묶음 × 5개'로 적어 두었더니 무엇이 묶음이고 무엇이 낱개인지
-            거꾸로 읽혔습니다. */}
-        {visual.plainCount === undefined
-          ? `${visual.columns}개씩 ${visual.rows}묶음`
-          : `${visual.plainCount}개`}
-      </text>
+      {/* 설명이 곧 답이 되는 문항에서는 이 줄을 통째로 뺍니다. 빈 띠만
+          남겨 두면 무언가 지워진 자리처럼 보여 아이가 신경을 씁니다. */}
+      {!visual.hideCaption && (
+        <>
+          <rect x="112" y="121" width="152" height="20" rx="10" fill="#e8fbfb" />
+          <text x="188" y="136" textAnchor="middle" fill="#0f7175" fontSize="13" fontWeight="900">
+            {/* 우리말은 '한 묶음의 크기'를 먼저 말합니다 — 5개씩 2묶음.
+                '2묶음 × 5개'로 적어 두었더니 무엇이 묶음이고 무엇이 낱개인지
+                거꾸로 읽혔습니다. */}
+            {visual.plainCount === undefined
+              ? `${visual.columns}개씩 ${visual.rows}묶음`
+              : `${visual.plainCount}개`}
+          </text>
+        </>
+      )}
     </svg>
   );
 }
