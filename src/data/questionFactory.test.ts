@@ -219,7 +219,19 @@ describe('questionFactory', () => {
   //
   // 채우려면 이 차시의 문항에 실제로 셀 자료를 넣어야 합니다. 그때 이
   // 목록에서 지웁니다.
-  const noDataToDraw = new Set<string>(['2-1-u5-l1', '2-1-u5-l2', '2-1-u5-l3', '2-2-u5-l1']);
+  //
+  // 길이 재기 단원 도입(2-2-u3-l1)도 같은 까닭으로 들어왔습니다. 이
+  // 차시의 문항은 '길이를 재야 하는 상황으로 알맞은 것은?', '두 물건을
+  // 맞대어 견줄 때 지켜야 할 것은?'처럼 잴 길이가 아예 없는 말 문제입니다.
+  // 그동안은 0~8cm짜리 자를 그려 수를 채웠지만, 8은 문제 어디에도 없는
+  // 수여서 아이가 그림과 문제를 이어 붙일 데가 없었습니다.
+  const noDataToDraw = new Set<string>([
+    '2-1-u5-l1',
+    '2-1-u5-l2',
+    '2-1-u5-l3',
+    '2-2-u5-l1',
+    '2-2-u3-l1',
+  ]);
 
   it('adds rich visual materials and higher-order items across every lesson', () => {
     const expectedRichCount: Record<Difficulty, number> = {
