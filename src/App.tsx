@@ -636,6 +636,13 @@ function App() {
   // 늘려 줍니다 — 60초 수업이면 최대 30초입니다.
   const [bonusUsed, setBonusUsed] = useState(0);
   const [bonusFlash, setBonusFlash] = useState(0);
+  // 맞힌 아이 자리에서 시계까지 날아가는 별입니다. 시간이 왜 늘었는지가
+  // 눈에 보여야 '맞히면 시간이 붙는다'가 규칙으로 읽힙니다.
+  const [flyingStars, setFlyingStars] = useState<
+    Array<{ id: number; left: number; top: number; dx: number; dy: number }>
+  >([]);
+  const timerCardRef = useRef<HTMLDivElement>(null);
+  const laneRefs = useRef<Record<number, HTMLElement | null>>({});
   const players = useMemo(() => createPlayers(playerCount, studentConfigs), [playerCount, studentConfigs]);
   const [bankSeed, setBankSeed] = useState(0);
   // '구구단, 몬스터를 막아라!'에서 학생이 스스로 고르는 구구단입니다.
@@ -896,12 +903,11 @@ function App() {
   const isCastleDefense = lesson.title === '구구단, 몬스터를 막아라!';
   const CASTLE_HEARTS_MAX = 8;
 
-  // 한 단계는 아이 한 명당 네 문제입니다.
+  // 한 단계는 아이 한 명당 여섯 문제입니다.
   //
-  // 여섯이었을 때는 다섯 명이 서른 개를 맞혀야 한 단계였습니다. 달리는
-  // 것이 목표마다 바뀌는데(기차 → 비행기 → 로켓 → 우주선 → 외계인 →
-  // 사람), 그 속도로는 한 학기에도 외계인을 못 봅니다.
-  const goalStep = Math.max(4, playerCount * 4);
+  // 넷이었을 때는 한 칸이 너무 빨리 찼습니다. 한 명이 두 문제씩 더
+  // 맞혀야 한 칸이 차도록 여섯으로 둡니다.
+  const goalStep = Math.max(6, playerCount * 6);
   const goalStage = Math.floor(correctCount / goalStep) + 1;
   const goalTarget = goalStage * goalStep;
   const goalPercent = Math.round(((correctCount % goalStep) / goalStep) * 100);
@@ -1172,12 +1178,42 @@ function App() {
 
   const bonusCap = Math.floor(sessionDuration / 2);
 
-  const addBonusTime = () => {
+  // 별이 날아가는 시간입니다. CSS의 star-fly와 같은 값이어야, 별이 시계에
+  // 닿는 그 순간에 '+2초'가 뜹니다.
+  const STAR_FLIGHT_MS = 700;
+
+  const addBonusTime = (fromPlayerId?: number) => {
     if (bonusUsed >= bonusCap) return;
     const giving = Math.min(BONUS_SECONDS, bonusCap - bonusUsed);
+    // 시간은 곧바로 붙입니다. 별이 닿을 때까지 미루면, 그 사이에 시계가
+    // 0이 되어 상을 못 받는 일이 생깁니다.
     setBonusUsed((value) => value + giving);
     setRemainingSeconds((value) => value + giving);
-    setBonusFlash(Date.now());
+
+    const lane = fromPlayerId === undefined ? null : laneRefs.current[fromPlayerId];
+    const timer = timerCardRef.current;
+    if (!lane || !timer) {
+      setBonusFlash(Date.now());
+      return;
+    }
+
+    const from = lane.getBoundingClientRect();
+    const to = timer.getBoundingClientRect();
+    const id = Date.now() + Math.random();
+    setFlyingStars((stars) => [
+      ...stars,
+      {
+        id,
+        left: from.left + from.width / 2,
+        top: from.top + 28,
+        dx: to.left + to.width / 2 - (from.left + from.width / 2),
+        dy: to.top + to.height / 2 - (from.top + 28),
+      },
+    ]);
+    window.setTimeout(() => {
+      setFlyingStars((stars) => stars.filter((star) => star.id !== id));
+      setBonusFlash(Date.now());
+    }, STAR_FLIGHT_MS);
   };
 
   // 새 문제로 넘어갈 때 힌트 상태를 접습니다. 열어 두었던 도움말이나
@@ -1275,7 +1311,7 @@ function App() {
 
     if (isCorrect) {
       triggerSuccessSignal(player.id, question.difficulty);
-      addBonusTime();
+      addBonusTime(player.id);
     } else {
       triggerWrongSignal(player.id);
     }
@@ -1726,7 +1762,10 @@ function App() {
       <div className="game-topbar-actions">
           <div className={`timer-cluster ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}>
             <SandTimer remaining={remainingSeconds} total={sessionDuration + bonusCap} />
-            <div className={`timer-card ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}>
+            <div
+              ref={timerCardRef}
+              className={`timer-card ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}
+            >
               <Timer size={22} />
               <strong>{remainingSeconds}초</strong>
               {/* 방금 붙은 시간입니다. 맞혀서 늘어났다는 것이 보여야
@@ -1744,8 +1783,30 @@ function App() {
     </section>
   );
 
+  // 맞힌 자리에서 시계로 날아가는 별입니다. 화면 어디에나 떠야 하므로
+  // 자리 계산을 화면 기준(fixed)으로 하고 문서 맨 위에 얹습니다.
+  const renderFlyingStars = () =>
+    flyingStars.map((star) => (
+      <span
+        key={star.id}
+        className="bonus-star"
+        aria-hidden="true"
+        style={
+          {
+            left: star.left,
+            top: star.top,
+            '--star-dx': `${star.dx}px`,
+            '--star-dy': `${star.dy}px`,
+          } as CSSProperties
+        }
+      >
+        ⭐
+      </span>
+    ));
+
   const renderGame = () => (
     <>
+      {renderFlyingStars()}
       <footer className={`command-bar ${mode === 'finished' ? 'finished-actions' : ''}`}>
         <button className="secondary-button" type="button" onClick={goSetup}>
           <Home size={18} />
@@ -1840,6 +1901,9 @@ function App() {
                 <article
                   className={`player-lane student-question ${mode === 'finished' ? 'finished-result' : state.feedback} ${successActive ? 'success-signal' : ''} ${wrongActive ? 'wrong-signal' : ''}`}
                   key={player.id}
+                  ref={(node) => {
+                    laneRefs.current[player.id] = node;
+                  }}
                   style={laneStyleFor(player.id)}
                 >
                   <header>

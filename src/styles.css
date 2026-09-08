@@ -5727,6 +5727,52 @@ body::before {
   position: relative;
 }
 
+/* 맞힌 아이 자리에서 시계까지 날아가는 별입니다. 시간이 왜 늘었는지
+   눈으로 따라갈 수 있어야, 시계가 벌이 아니라 상으로 읽힙니다.
+   날아가는 시간은 App.tsx의 STAR_FLIGHT_MS와 같아야 별이 닿는 순간에
+   '+2초'가 뜹니다. */
+.bonus-star {
+  position: fixed;
+  z-index: 60;
+  font-size: 26px;
+  line-height: 1;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: star-fly 0.7s cubic-bezier(0.34, 0.62, 0.36, 1) forwards;
+}
+
+@keyframes star-fly {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(-50%, -50%) scale(1.25) rotate(40deg);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--star-dx)), calc(-50% + var(--star-dy)))
+      scale(0.55) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* 움직임을 줄여 달라고 한 기기에서는 날리지 않고 그 자리에서 사라집니다. */
+@media (prefers-reduced-motion: reduce) {
+  .bonus-star {
+    animation: star-fade 0.7s ease forwards;
+  }
+
+  @keyframes star-fade {
+    0% { opacity: 0; }
+    30% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+}
+
 @keyframes timer-bonus-rise {
   0% { transform: translateY(6px); opacity: 0; }
   25% { transform: translateY(0); opacity: 1; }

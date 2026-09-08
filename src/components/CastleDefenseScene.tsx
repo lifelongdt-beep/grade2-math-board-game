@@ -14,7 +14,8 @@ const MONSTER_EMOJI = ['👻', '🦇', '👹', '👾', '🐲', '🧟'];
 const FALL_SECONDS: Record<Difficulty, number> = {
   하: 9,
   중: 5,
-  상: 3,
+  // 상은 3초로도 쉽다고 하여 0.5초 줄였습니다.
+  상: 2.5,
 };
 
 const hashOf = (text: string) => text.split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
