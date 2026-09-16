@@ -416,6 +416,106 @@ function NumberLineGraphic({ visual }: { visual: Extract<QuestionVisual, { kind:
   );
 }
 
+// 수의 범위를 그립니다(5-2 1단원).
+//
+// 지도서가 그리는 방법을 그대로 따릅니다.
+//   · 경곗값이 들어가면 ●, 들어가지 않으면 ○
+//   · 들어가는 쪽으로 굵은 선을 긋고, 끝이 없으면 화살표로 뻗는다
+// '이상'과 '초과'의 차이는 이 점 하나가 채워져 있는지뿐이므로, 점은
+// 눈금보다 크고 또렷하게 그립니다.
+function RangeLineGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'range-line' }> }) {
+  const span = Math.max(1e-9, visual.end - visual.start);
+  const toX = (value: number) => 32 + ((value - visual.start) / span) * NUMBER_LINE_TRACK_WIDTH;
+
+  const ticks: number[] = [];
+  // 소수 간격에서 0.30000000000000004 같은 값이 나오지 않게 칸 수로 셉니다.
+  const tickCount = Math.round(span / visual.step);
+  for (let i = 0; i <= tickCount; i += 1) {
+    ticks.push(Number((visual.start + visual.step * i).toFixed(6)));
+  }
+
+  const longestLabel = ticks.reduce((longest, value) => Math.max(longest, String(value).length), 1);
+  const tickGap = NUMBER_LINE_TRACK_WIDTH / Math.max(1, ticks.length - 1);
+  const labelEvery = Math.max(1, Math.ceil((longestLabel * 10 + 6) / Math.max(tickGap, 1)));
+
+  const left = visual.lower ? toX(visual.lower.value) : 32;
+  const right = visual.upper ? toX(visual.upper.value) : 344;
+
+  return (
+    <svg viewBox="0 0 376 142" role="img" aria-label={visual.label}>
+      <rect x="4" y="6" width="368" height="130" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      <line x1="32" y1="86" x2="344" y2="86" stroke="#506579" strokeWidth="4" strokeLinecap="round" />
+
+      {ticks.map((value, index) => {
+        const labelled = index % labelEvery === 0 || index === ticks.length - 1;
+        return (
+          <g key={`tick-${value}`}>
+            <line x1={toX(value)} y1="76" x2={toX(value)} y2={labelled ? 96 : 92} stroke="#8aa0b8" strokeWidth="3" />
+            {labelled && (
+              <text x={toX(value)} y="118" textAnchor="middle" fill="#24364a" fontSize="15" fontWeight="800">
+                {value}
+              </text>
+            )}
+          </g>
+        );
+      })}
+
+      {/* 범위를 나타내는 굵은 선입니다. */}
+      <line x1={left} y1="86" x2={right} y2="86" stroke="#18a7a7" strokeWidth="7" strokeLinecap="butt" />
+
+      {/* 끝이 정해지지 않은 쪽에는 화살표를 답니다. */}
+      {!visual.lower && <polygon points="32,86 44,79 44,93" fill="#18a7a7" />}
+      {!visual.upper && <polygon points="344,86 332,79 332,93" fill="#18a7a7" />}
+
+      {([visual.lower ? { ...visual.lower, side: 'lower' as const } : null,
+         visual.upper ? { ...visual.upper, side: 'upper' as const } : null]
+        .filter(Boolean) as Array<{ value: number; included: boolean; side: 'lower' | 'upper' }>)
+        .map((edge) => (
+          <g key={edge.side}>
+            <circle
+              cx={toX(edge.value)}
+              cy="86"
+              r="9"
+              fill={edge.included ? '#18a7a7' : '#ffffff'}
+              stroke="#0f7175"
+              strokeWidth="3"
+            />
+            {/*
+              경곗값은 늘 숫자로 적어 줍니다. 눈금은 5나 10 간격인데
+              경곗값이 32나 49처럼 눈금 사이에 놓이면, 아이는 점이
+              30에 있는지 32에 있는지 알 수가 없습니다. 어느 수가
+              경계인지는 이 그림에서 읽어야 할 것이 아니라 읽기의
+              출발점입니다 — 읽어야 할 것은 점이 찼는지 비었는지입니다.
+            */}
+            <text
+              x={toX(edge.value)}
+              y="70"
+              textAnchor="middle"
+              fill="#0f7175"
+              fontSize="16"
+              fontWeight="900"
+            >
+              {edge.value}
+            </text>
+          </g>
+        ))}
+
+      {/* 범위에 들어가는지 살펴볼 수 있게 함께 찍어 주는 수입니다. */}
+      {visual.dots?.map((dot, index) => (
+        <g key={`dot-${dot.value}-${index}`}>
+          <line x1={toX(dot.value)} y1="86" x2={toX(dot.value)} y2="58" stroke="#f0a202" strokeWidth="2" strokeDasharray="4 3" />
+          <circle cx={toX(dot.value)} cy="54" r="6" fill="#ffd166" stroke="#c07f00" strokeWidth="2" />
+          {dot.label && (
+            <text x={toX(dot.value)} y="36" textAnchor="middle" fill="#8a5a00" fontSize="14" fontWeight="900">
+              {dot.label}
+            </text>
+          )}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 function PlaceValueGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'place-value' }> }) {
   const cellWidth = 320 / visual.columns.length;
 
@@ -1230,6 +1330,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'cube-views' && <CubeViewsGraphic visual={visual} />}
       {visual.kind === 'tangram' && <TangramGraphic visual={visual} />}
       {visual.kind === 'number-line' && <NumberLineGraphic visual={visual} />}
+      {visual.kind === 'range-line' && <RangeLineGraphic visual={visual} />}
       {visual.kind === 'unit-measure' && <UnitMeasureGraphic visual={visual} />}
       {visual.kind === 'place-value' && <PlaceValueGraphic visual={visual} />}
       {visual.kind === 'bar-model' && <BarModelGraphic visual={visual} />}
