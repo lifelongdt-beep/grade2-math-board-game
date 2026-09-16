@@ -2128,6 +2128,7 @@ function App() {
                             solved={result.correct}
                             total={playerQuestions.length}
                             level={state.activeRetry?.level ?? state.level}
+                            sharedScreen={!isMobileEntry}
                             onTimeout={() => answerQuestion(player, question, -1)}
                           />
                         ) : (
