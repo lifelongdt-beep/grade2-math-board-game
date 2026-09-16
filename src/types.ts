@@ -248,6 +248,33 @@ export interface RangeLineVisual {
   dots?: Array<{ value: number; label?: string }>;
 }
 
+// 분수를 그림으로 보이는 모델입니다(5-2 2단원).
+//
+// 지도서가 차시마다 다른 모델을 씁니다.
+//   bar  : 띠를 여러 개 두고 같은 만큼씩 칠합니다. (진분수)×(자연수)를
+//          '같은 수를 여러 번 더하기'로 보이는 묶음 상황입니다.
+//   part : 띠 하나를 자연수만큼 나누고 그중 몇 묶음을 칠합니다.
+//          (자연수)×(진분수)의 '~의 몇 분의 몇'을 보이는 비율 상황입니다.
+//   area : 정사각형을 가로·세로로 나누어 겹치는 곳을 칠합니다.
+//          (분수)×(분수)의 넓이 상황입니다.
+export interface FractionModelVisual {
+  kind: 'fraction-model';
+  label: string;
+  shape: 'bar' | 'part' | 'area';
+  // bar·part에서 띠 하나를 몇 칸으로 나누는지와 몇 칸을 칠하는지입니다.
+  denominator: number;
+  numerator: number;
+  // bar에서 띠를 몇 개 두는지입니다.
+  repeat?: number;
+  // part에서 띠 하나가 나타내는 자연수입니다(6 m의 1/3이면 6).
+  whole?: number;
+  // area에서 가로·세로를 몇 칸으로 나누고 몇 칸을 칠하는지입니다.
+  columns?: number;
+  shadedColumns?: number;
+  rows?: number;
+  shadedRows?: number;
+}
+
 export interface PlaceValueVisual {
   kind: 'place-value';
   label: string;
@@ -420,6 +447,7 @@ export type QuestionVisual =
   | TangramVisual
   | NumberLineVisual
   | RangeLineVisual
+  | FractionModelVisual
   | GridTableVisual
   | UnitMeasureVisual
   | PlaceValueVisual

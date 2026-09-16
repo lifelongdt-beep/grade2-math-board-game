@@ -148,6 +148,21 @@ const hasFinal = (word: string): boolean => {
   return code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 !== 0;
 };
 
+/**
+ * 조사만 돌려줍니다.
+ *
+ * '1과 3/4을'처럼 앞말과 조사를 따로 적어야 할 때 씁니다. 조사는 바로
+ * 앞에 오는 소리를 따르므로, 대분수에서는 자연수 부분이 아니라 분수
+ * 부분('3/4' → 사분의 삼 → 받침 없음)을 보고 골라야 합니다.
+ */
+export const particleOf = (word: string, kind: '을' | '은' | '이' | '과'): string => {
+  const final = hasFinal(word);
+  if (kind === '을') return final ? '을' : '를';
+  if (kind === '은') return final ? '은' : '는';
+  if (kind === '이') return final ? '이' : '가';
+  return final ? '과' : '와';
+};
+
 export const eul = (word: string) => `${word}${hasFinal(word) ? '을' : '를'}`;
 export const eun = (word: string) => `${word}${hasFinal(word) ? '은' : '는'}`;
 export const i = (word: string) => `${word}${hasFinal(word) ? '이' : '가'}`;
@@ -156,4 +171,19 @@ export const gwa = (word: string) => `${word}${hasFinal(word) ? '과' : '와'}`;
 // '미만라는 말이'처럼 어긋나면 아이가 문제를 읽다가 걸립니다.
 export const iraneun = (word: string) => `${word}${hasFinal(word) ? '이라는' : '라는'}`;
 
-export const euro = (word: string) => `${word}${hasFinal(word) && !word.endsWith('ㄹ') ? '으로' : '로'}`;
+// '으로'와 '로'를 가립니다. 받침이 없거나 받침이 ㄹ이면 '로'입니다.
+//   1 일로   7 칠로   8 팔로   (받침이 ㄹ)
+//   3 삼으로  6 육으로  10 십으로 (다른 받침)
+//   2 이로   4 사로   5 오로   9 구로 (받침 없음)
+const endsWithRieul = (word: string): boolean => {
+  const last = word[word.length - 1];
+  if (/\d/.test(last)) return last === '1' || last === '7' || last === '8';
+  const code = word.charCodeAt(word.length - 1);
+  if (code < 0xac00 || code > 0xd7a3) return false;
+  return (code - 0xac00) % 28 === 8;
+};
+
+export const euro = (word: string) => `${word}${hasFinal(word) && !endsWithRieul(word) ? '으로' : '로'}`;
+
+/** 조사 '으로/로'만 돌려줍니다. */
+export const euroOf = (word: string) => euro(word).slice(word.length);

@@ -345,6 +345,7 @@ export const lesson567Middle = (mode: Rounding): G5Family[] => {
           const 묶음 = pick([10, 100], seed);
           const exp = 묶음 === 10 ? 1 : 2;
           if (개수 % 묶음 === 0) return null;
+          if (개수 < 묶음 * 2) return null;
           const answer = estimate(String(개수), exp, 'floor');
           return {
             prompt: `공 ${개수}개를 ${묶음}개씩 포장하여 판매하려고 합니다. 포장하여 판매할 수 있는 공은 최대 몇 개일까요?`,
@@ -374,6 +375,9 @@ export const lesson567Middle = (mode: Rounding): G5Family[] => {
           const 지폐 = pick([1000, 10000], seed);
           const exp = 지폐 === 1000 ? 3 : 4;
           if (금액 % 지폐 === 0) return null;
+          // 지폐 한 장 값도 되지 않으면 '최대 0원까지'가 되어 물을 것이
+          // 없습니다.
+          if (금액 < 지폐 * 2) return null;
           const answer = estimate(String(금액), exp, 'floor');
           return {
             prompt: `저금통에 모은 동전 ${금액}원을 ${지폐}원짜리 지폐로 바꾸려고 합니다. 최대 얼마까지 바꿀 수 있을까요?`,
@@ -403,6 +407,7 @@ export const lesson567Middle = (mode: Rounding): G5Family[] => {
           const 단위 = pick([10, 100, 1000], seed);
           const exp = 단위 === 10 ? 1 : 단위 === 100 ? 2 : 3;
           if (점수 % 단위 === 0) return null;
+          if (점수 < 단위 * 2) return null;
           const answer = estimate(String(점수), exp, 'floor');
           return {
             prompt: `서점에서 책을 사고 ${점수}점을 적립하였습니다. 적립한 점수를 ${단위}점 단위로만 쓸 수 있다면 최대 몇 점까지 쓸 수 있을까요?`,

@@ -157,7 +157,9 @@ export const lesson4Easy: G5Family[] = [
         hint: `양쪽 끝의 수 ${gwa(String(a))} ${eul(String(b))} 먼저 살펴보세요. 나머지 수는 대개 헷갈리지 않습니다.`,
         steps: [
           `${rangeText(lower, upper)}는 ${a} ${aboveWord(lower.included)}이면서 ${b} ${belowWord(upper.included)}인 수입니다.`,
-          `보기의 수를 하나씩 넣어 보면 ${iJosa(String(드는것.join(', ') || '없습니다'))} 조건에 맞습니다.`,
+          드는것.length
+            ? `보기의 수를 하나씩 넣어 보면 ${iJosa(드는것.join(', '))} 조건에 맞습니다.`
+            : '보기의 수를 하나씩 넣어 보면 조건에 맞는 수가 없습니다.',
           `그러므로 ${드는것.length}개입니다.`,
         ],
         visual: rangeLine('수의 범위', Math.max(1, Math.round((b - a) / 4)), lower, upper),
@@ -259,7 +261,9 @@ export const lesson4Middle: G5Family[] = [
         hint: `${줄.이름}의 범위를 먼저 적어 놓고 키를 하나씩 견주어 보세요. 경계와 똑같은 키가 있는지 눈여겨보세요.`,
         steps: [
           `${줄.이름}의 범위는 ${rangeText(줄.lower, 줄.upper, 'cm')}입니다.`,
-          `${사람.map((이름, index) => `${이름}(${키[index]} cm)`).join(', ')}을 하나씩 살펴보면 ${iJosa(String(드는사람.join(', ') || '없습니다'))} 이 범위에 들어갑니다.`,
+          드는사람.length
+            ? `${사람.map((이름, index) => `${이름}(${키[index]} cm)`).join(', ')}을 하나씩 살펴보면 ${iJosa(드는사람.join(', '))} 이 범위에 들어갑니다.`
+            : `${사람.map((이름, index) => `${이름}(${키[index]} cm)`).join(', ')}을 하나씩 살펴보면 이 범위에 드는 학생이 없습니다.`,
           `그러므로 ${드는사람.length}명입니다.`,
         ],
       };
@@ -271,7 +275,11 @@ export const lesson4Middle: G5Family[] = [
       const next = rand(seed);
       const 표 = 택배요금;
       const 줄 = 표.줄[next(표.줄.length)];
-      const 값 = 줄.upper ? 줄.upper.value : 1;
+      // 경곗값만 묻지 않고 구간 안쪽의 무게도 묻습니다. 경곗값만 나오면
+      // 아이가 '표의 오른쪽 수를 찾으면 된다'는 요령만 익힙니다.
+      const 아래 = 줄.lower?.value ?? 0;
+      const 위 = 줄.upper?.value ?? 아래 + 1;
+      const 값 = next(2) === 0 ? 위 : Math.min(위, 아래 + 1 + next(Math.max(1, 위 - 아래 - 1)));
       const 정답줄 = 줄찾기(표, 값);
       if (!정답줄) return null;
       return {
@@ -285,6 +293,41 @@ export const lesson4Middle: G5Family[] = [
           `${정답줄.이름} 줄의 범위는 ${rangeText(정답줄.lower, 정답줄.upper, 'kg')}입니다.`,
           `${값} ${iJosa('kg')} 이 범위에 들어갑니다.`,
           `그러므로 요금은 ${정답줄.이름}입니다.`,
+        ],
+      };
+    },
+  },
+  {
+    id: 'count-rows-between',
+    make: (seed) => {
+      const next = rand(seed);
+      const 표 = pick(표들, seed + 5);
+      const 이름표 = ['가', '나', '다', '라', '마'];
+      const 줄 = 표.줄[1 + next(표.줄.length - 1)];
+      if (!줄.lower || !줄.upper) return null;
+      const 값 = [줄.lower.value, 줄.upper.value, 줄.lower.value + 1, 줄.upper.value + 1, 줄.lower.value - 1];
+      const 드는것 = 값.filter((v) => inRange(v, 줄.lower, 줄.upper));
+      const 양끝포함 = 값.filter((v) =>
+        inRange(v, { value: 줄.lower!.value, included: true }, { value: 줄.upper!.value, included: true }),
+      );
+      if (드는것.length === 양끝포함.length || 드는것.length === 0) return null;
+      return {
+        prompt: `${표.제목}는 ${표글(표)}입니다. 조사한 값이 ${값.map((v, index) => `${이름표[index]} ${v} ${표.단위}`).join(', ')}일 때 ${줄.이름}에 해당하는 것은 모두 몇 개일까요?`,
+        answer: `${드는것.length}개`,
+        wrongs: [
+          `${양끝포함.length}개`,
+          `${값.length - 드는것.length}개`,
+          `${드는것.length + 1}개`,
+          `${Math.max(0, 드는것.length - 1)}개`,
+          `${값.length}개`,
+        ],
+        tag: 'range',
+        strategy: '구간에 드는 것의 개수 세기',
+        hint: `묻는 ${표.이름}의 범위를 표에서 찾아 먼저 적고, 경계에 딱 걸린 값부터 살펴보세요.`,
+        steps: [
+          `${줄.이름}의 범위는 ${rangeText(줄.lower, 줄.upper, 표.단위)}입니다.`,
+          `주어진 값 가운데 이 범위에 드는 것은 ${드는것.join(', ')}입니다.`,
+          `그러므로 ${드는것.length}개입니다.`,
         ],
       };
     },

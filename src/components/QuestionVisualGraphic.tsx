@@ -516,6 +516,149 @@ function RangeLineGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
   );
 }
 
+// 분수를 그림으로 보입니다(5-2 2단원).
+//
+// 지도서가 세 가지 모델을 씁니다. 차시가 다루는 곱셈의 종류에 따라
+// 어느 모델로 보여 줄지가 다릅니다 — (진분수)×(자연수)는 같은 만큼을
+// 여러 번 더하는 띠로, (자연수)×(진분수)는 하나를 똑같이 나눈 것 중
+// 몇 묶음으로, (분수)×(분수)는 가로·세로로 나눈 넓이로 보입니다.
+function FractionModelGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'fraction-model' }> }) {
+  const FILL = '#18a7a7';
+  const EMPTY = '#ffffff';
+  const LINE = '#0f7175';
+
+  if (visual.shape === 'area') {
+    const columns = Math.max(1, visual.columns ?? 1);
+    const rows = Math.max(1, visual.rows ?? 1);
+    const shadedColumns = Math.min(columns, visual.shadedColumns ?? 0);
+    const shadedRows = Math.min(rows, visual.shadedRows ?? 0);
+    const size = 190;
+    const left = (376 - size) / 2;
+    const top = 14;
+    const cellWidth = size / columns;
+    const cellHeight = size / rows;
+
+    return (
+      <svg viewBox="0 0 376 230" role="img" aria-label={visual.label}>
+        <rect x="4" y="4" width="368" height="222" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+        {Array.from({ length: rows }, (_, row) =>
+          Array.from({ length: columns }, (_, column) => {
+            // 가로로 고른 칸과 세로로 고른 칸이 겹치는 곳이 두 분수의 곱입니다.
+            //
+            // 한 번만 칠해진 두 곳을 같은 색으로 두었더니 어느 쪽이
+            // 가로에서 온 것이고 어느 쪽이 세로에서 온 것인지 알 수가
+            // 없었습니다. '두 번 칠해진 곳'을 세라고 해 놓고 한 번
+            // 칠해진 것이 몇 가지인지 보이지 않으면 그림이 뜻을
+            // 잃습니다. 두 방향을 다른 색으로 둡니다.
+            const byColumn = column < shadedColumns;
+            const byRow = row < shadedRows;
+            const both = byColumn && byRow;
+            return (
+              <rect
+                key={`${row}-${column}`}
+                x={left + column * cellWidth}
+                y={top + row * cellHeight}
+                width={cellWidth}
+                height={cellHeight}
+                fill={both ? FILL : byColumn ? '#cdeeee' : byRow ? '#ffe6a8' : EMPTY}
+                stroke="#8aa0b8"
+                strokeWidth="1.5"
+              />
+            );
+          }),
+        )}
+        <rect x={left} y={top} width={size} height={size} fill="none" stroke={LINE} strokeWidth="3" />
+        <text x="188" y="222" textAnchor="middle" fill="#526779" fontSize="15" fontWeight="800">
+          가로로 칠한 곳과 세로로 칠한 곳이 겹치는 자리
+        </text>
+      </svg>
+    );
+  }
+
+  if (visual.shape === 'part') {
+    // 띠 하나가 자연수 하나를 나타냅니다. 그 띠를 분모만큼 나누고
+    // 분자만큼 칠합니다 — '6의 1/3'이면 6을 3으로 나눈 것 중 1입니다.
+    const parts = Math.max(1, visual.denominator);
+    const shaded = Math.min(parts, visual.numerator);
+    const width = 312;
+    const left = 32;
+    const cell = width / parts;
+
+    return (
+      <svg viewBox="0 0 376 150" role="img" aria-label={visual.label}>
+        <rect x="4" y="4" width="368" height="142" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+        {Array.from({ length: parts }, (_, index) => (
+          <rect
+            key={index}
+            x={left + index * cell}
+            y={52}
+            width={cell}
+            height={46}
+            fill={index < shaded ? FILL : EMPTY}
+            stroke="#8aa0b8"
+            strokeWidth="2"
+          />
+        ))}
+        <rect x={left} y={52} width={width} height={46} fill="none" stroke={LINE} strokeWidth="3" />
+        {visual.whole !== undefined && (
+          <>
+            <text x="188" y="38" textAnchor="middle" fill="#0f7175" fontSize="17" fontWeight="900">
+              전체 {visual.whole}
+            </text>
+            {/*
+              칸 수를 글로 적어 두면 그림을 볼 필요가 없어집니다.
+              '그림이 나타내는 곱셈은?'을 묻는 문항에서는 그것이 곧
+              답을 적어 두는 것과 같습니다. 무엇을 세어야 하는지만
+              적습니다.
+            */}
+            <text x="188" y="126" textAnchor="middle" fill="#526779" fontSize="15" fontWeight="800">
+              똑같이 나눈 묶음 수와 칠한 묶음 수를 세어 보세요
+            </text>
+          </>
+        )}
+      </svg>
+    );
+  }
+
+  // bar: 띠를 여러 개 두고 같은 만큼씩 칠합니다.
+  const repeat = Math.max(1, visual.repeat ?? 1);
+  const parts = Math.max(1, visual.denominator);
+  const shaded = Math.min(parts, visual.numerator);
+  const barWidth = Math.min(96, 312 / repeat - 8);
+  const gap = repeat > 1 ? (312 - barWidth * repeat) / (repeat - 1) : 0;
+  const cell = barWidth / parts;
+
+  return (
+    <svg viewBox="0 0 376 150" role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width="368" height="142" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {Array.from({ length: repeat }, (_, bar) => {
+        const left = 32 + bar * (barWidth + gap);
+        return (
+          <g key={bar}>
+            {Array.from({ length: parts }, (_, index) => (
+              <rect
+                key={index}
+                x={left + index * cell}
+                y={48}
+                width={cell}
+                height={48}
+                fill={index < shaded ? FILL : EMPTY}
+                stroke="#8aa0b8"
+                strokeWidth="1.5"
+              />
+            ))}
+            <rect x={left} y={48} width={barWidth} height={48} fill="none" stroke={LINE} strokeWidth="3" />
+          </g>
+        );
+      })}
+      {/* 칸 수를 적어 두면 그림을 읽을 일이 없어집니다. */}
+      <text x="188" y="126" textAnchor="middle" fill="#526779" fontSize="15" fontWeight="800">
+        띠 하나에 칠한 칸 수와 띠의 개수를 세어 보세요
+      </text>
+    </svg>
+  );
+}
+
 function PlaceValueGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'place-value' }> }) {
   const cellWidth = 320 / visual.columns.length;
 
@@ -1331,6 +1474,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'tangram' && <TangramGraphic visual={visual} />}
       {visual.kind === 'number-line' && <NumberLineGraphic visual={visual} />}
       {visual.kind === 'range-line' && <RangeLineGraphic visual={visual} />}
+      {visual.kind === 'fraction-model' && <FractionModelGraphic visual={visual} />}
       {visual.kind === 'unit-measure' && <UnitMeasureGraphic visual={visual} />}
       {visual.kind === 'place-value' && <PlaceValueGraphic visual={visual} />}
       {visual.kind === 'bar-model' && <BarModelGraphic visual={visual} />}
