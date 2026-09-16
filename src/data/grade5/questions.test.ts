@@ -4,7 +4,7 @@ import { generateQuestions } from '../questionFactory';
 import type { Difficulty, Lesson, Question } from '../../types';
 
 // ════════════════════════════════════════════════════════════════════
-// 5-2 1단원 문항 검사
+// 5-2 문항 검사
 // ────────────────────────────────────────────────────────────────────
 // 선생님이 말한 그대로입니다 — 답이 틀리거나 문제가 틀리거나 해설이
 // 틀리면 아이가 그것을 배웁니다. 그래서 사람이 눈으로 읽어 찾는 데
@@ -54,6 +54,53 @@ const refEstimate = (value: string, exp: number, mode: Rounding): string => {
   if (outDecimals === 0) return wholeText;
   return `${wholeText}.${all.slice(wholeLength).join('').slice(0, outDecimals)}`;
 };
+
+// ── 분수 ────────────────────────────────────────────────────────────
+// fraction.ts를 부르지 않고 여기서 다시 만듭니다. 같은 함수를 두 번
+// 부르면 그 함수가 틀렸을 때 둘 다 똑같이 틀립니다.
+type Ratio = { n: number; d: number };
+
+const reduce = (n: number, d: number): Ratio => {
+  // 소인수로 하나씩 나눕니다. fraction.ts의 유클리드 호제법과 다른 길입니다.
+  let top = n;
+  let bottom = d;
+  for (let factor = 2; factor <= Math.min(Math.abs(top), bottom); factor += 1) {
+    while (top % factor === 0 && bottom % factor === 0) {
+      top /= factor;
+      bottom /= factor;
+    }
+  }
+  return { n: top, d: bottom };
+};
+
+const readFraction = (input: string): Ratio | null => {
+  const trimmed = input.trim();
+  const mixedHit = /^(\d+)[과와] (\d+)\/(\d+)$/.exec(trimmed);
+  if (mixedHit) {
+    const w = Number(mixedHit[1]);
+    const n = Number(mixedHit[2]);
+    const d = Number(mixedHit[3]);
+    return reduce(w * d + n, d);
+  }
+  const fracHit = /^(\d+)\/(\d+)$/.exec(trimmed);
+  if (fracHit) return reduce(Number(fracHit[1]), Number(fracHit[2]));
+  const wholeHit = /^(\d+)$/.exec(trimmed);
+  if (wholeHit) return { n: Number(wholeHit[1]), d: 1 };
+  return null;
+};
+
+// 대분수의 '과/와'도 소리에 맞춰야 합니다. 1 일과, 2 이와, 3 삼과 …
+const 받침있는수 = (value: number) => [true, true, false, true, false, false, true, true, true, false][value % 10];
+
+const writeFraction = ({ n, d }: Ratio): string => {
+  if (d === 1) return String(n);
+  if (n < d) return `${n}/${d}`;
+  const front = Math.floor(n / d);
+  const rest = n - front * d;
+  return rest === 0 ? String(front) : `${front}${받침있는수(front) ? '과' : '와'} ${rest}/${d}`;
+};
+
+const multiply = (a: Ratio, b: Ratio): Ratio => reduce(a.n * b.n, a.d * b.d);
 
 const placeExp = (name: string): number => {
   const whole: Record<string, number> = { 일: 0, 십: 1, 백: 2, 천: 3, 만: 4 };
@@ -185,6 +232,47 @@ const recompute = (prompt: string): string | null => {
   hit = /드론 (\d+)대를 사용하여.*약 몇천 몇백 대라고 할 수 있을까요\?$/.exec(prompt);
   if (hit) return `약 ${refEstimate(hit[1], 2, 'round')}대`;
 
+  // 2/5 × 3을 계산하면 얼마일까요?
+  hit = /^(\d+(?:과 \d+\/\d+)?|\d+\/\d+) × (\d+(?:과 \d+\/\d+)?|\d+\/\d+)[을를] 계산하면 얼마일까요\?$/.exec(prompt);
+  if (hit) {
+    const left = readFraction(hit[1]);
+    const right = readFraction(hit[2]);
+    if (left && right) return writeFraction(multiply(left, right));
+  }
+  // 2/5 × 3 × 1/4를 계산하면 얼마일까요?
+  hit = /^(\d+(?:과 \d+\/\d+)?|\d+\/\d+) × (\d+(?:과 \d+\/\d+)?|\d+\/\d+) × (\d+\/\d+)[을를] 계산하면 얼마일까요\?$/.exec(prompt);
+  if (hit) {
+    const a = readFraction(hit[1]);
+    const b = readFraction(hit[2]);
+    const c = readFraction(hit[3]);
+    if (a && b && c) return writeFraction(multiply(multiply(a, b), c));
+  }
+  // 대분수 1과 3/4을 가분수로 나타내면 얼마일까요?
+  hit = /^대분수 (\d+)과 (\d+)\/(\d+)[을를] 가분수로 나타내면 얼마일까요\?$/.exec(prompt);
+  if (hit) return `${Number(hit[1]) * Number(hit[3]) + Number(hit[2])}/${hit[3]}`;
+  // 가분수 7/4를 대분수로 나타내면 얼마일까요?
+  hit = /^가분수 (\d+)\/(\d+)[을를] 대분수로 나타내면 얼마일까요\?$/.exec(prompt);
+  if (hit) {
+    const n = Number(hit[1]);
+    const d = Number(hit[2]);
+    return writeFraction({ n, d });
+  }
+  // 8/12를 기약분수로 나타내면 얼마일까요?
+  hit = /^(\d+)\/(\d+)[을를] 기약분수로 나타내면 얼마일까요\?$/.exec(prompt);
+  if (hit) return writeFraction(reduce(Number(hit[1]), Number(hit[2])));
+  // 2/9 + 5/9를 계산하면 얼마일까요?
+  hit = /^(\d+)\/(\d+) \+ (\d+)\/(\d+)[을를] 계산하면 얼마일까요\?$/.exec(prompt);
+  if (hit) {
+    const [, a, b, c, d] = hit.map(Number);
+    return writeFraction(reduce(a * d + c * b, b * d));
+  }
+  // 12의 1/4은 얼마일까요?
+  hit = /^(\d+)의 1\/(\d+)[은는] 얼마일까요\?$/.exec(prompt);
+  if (hit) return writeFraction(reduce(Number(hit[1]), Number(hit[2])));
+  // 1/6이 20개인 수는 얼마일까요?
+  hit = /^1\/(\d+)[이가] (\d+)개인 수는 얼마일까요\?$/.exec(prompt);
+  if (hit) return writeFraction(reduce(Number(hit[2]), Number(hit[1])));
+
   // 0.1이 35개인 수는 얼마일까요?
   hit = /^0\.1이 (\d+)개인 수는 얼마일까요\?$/.exec(prompt);
   if (hit) return (Number(hit[1]) / 10).toFixed(1);
@@ -213,7 +301,7 @@ const every: Array<[Lesson, Difficulty, Question[]]> = lessons5.flatMap((lesson)
   ]),
 );
 
-describe('5-2 1단원 문항', () => {
+describe('5-2 문항', () => {
   it.each(every.map(([lesson, difficulty, questions]) => [`${lesson.id} ${difficulty}`, questions]))(
     '%s — 서른 문항이 만들어진다',
     (_label, questions) => {
@@ -231,6 +319,41 @@ describe('5-2 1단원 문항', () => {
         if (question.choices.filter((choice) => choice === question.answer).length !== 1) {
           broken.push(`${question.id} 정답이 여러 번`);
         }
+      }
+    }
+    expect(broken).toEqual([]);
+  });
+
+  it('보기 넷이 서로 다른 값을 가리킨다', () => {
+    // 글자가 달라도 값이 같으면 정답이 둘입니다. 1/2과 2/4가 함께
+    // 보기에 있으면 둘 다 맞는 답이라, 아이가 무엇을 골라도 맞거나
+    // 틀리게 됩니다. 분수로 읽히는 보기는 값으로 견줍니다.
+    const broken: string[] = [];
+    for (const [, , questions] of every) {
+      for (const question of questions) {
+        const 값들 = question.choices
+          .map((choice) => readFraction(choice.replace(/\s*(개|명|일|대|가지|권|원|점|컵|도막|cm|km|kg|m²|m|g|L|mL)$/u, '')))
+          .filter((one): one is Ratio => one !== null);
+        for (let i = 0; i < 값들.length; i += 1) {
+          for (let j = i + 1; j < 값들.length; j += 1) {
+            if (값들[i].n * 값들[j].d === 값들[j].n * 값들[i].d) {
+              broken.push(`${question.id}: 값이 같은 보기 — ${question.choices.join(' | ')}`);
+            }
+          }
+        }
+      }
+    }
+    expect([...new Set(broken)]).toEqual([]);
+  });
+
+  it('음수가 보기에 나오지 않는다', () => {
+    // 초등에서는 음수를 다루지 않습니다. 뺄셈으로 오답을 만들다 보면
+    // 순서에 따라 음수가 나올 수 있습니다.
+    const broken: string[] = [];
+    for (const [, , questions] of every) {
+      for (const question of questions) {
+        const 글 = [question.prompt, ...question.choices].join(' ');
+        if (/-\d/.test(글)) broken.push(`${question.id}: ${글.slice(0, 100)}`);
       }
     }
     expect(broken).toEqual([]);
@@ -431,6 +554,21 @@ describe('5-2 1단원 문항', () => {
       }
     }
     expect([...new Set(broken)]).toEqual([]);
+  });
+
+  it('빈 목록을 말로 이어 붙이다 문장이 깨지지 않는다', () => {
+    // '없습니다이 조건에 맞습니다'처럼, 비어 있을 때를 따로 쓰지 않으면
+    // 조사가 낱말 뒤에 그대로 붙어 문장이 깨집니다.
+    const broken: string[] = [];
+    for (const [, , questions] of every) {
+      for (const question of questions) {
+        const 글 = [question.prompt, question.support.studentHint, ...question.support.steps].join(' ');
+        if (/없습니다[이가은는을를과와]/.test(글) || /undefined|NaN|\[object/.test(글)) {
+          broken.push(`${question.id}: ${글.slice(0, 120)}`);
+        }
+      }
+    }
+    expect(broken).toEqual([]);
   });
 
   it('5학년 차시에 2학년 문항이 섞이지 않는다', () => {

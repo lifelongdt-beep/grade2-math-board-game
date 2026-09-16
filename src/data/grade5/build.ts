@@ -1,4 +1,5 @@
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, Question, QuestionVisual } from '../../types';
+import { parse as parseFraction } from './fraction';
 import { rand } from './util';
 import {
   g5CoreConcept,
@@ -100,12 +101,31 @@ const tagLabel: Partial<Record<ConceptTag, string>> = {
   number: '수 세기와 크기 비교',
 };
 
-// 쓸 수 있는 오답입니다. 답과 같은 것, 서로 같은 것은 버립니다.
+// 글에 붙은 단위를 떼고 수만 남깁니다. '3과 1/5 km' → '3과 1/5'
+const 수만 = (choice: string) =>
+  choice.replace(/\s*(개|명|일|대|가지|권|원|점|컵|도막|cm|km|kg|m²|m|g|L|mL)$/u, '').trim();
+
+// 쓸 수 있는 오답입니다.
+//
+// 글자가 다른 것만으로는 모자랍니다. 1/2과 2/4는 글자가 다르지만 같은
+// 수라, 둘이 함께 보기에 있으면 정답이 둘이 됩니다. 아이가 무엇을
+// 골라도 맞거나 틀리게 되는 문항이 됩니다. 그래서 분수로 읽히는 보기는
+// 값으로 견줍니다.
+const 같은값 = (a: string, b: string) => {
+  if (a === b) return true;
+  const left = parseFraction(수만(a));
+  const right = parseFraction(수만(b));
+  if (!left || !right) return false;
+  return left.n * right.d === right.n * left.d;
+};
+
 const usableWrongs = (spec: G5Spec): string[] => {
   const kept: string[] = [];
   for (const wrong of spec.wrongs) {
-    if (wrong === spec.answer) continue;
-    if (kept.includes(wrong)) continue;
+    if (같은값(wrong, spec.answer)) continue;
+    if (kept.some((one) => 같은값(one, wrong))) continue;
+    // 초등에서는 음수를 다루지 않습니다.
+    if (/-\d/.test(wrong)) continue;
     kept.push(wrong);
     if (kept.length === 3) break;
   }
@@ -169,9 +189,14 @@ export const buildGrade5Questions = (
   const made: Question[] = [];
   const seenPrompt = new Set<string>();
   const shapeCount = new Map<string, number>();
-  // 한 모양이 서른 자리를 다 먹으면 그 차시는 같은 문제만 되풀이됩니다.
-  // 뭉치가 여섯이면 한 뭉치가 다섯 자리까지입니다.
-  const mostPerShape = Math.max(4, Math.ceil(SLOTS_PER_LESSON / families.length) + 2);
+  const familyCount = new Map<string, number>();
+  // 한 뭉치가 서른 자리를 다 먹으면 그 차시는 한 가지만 되풀이됩니다.
+  // 뭉치가 여섯이면 한 뭉치가 일곱 자리까지입니다.
+  const mostPerFamily = Math.max(4, Math.ceil(SLOTS_PER_LESSON / families.length) + 2);
+  // 글의 모양으로도 한 번 더 막습니다. 다만 계산 차시는 '□ × □를
+  // 계산하면?'이 서른 번 나오는 것이 옳으므로, 이쪽은 느슨하게 둡니다 —
+  // 뭉치가 다르면 묻는 것도 다릅니다.
+  const mostPerShape = 15;
 
   const salt = difficultyIndex[difficulty] * 1009 + lesson.unitNo * 101 + lesson.lessonNo * 17;
 
@@ -192,10 +217,12 @@ export const buildGrade5Questions = (
       // 후보는 달라도 쓰이는 셋이 같은 두 문항이 함께 나갑니다.
       const key = `${spec.prompt}||${spec.answer}||${[...wrongs].sort().join('|')}`;
       if (seenPrompt.has(key)) continue;
+      if ((familyCount.get(family.id) ?? 0) >= mostPerFamily) continue;
       const shape = shapeOfPrompt(spec.prompt);
       if ((shapeCount.get(shape) ?? 0) >= mostPerShape) continue;
 
       seenPrompt.add(key);
+      familyCount.set(family.id, (familyCount.get(family.id) ?? 0) + 1);
       shapeCount.set(shape, (shapeCount.get(shape) ?? 0) + 1);
       made.push(toQuestion(lesson, difficulty, made.length, spec));
     }

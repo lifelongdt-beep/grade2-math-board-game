@@ -857,8 +857,10 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'year-calendar' ||
     visual.kind === 'pictograph' ||
     visual.kind === 'cube-pattern' ||
-    // range-line은 5학년 그림이라 2학년 말로 다듬을 것이 이름표뿐입니다.
+    // range-line과 fraction-model은 5학년 그림이라 2학년 말로 다듬을
+    // 것이 이름표뿐입니다.
     visual.kind === 'range-line' ||
+    visual.kind === 'fraction-model' ||
     visual.kind === 'array'
   ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };

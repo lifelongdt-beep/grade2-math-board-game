@@ -65,6 +65,12 @@ export const splitPrompt = (text: string): Piece[] => {
     if (/\d/.test(text[at])) {
       let end = at;
       while (end < text.length && /\d/.test(text[end])) end += 1;
+      // 분수는 하나의 수입니다. 2/5을 '2'와 '5'로 끊어 칠하면 가운데
+      // 빗금만 색 없이 남아, 한 수가 아니라 두 수처럼 보입니다.
+      if (text[end] === '/' && /\d/.test(text[end + 1] ?? '')) {
+        end += 1;
+        while (end < text.length && /\d/.test(text[end])) end += 1;
+      }
       flush();
       pieces.push({ kind: 'number', text: text.slice(at, end) });
       at = end;

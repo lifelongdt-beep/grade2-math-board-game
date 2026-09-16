@@ -5,6 +5,9 @@ import { lesson23Easy, lesson23Hard, lesson23Middle } from './unit1/lesson23';
 import { lesson4Easy, lesson4Hard, lesson4Middle } from './unit1/lesson4';
 import { lesson567Easy, lesson567Hard, lesson567Middle } from './unit1/lesson567';
 import { lesson8Easy, lesson8Hard, lesson8Middle } from './unit1/lesson8';
+import type { Kind } from './unit2/kinds';
+import { unit2Lesson1Easy, unit2Lesson1Hard, unit2Lesson1Middle } from './unit2/lesson1';
+import { multiplyEasy, multiplyHard, multiplyMiddle } from './unit2/multiply';
 import type { Rounding } from './util';
 
 // ════════════════════════════════════════════════════════════════════
@@ -56,9 +59,34 @@ const unit1Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
   return null;
 };
 
+// 2단원 2~7차시가 맡는 곱셈의 종류입니다. 차시 차례는 지도서의 단원
+// 전개 계획 그대로입니다 — (진분수)×(자연수)부터 시작해 (대분수)×(대분수)로
+// 끝납니다. 앞 차시에서 배운 것 위에 하나씩 얹히는 차례라, 이 표를
+// 바꾸면 차시가 배우지 않은 곱셈을 묻게 됩니다.
+const unit2Kinds: Record<number, Kind> = {
+  2: 'proper-whole',
+  3: 'mixed-whole',
+  4: 'whole-proper',
+  5: 'whole-mixed',
+  6: 'proper-proper',
+  7: 'mixed-mixed',
+};
+
+const unit2Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
+  if (lessonNo === 1) {
+    return difficulty === '하' ? unit2Lesson1Easy : difficulty === '중' ? unit2Lesson1Middle : unit2Lesson1Hard;
+  }
+  const kind = unit2Kinds[lessonNo];
+  if (!kind) return null;
+  if (difficulty === '하') return multiplyEasy(kind);
+  if (difficulty === '중') return multiplyMiddle(kind);
+  return multiplyHard(kind);
+};
+
 export const grade5FamiliesFor = (lesson: Lesson, difficulty: Difficulty): G5Family[] | null => {
   if (lesson.semester !== '5-2') return null;
   if (lesson.unitNo === 1) return unit1Families(lesson.lessonNo, difficulty);
+  if (lesson.unitNo === 2) return unit2Families(lesson.lessonNo, difficulty);
   return null;
 };
 
