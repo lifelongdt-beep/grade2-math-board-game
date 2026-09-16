@@ -102,6 +102,55 @@ const writeFraction = ({ n, d }: Ratio): string => {
 
 const multiply = (a: Ratio, b: Ratio): Ratio => reduce(a.n * b.n, a.d * b.d);
 
+// ── 소수 ────────────────────────────────────────────────────────────
+// decimal.ts는 BigInt 곱셈으로 셈합니다. 여기서는 자릿수를 손으로
+// 올려 가며 곱하는 학교 셈법으로 다시 셉니다.
+const 손으로곱하기 = (a: string, b: string): string => {
+  const left = a.split('').map(Number).reverse();
+  const right = b.split('').map(Number).reverse();
+  const result = new Array(left.length + right.length).fill(0);
+  for (let i = 0; i < left.length; i += 1) {
+    for (let j = 0; j < right.length; j += 1) {
+      result[i + j] += left[i] * right[j];
+    }
+  }
+  for (let i = 0; i < result.length; i += 1) {
+    if (result[i] >= 10) {
+      result[i + 1] += Math.floor(result[i] / 10);
+      result[i] %= 10;
+    }
+  }
+  const text = result.reverse().join('').replace(/^0+(?=\d)/, '');
+  return text;
+};
+
+const 소수곱 = (a: string, b: string): string => {
+  const 자리 = (text: string) => (text.split('.')[1] ?? '').length;
+  const 숫자만 = (text: string) => text.replace('.', '');
+  const places = 자리(a) + 자리(b);
+  let digits = 손으로곱하기(숫자만(a), 숫자만(b));
+  if (places === 0) return String(Number(digits));
+  digits = digits.padStart(places + 1, '0');
+  const whole = String(Number(digits.slice(0, digits.length - places)));
+  const fraction = digits.slice(digits.length - places).replace(/0+$/, '');
+  return fraction ? `${whole}.${fraction}` : whole;
+};
+
+const 소수점옮기기 = (text: string, by: number): string => {
+  const [whole, fraction = ''] = text.split('.');
+  const digits = whole + fraction;
+  let point = whole.length + by;
+  let padded = digits;
+  while (point <= 0) {
+    padded = `0${padded}`;
+    point += 1;
+  }
+  while (point > padded.length) padded = `${padded}0`;
+  const left = String(Number(padded.slice(0, point)));
+  const right = padded.slice(point).replace(/0+$/, '');
+  return right ? `${left}.${right}` : left;
+};
+
 const placeExp = (name: string): number => {
   const whole: Record<string, number> = { 일: 0, 십: 1, 백: 2, 천: 3, 만: 4 };
   const decimal: Record<string, number> = { 첫째: -1, 둘째: -2, 셋째: -3 };
@@ -272,6 +321,21 @@ const recompute = (prompt: string): string | null => {
   // 1/6이 20개인 수는 얼마일까요?
   hit = /^1\/(\d+)[이가] (\d+)개인 수는 얼마일까요\?$/.exec(prompt);
   if (hit) return writeFraction(reduce(Number(hit[2]), Number(hit[1])));
+
+  // 0.9 × 4를 계산하면 얼마일까요?  /  2.4 × 1.5를 …
+  hit = /^(\d+(?:\.\d+)?) × (\d+(?:\.\d+)?)[을를] 계산하면 얼마일까요\?$/.exec(prompt);
+  if (hit) return 소수곱(hit[1], hit[2]);
+  // 3.24의 10배는 얼마일까요?
+  hit = /^(\d+(?:\.\d+)?)의 (10|100)배[은는] 얼마일까요\?$/.exec(prompt);
+  if (hit) return 소수점옮기기(hit[1], hit[2] === '10' ? 1 : 2);
+  hit = /^(\d+(?:\.\d+)?)의 1\/(10|100)[은는] 얼마일까요\?$/.exec(prompt);
+  if (hit) return 소수점옮기기(hit[1], hit[2] === '10' ? -1 : -2);
+  // 2.4 × 1.5의 곱은 소수점 아래 자리 수가 몇 개일까요?
+  hit = /^(\d+(?:\.\d+)?) × (\d+(?:\.\d+)?)의 곱은 소수점 아래 자리 수가 몇 개일까요\?$/.exec(prompt);
+  if (hit) {
+    const 자리 = (text: string) => (text.split('.')[1] ?? '').length;
+    return `${자리(hit[1]) + 자리(hit[2])}개`;
+  }
 
   // 0.1이 35개인 수는 얼마일까요?
   hit = /^0\.1이 (\d+)개인 수는 얼마일까요\?$/.exec(prompt);
@@ -579,7 +643,14 @@ describe('5-2 문항', () => {
     for (const [, , questions] of every) {
       for (const question of questions) {
         for (const 글 of [question.prompt, ...question.choices, question.support.studentHint, ...question.support.steps]) {
-          const hit = /([가-힣]{2,12})\1/.exec(글);
+          // 낱말이 되풀이된 것, 수가 되풀이된 것('8.678.67'), 그리고
+          // 단위 한 글자가 되풀이된 것('10배배')을 모두 봅니다.
+          const hit =
+            /([가-힣]{2,12})\1/.exec(글)
+            // 소수가 되풀이된 것만 봅니다. 370000처럼 0이 이어지는 수는
+            // 멀쩡한 수라 걸러 내면 안 됩니다.
+            ?? /(\d+\.\d+)\1/.exec(글)
+            ?? /(배|개|명|번|칸|쪽|원|점)\1/.exec(글);
           if (hit) broken.push(`${question.id}: "${hit[1]}"이(가) 두 번 — ${글.slice(0, 90)}`);
         }
       }

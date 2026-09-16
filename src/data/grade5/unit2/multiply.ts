@@ -394,7 +394,7 @@ export const multiplyHard = (kind: Kind): G5Family[] => [
       const 작은값 = compare(곱1, 곱2) > 0 ? 곱2 : 곱1;
       const 식 = (o: Operands) => `${o.leftText} × ${o.rightText}`;
       return {
-        prompt: `${식(a)}${gwa(a.rightText).slice(a.rightText.length)} ${식(b)} 중에서 계산 결과가 더 큰 것은 어느 것일까요?`,
+        prompt: `${식(a)}${particleOf(a.rightText, '과')} ${식(b)} 중에서 계산 결과가 더 큰 것은 어느 것일까요?`,
         answer: 식(큰쪽),
         wrongs: [식(큰쪽 === a ? b : a), '두 식의 결과는 같습니다.', text(큰값), text(작은값)],
         tag: 'fraction',
