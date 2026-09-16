@@ -372,7 +372,7 @@ describe('5-2 문항', () => {
         // 보기 넷이 같아도 답과 그림이 다르면 다른 문제입니다. 25와
         // 35로 만들 수 있는 네 가지 범위를 보기로 놓고, 그림만 바꾸어
         // 어느 것인지 묻는 문항이 그렇습니다.
-        const key = `${question.prompt}||${[...question.choices].sort().join('|')}||${question.answer}`;
+        const key = `${question.prompt}||${[...question.choices].sort().join('|')}||${question.answer}||${JSON.stringify(question.visual ?? null)}`;
         if (seen.has(key)) broken.push(`${lesson.id} ${difficulty}: ${question.prompt}`);
         seen.add(key);
 
@@ -565,6 +565,48 @@ describe('5-2 문항', () => {
         const 글 = [question.prompt, question.support.studentHint, ...question.support.steps].join(' ');
         if (/없습니다[이가은는을를과와]/.test(글) || /undefined|NaN|\[object/.test(글)) {
           broken.push(`${question.id}: ${글.slice(0, 120)}`);
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+  });
+
+  it('같은 말이 잇달아 두 번 찍히지 않는다', () => {
+    // '마름모마름모는', '2과 1/62과 1/6과'처럼 낱말 뒤에 조사를 붙이려다
+    // 낱말까지 한 번 더 찍는 실수가 잦습니다. 문장 안에서 두 글자 이상이
+    // 잇달아 되풀이되면 걸러 냅니다.
+    const broken: string[] = [];
+    for (const [, , questions] of every) {
+      for (const question of questions) {
+        for (const 글 of [question.prompt, ...question.choices, question.support.studentHint, ...question.support.steps]) {
+          const hit = /([가-힣]{2,12})\1/.exec(글);
+          if (hit) broken.push(`${question.id}: "${hit[1]}"이(가) 두 번 — ${글.slice(0, 90)}`);
+        }
+      }
+    }
+    expect([...new Set(broken)]).toEqual([]);
+  });
+
+  it('그림에 적은 길이와 각도가 그 도형과 어긋나지 않는다', () => {
+    // 직사각형을 그려 놓고 한 각을 107°라고 적으면, 아이는 그림과 글
+    // 가운데 어느 것을 믿어야 할지 알 수 없습니다. 각이 정해진 도형과
+    // 변의 길이가 정해진 도형에는 마음대로 적을 수 없습니다.
+    const 각이정해진도형 = ['정사각형', '직사각형'];
+    const 변이같은도형 = ['정사각형', '정삼각형', '마름모', '정오각형', '정육각형'];
+    const broken: string[] = [];
+    for (const [, , questions] of every) {
+      for (const question of questions) {
+        if (question.visual?.kind !== 'figure-set') continue;
+        for (const item of question.visual.items) {
+          for (const angle of item.angleLabels ?? []) {
+            if (각이정해진도형.includes(item.shape) && angle.text !== '90°') {
+              broken.push(`${question.id}: ${item.shape}에 ${angle.text}`);
+            }
+          }
+          const 길이들 = new Set((item.edgeLabels ?? []).map((edge) => edge.text));
+          if (변이같은도형.includes(item.shape) && 길이들.size > 1) {
+            broken.push(`${question.id}: ${item.shape}에 서로 다른 변의 길이 ${[...길이들].join(', ')}`);
+          }
         }
       }
     }

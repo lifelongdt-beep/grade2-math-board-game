@@ -442,9 +442,9 @@ export const unit2Lesson1Hard: G5Family[] = [
         ],
         tag: 'fraction',
         strategy: '두 분수를 통분하기',
-        hint: `두 분모 ${d1}${gwa(String(d1))} ${d2}의 최소공배수를 먼저 구하세요. 그 수가 새 분모가 됩니다.`,
+        hint: `두 분모 ${gwa(String(d1))} ${d2}의 최소공배수를 먼저 구하세요. 그 수가 새 분모가 됩니다.`,
         steps: [
-          `${d1}${gwa(String(d1))} ${d2}의 최소공배수는 ${공통}입니다.`,
+          `${gwa(String(d1))} ${d2}의 최소공배수는 ${공통}입니다.`,
           `${a}/${d1}의 분모와 분자에 ${공통 / d1}${euroText(공통 / d1)} 곱하면 ${(a * 공통) / d1}/${공통}입니다.`,
           `${b}/${d2}의 분모와 분자에 ${공통 / d2}${euroText(공통 / d2)} 곱하면 ${(b * 공통) / d2}/${공통}입니다.`,
           `그러므로 ${answer}입니다.`,

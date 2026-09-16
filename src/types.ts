@@ -275,6 +275,48 @@ export interface FractionModelVisual {
   shadedRows?: number;
 }
 
+// 도형을 여러 개 늘어놓고 보이는 그림입니다(5-2 3단원 합동과 대칭).
+//
+// 한 그림 안에서
+//   · 합동인지 보려고 두 도형을 나란히 두거나
+//   · 대칭축을 긋거나 대칭의 중심을 찍거나
+//   · 꼭짓점에 ㄱㄴㄷㄹ을 붙여 대응점·대응변·대응각을 묻습니다.
+// 세 가지가 모두 '도형을 놓고 그 위에 무엇을 표시한다'는 같은 일이라
+// 하나로 둡니다.
+export type FigureShapeName =
+  | '정삼각형' | '이등변삼각형' | '직각삼각형'
+  | '정사각형' | '직사각형' | '마름모' | '평행사변형'
+  | '사다리꼴' | '사각형'
+  | '정오각형' | '정육각형' | '원';
+
+export interface FigureSetVisual {
+  kind: 'figure-set';
+  label: string;
+  items: Array<{
+    // 가, 나, 다 … 도형 밑에 붙이는 이름입니다. 없으면 붙이지 않습니다.
+    name?: string;
+    shape: FigureShapeName;
+    // 도 단위입니다. 합동인 두 도형을 돌려 놓을 때 씁니다.
+    rotate?: number;
+    // 좌우를 뒤집습니다(선대칭이동).
+    flip?: boolean;
+    // 1이 기본 크기입니다. '모양은 같고 크기가 다른' 도형을 보일 때 씁니다.
+    scale?: number;
+    // 꼭짓점 이름입니다. 꼭짓점 차례대로 붙습니다.
+    vertexLabels?: string[];
+    // 대칭축입니다. 여러 개 그릴 수 있습니다.
+    axes?: Array<'vertical' | 'horizontal' | 'diagonal' | 'anti-diagonal'>;
+    // 대칭의 중심을 찍습니다.
+    center?: boolean;
+    // 변에 길이를 적습니다. 꼭짓점 번호 두 개로 변을 가리킵니다.
+    edgeLabels?: Array<{ from: number; to: number; text: string }>;
+    // 꼭짓점에 각의 크기를 적습니다.
+    angleLabels?: Array<{ at: number; text: string }>;
+    // 눈에 띄게 그립니다.
+    active?: boolean;
+  }>;
+}
+
 export interface PlaceValueVisual {
   kind: 'place-value';
   label: string;
@@ -448,6 +490,7 @@ export type QuestionVisual =
   | NumberLineVisual
   | RangeLineVisual
   | FractionModelVisual
+  | FigureSetVisual
   | GridTableVisual
   | UnitMeasureVisual
   | PlaceValueVisual
