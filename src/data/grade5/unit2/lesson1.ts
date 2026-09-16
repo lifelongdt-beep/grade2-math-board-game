@@ -432,7 +432,7 @@ export const unit2Lesson1Hard: G5Family[] = [
       if (공통 === d1 || 공통 === d2) return null;
       const answer = `${(a * 공통) / d1}/${공통}, ${(b * 공통) / d2}/${공통}`;
       return {
-        prompt: `${a}/${d1}${gwa(`${a}/${d1}`)} ${b}/${d2}${eul(`${b}/${d2}`)} 최소공배수로 통분하면 어느 것일까요?`,
+        prompt: `${gwa(`${a}/${d1}`)} ${eul(`${b}/${d2}`)} 최소공배수로 통분하면 어느 것일까요?`,
         answer,
         wrongs: [
           `${a}/${공통}, ${b}/${공통}`,

@@ -20,6 +20,9 @@ import {
   합동성질Easy,
   합동성질Hard,
 } from './unit3/lessons';
+import type { DecimalKind } from './unit4/multiply';
+import { decimalEasy, decimalHard, decimalMiddle } from './unit4/multiply';
+import { unit4Lesson1Easy, 소수점위치Easy } from './unit4/lessons';
 import type { Rounding } from './util';
 
 // ════════════════════════════════════════════════════════════════════
@@ -136,11 +139,39 @@ const unit3Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
   return null;
 };
 
+// 4단원 2~7차시가 맡는 곱셈의 종류입니다. 지도서의 차례 그대로,
+// (1보다 작은 소수)×(자연수)부터 (1보다 큰 소수)×(1보다 큰 소수)까지
+// 한 차시에 하나씩 올라갑니다.
+const unit4Kinds: Record<number, DecimalKind> = {
+  2: 'small-whole',
+  3: 'big-whole',
+  4: 'whole-small',
+  5: 'whole-big',
+  6: 'small-small',
+  7: 'big-big',
+};
+
+const unit4Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
+  if (lessonNo === 1) return unit4Lesson1Easy;
+  if (lessonNo === 8) {
+    // 8차시는 곱의 소수점 위치 하나를 여러 갈래로 묻습니다.
+    if (difficulty === '하') return 소수점위치Easy.slice(0, 4);
+    if (difficulty === '중') return 소수점위치Easy;
+    return [...소수점위치Easy.slice(3), ...소수점위치Easy.slice(0, 2)];
+  }
+  const kind = unit4Kinds[lessonNo];
+  if (!kind) return null;
+  if (difficulty === '하') return decimalEasy(kind);
+  if (difficulty === '중') return decimalMiddle(kind);
+  return decimalHard(kind);
+};
+
 export const grade5FamiliesFor = (lesson: Lesson, difficulty: Difficulty): G5Family[] | null => {
   if (lesson.semester !== '5-2') return null;
   if (lesson.unitNo === 1) return unit1Families(lesson.lessonNo, difficulty);
   if (lesson.unitNo === 2) return unit2Families(lesson.lessonNo, difficulty);
   if (lesson.unitNo === 3) return unit3Families(lesson.lessonNo, difficulty);
+  if (lesson.unitNo === 4) return unit4Families(lesson.lessonNo, difficulty);
   return null;
 };
 
