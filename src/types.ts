@@ -2,6 +2,11 @@ export type Difficulty = '하' | '중' | '상';
 
 export type SessionDuration = 30 | 60 | 120;
 
+// 어느 학기인지입니다. 2학년 1·2학기로 시작했고, 5학년 2학기가 뒤에
+// 붙었습니다. 5학년은 차시도 문항도 따로 만들기 때문에(grade5 폴더),
+// 여기서 하는 일은 '어느 학기의 차시인가'를 한 곳에 적어 두는 것뿐입니다.
+export type Semester = '2-1' | '2-2' | '5-2';
+
 export type ConceptTag =
   | 'number'
   | 'placeValue'
@@ -14,7 +19,18 @@ export type ConceptTag =
   | 'multiplication'
   | 'time'
   | 'data'
-  | 'pattern';
+  | 'pattern'
+  // ── 5학년에서 쓰는 갈래입니다 ──────────────────────────────────
+  // 2학년 문항은 이 갈래를 쓰지 않습니다. 5학년 문항은 자기 풀이와
+  // 볼 곳을 문항마다 직접 들고 다니므로(grade5/support.ts), 여기 갈래는
+  // 기록에 남을 이름과 묶음을 정하는 데 씁니다.
+  | 'range'
+  | 'rounding'
+  | 'fraction'
+  | 'decimal'
+  | 'congruence'
+  | 'average'
+  | 'possibility';
 
 // 차시가 '무엇을 물어도 되는가'를 적어 둔 선언입니다.
 //
@@ -42,7 +58,7 @@ export interface LessonScope {
 
 export interface Lesson {
   id: string;
-  semester: '2-1' | '2-2';
+  semester: Semester;
   unitNo: number;
   unitTitle: string;
   lessonNo: number;
@@ -56,7 +72,7 @@ export interface Lesson {
 }
 
 export interface Unit {
-  semester: '2-1' | '2-2';
+  semester: Semester;
   unitNo: number;
   title: string;
   lessons: Lesson[];
@@ -206,6 +222,30 @@ export interface NumberLineVisual {
   // 눈금은 보이되 숫자는 감출 자리입니다. 정답 자리에 숫자를 그대로 쓰면
   // 세어 보지 않고 답을 읽어 버립니다. 눈금만 두면 한 칸을 세어야 합니다.
   hiddenLabels?: number[];
+}
+
+// 수의 범위를 나타내는 그림입니다(5-2 1단원).
+//
+// 지도서가 쓰는 그대로입니다 — 기준이 되는 수를 ●(포함)나 ○(포함하지
+// 않음)로 표시하고, 포함되는 쪽으로 굵은 선과 화살표를 그립니다.
+// 한쪽만 정해진 범위('20 이상인 수')와 두 수로 끊은 범위('49 초과 59
+// 이하인 수') 둘 다 이 하나로 그립니다.
+//
+// 지도서는 이 그림을 '수직선'이라 부르지만, 그 말은 중학교에서 배우는
+// 용어라 학생에게는 쓰지 않는다고 못박아 두었습니다. 그래서 label에도
+// 문항 글에도 '수직선'이라고 쓰지 않습니다.
+export interface RangeLineVisual {
+  kind: 'range-line';
+  label: string;
+  start: number;
+  end: number;
+  step: number;
+  // 아래쪽 경계입니다. 없으면 왼쪽 끝까지 이어진(화살표로 뻗는) 범위입니다.
+  lower?: { value: number; included: boolean };
+  // 위쪽 경계입니다. 없으면 오른쪽 끝까지 이어진 범위입니다.
+  upper?: { value: number; included: boolean };
+  // 범위와 함께 찍어서 '들어가는지' 살펴볼 수 있게 하는 점입니다.
+  dots?: Array<{ value: number; label?: string }>;
 }
 
 export interface PlaceValueVisual {
@@ -379,6 +419,7 @@ export type QuestionVisual =
   | CubeViewsVisual
   | TangramVisual
   | NumberLineVisual
+  | RangeLineVisual
   | GridTableVisual
   | UnitMeasureVisual
   | PlaceValueVisual
