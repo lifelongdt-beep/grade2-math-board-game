@@ -659,6 +659,182 @@ function FractionModelGraphic({ visual }: { visual: Extract<QuestionVisual, { ki
   );
 }
 
+// 도형의 꼭짓점입니다. -1 ~ 1 사이의 자리로 적어 두고, 그릴 때 크기를
+// 맞춥니다. 차례는 시계 반대 방향이 아니라 '왼쪽 위에서 시작해 시계
+// 방향'입니다 — 교과서가 ㄱㄴㄷㄹ을 그렇게 붙입니다.
+const FIGURE_POINTS: Record<string, Array<[number, number]>> = {
+  정삼각형: [[0, -1], [0.866, 0.5], [-0.866, 0.5]],
+  이등변삼각형: [[0, -1], [0.62, 0.7], [-0.62, 0.7]],
+  직각삼각형: [[-0.8, -0.7], [-0.8, 0.7], [0.9, 0.7]],
+  정사각형: [[-0.75, -0.75], [0.75, -0.75], [0.75, 0.75], [-0.75, 0.75]],
+  직사각형: [[-1, -0.6], [1, -0.6], [1, 0.6], [-1, 0.6]],
+  마름모: [[0, -0.95], [0.8, 0], [0, 0.95], [-0.8, 0]],
+  평행사변형: [[-0.55, -0.6], [1, -0.6], [0.55, 0.6], [-1, 0.6]],
+  사다리꼴: [[-0.35, -0.6], [0.95, -0.6], [1, 0.6], [-1, 0.6]],
+  // 아무 조건도 없는 사각형입니다. 변의 길이와 각의 크기를 마음대로
+  // 적어도 그림과 어긋나지 않습니다 — 직사각형에 107°를 적어 두는 일이
+  // 생기지 않게, 대응변·대응각을 묻는 문항은 이 도형을 씁니다.
+  사각형: [[-0.85, -0.7], [0.7, -0.9], [0.95, 0.5], [-0.6, 0.85]],
+  정오각형: Array.from({ length: 5 }, (_, index) => {
+    const angle = (Math.PI * 2 * index) / 5 - Math.PI / 2;
+    return [Math.cos(angle), Math.sin(angle)] as [number, number];
+  }),
+  정육각형: Array.from({ length: 6 }, (_, index) => {
+    const angle = (Math.PI * 2 * index) / 6 - Math.PI / 2;
+    return [Math.cos(angle), Math.sin(angle)] as [number, number];
+  }),
+};
+
+// 합동과 대칭을 보이는 그림입니다(5-2 3단원).
+function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'figure-set' }> }) {
+  const count = Math.max(1, visual.items.length);
+  const width = 376;
+  const cellWidth = width / count;
+  // 도형이 셋 넷 늘어서면 하나하나가 작아집니다. 꼭짓점 이름과 길이가
+  // 붙는 그림은 도형이 한둘뿐이므로, 개수에 따라 반지름을 정합니다.
+  const radius = Math.min(cellWidth / 2 - 22, count <= 2 ? 62 : 40);
+  const height = count <= 2 ? 190 : 160;
+  const centerY = height / 2 - 6;
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.items.map((item, index) => {
+        const cx = cellWidth * index + cellWidth / 2;
+        const scale = radius * (item.scale ?? 1);
+        const radians = ((item.rotate ?? 0) * Math.PI) / 180;
+
+        const place = ([x, y]: [number, number]): [number, number] => {
+          const flipped = item.flip ? -x : x;
+          const rx = flipped * Math.cos(radians) - y * Math.sin(radians);
+          const ry = flipped * Math.sin(radians) + y * Math.cos(radians);
+          return [cx + rx * scale, centerY + ry * scale];
+        };
+
+        const stroke = item.active ? '#0f7175' : '#41607a';
+        const fill = item.active ? '#dffafa' : '#ffffff';
+
+        if (item.shape === '원') {
+          return (
+            <g key={index}>
+              <circle cx={cx} cy={centerY} r={scale} fill={fill} stroke={stroke} strokeWidth="3.5" />
+              {item.center && <circle cx={cx} cy={centerY} r="5" fill="#f0a202" stroke="#8a5a00" strokeWidth="2" />}
+              {item.name && (
+                <text x={cx} y={height - 12} textAnchor="middle" fill="#24364a" fontSize="17" fontWeight="900">
+                  {item.name}
+                </text>
+              )}
+            </g>
+          );
+        }
+
+        const base = FIGURE_POINTS[item.shape] ?? FIGURE_POINTS.정사각형;
+        const drawn = base.map(place);
+        const points = drawn.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+
+        return (
+          <g key={index}>
+            <polygon points={points} fill={fill} stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" />
+
+            {/* 대칭축입니다. 도형 밖으로 조금 넘겨 그어야 축으로 보입니다. */}
+            {item.axes?.map((axis) => {
+              const reach = scale * 1.25;
+              const direction =
+                axis === 'vertical'
+                  ? ([0, 1] as const)
+                  : axis === 'horizontal'
+                    ? ([1, 0] as const)
+                    : axis === 'diagonal'
+                      ? ([0.7071, 0.7071] as const)
+                      : ([0.7071, -0.7071] as const);
+              const [dx, dy] = direction;
+              const rdx = dx * Math.cos(radians) - dy * Math.sin(radians);
+              const rdy = dx * Math.sin(radians) + dy * Math.cos(radians);
+              return (
+                <line
+                  key={axis}
+                  x1={cx - rdx * reach}
+                  y1={centerY - rdy * reach}
+                  x2={cx + rdx * reach}
+                  y2={centerY + rdy * reach}
+                  stroke="#f0a202"
+                  strokeWidth="2.5"
+                  strokeDasharray="7 5"
+                />
+              );
+            })}
+
+            {item.center && <circle cx={cx} cy={centerY} r="5" fill="#f0a202" stroke="#8a5a00" strokeWidth="2" />}
+
+            {/* 꼭짓점 이름은 도형 바깥쪽으로 조금 밀어 놓습니다. */}
+            {item.vertexLabels?.map((label, at) => {
+              const [x, y] = drawn[at] ?? [cx, centerY];
+              const outX = x + (x - cx) * 0.22;
+              const outY = y + (y - centerY) * 0.22;
+              return (
+                <text
+                  key={`v-${at}`}
+                  x={outX}
+                  y={outY + 5}
+                  textAnchor="middle"
+                  fill="#0f7175"
+                  fontSize="15"
+                  fontWeight="900"
+                >
+                  {label}
+                </text>
+              );
+            })}
+
+            {item.edgeLabels?.map((edge, at) => {
+              const [x1, y1] = drawn[edge.from] ?? [cx, centerY];
+              const [x2, y2] = drawn[edge.to] ?? [cx, centerY];
+              const midX = (x1 + x2) / 2;
+              const midY = (y1 + y2) / 2;
+              return (
+                <text
+                  key={`e-${at}`}
+                  x={midX + (midX - cx) * 0.3}
+                  y={midY + (midY - centerY) * 0.3 + 4}
+                  textAnchor="middle"
+                  fill="#24364a"
+                  fontSize="14"
+                  fontWeight="800"
+                >
+                  {edge.text}
+                </text>
+              );
+            })}
+
+            {item.angleLabels?.map((angle, at) => {
+              const [x, y] = drawn[angle.at] ?? [cx, centerY];
+              return (
+                <text
+                  key={`a-${at}`}
+                  x={x + (cx - x) * 0.34}
+                  y={y + (centerY - y) * 0.34 + 4}
+                  textAnchor="middle"
+                  fill="#a8410a"
+                  fontSize="13"
+                  fontWeight="800"
+                >
+                  {angle.text}
+                </text>
+              );
+            })}
+
+            {item.name && (
+              <text x={cx} y={height - 12} textAnchor="middle" fill="#24364a" fontSize="17" fontWeight="900">
+                {item.name}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function PlaceValueGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'place-value' }> }) {
   const cellWidth = 320 / visual.columns.length;
 
@@ -1475,6 +1651,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'number-line' && <NumberLineGraphic visual={visual} />}
       {visual.kind === 'range-line' && <RangeLineGraphic visual={visual} />}
       {visual.kind === 'fraction-model' && <FractionModelGraphic visual={visual} />}
+      {visual.kind === 'figure-set' && <FigureSetGraphic visual={visual} />}
       {visual.kind === 'unit-measure' && <UnitMeasureGraphic visual={visual} />}
       {visual.kind === 'place-value' && <PlaceValueGraphic visual={visual} />}
       {visual.kind === 'bar-model' && <BarModelGraphic visual={visual} />}

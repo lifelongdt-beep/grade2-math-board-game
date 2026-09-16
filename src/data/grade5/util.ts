@@ -143,6 +143,9 @@ const hasFinal = (word: string): boolean => {
   const unit = unitFinal.find(([suffix]) => word.endsWith(suffix));
   if (unit) return unit[1];
   const last = word[word.length - 1];
+  // 자모 낱자(ㄱ, ㄴ, ㅁ …)는 이름으로 읽습니다 — 기역, 니은, 미음.
+  // 모두 받침으로 끝나므로 '점 ㄱ과', '점 ㅁ은'이 맞습니다.
+  if (last >= 'ㄱ' && last <= 'ㅎ') return true;
   if (/\d/.test(last)) return [true, true, false, true, false, false, true, true, true, false][Number(last)];
   const code = word.charCodeAt(word.length - 1);
   return code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 !== 0;

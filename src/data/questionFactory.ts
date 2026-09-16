@@ -861,6 +861,7 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     // 것이 이름표뿐입니다.
     visual.kind === 'range-line' ||
     visual.kind === 'fraction-model' ||
+    visual.kind === 'figure-set' ||
     visual.kind === 'array'
   ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };

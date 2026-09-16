@@ -192,7 +192,7 @@ export const buildGrade5Questions = (
   const familyCount = new Map<string, number>();
   // 한 뭉치가 서른 자리를 다 먹으면 그 차시는 한 가지만 되풀이됩니다.
   // 뭉치가 여섯이면 한 뭉치가 일곱 자리까지입니다.
-  const mostPerFamily = Math.max(4, Math.ceil(SLOTS_PER_LESSON / families.length) + 2);
+  const mostPerFamily = Math.max(6, Math.ceil(SLOTS_PER_LESSON / families.length) + 3);
   // 글의 모양으로도 한 번 더 막습니다. 다만 계산 차시는 '□ × □를
   // 계산하면?'이 서른 번 나오는 것이 옳으므로, 이쪽은 느슨하게 둡니다 —
   // 뭉치가 다르면 묻는 것도 다릅니다.
@@ -215,7 +215,11 @@ export const buildGrade5Questions = (
       if (wrongs.length < 3) continue;
       // 실제로 화면에 나가는 보기로 견줍니다. 후보 목록으로 견주면
       // 후보는 달라도 쓰이는 셋이 같은 두 문항이 함께 나갑니다.
-      const key = `${spec.prompt}||${spec.answer}||${[...wrongs].sort().join('|')}`;
+      //
+      // 그림도 함께 봅니다. '그림의 두 도형은 서로 합동일까요?'처럼
+      // 수가 그림에만 있는 문항은 글과 보기가 늘 같아서, 글로만 견주면
+      // 한 차시에 두 문항밖에 남지 않습니다.
+      const key = `${spec.prompt}||${spec.answer}||${[...wrongs].sort().join('|')}||${JSON.stringify(spec.visual ?? null)}`;
       if (seenPrompt.has(key)) continue;
       if ((familyCount.get(family.id) ?? 0) >= mostPerFamily) continue;
       const shape = shapeOfPrompt(spec.prompt);

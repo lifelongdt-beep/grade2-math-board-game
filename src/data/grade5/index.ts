@@ -8,6 +8,18 @@ import { lesson8Easy, lesson8Hard, lesson8Middle } from './unit1/lesson8';
 import type { Kind } from './unit2/kinds';
 import { unit2Lesson1Easy, unit2Lesson1Hard, unit2Lesson1Middle } from './unit2/lesson1';
 import { multiplyEasy, multiplyHard, multiplyMiddle } from './unit2/multiply';
+import { unit3Lesson1Easy } from './unit3/lesson1';
+import {
+  대칭성질,
+  선대칭Easy,
+  선대칭Middle,
+  점대칭Easy,
+  점대칭Middle,
+  합동Easy,
+  합동Middle,
+  합동성질Easy,
+  합동성질Hard,
+} from './unit3/lessons';
 import type { Rounding } from './util';
 
 // ════════════════════════════════════════════════════════════════════
@@ -83,10 +95,52 @@ const unit2Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
   return multiplyHard(kind);
 };
 
+// 3단원 차시별 문항 뭉치입니다. 지도서의 차례 그대로,
+//   2 합동  3 합동의 성질  4 선대칭  5 선대칭의 성질
+//   6 점대칭  7 점대칭의 성질
+// 로 이어집니다. 성질 차시(5·7)는 뭉치 다섯을 수준에 따라 나눕니다.
+const unit3Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
+  if (lessonNo === 1) return unit3Lesson1Easy;
+  if (lessonNo === 2) {
+    if (difficulty === '하') return 합동Easy;
+    if (difficulty === '중') return 합동Middle;
+    return [...합동Middle, ...합동Easy.slice(2)];
+  }
+  if (lessonNo === 3) {
+    if (difficulty === '하') return 합동성질Easy;
+    if (difficulty === '중') return [...합동성질Easy.slice(1), ...합동성질Hard.slice(1)];
+    return 합동성질Hard;
+  }
+  if (lessonNo === 4) {
+    if (difficulty === '하') return 선대칭Easy;
+    if (difficulty === '중') return 선대칭Middle;
+    return [...선대칭Middle, ...선대칭Easy.slice(2)];
+  }
+  if (lessonNo === 5) {
+    const 뭉치 = 대칭성질(true);
+    if (difficulty === '하') return 뭉치.slice(0, 4);
+    if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0]];
+    return [...뭉치.slice(3), ...뭉치.slice(0, 3)];
+  }
+  if (lessonNo === 6) {
+    if (difficulty === '하') return 점대칭Easy;
+    if (difficulty === '중') return [...점대칭Middle, ...점대칭Easy.slice(3)];
+    return [...점대칭Middle, ...점대칭Easy.slice(2)];
+  }
+  if (lessonNo === 7) {
+    const 뭉치 = 대칭성질(false);
+    if (difficulty === '하') return 뭉치.slice(0, 4);
+    if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0]];
+    return [...뭉치.slice(3), ...뭉치.slice(0, 3)];
+  }
+  return null;
+};
+
 export const grade5FamiliesFor = (lesson: Lesson, difficulty: Difficulty): G5Family[] | null => {
   if (lesson.semester !== '5-2') return null;
   if (lesson.unitNo === 1) return unit1Families(lesson.lessonNo, difficulty);
   if (lesson.unitNo === 2) return unit2Families(lesson.lessonNo, difficulty);
+  if (lesson.unitNo === 3) return unit3Families(lesson.lessonNo, difficulty);
   return null;
 };
 
