@@ -9,6 +9,7 @@ import {
   inBelow,
   rangeLine,
   rangeText,
+  unitTail,
   type Edge,
 } from './rangeCore';
 
@@ -272,7 +273,25 @@ type 상황 = {
   값들: (seed: number, base: number) => number[];
   기준후보: number[];
   물음: string;
+  // 수 앞에 붙는 말입니다. 대부분은 없지만, 빠르기는 '시속 91 km'라야
+  // 뜻이 통합니다. 값을 적을 때도 범위를 적을 때도 함께 붙습니다.
+  앞말?: string;
+  // 사람 이름을 붙여 '누가 벗어났는지' 물을 수 있는 상황에만 적습니다.
+  // 날씨처럼 값이 사람의 것이 아닌 상황에 이름을 붙이면
+  // '가람 29 ℃'처럼 뜻이 통하지 않는 문장이 됩니다.
+  // 또 상황에 따라 범위 안이 '할 수 있음'일 때도 '할 수 없음'일 때도
+  // 있으므로, 범위 밖을 무엇이라 부르는지 상황마다 적어 둡니다.
+  밖물음?: string;
+  // '조건에 맞는 수의 범위'라고만 물으면 두 가지로 읽힙니다. 예를 들어
+  // '시속 100 km보다 빠르게 달리면 안 됩니다'에서 아이는 '조건에 맞는'을
+  // '규정을 지킨'으로 읽어 100 이하를 고를 수 있습니다. 무엇의 범위를
+  // 묻는지 상황마다 또박또박 적습니다.
+  범위물음: string;
 };
+
+// 값 하나를 글로 적습니다. 상황이 제 나름의 적는 법을 가지고 있으면
+// 그것을 쓰고, 없으면 '수 단위'로 적습니다.
+const 값글 = (상: 상황, value: number) => `${상.앞말 ?? ''}${value}${unitTail(상.단위)}`;
 
 const 이상이하상황: 상황[] = [
   {
@@ -283,6 +302,8 @@ const 이상이하상황: 상황[] = [
     기준후보: [18, 20, 22],
     값들: (seed, base) => 자연수목록(seed, base, 4),
     물음: '참가할 수 있는 선수는 모두 몇 명일까요?',
+    밖물음: '참가할 수 없는 선수는 누구일까요?',
+    범위물음: '참가할 수 있는 선수의 나이를 수의 범위로 바르게 나타낸 것은 어느 것일까요?',
   },
   {
     id: 'vote',
@@ -292,6 +313,8 @@ const 이상이하상황: 상황[] = [
     기준후보: [18],
     값들: (seed, base) => 자연수목록(seed, base, 5),
     물음: '투표할 수 있는 사람은 모두 몇 명일까요?',
+    밖물음: '투표할 수 없는 사람은 누구일까요?',
+    범위물음: '투표할 수 있는 사람의 나이를 수의 범위로 바르게 나타낸 것은 어느 것일까요?',
   },
   {
     id: 'ride',
@@ -301,6 +324,8 @@ const 이상이하상황: 상황[] = [
     기준후보: [120, 130, 140],
     값들: (seed, base) => 자연수목록(seed, base, 8),
     물음: '놀이기구를 탈 수 있는 학생은 모두 몇 명일까요?',
+    밖물음: '놀이기구를 탈 수 없는 학생은 누구일까요?',
+    범위물음: '놀이기구를 탈 수 있는 학생의 키를 수의 범위로 바르게 나타낸 것은 어느 것일까요?',
   },
   {
     id: 'cabin',
@@ -310,6 +335,8 @@ const 이상이하상황: 상황[] = [
     기준후보: [10, 12],
     값들: (seed, base) => 자연수목록(seed, base, 3),
     물음: '비행기에 들고 탈 수 있는 가방은 모두 몇 개일까요?',
+    밖물음: '가방을 들고 탈 수 없는 사람은 누구일까요?',
+    범위물음: '들고 탈 수 있는 가방의 무게를 수의 범위로 바르게 나타낸 것은 어느 것일까요?',
   },
   {
     id: 'library',
@@ -318,7 +345,12 @@ const 이상이하상황: 상황[] = [
     방향: 'below',
     기준후보: [5, 6, 7],
     값들: (seed, base) => 자연수목록(seed, base, 3),
-    물음: '한 번에 빌릴 수 있는 권수는 모두 몇 가지일까요?',
+    // '빌릴 수 있는 권수는 몇 가지'라고 물으면 조사한 값과 상관없이
+    // 1권부터 5권까지 5가지라고 답할 수 있습니다 — 물음이 둘로 읽힙니다.
+    // 조사한 값을 하나씩 가려내는 물음으로 바꿉니다.
+    물음: '빌릴 수 있는 사람은 모두 몇 명일까요?',
+    밖물음: '책을 빌릴 수 없는 사람은 누구일까요?',
+    범위물음: '한 사람이 빌릴 수 있는 책의 수를 수의 범위로 바르게 나타낸 것은 어느 것일까요?',
   },
 ];
 
@@ -331,6 +363,8 @@ const 초과미만상황: 상황[] = [
     기준후보: [38, 40],
     값들: (seed, base) => 자연수목록(seed, base, 3),
     물음: '사용할 수 없는 썰매는 모두 몇 개일까요?',
+    밖물음: '썰매를 사용할 수 있는 선수는 누구일까요?',
+    범위물음: '사용할 수 없는 썰매의 무게를 수의 범위로 바르게 나타낸 것은 어느 것일까요?',
   },
   {
     id: 'temperature',
@@ -340,6 +374,8 @@ const 초과미만상황: 상황[] = [
     기준후보: [25, 28, 30],
     값들: (seed, base) => 자연수목록(seed, base, 4),
     물음: '서늘한 날은 모두 며칠일까요?',
+    // 기온은 사람의 값이 아니므로 '누가 벗어났는지'는 묻지 않습니다.
+    범위물음: '서늘한 날의 최고 기온을 수의 범위로 바르게 나타낸 것은 어느 것일까요?',
   },
   {
     id: 'signup',
@@ -349,6 +385,8 @@ const 초과미만상황: 상황[] = [
     기준후보: [14],
     값들: (seed, base) => 자연수목록(seed, base, 3),
     물음: '보호자의 동의가 필요한 학생은 모두 몇 명일까요?',
+    밖물음: '보호자의 동의가 필요하지 않은 학생은 누구일까요?',
+    범위물음: '보호자의 동의가 필요한 학생의 나이를 수의 범위로 바르게 나타낸 것은 어느 것일까요?',
   },
   {
     id: 'speed',
@@ -358,6 +396,9 @@ const 초과미만상황: 상황[] = [
     기준후보: [60, 80, 100],
     값들: (seed, base) => 자연수목록(seed, base, 10),
     물음: '규정을 어긴 자동차는 모두 몇 대일까요?',
+    앞말: '시속 ',
+    밖물음: '규정을 지킨 사람은 누구일까요?',
+    범위물음: '규정을 어긴 자동차의 빠르기를 수의 범위로 바르게 나타낸 것은 어느 것일까요?',
   },
 ];
 
@@ -389,7 +430,7 @@ export const lesson23Middle = (included: boolean): G5Family[] => {
               ? '가지'
               : '개';
       return {
-        prompt: `${상.intro(base)} 조사한 값이 ${목록글(values.map((v) => `${v} ${상.단위}`))}일 때, ${상.물음}`,
+        prompt: `${상.intro(base)} 조사한 값이 ${목록글(values.map((v) => 값글(상, v)))}일 때, ${상.물음}`,
         answer: `${맞는것.length}${세는말}`,
         wrongs: [
           뒤집은것.length,
@@ -403,8 +444,8 @@ export const lesson23Middle = (included: boolean): G5Family[] => {
         strategy: '실생활 상황에서 수의 범위 적용하기',
         hint: `문장에 나온 조건을 '${base} ${word}' 꼴로 바꾸어 적어 보세요. 그러면 ${base} 자신을 셀지 말지가 분명해집니다.`,
         steps: [
-          `문장이 말하는 조건은 ${base} ${상.단위} ${word}입니다.`,
-          `${목록글(values.map((v) => `${v} ${상.단위}`))} 중 조건에 맞는 것은 ${목록글(맞는것.map((v) => `${v} ${상.단위}`))}입니다.`,
+          `문장이 말하는 조건은 ${값글(상, base)} ${word}입니다.`,
+          `${목록글(values.map((v) => 값글(상, v)))} 중 조건에 맞는 것은 ${목록글(맞는것.map((v) => 값글(상, v)))}입니다.`,
           `그러므로 모두 ${맞는것.length}${세는말}입니다.`,
         ],
         visual: rangeLine(
@@ -427,36 +468,39 @@ export const lesson23Middle = (included: boolean): G5Family[] => {
         const 상 = 상황들[Math.abs(seed) % 상황들.length];
         const base = pick(상.기준후보, seed);
         const edge: Edge = { value: base, included };
-        const answer = 상.방향 === 'above' ? rangeText(edge, undefined, 상.단위) : rangeText(undefined, edge, 상.단위);
+        // 빠르기처럼 앞에 붙는 말이 있는 상황은 보기에도 그대로 붙입니다
+        // ('100 km 초과'가 아니라 '시속 100 km 초과').
+        const 범위글 = (above?: Edge, below?: Edge) => `${상.앞말 ?? ''}${rangeText(above, below, 상.단위)}`;
+        const answer = 상.방향 === 'above' ? 범위글(edge, undefined) : 범위글(undefined, edge);
         return {
-          prompt: `${상.intro(base)} 조건에 맞는 수의 범위를 바르게 나타낸 것은 어느 것일까요?`,
+          prompt: `${상.intro(base)} ${상.범위물음}`,
           answer,
           // 2차시(이상·이하)에서는 초과·미만이라는 말을 아직 배우지
           // 않았으므로 오답에 쓰지 않습니다.
           wrongs: included
             ? [
-                상.방향 === 'above' ? rangeText(undefined, edge, 상.단위) : rangeText(edge, undefined, 상.단위),
+                상.방향 === 'above' ? 범위글(undefined, edge) : 범위글(edge, undefined),
                 상.방향 === 'above'
-                  ? rangeText({ value: base + 1, included }, undefined, 상.단위)
-                  : rangeText(undefined, { value: base + 1, included }, 상.단위),
+                  ? 범위글({ value: base + 1, included }, undefined)
+                  : 범위글(undefined, { value: base + 1, included }),
                 상.방향 === 'above'
-                  ? rangeText(undefined, { value: base + 1, included }, 상.단위)
-                  : rangeText({ value: base + 1, included }, undefined, 상.단위),
+                  ? 범위글(undefined, { value: base + 1, included })
+                  : 범위글({ value: base + 1, included }, undefined),
               ]
             : [
                 상.방향 === 'above'
-                  ? rangeText({ value: base, included: !included }, undefined, 상.단위)
-                  : rangeText(undefined, { value: base, included: !included }, 상.단위),
-                상.방향 === 'above' ? rangeText(undefined, edge, 상.단위) : rangeText(edge, undefined, 상.단위),
+                  ? 범위글({ value: base, included: !included }, undefined)
+                  : 범위글(undefined, { value: base, included: !included }),
+                상.방향 === 'above' ? 범위글(undefined, edge) : 범위글(edge, undefined),
                 상.방향 === 'above'
-                  ? rangeText(undefined, { value: base, included: !included }, 상.단위)
-                  : rangeText({ value: base, included: !included }, undefined, 상.단위),
+                  ? 범위글(undefined, { value: base, included: !included })
+                  : 범위글({ value: base, included: !included }, undefined),
               ],
           tag: 'range',
           strategy: '상황을 수의 범위로 나타내기',
           hint: "'같거나'라는 말이 문장에 있는지 찾아보세요. 그 한 마디가 기준이 되는 수를 넣을지 말지를 정합니다.",
           steps: [
-            `문장에서 기준이 되는 수는 ${base} ${상.단위}입니다.`,
+            `문장에서 기준이 되는 수는 ${값글(상, base)}입니다.`,
             included
               ? "'같거나'라는 말이 있으므로 기준이 되는 수도 범위에 넣습니다."
               : "'보다'라는 말만 있으므로 기준이 되는 수는 범위에 넣지 않습니다.",
@@ -468,7 +512,10 @@ export const lesson23Middle = (included: boolean): G5Family[] => {
     {
       id: 'who-is-out',
       make: (seed) => {
-        const 상 = 상황들[Math.abs(seed + 3) % 상황들.length];
+        // 사람 이름을 붙여도 뜻이 통하는 상황에서만 냅니다.
+        const 사람상황 = 상황들.filter((one) => one.밖물음);
+        if (!사람상황.length) return null;
+        const 상 = 사람상황[Math.abs(seed + 3) % 사람상황.length];
         const base = pick(상.기준후보, seed + 3);
         const edge: Edge = { value: base, included };
         const next = rand(seed + 5);
@@ -483,16 +530,16 @@ export const lesson23Middle = (included: boolean): G5Family[] => {
         const 벗어난사람 = 짝.filter((x) => !맞는쪽(x.값));
         if (벗어난사람.length !== 1) return null;
         return {
-          prompt: `${상.intro(base)} ${목록글(짝.map((x) => `${x.이름} ${x.값} ${상.단위}`))}일 때, 조건에 맞지 않는 사람은 누구일까요?`,
+          prompt: `${상.intro(base)} ${목록글(짝.map((x) => `${x.이름} ${값글(상, x.값)}`))}일 때, ${상.밖물음}`,
           answer: 벗어난사람[0].이름,
           wrongs: 짝.filter((x) => 맞는쪽(x.값)).map((x) => x.이름),
           tag: 'range',
           strategy: '조건에서 벗어난 자료 찾기',
           hint: `한 사람씩 값을 ${gwa(String(base))} 견주어 보세요. ${eul(String(base))} 넣는지 아닌지를 먼저 정해 두면 헷갈리지 않습니다.`,
           steps: [
-            `조건은 ${base} ${상.단위} ${상.방향 === 'above' ? aboveWord(included) : belowWord(included)}입니다.`,
-            `${목록글(짝.map((x) => `${x.이름}(${x.값} ${상.단위})`))}을 하나씩 살펴봅니다.`,
-            `${벗어난사람[0].이름}의 값 ${벗어난사람[0].값} ${상.단위}만 조건에 맞지 않습니다.`,
+            `문장이 말하는 수의 범위는 ${값글(상, base)} ${상.방향 === 'above' ? aboveWord(included) : belowWord(included)}입니다.`,
+            `${목록글(짝.map((x) => `${x.이름}(${값글(상, x.값)})`))}을 하나씩 살펴봅니다.`,
+            `${벗어난사람[0].이름}의 값 ${값글(상, 벗어난사람[0].값)}만 이 범위에서 벗어나므로 답은 ${벗어난사람[0].이름}입니다.`,
           ],
         };
       },
