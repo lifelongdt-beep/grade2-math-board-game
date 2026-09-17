@@ -205,6 +205,28 @@ const 보이는수 = {
 
 const 요소수 = (name: string) => 상자수[name as keyof typeof 상자수];
 
+// ── 6단원: 평균을 나눗셈 없이 구하기 ────────────────────────────────
+// 문항은 (합)÷(자료의 수)로 평균을 구합니다. 여기서 같은 나눗셈을 다시
+// 하면 그 셈이 틀렸을 때 둘 다 똑같이 틀립니다. 그래서 지도서가 평균을
+// 처음 꺼내는 방법 그대로, 많은 쪽에서 적은 쪽으로 하나씩 옮겨 모두
+// 같아질 때까지 고르게 만듭니다. 그 높이가 평균입니다.
+const 고르게하기 = (values: number[]): number | null => {
+  const 칸 = [...values];
+  for (let 옮긴횟수 = 0; 옮긴횟수 < 100000; 옮긴횟수 += 1) {
+    let 큰자리 = 0;
+    let 작은자리 = 0;
+    for (let at = 1; at < 칸.length; at += 1) {
+      if (칸[at] > 칸[큰자리]) 큰자리 = at;
+      if (칸[at] < 칸[작은자리]) 작은자리 = at;
+    }
+    if (칸[큰자리] === 칸[작은자리]) return 칸[0];
+    if (칸[큰자리] - 칸[작은자리] === 1) return null; // 고르게 되지 않습니다
+    칸[큰자리] -= 1;
+    칸[작은자리] += 1;
+  }
+  return null;
+};
+
 const recompute = (prompt: string): string | null => {
   let hit: RegExpExecArray | null;
 
@@ -460,6 +482,33 @@ const recompute = (prompt: string): string | null => {
 
   hit = /^(?:직육면체|정육면체)의 전개도에서 잘리지 않은 모서리는 몇 군데일까요\?$/.exec(prompt);
   if (hit) return '5군데';
+
+  // ── 6단원 평균 ────────────────────────────────────────────────────
+  hit = /^(.+?)의 평균이 (\d+)(개|쪽|분|회|점|시간)이고 자료가 (\d+)개입니다\. .+?의 합은 얼마일까요\?$/.exec(prompt);
+  if (hit) return `${Number(hit[2]) * Number(hit[4])}${hit[3]}`;
+
+  hit = /^(.+?)의 합이 (\d+)(?:개|쪽|분|회|점|시간)이고 평균이 (\d+)(?:개|쪽|분|회|점|시간)입니다\. 자료는 모두 몇 개일까요\?$/.exec(prompt);
+  if (hit) return `${Number(hit[2]) / Number(hit[3])}개`;
+
+  hit = /^민아가 월요일부터 금요일까지 책을 읽은 시간은 ([\d, ]+)시간입니다\. 하루에 책을 읽은 시간의 평균은 몇 시간일까요\?$/.exec(prompt);
+  if (hit) {
+    const 평균값 = 고르게하기(hit[1].split(',').map((one) => Number(one.trim())));
+    return 평균값 === null ? null : `${평균값}시간`;
+  }
+
+  hit = /^준호가 월요일부터 목요일까지 읽은 책의 쪽수는 ([\d, ]+)쪽입니다\. 금요일까지 5일 동안 읽은 책의 쪽수의 평균이 (\d+)쪽이 되려면 금요일에 적어도 몇 쪽을 읽어야 할까요\?$/.exec(prompt);
+  if (hit) {
+    const values = hit[1].split(',').map((one) => Number(one.trim()));
+    return `${Number(hit[2]) * 5 - values.reduce((sum, one) => sum + one, 0)}쪽`;
+  }
+
+  hit = /^가 모둠 \d+명의 .+?[은는] ([\d, ]+)(?:개|쪽|분|회|점|시간)이고, 나 모둠 \d+명의 .+?[은는] ([\d, ]+)(?:개|쪽|분|회|점|시간)입니다\. 어느 모둠의 평균이 더 높을까요\?$/.exec(prompt);
+  if (hit) {
+    const 왼 = 고르게하기(hit[1].split(',').map((one) => Number(one.trim())));
+    const 오른 = 고르게하기(hit[2].split(',').map((one) => Number(one.trim())));
+    if (왼 === null || 오른 === null) return null;
+    return 왼 === 오른 ? '두 모둠이 같습니다.' : 왼 > 오른 ? '가 모둠' : '나 모둠';
+  }
 
   return null;
 };
@@ -1130,5 +1179,215 @@ describe('5-2 5단원 — 다른 방법으로 다시 구해 보기', () => {
     // 그림에서 확인할 수 없게 됩니다.
     expect(보이는수).toEqual({ 면: 3, 모서리: 9, 꼭짓점: 7 });
     expect(안보이는수).toEqual({ 면: 3, 모서리: 3, 꼭짓점: 1 });
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════
+// 6단원 — 평균과 가능성을 '다른 방법으로' 다시 구해 맞춰 보기
+// ────────────────────────────────────────────────────────────────────
+// 평균은 나누지 않고 고르게 만들어 구합니다(고르게하기). 가능성은
+// 문항이 쓰는 말로()와 수로()를 부르지 않고, 그림에서 칸과 바둑돌을
+// 직접 세어 다시 정합니다.
+// ════════════════════════════════════════════════════════════════════
+
+const 가능성말 = (좋은것: number, 모두: number): string => {
+  if (좋은것 === 0) return '불가능하다';
+  if (좋은것 === 모두) return '확실하다';
+  // 반인지 아닌지는 나누지 않고 두 배 해서 견줍니다.
+  if (좋은것 + 좋은것 === 모두) return '반반이다';
+  return 좋은것 + 좋은것 < 모두 ? '~아닐 것 같다' : '~일 것 같다';
+};
+
+const 가능성수 = (좋은것: number, 모두: number): string | null => {
+  if (좋은것 === 0) return '0';
+  if (좋은것 === 모두) return '1';
+  if (좋은것 + 좋은것 === 모두) return '1/2';
+  return null;
+};
+
+const 색말 = (text: string): string | null => {
+  const 표: Record<string, string> = {
+    빨간색: 'red', 파란색: 'blue', 노란색: 'yellow', 초록색: 'green', 흰색: 'white', 검은색: 'black',
+  };
+  return 표[text] ?? null;
+};
+
+describe('5-2 6단원 — 다른 방법으로 다시 구해 보기', () => {
+  const 여섯단원 = every.filter(([lesson]) => lesson.unitNo === 6);
+
+  it('6단원 차시가 모두 문항을 내놓는다', () => {
+    expect(여섯단원.length).toBe(8 * 3);
+    for (const [, , questions] of 여섯단원) expect(questions.length).toBe(30);
+  });
+
+  it('표와 막대그래프의 평균을 고르게 만들어 다시 구해도 답이 같다', () => {
+    const broken: string[] = [];
+    let 본것 = 0;
+    for (const [, , questions] of 여섯단원) {
+      for (const question of questions) {
+        const visual = question.visual;
+        if (!visual) continue;
+        let values: number[] | null = null;
+        if (visual.kind === 'table' && visual.columns.every((one) => typeof one.value === 'number')) {
+          values = visual.columns.map((one) => one.value as number);
+        }
+        if (visual.kind === 'bar-model') values = visual.bars.map((one) => one.value);
+        if (!values) continue;
+        if (!/고르게 하면|막대의 길이를 모두 같게|의 평균은 얼마일까요/.test(question.prompt)) continue;
+        본것 += 1;
+        const 평균값 = 고르게하기(values);
+        if (평균값 === null) {
+          broken.push(`${question.id}: 고르게 만들어지지 않는 자료입니다 — ${values.join(', ')}`);
+          continue;
+        }
+        const 답의수 = Number(question.answer.replace(/[^\d.]/g, ''));
+        if (답의수 !== 평균값) {
+          broken.push(`${question.id}: ${question.prompt} → 고르게 만드니 ${평균값}인데 답은 ${question.answer}`);
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+    expect(본것).toBeGreaterThan(20);
+  });
+
+  it('빈칸이 있는 표는 그 칸을 답으로 메우면 평균이 문제에 적힌 값이 된다', () => {
+    const broken: string[] = [];
+    let 본것 = 0;
+    for (const [, , questions] of 여섯단원) {
+      for (const question of questions) {
+        const visual = question.visual;
+        if (!visual || visual.kind !== 'table') continue;
+        if (!visual.columns.some((one) => one.value === null)) continue;
+        본것 += 1;
+        const 적힌평균 = Number(/평균이 (\d+)/.exec(question.prompt)?.[1] ?? NaN);
+        const 메운것 = visual.columns.map((one) => (one.value === null ? Number(question.answer) : one.value));
+        const 평균값 = 고르게하기(메운것);
+        if (평균값 !== 적힌평균) {
+          broken.push(`${question.id}: 빈칸을 ${question.answer}으로 메우면 평균이 ${평균값}인데 문제는 ${적힌평균}이라고 합니다`);
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+    expect(본것).toBeGreaterThan(5);
+  });
+
+  it('회전판과 주머니의 가능성을 그림에서 다시 세어도 답이 같다', () => {
+    const broken: string[] = [];
+    let 본것 = 0;
+    for (const [, , questions] of 여섯단원) {
+      for (const question of questions) {
+        const visual = question.visual;
+        if (!visual) continue;
+
+        // 하나짜리 그림에서 말이나 수를 묻는 문항입니다.
+        const 하나물음 = /가능성을 (말로 표현하면|수로 나타내면)/.exec(question.prompt);
+        if (하나물음) {
+          const 색 = /화살이 ([가-힣]+색)을 가리킬|([가-힣]+색)이 나올/.exec(question.prompt);
+          const 색코드 = 색말((색?.[1] ?? 색?.[2] ?? '').trim());
+          if (!색코드) continue;
+          let 모두 = 0;
+          let 좋은것 = 0;
+          if (visual.kind === 'spinner' && visual.items.length === 1) {
+            모두 = visual.items[0].slices.length;
+            좋은것 = visual.items[0].slices.filter((one) => one === 색코드).length;
+          } else if (visual.kind === 'marble-bag' && visual.bags.length === 1) {
+            모두 = visual.bags[0].marbles.length;
+            좋은것 = visual.bags[0].marbles.filter((one) => one === 색코드).length;
+          } else continue;
+          본것 += 1;
+          const 다시 = 하나물음[1] === '말로 표현하면' ? 가능성말(좋은것, 모두) : 가능성수(좋은것, 모두);
+          if (다시 === null) {
+            broken.push(`${question.id}: 0, 1/2, 1이 아닌 가능성을 수로 물었습니다 (${좋은것}/${모두})`);
+          } else if (다시 !== question.answer) {
+            broken.push(`${question.id}: ${question.prompt} → 다시 세니 ${다시}인데 답은 ${question.answer}`);
+          }
+          continue;
+        }
+
+        // 여럿을 견주는 문항입니다.
+        const 견줌 = /가능성이 가장 (높은|낮은) (회전판|주머니)/.exec(question.prompt);
+        if (견줌) {
+          const 색 = /화살이 ([가-힣]+색)을 가리킬|([가-힣]+색)이 나올/.exec(question.prompt);
+          const 색코드 = 색말((색?.[1] ?? 색?.[2] ?? '').trim());
+          if (!색코드) continue;
+          const 것들: Array<{ name: string; 좋은것: number; 모두: number }> = [];
+          if (visual.kind === 'spinner') {
+            for (const item of visual.items) {
+              것들.push({
+                name: item.name ?? '',
+                좋은것: item.slices.filter((one) => one === 색코드).length,
+                모두: item.slices.length,
+              });
+            }
+          } else if (visual.kind === 'marble-bag') {
+            for (const bag of visual.bags) {
+              것들.push({
+                name: bag.name ?? '',
+                좋은것: bag.marbles.filter((one) => one === 색코드).length,
+                모두: bag.marbles.length,
+              });
+            }
+          } else continue;
+          본것 += 1;
+          // 어긋셈으로만 견줍니다. 소수로 바꾸지 않습니다.
+          const 더높은가 = (a: typeof 것들[number], b: typeof 것들[number]) => a.좋은것 * b.모두 - b.좋은것 * a.모두;
+          const 고른것 = 것들.reduce((best, one) =>
+            (견줌[1] === '높은' ? 더높은가(one, best) > 0 : 더높은가(one, best) < 0) ? one : best,
+          );
+          const 같은것 = 것들.filter((one) => 더높은가(one, 고른것) === 0);
+          if (같은것.length !== 1) {
+            broken.push(`${question.id}: 가장 ${견줌[1]} 것이 ${같은것.length}개입니다`);
+          } else if (question.answer !== `${고른것.name} ${견줌[2]}`) {
+            broken.push(`${question.id}: ${question.prompt} → 다시 세니 ${고른것.name}인데 답은 ${question.answer}`);
+          }
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+    expect(본것).toBeGreaterThan(40);
+  });
+
+  it('가능성을 말로 묻는 문항의 보기는 지도서가 쓰는 다섯 말뿐이다', () => {
+    const 다섯말 = ['불가능하다', '~아닐 것 같다', '반반이다', '~일 것 같다', '확실하다'];
+    const broken: string[] = [];
+    for (const [lesson, , questions] of 여섯단원) {
+      if (lesson.lessonNo !== 5) continue;
+      for (const question of questions) {
+        if (!/가능성을 말로 표현하면/.test(question.prompt)) continue;
+        for (const choice of question.choices) {
+          if (!다섯말.includes(choice)) broken.push(`${question.id}: 보기 '${choice}'`);
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+  });
+
+  // 지도서 7차시: "가능성이 직관적으로 파악되는 상황들을 제시하여 일이
+  // 일어날 가능성을 0, 1/2, 1의 수로 나타내어 보게 한다."
+  it('7차시에서 수로 나타낸 답은 0, 1/2, 1뿐이다', () => {
+    const broken: string[] = [];
+    for (const [lesson, , questions] of 여섯단원) {
+      if (lesson.lessonNo !== 7) continue;
+      for (const question of questions) {
+        if (!/가능성을 수로 나타내면 얼마일까요/.test(question.prompt)) continue;
+        if (!['0', '1/2', '1'].includes(question.answer)) {
+          broken.push(`${question.id}: 답이 ${question.answer}`);
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+  });
+
+  // 5차시 앞에서는 가능성을, 5차시 뒤에서는 평균을 묻지 않습니다.
+  it('차시가 아직 배우지 않은 것을 묻지 않는다', () => {
+    const broken: string[] = [];
+    for (const [lesson, , questions] of 여섯단원) {
+      for (const question of questions) {
+        const 글 = [question.prompt, ...question.choices].join(' ');
+        if (lesson.lessonNo <= 4 && /가능성/.test(글)) broken.push(`${lesson.id}: ${question.prompt}`);
+        if (lesson.lessonNo >= 5 && /평균/.test(글)) broken.push(`${lesson.id}: ${question.prompt}`);
+      }
+    }
+    expect(broken).toEqual([]);
   });
 });

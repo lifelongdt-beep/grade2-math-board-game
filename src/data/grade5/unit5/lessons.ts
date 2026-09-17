@@ -1,6 +1,8 @@
 import type { BoxFace, FigureShapeName, QuestionVisual } from '../../../types';
 import type { G5Family } from '../build';
-import { eul, eun, gwa, i as iJosa, particleOf, pick, rand } from '../util';
+import { eul, eun, gwa, i as iJosa, rand, 답으로맺기 } from '../util';
+
+export { 답으로맺기 };
 import { ALL_FACES, OPPOSITE, faceName, perpendicularTo } from './box';
 
 // ════════════════════════════════════════════════════════════════════
@@ -16,16 +18,6 @@ import { ALL_FACES, OPPOSITE, faceName, perpendicularTo } from './box';
 //   ④ 직육면체와 정육면체의 관계를 거꾸로 알기
 //      → 정육면체는 직육면체이지만, 직육면체가 늘 정육면체는 아닙니다.
 // ════════════════════════════════════════════════════════════════════
-
-/**
- * 풀이의 마지막 줄은 늘 이 문항의 답을 말해야 합니다. 까닭만 적어 두면
- * 아이가 풀이를 읽고도 무엇이 답인지 모르는 일이 생깁니다.
- */
-export const 답으로맺기 = (까닭: string, 답: string): string[] => {
-  const 알맹이 = 답.replace(/[.]$/, '');
-  if (까닭.includes(알맹이)) return [까닭];
-  return [까닭, `그러므로 ${답.endsWith('.') ? 답 : `${답}입니다.`}`];
-};
 
 /** 그림에 쓸 직육면체의 크기입니다. 셋이 서로 다르게 나오게 합니다. */
 export const boxSizeFor = (seed: number) => {
