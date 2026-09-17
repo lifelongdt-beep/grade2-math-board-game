@@ -30,6 +30,11 @@ export type FigureFact = {
   vertexCount: number;
 };
 
+// 여기 적은 대칭축의 수는 '그 이름으로 흔히 그리는 도형' 하나의 값입니다.
+// 이름만으로는 하나로 정해지지 않는 것이 있습니다 — 등변사다리꼴도
+// 사다리꼴이고 대칭축이 하나 있으며, 정사각형도 직사각형이고 마름모이며
+// 대칭축이 넷입니다. 그래서 이 값을 쓰는 문항은 반드시 도형을 함께
+// 그리고, 물음도 '그림의 사다리꼴에서…'처럼 그린 도형을 가리킵니다.
 export const FIGURE_FACTS: FigureFact[] = [
   { shape: '정삼각형', axisCount: 3, drawableAxes: ['vertical'], pointSymmetric: false, vertexCount: 3 },
   { shape: '이등변삼각형', axisCount: 1, drawableAxes: ['vertical'], pointSymmetric: false, vertexCount: 3 },

@@ -19,6 +19,13 @@ type 구간표 = {
   제목: string;
   단위: string;
   이름: string;
+  // 표의 값이 무엇의 값인지입니다. 자료마다 이름 붙이는 법도, 세는
+  // 말도 달라집니다 — 선수는 '명'으로 세고 상자는 '개'로 셉니다.
+  // 사람의 값을 '가, 나, 다'로 부르거나 '몇 개'로 세면 어색합니다.
+  대상: { 이름들: string[]; 세는말: string; 부르는말: string };
+  // 값 하나를 주고 어느 줄인지 고르게 할 때의 물음입니다. '어느 요금일까요'는
+  // 어색하므로 표마다 제 말로 적습니다.
+  고르는물음: string;
   // 각 줄은 [줄 이름, 아래 경계(없으면 undefined), 위 경계]입니다.
   줄: Array<{ 이름: string; lower?: Edge; upper?: Edge }>;
 };
@@ -29,6 +36,8 @@ const 역도체급: 구간표 = {
   제목: '올림픽 역도 여자 체급',
   단위: 'kg',
   이름: '체급',
+  대상: { 이름들: ['가 선수', '나 선수', '다 선수', '라 선수', '마 선수'], 세는말: '명', 부르는말: '선수' },
+  고르는물음: '어느 체급일까요?',
   줄: [
     { 이름: '49 kg급', upper: { value: 49, included: true } },
     { 이름: '59 kg급', lower: { value: 49, included: false }, upper: { value: 59, included: true } },
@@ -43,6 +52,8 @@ const 티셔츠치수: 구간표 = {
   제목: '학급 티셔츠 치수',
   단위: 'cm',
   이름: '치수',
+  대상: { 이름들: ['우리', '주원', '지수', '수현', '민규'], 세는말: '명', 부르는말: '학생' },
+  고르는물음: '어느 치수일까요?',
   줄: [
     { 이름: '11호', lower: { value: 125, included: true }, upper: { value: 135, included: false } },
     { 이름: '13호', lower: { value: 135, included: true }, upper: { value: 145, included: false } },
@@ -56,6 +67,8 @@ const 택배요금: 구간표 = {
   제목: '택배 요금',
   단위: 'kg',
   이름: '요금',
+  대상: { 이름들: ['가', '나', '다', '라', '마'], 세는말: '개', 부르는말: '상자' },
+  고르는물음: '요금은 얼마일까요?',
   줄: [
     { 이름: '4000원', upper: { value: 2, included: true } },
     { 이름: '5000원', lower: { value: 2, included: false }, upper: { value: 5, included: true } },
@@ -183,7 +196,7 @@ export const lesson4Middle: G5Family[] = [
       const 정답줄 = 줄찾기(표, 값);
       if (!정답줄) return null;
       return {
-        prompt: `${표.제목}입니다. ${표글(표)}. ${표.단위 === 'cm' ? '키' : '무게'}가 ${값} ${표.단위}이면 어느 ${표.이름}일까요?`,
+        prompt: `${표.제목}입니다. ${표글(표)}. ${표.단위 === 'cm' ? '키' : '무게'}가 ${값} ${표.단위}이면 ${표.고르는물음}`,
         answer: 정답줄.이름,
         wrongs: 표.줄.filter((행) => 행.이름 !== 정답줄.이름).map((행) => 행.이름),
         tag: 'range',
@@ -238,7 +251,7 @@ export const lesson4Middle: G5Family[] = [
       const 표 = 티셔츠치수;
       const 줄 = 표.줄[next(표.줄.length)];
       if (!줄.lower || !줄.upper) return null;
-      const 사람 = ['우리', '주원', '지수', '수현', '민규'];
+      const 사람 = 표.대상.이름들;
       const 키 = [줄.lower.value, 줄.upper.value, 줄.lower.value + 4, 줄.lower.value - 2, 줄.upper.value + 3];
       const 드는사람 = 사람.filter((_, index) => inRange(키[index], 줄.lower, 줄.upper));
       const 양끝포함 = 사람.filter((_, index) =>
@@ -246,7 +259,7 @@ export const lesson4Middle: G5Family[] = [
       );
       if (드는사람.length === 양끝포함.length) return null;
       return {
-        prompt: `${표.제목}는 ${표글(표)}입니다. ${사람.map((이름, index) => `${이름} ${키[index]} cm`).join(', ')}일 때 ${줄.이름} 티셔츠를 입는 학생은 모두 몇 명일까요?`,
+        prompt: `${eun(표.제목)} ${표글(표)}입니다. ${사람.map((이름, index) => `${이름} ${키[index]} cm`).join(', ')}일 때 ${줄.이름} 티셔츠를 입는 학생은 모두 몇 명일까요?`,
         answer: `${드는사람.length}명`,
         wrongs: [
           `${양끝포함.length}명`,
@@ -302,7 +315,7 @@ export const lesson4Middle: G5Family[] = [
     make: (seed) => {
       const next = rand(seed);
       const 표 = pick(표들, seed + 5);
-      const 이름표 = ['가', '나', '다', '라', '마'];
+      const 이름표 = 표.대상.이름들;
       const 줄 = 표.줄[1 + next(표.줄.length - 1)];
       if (!줄.lower || !줄.upper) return null;
       const 값 = [줄.lower.value, 줄.upper.value, 줄.lower.value + 1, 줄.upper.value + 1, 줄.lower.value - 1];
@@ -312,14 +325,14 @@ export const lesson4Middle: G5Family[] = [
       );
       if (드는것.length === 양끝포함.length || 드는것.length === 0) return null;
       return {
-        prompt: `${표.제목}는 ${표글(표)}입니다. 조사한 값이 ${값.map((v, index) => `${이름표[index]} ${v} ${표.단위}`).join(', ')}일 때 ${줄.이름}에 해당하는 것은 모두 몇 개일까요?`,
-        answer: `${드는것.length}개`,
+        prompt: `${eun(표.제목)} ${표글(표)}입니다. ${값.map((v, index) => `${이름표[index]} ${v} ${표.단위}`).join(', ')}일 때 ${줄.이름}에 해당하는 ${eun(표.대상.부르는말)} 모두 몇 ${표.대상.세는말}일까요?`,
+        answer: `${드는것.length}${표.대상.세는말}`,
         wrongs: [
-          `${양끝포함.length}개`,
-          `${값.length - 드는것.length}개`,
-          `${드는것.length + 1}개`,
-          `${Math.max(0, 드는것.length - 1)}개`,
-          `${값.length}개`,
+          `${양끝포함.length}${표.대상.세는말}`,
+          `${값.length - 드는것.length}${표.대상.세는말}`,
+          `${드는것.length + 1}${표.대상.세는말}`,
+          `${Math.max(0, 드는것.length - 1)}${표.대상.세는말}`,
+          `${값.length}${표.대상.세는말}`,
         ],
         tag: 'range',
         strategy: '구간에 드는 것의 개수 세기',
@@ -327,7 +340,7 @@ export const lesson4Middle: G5Family[] = [
         steps: [
           `${줄.이름}의 범위는 ${rangeText(줄.lower, 줄.upper, 표.단위)}입니다.`,
           `주어진 값 가운데 이 범위에 드는 것은 ${드는것.join(', ')}입니다.`,
-          `그러므로 ${드는것.length}개입니다.`,
+          `그러므로 ${드는것.length}${표.대상.세는말}입니다.`,
         ],
       };
     },
@@ -406,7 +419,7 @@ export const lesson4Hard: G5Family[] = [
       const 표 = 역도체급;
       const 줄 = 표.줄[1 + next(3)];
       if (!줄.lower || !줄.upper) return null;
-      const 선수 = ['가 선수', '나 선수', '다 선수', '라 선수'];
+      const 선수 = 표.대상.이름들.slice(0, 4);
       const 무게 = [
         줄.upper.value,
         줄.lower.value,
@@ -417,7 +430,7 @@ export const lesson4Hard: G5Family[] = [
       if (같은줄.length !== 2) return null;
       const 아닌사람 = 선수.filter((이름) => !같은줄.includes(이름));
       return {
-        prompt: `${표.제목}은 ${표글(표)}입니다. ${선수.map((이름, index) => `${이름} ${무게[index]} kg`).join(', ')}일 때, ${줄.이름}에 속하지 않는 선수를 모두 고르면 몇 명일까요?`,
+        prompt: `${eun(표.제목)} ${표글(표)}입니다. ${선수.map((이름, index) => `${이름} ${무게[index]} kg`).join(', ')}일 때, ${줄.이름}에 속하지 않는 선수를 모두 고르면 몇 명일까요?`,
         answer: `${아닌사람.length}명`,
         wrongs: [`${같은줄.length}명`, `${선수.length}명`, `${아닌사람.length + 1}명`, '0명'],
         tag: 'range',

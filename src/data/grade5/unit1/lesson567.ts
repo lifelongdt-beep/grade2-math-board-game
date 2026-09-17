@@ -500,11 +500,19 @@ export const lesson567Middle = (mode: Rounding): G5Family[] => {
         return {
           prompt: `경기를 보러 온 입장객이 ${사람}명입니다. 입장객 수를 반올림하여 ${placeName(exp)}까지 나타내면 약 몇 명일까요?`,
           answer: `약 ${answer}명`,
+          // 한 자리 위에서 어림한 값도 오답으로 씁니다. 다만 그 값이 0이
+          // 되어 버리면('약 0명') 아이가 보기만 보고도 지우게 되고,
+          // 무엇보다 말이 되지 않는 보기입니다. 그럴 때는 한 자리 아래에서
+          // 어림한 값을 대신 씁니다.
           wrongs: [
             `약 ${estimate(String(사람), exp, 'ceil')}명`,
             `약 ${estimate(String(사람), exp, 'floor')}명`,
             `약 ${사람}명`,
-            `약 ${estimate(String(사람), exp + 1, 'round')}명`,
+            `약 ${
+              estimate(String(사람), exp + 1, 'round') === '0'
+                ? estimate(String(사람), exp - 1, 'round')
+                : estimate(String(사람), exp + 1, 'round')
+            }명`,
           ],
           tag: 'rounding',
           strategy: '반올림을 활용하여 문제 해결하기',
