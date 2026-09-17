@@ -1,6 +1,4 @@
-import { Fragment, useMemo } from 'react';
-import katex from 'katex';
-import '../katex-layout.css';
+import { Fragment } from 'react';
 
 // ════════════════════════════════════════════════════════════════════
 // 우리말 문장 속의 분수를 수학 표기로 그립니다
@@ -10,15 +8,18 @@ import '../katex-layout.css';
 // 분모 위에 가로선을 긋고 그 위에 분자를 얹어 적는 수이고, 1/5는
 // '1 나누기 5'로 읽힐 수도 있는 다른 표기입니다.
 //
-// 그리는 일은 KaTeX에 맡깁니다. 분자와 분모의 크기, 가로선의 굵기와
-// 자리, 글줄 위에서의 높이가 모두 수학 조판 규칙대로 잡힙니다. 손으로
-// CSS를 짜면 이 가운데 높이가 늘 어긋나, 분수가 글줄 아래로 흘러
-// 내립니다.
+// 그리는 일은 CSS로 합니다 — 분자, 가로선, 분모를 세로로 쌓습니다.
 //
-// 다만 글자체는 앱 것을 그대로 씁니다(styles.css의 .math-fraction 규칙).
-// KaTeX가 들고 오는 글자체는 세리프라 한글 옆에서 혼자 튀고, 그 글자
-// 파일을 받으려면 1 MB가 넘는데 교실에서는 인터넷이 끊겨도 앱이
-// 열려야 합니다.
+// 처음에는 KaTeX에 맡겼습니다. 조판 규칙을 제대로 아는 쪽에 맡기는 것이
+// 맞아 보였기 때문입니다. 그런데 KaTeX는 자리를 '자기 글자체의 치수'로
+// 잡아 둡니다. 우리는 한글 옆에서 혼자 튀지 않도록 글자체를 앱 것으로
+// 바꿔 쓰는데, 그 글자의 숫자가 KaTeX 글자보다 높아서 잡아 둔 자리를
+// 넘어 그려졌습니다. 강조 상자(노란 칸)는 잡아 둔 자리를 따라가므로,
+// 숫자만 상자 밖으로 삐져나와 읽기 어려워졌습니다.
+//
+// 글자체를 바꾸는 한 이 어긋남은 없어지지 않습니다. 그리고 이 앱에 나오는
+// 분수는 숫자와 ×, + 뿐이라 조판 엔진이 할 일이 없습니다. 그래서 직접
+// 쌓습니다 — 상자가 곧 글자라 넘칠 자리가 없습니다.
 // ════════════════════════════════════════════════════════════════════
 
 export type MathPiece =
@@ -134,28 +135,17 @@ export const readAloud = (piece: Extract<MathPiece, { kind: 'fraction' }>) => {
   return `${piece.whole ? `${piece.whole}과 ` : ''}${읽기(piece.denominator)}분의 ${읽기(piece.numerator)}`;
 };
 
-// 같은 분수가 한 화면에 여러 번 나옵니다. 그릴 때마다 다시 짜지 않게
-// 만들어 둔 것을 들고 있습니다.
-const 그려둔것 = new Map<string, string>();
-
-/** 우리말 글에 적힌 셈을 TeX로 옮깁니다. 숫자와 ×, + 만 다룹니다. */
-const 셈을TeX로 = (text: string) => text.replace(/×/g, '\\times ').replace(/\s+/g, '');
-
-const 그리기 = (piece: Extract<MathPiece, { kind: 'fraction' }>): string => {
-  const tex = `${piece.whole ?? ''}\\dfrac{${셈을TeX로(piece.numerator)}}{${셈을TeX로(piece.denominator)}}`;
-  const 있던것 = 그려둔것.get(tex);
-  if (있던것) return 있던것;
-  // 숫자만 넣으므로 LaTeX 명령이 섞일 자리가 없습니다.
-  const html = katex.renderToString(tex, { throwOnError: false, output: 'html', displayMode: false });
-  그려둔것.set(tex, html);
-  return html;
-};
+/** 분자나 분모에 든 셈('5×3')도 글자 그대로 보여 줍니다. */
+const 칸 = (text: string) => text.replace(/\s+/g, ' ').trim();
 
 export function MathFraction({ piece }: { piece: Extract<MathPiece, { kind: 'fraction' }> }) {
-  const html = useMemo(() => 그리기(piece), [piece.whole, piece.numerator, piece.denominator]);
   return (
     <span className="math-fraction" role="math" aria-label={readAloud(piece)}>
-      <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: html }} />
+      {piece.whole && <span className="mf-whole" aria-hidden="true">{piece.whole}</span>}
+      <span className="mf-frac" aria-hidden="true">
+        <span className="mf-num">{칸(piece.numerator)}</span>
+        <span className="mf-den">{칸(piece.denominator)}</span>
+      </span>
     </span>
   );
 }
