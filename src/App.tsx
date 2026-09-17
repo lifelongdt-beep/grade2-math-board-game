@@ -2007,7 +2007,7 @@ function App() {
                                 아이는 그 뒤를 잘 읽지 않습니다. */}
                             <section className="lane-guide-block good">
                               <h4>잘한 점</h4>
-                              {guide.cheer && <p className="lane-cheer">{guide.cheer}</p>}
+                              {guide.cheer && <p className="lane-cheer"><MathText text={guide.cheer} /></p>}
 
                               {/* 우리 반 목표에 얼마나 보탰는지입니다.
                                   등수가 아니라 보탬이라, 적게 푼 아이도
@@ -2040,11 +2040,11 @@ function App() {
                                 <ul className="lane-guide-kinds">
                                   {guide.strong.map((one) => (
                                     <li key={one.kind}>
-                                      <strong>{one.kind}</strong>
+                                      <strong><MathText text={one.kind} /></strong>
                                       {/* 몇 번 맞혔는지는 아이가 이미
                                           압니다. 무엇을 할 줄 알게
                                           되었는지를 적어 줍니다. */}
-                                      <span>{one.praise}</span>
+                                      <span><MathText text={one.praise} /></span>
                                       <span className="lane-guide-count">{one.total}번 다 맞혔어요</span>
                                     </li>
                                   ))}
@@ -2066,7 +2066,7 @@ function App() {
                                 <ul className="lane-guide-kinds missed">
                                   {guide.weak.map((one) => (
                                     <li key={one.kind}>
-                                      <strong>{one.kind}</strong>
+                                      <strong><MathText text={one.kind} /></strong>
                                       <span>{one.total}번 중 {one.wrong}번 걸렸어요</span>
                                       {/* '무엇을 더 공부하라'는 말만으로는
                                           집에서 무엇을 펼쳐야 할지 알 수
@@ -2074,9 +2074,9 @@ function App() {
                                           문제의 첫 동작을 함께 둡니다. */}
                                       {one.example && (
                                         <span className="lane-guide-example">
-                                          <em>{one.example.prompt}</em>
-                                          <b>답 {one.example.answer}</b>
-                                          <i>{one.example.firstMove}</i>
+                                          <em><MathText text={one.example.prompt} /></em>
+                                          <b>답 <MathText text={one.example.answer} /></b>
+                                          <i><MathText text={one.example.firstMove} /></i>
                                         </span>
                                       )}
                                     </li>
@@ -2089,8 +2089,8 @@ function App() {
                                   <ul className="lane-habits">
                                     {guide.habits.map((one) => (
                                       <li key={one.what}>
-                                        <strong>{one.what} {one.times}번</strong>
-                                        <span>{one.fix}</span>
+                                        <strong><MathText text={one.what} /> {one.times}번</strong>
+                                        <span><MathText text={one.fix} /></span>
                                       </li>
                                     ))}
                                   </ul>
@@ -2099,14 +2099,14 @@ function App() {
                                 <div className="lane-guide-advice">
                                   {guide.advice.map((line) => (
                                     <p className="lane-guide-line how" key={line}>
-                                      <span>이렇게 해 봐요</span>{line}
+                                      <span>이렇게 해 봐요</span><MathText text={line} />
                                     </p>
                                   ))}
                                   {guide.watchOut && (
-                                    <p className="lane-guide-line"><span>조심할 곳</span>{guide.watchOut}</p>
+                                    <p className="lane-guide-line"><span>조심할 곳</span><MathText text={guide.watchOut} /></p>
                                   )}
                                   {guide.selfCheck && (
-                                    <p className="lane-guide-line check"><span>다 풀고 나서</span>{guide.selfCheck}</p>
+                                    <p className="lane-guide-line check"><span>다 풀고 나서</span><MathText text={guide.selfCheck} /></p>
                                   )}
                                 </div>
                               </section>
