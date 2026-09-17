@@ -54,6 +54,7 @@ import {
 } from './sound';
 import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
 import { HighlightedPrompt } from './components/HighlightedPrompt';
+import { MathText } from './components/MathText';
 import { CastleDefenseScene } from './components/CastleDefenseScene';
 import { InteractiveHintModal } from './components/InteractiveHintModal';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
@@ -123,6 +124,12 @@ type InitialRoute = {
   unitSelection?: UnitSelection;
   lessonId?: string;
   duration: SessionDuration;
+  // 검사용입니다. 주소에 ?check=상 을 붙이면 그 수준부터 시작합니다.
+  // 수업에서는 늘 '하'에서 시작하고 풀면서 오르내립니다. 이 문은 화면을
+  // 단원·차시·수준별로 모두 훑어보는 검사에서 상 수준 문항까지 실제로
+  // 그려 보기 위한 것입니다. 수준만 정할 뿐 답을 알려 주지 않으므로,
+  // 이 주소로 얻을 수 있는 것은 더 어려운 문제뿐입니다.
+  checkLevel?: Difficulty;
 };
 
 // 2학년 차시와 5학년 차시를 한 앱에서 씁니다. 2학년 문항을 지키는
@@ -153,6 +160,7 @@ const readInitialRoute = (): InitialRoute => {
   const durationParam = params.get('t') ?? params.get('duration');
   const dbParam = params.get('db');
   const roomParam = params.get('room');
+  const checkParam = params.get('check');
 
   return {
     isMobileEntry: params.get('mobile') === '1' || params.get('m') === '1',
@@ -163,6 +171,7 @@ const readInitialRoute = (): InitialRoute => {
     unitSelection: parseUnitSelection(unitParam),
     lessonId: lessonParam ?? undefined,
     duration: parseSessionDuration(durationParam),
+    checkLevel: checkParam === '하' || checkParam === '중' || checkParam === '상' ? checkParam : undefined,
   };
 };
 
@@ -558,6 +567,8 @@ function App() {
   const [mode, setMode] = useState<'setup' | 'playing' | 'finished'>('setup');
   const initialRoute = useMemo(() => readInitialRoute(), []);
   const isMobileEntry = initialRoute.isMobileEntry;
+  // 검사로 열었을 때만 값이 있습니다(위 readInitialRoute의 설명 참고).
+  const checkLevel = initialRoute.checkLevel;
   // 이 폰의 답을 선생님 화면과 연동할지입니다 — 선생님이 큐알을 만들 때
   // 정한 값을 그대로 물려받습니다(모바일이 아니면 뜻이 없습니다).
   const mobileSyncEnabled = isMobileEntry && initialRoute.syncEnabled;
@@ -674,7 +685,7 @@ function App() {
     [bankSeed, reviewScope, scopedLessons, castleDans],
   );
   const [remainingSeconds, setRemainingSeconds] = useState<SessionDuration | number>(sessionDuration);
-  const [playerStates, setPlayerStates] = useState<Record<number, PlayerQuestionState>>(() => createQuestionState(players));
+  const [playerStates, setPlayerStates] = useState<Record<number, PlayerQuestionState>>(() => createQuestionState(players, undefined, checkLevel));
   const [records, setRecords] = useState<AnswerRecord[]>([]);
   // 큐알로 들어온 학생 폰의 결과입니다. 폰은 자기 답을 서버에 올리고,
   // 선생님 화면은 이 자리로 주기적으로 받아 옵니다(server가 없으면
@@ -764,7 +775,7 @@ function App() {
 
   useEffect(() => {
     if (mode !== 'setup') return;
-    setPlayerStates(createQuestionState(players));
+    setPlayerStates(createQuestionState(players, undefined, checkLevel));
     setRemainingSeconds(sessionDuration);
   }, [players, sessionDuration, mode]);
 
@@ -931,7 +942,7 @@ function App() {
   }, [goalJustReached, correctCount]);
   const getQuestionForPlayer = (_player: Player, state: PlayerQuestionState) =>
     getPlayerQuestion(questionBanks, state);
-  const fallbackStates = createQuestionState(players);
+  const fallbackStates = createQuestionState(players, undefined, checkLevel);
   const firstPlayer = players[0];
   const sampleQuestion = firstPlayer
     ? getQuestionForPlayer(firstPlayer, playerStates[firstPlayer.id] ?? fallbackStates[firstPlayer.id])
@@ -1063,7 +1074,7 @@ function App() {
     setRecords([]);
     setSuccessSignals({});
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
-    setPlayerStates(createQuestionState(players, now));
+    setPlayerStates(createQuestionState(players, now, checkLevel));
     setRemainingSeconds(sessionDuration);
     setTeacherOpen(false);
     setMode('playing');
@@ -1125,7 +1136,7 @@ function App() {
     setBonusFlash(0);
     setRecords([]);
     setSuccessSignals({});
-    setPlayerStates(createQuestionState(players));
+    setPlayerStates(createQuestionState(players, undefined, checkLevel));
     setRemainingSeconds(sessionDuration);
     setStudentSetupSteps(createStudentSetupSteps(playerCount));
     if (!isMobileEntry) {
@@ -1159,7 +1170,7 @@ function App() {
     setSuccessSignals({});
     setWrongSignals({});
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
-    setPlayerStates(createQuestionState(players));
+    setPlayerStates(createQuestionState(players, undefined, checkLevel));
     setRemainingSeconds(sessionDuration);
     setMode('playing');
   };
@@ -2184,8 +2195,8 @@ function App() {
 
                         {state.feedback !== 'explain' && hintTextOpen[player.id] && (
                           <div className="hint-text-panel" aria-label={`${player.name} 힌트`}>
-                            <p className="quick-core"><span>핵심</span>{question.support.studentConcept}</p>
-                            <p><span>볼 곳</span>{question.support.studentHint}</p>
+                            <p className="quick-core"><span>핵심</span><span><MathText text={question.support.studentConcept} /></span></p>
+                            <p><span>볼 곳</span><span><MathText text={question.support.studentHint} /></span></p>
                             {/* 쌓은 모양은 앞의 것이 뒤의 것을 가립니다. 개수를
                                 묻는 문제에서 아이가 보이는 것만 세고 숨은 것을
                                 빠뜨립니다. 힌트를 열었을 때만 비쳐 보이게 그려
@@ -2213,10 +2224,10 @@ function App() {
                         <div className="student-feedback wrong-feedback">
                           <strong><XCircle size={18} /> {isCastleDefense ? '성벽이 흔들렸어요!' : '짧은 도움'}</strong>
                           <div className="support-card quick-support-card" aria-label={`${player.name} 오답 도움`}>
-                            <p className="quick-core"><span>핵심</span>{question.support.studentConcept}</p>
-                            <p><span>볼 곳</span>{question.support.studentHint}</p>
-                            <p><span>정답</span>{question.answer}</p>
-                            <p className="quick-reason"><span>왜?</span>{question.support.steps[2]}</p>
+                            <p className="quick-core"><span>핵심</span><span><MathText text={question.support.studentConcept} /></span></p>
+                            <p><span>볼 곳</span><span><MathText text={question.support.studentHint} /></span></p>
+                            <p><span>정답</span><span><MathText text={question.answer} /></span></p>
+                            <p className="quick-reason"><span>왜?</span><span><MathText text={question.support.steps[2]} /></span></p>
                           </div>
                           <div className="wrong-feedback-actions">
                             {question.visual && (
@@ -2259,10 +2270,10 @@ function App() {
                               {question.choiceVisuals?.[index] ? (
                                 <span className="choice-picture">
                                   <QuestionVisualGraphic visual={question.choiceVisuals[index]} />
-                                  <span className="choice-caption">{choice}</span>
+                                  <span className="choice-caption"><MathText text={choice} /></span>
                                 </span>
                               ) : (
-                                choice
+                                <span className="choice-text"><MathText text={choice} /></span>
                               )}
                             </button>
                           ))}

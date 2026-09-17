@@ -46,6 +46,11 @@ export type G5Spec = {
   visual?: QuestionVisual;
   misconceptionTip?: string;
   selfCheck?: string;
+  // 갈래마다 정해 둔 '핵심' 한 줄 대신 이 문항만의 핵심을 쓸 때 적습니다.
+  // 분수의 곱셈처럼 한 갈래 안에서도 짚을 곳이 차시마다 달라지는 자리에
+  // 씁니다 — 진분수끼리 곱하는 문항에 '대분수는 먼저 가분수로 고치세요'가
+  // 붙으면 아이는 있지도 않은 대분수를 찾게 됩니다.
+  concept?: string;
 };
 
 export type G5Family = {
@@ -146,7 +151,7 @@ const toQuestion = (
   const options = shuffle([spec.answer, ...usableWrongs(spec)], slot * 31 + difficultyIndex[difficulty] * 7 + lesson.lessonNo);
 
   const support: LearningSupport = {
-    studentConcept: g5StudentConcept[spec.tag] ?? '문제에서 무엇을 구하라고 했는지 먼저 찾으세요.',
+    studentConcept: spec.concept ?? g5StudentConcept[spec.tag] ?? '문제에서 무엇을 구하라고 했는지 먼저 찾으세요.',
     studentHint: spec.hint,
     coreConcept: g5CoreConcept[spec.tag] ?? lesson.objective,
     readStrategy: `${strategy}: ${g5ReadStrategy[spec.tag] ?? '문제에 주어진 조건을 하나씩 표시합니다.'}`,

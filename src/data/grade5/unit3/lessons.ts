@@ -643,7 +643,7 @@ const 축인지판단 = (which: number): G5Family => ({
     // 정오각형·정육각형은 45° 격자에 축이 놓이지 않아 그림이 어긋납니다.
     if (도형.drawableAxes.length === 0 && 도형.axisCount !== 0) return null;
     return {
-      prompt: `${도형.shape}에 ${방향이름[고른축]}을 따라 접으면 두 쪽이 완전히 겹칠까요?`,
+      prompt: `그림의 ${도형.shape}에 ${방향이름[고른축]}을 따라 접으면 두 쪽이 완전히 겹칠까요?`,
       answer: 맞나 ? '겹치므로 대칭축입니다.' : '겹치지 않으므로 대칭축이 아닙니다.',
       wrongs: [
         맞나 ? '겹치지 않으므로 대칭축이 아닙니다.' : '겹치므로 대칭축입니다.',
@@ -721,7 +721,7 @@ const 대칭개수세기 = (선대칭인가: boolean): G5Family => ({
     const 개수 = 넷.filter((one) => (선대칭인가 ? one.axisCount !== 0 : one.pointSymmetric)).length;
     if (개수 === 0 || 개수 === 4) return null;
     return {
-      prompt: `${넷.map((one) => one.shape).join(', ')} 중에서 ${eun(이름)} 모두 몇 개일까요?`,
+      prompt: `그림의 ${넷.map((one) => one.shape).join(', ')} 중에서 ${eun(이름)} 모두 몇 개일까요?`,
       answer: `${개수}개`,
       wrongs: ['0개', '1개', '2개', '3개', '4개'].filter((one) => one !== `${개수}개`),
       tag: 'congruence',
@@ -950,7 +950,7 @@ const 대칭찾기 = (선대칭인가: boolean): G5Family[] => {
         const 도형 = FIGURE_FACTS[next(FIGURE_FACTS.length)];
         const 맞나 = 선대칭인가 ? 도형.axisCount !== 0 : 도형.pointSymmetric;
         return {
-          prompt: `${eun(도형.shape)} ${이름}일까요?`,
+          prompt: `그림의 ${eun(도형.shape)} ${이름}일까요?`,
           answer: 맞나 ? `${이름}입니다.` : `${이름}이 아닙니다.`,
           wrongs: [
             맞나 ? `${이름}이 아닙니다.` : `${이름}입니다.`,
@@ -966,7 +966,7 @@ const 대칭찾기 = (선대칭인가: boolean): G5Family[] => {
             선대칭인가
               ? `${도형.shape}의 대칭축은 ${도형.axisCount === 0 ? '하나도 없습니다' : `${도형.axisCount}개입니다`}.`
               : `${eul(도형.shape)} 180° 돌리면 ${도형.pointSymmetric ? '처음 도형과 완전히 겹칩니다' : '처음 도형과 겹치지 않습니다'}.`,
-            `그러므로 ${eun(도형.shape)} ${맞나 ? `${이름}입니다` : `${이름}이 아닙니다`}.`,
+            `그러므로 그림의 ${eun(도형.shape)} ${맞나 ? `${이름}입니다` : `${이름}이 아닙니다`}.`,
           ],
           visual: oneFigure('도형', 도형.shape),
           misconceptionTip: 선대칭인가
@@ -994,7 +994,7 @@ export const 선대칭Middle: G5Family[] = [
       const answer = `${도형.axisCount}개`;
       const 다른수 = [0, 1, 2, 3, 4, 5, 6].filter((one) => one !== 도형.axisCount);
       return {
-        prompt: `${도형.shape}의 대칭축은 모두 몇 개일까요?`,
+        prompt: `그림의 ${도형.shape}에서 대칭축은 모두 몇 개일까요?`,
         answer,
         wrongs: 다른수.slice(0, 3).map((one) => `${one}개`).concat('무수히 많습니다.'),
         tag: 'congruence',
@@ -1003,8 +1003,8 @@ export const 선대칭Middle: G5Family[] = [
         steps: [
           '대칭축은 접었을 때 두 쪽이 완전히 겹치는 직선입니다.',
           도형.axisCount === 0
-            ? `${eun(도형.shape)} 어느 직선으로 접어도 두 쪽이 겹치지 않습니다.`
-            : `${eun(도형.shape)} 그런 직선이 ${도형.axisCount}개 있습니다.`,
+            ? `그림의 ${eun(도형.shape)} 어느 직선으로 접어도 두 쪽이 겹치지 않습니다.`
+            : `그림의 ${eun(도형.shape)} 그런 직선이 ${도형.axisCount}개 있습니다.`,
           `그러므로 대칭축은 ${answer}입니다.`,
         ],
         visual: oneFigure('도형', 도형.shape),
@@ -1017,7 +1017,7 @@ export const 선대칭Middle: G5Family[] = [
     make: (seed) => {
       const 도형 = pick(['직사각형', '평행사변형'] as FigureShapeName[], seed);
       return {
-        prompt: `${eul(도형)} 대각선을 따라 접으면 두 쪽이 완전히 겹칠까요?`,
+        prompt: `그림의 ${eul(도형)} 대각선을 따라 접으면 두 쪽이 완전히 겹칠까요?`,
         answer: '겹치지 않으므로 대각선은 대칭축이 아닙니다.',
         wrongs: [
           '겹치므로 대각선은 대칭축입니다.',

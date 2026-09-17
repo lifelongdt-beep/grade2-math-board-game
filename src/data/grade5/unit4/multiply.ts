@@ -1,7 +1,7 @@
 import type { FractionModelVisual } from '../../../types';
 import type { G5Family } from '../build';
-import { asFractionText, mulDecimal, placesOf, shiftPoint, withoutPoint } from '../decimal';
-import { eul, eun, gwa, i as iJosa, particleOf, pick, rand } from '../util';
+import { asFractionText, mulDecimal, mulDecimalKeepingZeros, placesOf, shiftPoint, withoutPoint } from '../decimal';
+import { eul, eun, euro, gwa, i as iJosa, particleOf, pick, rand } from '../util';
 
 // ════════════════════════════════════════════════════════════════════
 // 4단원 2~7차시 소수의 곱셈
@@ -88,6 +88,13 @@ export const decimalSteps = (left: string, right: string): string[] => {
   lines.push(
     `곱하는 두 수의 소수점 아래 자리 수를 더하면 ${placesOf(left)} + ${placesOf(right)} = ${자리}이므로, 곱의 소수점 아래 자리 수도 ${자리}입니다.`,
   );
+  // 0.5 × 0.04처럼 끝자리가 0이 되는 곱이 있습니다. 규칙대로 찍으면
+  // 0.020인데 적을 때는 0.02입니다. 이 한 줄이 없으면 바로 앞 줄과
+  // 마지막 줄의 자리 수가 어긋나 보입니다.
+  const 자리대로 = mulDecimalKeepingZeros(left, right);
+  if (자리대로 !== answer) {
+    lines.push(`소수점 아래 ${자리} 자리로 찍으면 ${자리대로}입니다. 끝자리의 0은 지워도 크기가 같으므로 ${euro(answer)} 씁니다.`);
+  }
   lines.push(`그러므로 ${left} × ${right} = ${answer}입니다.`);
   return lines;
 };
@@ -182,6 +189,9 @@ const 자리수문항 = (kind: DecimalKind): G5Family => ({
     const { left, right } = decimalOperands(kind, seed);
     const 자리 = placesOf(left) + placesOf(right);
     if (자리 === 0) return null;
+    // 끝자리가 0이 되어 지워지는 곱은 묻지 않습니다. 0.5 × 0.04는
+    // 규칙대로면 세 자리인데 적은 값 0.02는 두 자리라, 답이 둘이 됩니다.
+    if (mulDecimalKeepingZeros(left, right) !== mulDecimal(left, right)) return null;
     return {
       prompt: `${left} × ${right}의 곱은 소수점 아래 자리 수가 몇 개일까요?`,
       answer: `${자리}개`,
@@ -261,8 +271,10 @@ const 상황들: Record<DecimalKind, 상황[]> = {
     { 글: (l, r) => `사과 한 개의 무게가 ${l} kg입니다. 사과 ${r}개의`, 단위: 'kg', 물음: '무게는 모두 몇 kg일까요?' },
   ],
   'big-whole': [
-    { 글: (l, r) => `배 한 개의 무게가 ${l} kg입니다. 배 ${r}개의`, 단위: 'kg', 물음: '무게는 모두 몇 kg일까요?' },
-    { 글: (l, r) => `한 시간에 ${l} km를 걷습니다. ${r}시간 동안 걸으면`, 단위: 'km', 물음: '모두 몇 km를 걸을까요?' },
+    // 1보다 큰 소수를 쓰는 자리이므로 무게가 몇 kg인 것이라야 합니다.
+    // 배 한 개가 7.8 kg이면 답은 맞아도 장면이 말이 되지 않습니다.
+    { 글: (l, r) => `수박 한 통의 무게가 ${l} kg입니다. 수박 ${r}통의`, 단위: 'kg', 물음: '무게는 모두 몇 kg일까요?' },
+    { 글: (l, r) => `한 시간에 ${l} km를 걷습니다. ${r} 시간 동안 걸으면`, 단위: 'km', 물음: '모두 몇 km를 걸을까요?' },
     { 글: (l, r) => `주스 한 병에 주스가 ${l} L씩 들어 있습니다. ${r}병에 들어 있는`, 단위: 'L', 물음: '주스는 모두 몇 L일까요?' },
   ],
   'whole-small': [
@@ -281,7 +293,7 @@ const 상황들: Record<DecimalKind, 상황[]> = {
   ],
   'big-big': [
     { 글: (l, r) => `가로가 ${l} m, 세로가 ${r} m인 직사각형 모양의 커튼이 있습니다. 이 커튼의`, 단위: 'm²', 물음: '넓이는 몇 m²일까요?' },
-    { 글: (l, r) => `한 시간에 ${l} km를 달립니다. ${r}시간 동안 달리면`, 단위: 'km', 물음: '모두 몇 km를 달릴까요?' },
+    { 글: (l, r) => `한 시간에 ${l} km를 달립니다. ${r} 시간 동안 달리면`, 단위: 'km', 물음: '모두 몇 km를 달릴까요?' },
     { 글: (l, r) => `가로가 ${l} m, 세로가 ${r} m인 직사각형 모양의 화단이 있습니다. 이 화단의`, 단위: 'm²', 물음: '넓이는 몇 m²일까요?' },
   ],
 };
