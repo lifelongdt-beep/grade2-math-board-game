@@ -60,7 +60,8 @@ import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
 import { TeacherPanel } from './components/TeacherPanel';
-import { curriculum } from './data/curriculum';
+import { curriculum as curriculum2 } from './data/curriculum';
+import { curriculum5 } from './data/curriculum5';
 import { generateQuestions, ALL_CASTLE_DEFENSE_DANS } from './data/questionFactory';
 import type { AnswerRecord, ConceptTag, Difficulty, Lesson, Player, PlayerQuestionState, Question, SessionDuration, Unit } from './types';
 
@@ -124,7 +125,13 @@ type InitialRoute = {
   duration: SessionDuration;
 };
 
-const isSemesterValue = (value: string | null): value is Unit['semester'] => value === '2-1' || value === '2-2';
+// 2학년 차시와 5학년 차시를 한 앱에서 씁니다. 2학년 문항을 지키는
+// 시험들이 curriculum만 훑도록, 두 학기는 파일을 따로 두고 여기서만
+// 이어 붙입니다.
+const curriculum: Unit[] = [...curriculum2, ...curriculum5];
+
+const isSemesterValue = (value: string | null): value is Unit['semester'] =>
+  value === '2-1' || value === '2-2' || value === '5-2';
 
 const parseSessionDuration = (value: string | null): SessionDuration => {
   const parsed = Number(value);
@@ -578,7 +585,7 @@ function App() {
   }, [initialRoute.cloudDbUrl, initialRoute.cloudRoom, isMobileEntry, relayDbUrl, relayRoom]);
   const skipInitialSemesterReset = useRef(true);
   const skipInitialUnitReset = useRef(true);
-  const [semester, setSemester] = useState<'2-1' | '2-2'>(initialRoute.semester);
+  const [semester, setSemester] = useState<Unit['semester']>(initialRoute.semester);
   const semesterUnits = useMemo(() => curriculum.filter((unit) => unit.semester === semester), [semester]);
   const [unitSelection, setUnitSelection] = useState<UnitSelection>(initialRoute.unitSelection ?? 1);
   const isSemesterReviewSelected = unitSelection === semesterReviewUnitValue;
@@ -1398,9 +1405,10 @@ function App() {
       <div className="setup-grid">
         <label>
           학기
-          <select value={semester} onChange={(event) => setSemester(event.target.value as '2-1' | '2-2')}>
+          <select value={semester} onChange={(event) => setSemester(event.target.value as Unit['semester'])}>
             <option value="2-1">2학년 1학기</option>
             <option value="2-2">2학년 2학기</option>
+            <option value="5-2">5학년 2학기</option>
           </select>
         </label>
         <label>

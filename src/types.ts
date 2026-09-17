@@ -2,6 +2,11 @@ export type Difficulty = '하' | '중' | '상';
 
 export type SessionDuration = 30 | 60 | 120;
 
+// 어느 학기인지입니다. 2학년 1·2학기로 시작했고, 5학년 2학기가 뒤에
+// 붙었습니다. 5학년은 차시도 문항도 따로 만들기 때문에(grade5 폴더),
+// 여기서 하는 일은 '어느 학기의 차시인가'를 한 곳에 적어 두는 것뿐입니다.
+export type Semester = '2-1' | '2-2' | '5-2';
+
 export type ConceptTag =
   | 'number'
   | 'placeValue'
@@ -14,7 +19,18 @@ export type ConceptTag =
   | 'multiplication'
   | 'time'
   | 'data'
-  | 'pattern';
+  | 'pattern'
+  // ── 5학년에서 쓰는 갈래입니다 ──────────────────────────────────
+  // 2학년 문항은 이 갈래를 쓰지 않습니다. 5학년 문항은 자기 풀이와
+  // 볼 곳을 문항마다 직접 들고 다니므로(grade5/support.ts), 여기 갈래는
+  // 기록에 남을 이름과 묶음을 정하는 데 씁니다.
+  | 'range'
+  | 'rounding'
+  | 'fraction'
+  | 'decimal'
+  | 'congruence'
+  | 'average'
+  | 'possibility';
 
 // 차시가 '무엇을 물어도 되는가'를 적어 둔 선언입니다.
 //
@@ -42,7 +58,7 @@ export interface LessonScope {
 
 export interface Lesson {
   id: string;
-  semester: '2-1' | '2-2';
+  semester: Semester;
   unitNo: number;
   unitTitle: string;
   lessonNo: number;
@@ -56,7 +72,7 @@ export interface Lesson {
 }
 
 export interface Unit {
-  semester: '2-1' | '2-2';
+  semester: Semester;
   unitNo: number;
   title: string;
   lessons: Lesson[];
@@ -206,6 +222,99 @@ export interface NumberLineVisual {
   // 눈금은 보이되 숫자는 감출 자리입니다. 정답 자리에 숫자를 그대로 쓰면
   // 세어 보지 않고 답을 읽어 버립니다. 눈금만 두면 한 칸을 세어야 합니다.
   hiddenLabels?: number[];
+}
+
+// 수의 범위를 나타내는 그림입니다(5-2 1단원).
+//
+// 지도서가 쓰는 그대로입니다 — 기준이 되는 수를 ●(포함)나 ○(포함하지
+// 않음)로 표시하고, 포함되는 쪽으로 굵은 선과 화살표를 그립니다.
+// 한쪽만 정해진 범위('20 이상인 수')와 두 수로 끊은 범위('49 초과 59
+// 이하인 수') 둘 다 이 하나로 그립니다.
+//
+// 지도서는 이 그림을 '수직선'이라 부르지만, 그 말은 중학교에서 배우는
+// 용어라 학생에게는 쓰지 않는다고 못박아 두었습니다. 그래서 label에도
+// 문항 글에도 '수직선'이라고 쓰지 않습니다.
+export interface RangeLineVisual {
+  kind: 'range-line';
+  label: string;
+  start: number;
+  end: number;
+  step: number;
+  // 아래쪽 경계입니다. 없으면 왼쪽 끝까지 이어진(화살표로 뻗는) 범위입니다.
+  lower?: { value: number; included: boolean };
+  // 위쪽 경계입니다. 없으면 오른쪽 끝까지 이어진 범위입니다.
+  upper?: { value: number; included: boolean };
+  // 범위와 함께 찍어서 '들어가는지' 살펴볼 수 있게 하는 점입니다.
+  dots?: Array<{ value: number; label?: string }>;
+}
+
+// 분수를 그림으로 보이는 모델입니다(5-2 2단원).
+//
+// 지도서가 차시마다 다른 모델을 씁니다.
+//   bar  : 띠를 여러 개 두고 같은 만큼씩 칠합니다. (진분수)×(자연수)를
+//          '같은 수를 여러 번 더하기'로 보이는 묶음 상황입니다.
+//   part : 띠 하나를 자연수만큼 나누고 그중 몇 묶음을 칠합니다.
+//          (자연수)×(진분수)의 '~의 몇 분의 몇'을 보이는 비율 상황입니다.
+//   area : 정사각형을 가로·세로로 나누어 겹치는 곳을 칠합니다.
+//          (분수)×(분수)의 넓이 상황입니다.
+export interface FractionModelVisual {
+  kind: 'fraction-model';
+  label: string;
+  shape: 'bar' | 'part' | 'area';
+  // bar·part에서 띠 하나를 몇 칸으로 나누는지와 몇 칸을 칠하는지입니다.
+  denominator: number;
+  numerator: number;
+  // bar에서 띠를 몇 개 두는지입니다.
+  repeat?: number;
+  // part에서 띠 하나가 나타내는 자연수입니다(6 m의 1/3이면 6).
+  whole?: number;
+  // area에서 가로·세로를 몇 칸으로 나누고 몇 칸을 칠하는지입니다.
+  columns?: number;
+  shadedColumns?: number;
+  rows?: number;
+  shadedRows?: number;
+}
+
+// 도형을 여러 개 늘어놓고 보이는 그림입니다(5-2 3단원 합동과 대칭).
+//
+// 한 그림 안에서
+//   · 합동인지 보려고 두 도형을 나란히 두거나
+//   · 대칭축을 긋거나 대칭의 중심을 찍거나
+//   · 꼭짓점에 ㄱㄴㄷㄹ을 붙여 대응점·대응변·대응각을 묻습니다.
+// 세 가지가 모두 '도형을 놓고 그 위에 무엇을 표시한다'는 같은 일이라
+// 하나로 둡니다.
+export type FigureShapeName =
+  | '정삼각형' | '이등변삼각형' | '직각삼각형'
+  | '정사각형' | '직사각형' | '마름모' | '평행사변형'
+  | '사다리꼴' | '사각형'
+  | '정오각형' | '정육각형' | '원';
+
+export interface FigureSetVisual {
+  kind: 'figure-set';
+  label: string;
+  items: Array<{
+    // 가, 나, 다 … 도형 밑에 붙이는 이름입니다. 없으면 붙이지 않습니다.
+    name?: string;
+    shape: FigureShapeName;
+    // 도 단위입니다. 합동인 두 도형을 돌려 놓을 때 씁니다.
+    rotate?: number;
+    // 좌우를 뒤집습니다(선대칭이동).
+    flip?: boolean;
+    // 1이 기본 크기입니다. '모양은 같고 크기가 다른' 도형을 보일 때 씁니다.
+    scale?: number;
+    // 꼭짓점 이름입니다. 꼭짓점 차례대로 붙습니다.
+    vertexLabels?: string[];
+    // 대칭축입니다. 여러 개 그릴 수 있습니다.
+    axes?: Array<'vertical' | 'horizontal' | 'diagonal' | 'anti-diagonal'>;
+    // 대칭의 중심을 찍습니다.
+    center?: boolean;
+    // 변에 길이를 적습니다. 꼭짓점 번호 두 개로 변을 가리킵니다.
+    edgeLabels?: Array<{ from: number; to: number; text: string }>;
+    // 꼭짓점에 각의 크기를 적습니다.
+    angleLabels?: Array<{ at: number; text: string }>;
+    // 눈에 띄게 그립니다.
+    active?: boolean;
+  }>;
 }
 
 export interface PlaceValueVisual {
@@ -379,6 +488,9 @@ export type QuestionVisual =
   | CubeViewsVisual
   | TangramVisual
   | NumberLineVisual
+  | RangeLineVisual
+  | FractionModelVisual
+  | FigureSetVisual
   | GridTableVisual
   | UnitMeasureVisual
   | PlaceValueVisual

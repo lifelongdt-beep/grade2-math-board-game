@@ -65,6 +65,16 @@ export const splitPrompt = (text: string): Piece[] => {
     if (/\d/.test(text[at])) {
       let end = at;
       while (end < text.length && /\d/.test(text[end])) end += 1;
+      // 분수와 소수는 하나의 수입니다. 2/5을 '2'와 '5'로 끊어 칠하면
+      // 가운데 빗금만 색 없이 남아 두 수처럼 보이고, 0.09도 '0'과 '09'로
+      // 끊기면 소수점이 색 밖에 남습니다.
+      //
+      // 소수점 뒤에 숫자가 이어질 때만 붙입니다. '사과가 3개 있습니다.'의
+      // 마침표는 뒤에 숫자가 없으므로 그대로 둡니다.
+      if ((text[end] === '/' || text[end] === '.') && /\d/.test(text[end + 1] ?? '')) {
+        end += 1;
+        while (end < text.length && /\d/.test(text[end])) end += 1;
+      }
       flush();
       pieces.push({ kind: 'number', text: text.slice(at, end) });
       at = end;
