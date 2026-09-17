@@ -23,6 +23,11 @@ import {
 import type { DecimalKind } from './unit4/multiply';
 import { decimalEasy, decimalHard, decimalMiddle } from './unit4/multiply';
 import { unit4Lesson1Easy, 소수점위치Easy } from './unit4/lessons';
+import { unit5Lesson1, unit5Lesson2, unit5Lesson3, unit5Lesson4 } from './unit5/lessons';
+import { unit5Lesson5 } from './unit5/drawing';
+import { 전개도Families } from './unit5/netLessons';
+import { unit6Lesson1, unit6Lesson2, unit6Lesson3, unit6Lesson4 } from './unit6/average';
+import { unit6Lesson5, unit6Lesson6, unit6Lesson7, unit6Lesson8 } from './unit6/chance';
 import type { Rounding } from './util';
 
 // ════════════════════════════════════════════════════════════════════
@@ -166,12 +171,63 @@ const unit4Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
   return decimalHard(kind);
 };
 
+// 5단원 차시별 문항 뭉치입니다. 지도서의 차례 그대로,
+//   2 직육면체  3 직육면체의 성질  4 정육면체
+//   5 겨냥도  6 직육면체의 전개도  7 정육면체의 전개도
+// 로 이어집니다. 6·7차시는 하는 일이 같고 상자만 다르므로 한 뭉치를
+// 정육면체인지 아닌지로 나누어 씁니다.
+const unit5Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
+  const 수준대로 = (뭉치: G5Family[]): G5Family[] => {
+    // 같은 뭉치라도 수준에 따라 앞뒤를 바꿔 냅니다. 앞에 오는 뭉치가
+    // 더 많은 자리를 가져가므로, 기초에서는 뜻을 묻는 것이, 도전에서는
+    // 세어 계산하는 것이 앞에 오게 합니다.
+    if (difficulty === '하') return 뭉치;
+    if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0]];
+    return [...뭉치.slice(2), ...뭉치.slice(0, 2)];
+  };
+  if (lessonNo === 1) return 수준대로(unit5Lesson1);
+  if (lessonNo === 2) return 수준대로(unit5Lesson2);
+  if (lessonNo === 3) return 수준대로(unit5Lesson3);
+  if (lessonNo === 4) return 수준대로(unit5Lesson4);
+  if (lessonNo === 5) return 수준대로(unit5Lesson5);
+  if (lessonNo === 6) return 수준대로(전개도Families(false));
+  if (lessonNo === 7) return 수준대로(전개도Families(true));
+  return null;
+};
+
+// 6단원 차시별 문항 뭉치입니다. 지도서의 차례 그대로,
+//   2 평균의 뜻  3 평균 구하기  4 평균 해석하기
+//   5 말로 표현  6 비교  7 수로 나타내기  8 판단
+// 으로 이어집니다. 5차시 앞에서는 가능성을, 5차시 뒤에서는 평균을
+// 묻지 않습니다 — 아직 배우지 않았거나 이미 지난 것입니다.
+const unit6Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
+  const 수준대로 = (뭉치: G5Family[]): G5Family[] => {
+    if (difficulty === '하') return 뭉치;
+    if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0]];
+    return [...뭉치.slice(2), ...뭉치.slice(0, 2)];
+  };
+  const 차시별: Record<number, G5Family[]> = {
+    1: unit6Lesson1,
+    2: unit6Lesson2,
+    3: unit6Lesson3,
+    4: unit6Lesson4,
+    5: unit6Lesson5,
+    6: unit6Lesson6,
+    7: unit6Lesson7,
+    8: unit6Lesson8,
+  };
+  const 뭉치 = 차시별[lessonNo];
+  return 뭉치 ? 수준대로(뭉치) : null;
+};
+
 export const grade5FamiliesFor = (lesson: Lesson, difficulty: Difficulty): G5Family[] | null => {
   if (lesson.semester !== '5-2') return null;
   if (lesson.unitNo === 1) return unit1Families(lesson.lessonNo, difficulty);
   if (lesson.unitNo === 2) return unit2Families(lesson.lessonNo, difficulty);
   if (lesson.unitNo === 3) return unit3Families(lesson.lessonNo, difficulty);
   if (lesson.unitNo === 4) return unit4Families(lesson.lessonNo, difficulty);
+  if (lesson.unitNo === 5) return unit5Families(lesson.lessonNo, difficulty);
+  if (lesson.unitNo === 6) return unit6Families(lesson.lessonNo, difficulty);
   return null;
 };
 

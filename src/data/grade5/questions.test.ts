@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { curriculum5 } from '../curriculum5';
 import { generateQuestions } from '../questionFactory';
-import type { Difficulty, Lesson, Question } from '../../types';
+import type { Difficulty, Lesson, Question, QuestionVisual } from '../../types';
 
 // ════════════════════════════════════════════════════════════════════
 // 5-2 문항 검사
@@ -166,6 +166,67 @@ const inBelow = (x: number, edge: number, word: string) => (word === '이하' ? 
 
 // 문제 글을 읽어 답을 다시 구합니다. 읽을 수 있는 꼴이면 답을,
 // 읽을 수 없으면 null을 돌려줍니다.
+// ── 5단원 직육면체와 정육면체 ───────────────────────────────────────
+// 면·모서리·꼭짓점의 수를 6, 12, 8이라고 적어 두고 견주면 문항과 같은
+// 표를 두 번 쓰는 셈입니다. 그래서 여기서는 상자를 좌표로 세워 직접
+// 셉니다. 꼭짓점은 (0,0,0)부터 (1,1,1)까지 여덟, 모서리는 한 자리만
+// 다른 두 꼭짓점을 이은 것, 면은 한 자리가 고정된 네 꼭짓점 묶음입니다.
+const 상자꼭짓점: Array<[number, number, number]> = [];
+for (const x of [0, 1]) for (const y of [0, 1]) for (const z of [0, 1]) 상자꼭짓점.push([x, y, z]);
+
+const 상자모서리 = 상자꼭짓점.flatMap((a, at) =>
+  상자꼭짓점.slice(at + 1).filter((b) => a.filter((one, axis) => one !== b[axis]).length === 1).map((b) => [a, b] as const),
+);
+
+const 상자면 = [0, 1, 2].flatMap((axis) =>
+  [0, 1].map((value) => 상자꼭짓점.filter((one) => one[axis] === value)),
+);
+
+// 겨냥도에서 가려지는 꼭짓점 하나입니다. 그 꼭짓점에 붙은 모서리와
+// 면이 보이지 않는 것입니다.
+const 가려진꼭짓점: [number, number, number] = [0, 1, 0];
+const 같은점 = (a: readonly number[], b: readonly number[]) => a.every((one, at) => one === b[at]);
+
+const 상자수 = {
+  면: 상자면.length,
+  모서리: 상자모서리.length,
+  꼭짓점: 상자꼭짓점.length,
+};
+const 안보이는수 = {
+  면: 상자면.filter((face) => face.some((one) => 같은점(one, 가려진꼭짓점))).length,
+  모서리: 상자모서리.filter(([a, b]) => 같은점(a, 가려진꼭짓점) || 같은점(b, 가려진꼭짓점)).length,
+  꼭짓점: 1,
+};
+const 보이는수 = {
+  면: 상자수.면 - 안보이는수.면,
+  모서리: 상자수.모서리 - 안보이는수.모서리,
+  꼭짓점: 상자수.꼭짓점 - 안보이는수.꼭짓점,
+};
+
+const 요소수 = (name: string) => 상자수[name as keyof typeof 상자수];
+
+// ── 6단원: 평균을 나눗셈 없이 구하기 ────────────────────────────────
+// 문항은 (합)÷(자료의 수)로 평균을 구합니다. 여기서 같은 나눗셈을 다시
+// 하면 그 셈이 틀렸을 때 둘 다 똑같이 틀립니다. 그래서 지도서가 평균을
+// 처음 꺼내는 방법 그대로, 많은 쪽에서 적은 쪽으로 하나씩 옮겨 모두
+// 같아질 때까지 고르게 만듭니다. 그 높이가 평균입니다.
+const 고르게하기 = (values: number[]): number | null => {
+  const 칸 = [...values];
+  for (let 옮긴횟수 = 0; 옮긴횟수 < 100000; 옮긴횟수 += 1) {
+    let 큰자리 = 0;
+    let 작은자리 = 0;
+    for (let at = 1; at < 칸.length; at += 1) {
+      if (칸[at] > 칸[큰자리]) 큰자리 = at;
+      if (칸[at] < 칸[작은자리]) 작은자리 = at;
+    }
+    if (칸[큰자리] === 칸[작은자리]) return 칸[0];
+    if (칸[큰자리] - 칸[작은자리] === 1) return null; // 고르게 되지 않습니다
+    칸[큰자리] -= 1;
+    칸[작은자리] += 1;
+  }
+  return null;
+};
+
 const recompute = (prompt: string): string | null => {
   let hit: RegExpExecArray | null;
 
@@ -351,6 +412,103 @@ const recompute = (prompt: string): string | null => {
   // 3 m 45 cm는 모두 몇 cm일까요?
   hit = /길이가 (\d+) m (\d+) cm인 끈이 있습니다\..*모두 몇 cm일까요\?$/.exec(prompt);
   if (hit) return `${Number(hit[1]) * 100 + Number(hit[2])} cm`;
+
+  // ── 5단원 ─────────────────────────────────────────────────────────
+  hit = /^(?:직육면체|정육면체)에서 (면|모서리|꼭짓점)은 모두 몇 개일까요\?$/.exec(prompt);
+  if (hit) return `${요소수(hit[1])}개`;
+
+  hit = /^.+?[은는] (?:직육면체|정육면체) 모양입니다\. .+?의 (면|모서리|꼭짓점)[은는] 모두 몇 개일까요\?$/.exec(prompt);
+  if (hit) return `${요소수(hit[1])}개`;
+
+  hit = /^(?:직육면체|정육면체)의 전개도에서 면은 모두 몇 개일까요\?$/.exec(prompt);
+  if (hit) return `${요소수('면')}개`;
+
+  hit = /^직육면체에서 (면|모서리|꼭짓점)의 수와 (면|모서리|꼭짓점)의 수의 (합|차)를? 구하면 얼마일까요\?$/.exec(prompt);
+  if (hit) {
+    const left = 요소수(hit[1]);
+    const right = 요소수(hit[2]);
+    return `${hit[3] === '합' ? left + right : Math.abs(left - right)}`;
+  }
+
+  hit = /^직육면체의 한 꼭짓점에서 만나는 (면|모서리)[은는] 몇 개일까요\?$/.exec(prompt);
+  if (hit) {
+    // 한 꼭짓점에 모이는 모서리는 그 꼭짓점과 한 자리만 다른 꼭짓점의
+    // 수이고, 모이는 면은 그 꼭짓점을 품은 면의 수입니다.
+    const 한점 = 상자꼭짓점[0];
+    const 모이는모서리 = 상자모서리.filter(([a, b]) => 같은점(a, 한점) || 같은점(b, 한점)).length;
+    const 모이는면 = 상자면.filter((face) => face.some((one) => 같은점(one, 한점))).length;
+    return `${hit[1] === '모서리' ? 모이는모서리 : 모이는면}개`;
+  }
+
+  hit = /^직육면체의 겨냥도를 그렸습니다\. (보이는|보이지 않는) (면|모서리|꼭짓점)[이가] 몇 개일까요\?$/.exec(prompt);
+  if (hit) {
+    const 표 = hit[1] === '보이는' ? 보이는수 : 안보이는수;
+    return `${표[hit[2] as keyof typeof 표]}개`;
+  }
+
+  hit = /^직육면체의 겨냥도에서 보이는 (면|모서리|꼭짓점)의 수와 보이지 않는 (?:면|모서리|꼭짓점)의 수의 (합|차)[은는] 얼마일까요\?$/.exec(prompt);
+  if (hit) {
+    const key = hit[1] as keyof typeof 보이는수;
+    return `${hit[2] === '합' ? 보이는수[key] + 안보이는수[key] : 보이는수[key] - 안보이는수[key]}`;
+  }
+
+  hit = /^한 모서리의 길이가 (\d+) cm인 정육면체가 있습니다\. 모든 모서리의 길이의 합은 몇 cm일까요\?$/.exec(prompt);
+  if (hit) return `${Number(hit[1]) * 상자수.모서리} cm`;
+
+  hit = /^모든 모서리의 길이의 합이 (\d+) cm인 정육면체가 있습니다\. 한 모서리의 길이는 몇 cm일까요\?$/.exec(prompt);
+  if (hit) return `${Number(hit[1]) / 상자수.모서리} cm`;
+
+  hit = /^그림은 가로가 (\d+) cm, 세로가 (\d+) cm, 높이가 (\d+) cm인 직육면체의 겨냥도입니다\. 모든 모서리의 길이의 합은 몇 cm일까요\?$/.exec(prompt);
+  if (hit) {
+    // 길이가 같은 모서리가 몇 개씩인지도 세어서 구합니다.
+    const 같은길이 = 상자모서리.filter(([a, b]) => a[0] !== b[0]).length;
+    return `${(Number(hit[1]) + Number(hit[2]) + Number(hit[3])) * 같은길이} cm`;
+  }
+
+  hit = /^그림은 가로가 (\d+) cm, 세로가 (\d+) cm, 높이가 (\d+) cm인 직육면체의 전개도입니다\. 이 전개도를 접었을 때 (가로|세로|높이)를 나타내는 모서리의 길이는 몇 cm일까요\?$/.exec(prompt);
+  if (hit) {
+    const 값: Record<string, string> = { 가로: hit[1], 세로: hit[2], 높이: hit[3] };
+    return `${값[hit[4]]} cm`;
+  }
+
+  hit = /^가로가 (\d+) cm, 세로가 (\d+) cm, 높이가 (\d+) cm인 직육면체가 있습니다\. 이 직육면체는 정육면체일까요\?$/.exec(prompt);
+  if (hit) {
+    const 셋 = [hit[1], hit[2], hit[3]];
+    return 셋.every((one) => one === 셋[0]) ? '정육면체입니다.' : '정육면체가 아닙니다.';
+  }
+
+  hit = /^(?:직육면체|정육면체) 모양의 상자를 펼칠 때 모서리를 자른 곳은 몇 군데일까요\?$/.exec(prompt);
+  if (hit) return `${상자수.모서리 - 5}군데`;
+
+  hit = /^(?:직육면체|정육면체)의 전개도에서 잘리지 않은 모서리는 몇 군데일까요\?$/.exec(prompt);
+  if (hit) return '5군데';
+
+  // ── 6단원 평균 ────────────────────────────────────────────────────
+  hit = /^(.+?)의 평균이 (\d+)(개|쪽|분|회|점|시간)이고 자료가 (\d+)개입니다\. .+?의 합은 얼마일까요\?$/.exec(prompt);
+  if (hit) return `${Number(hit[2]) * Number(hit[4])}${hit[3]}`;
+
+  hit = /^(.+?)의 합이 (\d+)(?:개|쪽|분|회|점|시간)이고 평균이 (\d+)(?:개|쪽|분|회|점|시간)입니다\. 자료는 모두 몇 개일까요\?$/.exec(prompt);
+  if (hit) return `${Number(hit[2]) / Number(hit[3])}개`;
+
+  hit = /^민아가 월요일부터 금요일까지 책을 읽은 시간은 ([\d, ]+)시간입니다\. 하루에 책을 읽은 시간의 평균은 몇 시간일까요\?$/.exec(prompt);
+  if (hit) {
+    const 평균값 = 고르게하기(hit[1].split(',').map((one) => Number(one.trim())));
+    return 평균값 === null ? null : `${평균값}시간`;
+  }
+
+  hit = /^준호가 월요일부터 목요일까지 읽은 책의 쪽수는 ([\d, ]+)쪽입니다\. 금요일까지 5일 동안 읽은 책의 쪽수의 평균이 (\d+)쪽이 되려면 금요일에 적어도 몇 쪽을 읽어야 할까요\?$/.exec(prompt);
+  if (hit) {
+    const values = hit[1].split(',').map((one) => Number(one.trim()));
+    return `${Number(hit[2]) * 5 - values.reduce((sum, one) => sum + one, 0)}쪽`;
+  }
+
+  hit = /^가 모둠 \d+명의 .+?[은는] ([\d, ]+)(?:개|쪽|분|회|점|시간)이고, 나 모둠 \d+명의 .+?[은는] ([\d, ]+)(?:개|쪽|분|회|점|시간)입니다\. 어느 모둠의 평균이 더 높을까요\?$/.exec(prompt);
+  if (hit) {
+    const 왼 = 고르게하기(hit[1].split(',').map((one) => Number(one.trim())));
+    const 오른 = 고르게하기(hit[2].split(',').map((one) => Number(one.trim())));
+    if (왼 === null || 오른 === null) return null;
+    return 왼 === 오른 ? '두 모둠이 같습니다.' : 왼 > 오른 ? '가 모둠' : '나 모둠';
+  }
 
   return null;
 };
@@ -690,6 +848,544 @@ describe('5-2 문항', () => {
     for (const [, , questions] of every) {
       for (const question of questions) {
         if (이학년말.test(question.prompt)) broken.push(`${question.id}: ${question.prompt}`);
+      }
+    }
+    expect(broken).toEqual([]);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════
+// 5단원 — 면 사이의 관계와 전개도를 '다른 방법으로' 다시 구해 맞춰 보기
+// ────────────────────────────────────────────────────────────────────
+// 문항은 box.ts가 만듭니다. box.ts는 상자를 3차원 좌표에 놓고 전개도를
+// 90°씩 돌려 접습니다. 여기서 같은 방법을 다시 쓰면, 그 방법이 틀렸을 때
+// 둘 다 똑같이 틀립니다.
+//
+// 그래서 여기서는 좌표를 쓰지 않습니다.
+//   · 면 사이의 관계는 꼭짓점 이름을 좌표에 대응시켜, 네 꼭짓점이 어느
+//     자리를 함께 가지는지로 봅니다.
+//   · 전개도는 '주사위 굴리기'로 접습니다. 칸 하나에 주사위를 얹어 놓고
+//     이웃 칸으로 굴리면, 그 칸이 상자의 어느 면이 되는지가 정해집니다.
+//     좌표는 한 번도 나오지 않습니다.
+// ════════════════════════════════════════════════════════════════════
+
+const 꼭짓점자리: Record<string, [number, number, number]> = {
+  ㄱ: [0, 1, 1], ㄴ: [0, 0, 1], ㄷ: [1, 0, 1], ㄹ: [1, 1, 1],
+  ㅁ: [0, 1, 0], ㅂ: [0, 0, 0], ㅅ: [1, 0, 0], ㅇ: [1, 1, 0],
+};
+
+/** 네 꼭짓점이 한 면을 이루면 그 면이 붙어 있는 축과 값을 돌려줍니다. */
+const 면자리 = (letters: string): { axis: number; value: number } | null => {
+  const points = [...letters].map((one) => 꼭짓점자리[one]);
+  if (points.length !== 4 || points.some((one) => !one)) return null;
+  for (const axis of [0, 1, 2]) {
+    const value = points[0][axis];
+    if (points.every((one) => one[axis] === value)) return { axis, value };
+  }
+  return null;
+};
+
+const 면관계 = (a: string, b: string): '같은면' | '평행' | '수직' | null => {
+  const left = 면자리(a);
+  const right = 면자리(b);
+  if (!left || !right) return null;
+  if (left.axis !== right.axis) return '수직';
+  return left.value === right.value ? '같은면' : '평행';
+};
+
+// ── 주사위 굴리기로 전개도 접기 ─────────────────────────────────────
+// 면은 0~5로 적고, 마주 보는 면은 1을 더하거나 빼서 짝을 짓습니다
+// (0↔1, 2↔3, 4↔5). 칸마다 세 가지를 들고 다닙니다.
+//   F 이 칸이 되는 면
+//   U 이 칸의 위쪽 모서리 너머에 있는 면
+//   R 이 칸의 오른쪽 모서리 너머에 있는 면
+// 오른쪽 칸으로 넘어가면 그 칸은 R이 되고, 왼쪽 너머가 지금 칸이 되므로
+// R은 F의 맞은편이 됩니다. 위아래도 같은 식입니다.
+const 맞은편 = (face: number) => face ^ 1;
+
+type 굴린칸 = { col: number; row: number; F: number; U: number; R: number };
+
+const 굴리기 = (cells: Array<{ col: number; row: number }>): 굴린칸[] | null => {
+  const 자리 = new Map<string, number>();
+  cells.forEach((cell, at) => 자리.set(`${cell.col},${cell.row}`, at));
+  const 놓인것: Array<굴린칸 | null> = cells.map(() => null);
+  놓인것[0] = { ...cells[0], F: 0, U: 2, R: 4 };
+  const 줄 = [0];
+  while (줄.length) {
+    const at = 줄.shift() as number;
+    const here = 놓인것[at] as 굴린칸;
+    const 갈곳: Array<{ dc: number; dr: number; next: { F: number; U: number; R: number } }> = [
+      { dc: 1, dr: 0, next: { F: here.R, U: here.U, R: 맞은편(here.F) } },
+      { dc: -1, dr: 0, next: { F: 맞은편(here.R), U: here.U, R: here.F } },
+      { dc: 0, dr: 1, next: { F: 맞은편(here.U), U: here.F, R: here.R } },
+      { dc: 0, dr: -1, next: { F: here.U, U: 맞은편(here.F), R: here.R } },
+    ];
+    for (const one of 갈곳) {
+      const to = 자리.get(`${here.col + one.dc},${here.row + one.dr}`);
+      if (to === undefined || 놓인것[to]) continue;
+      놓인것[to] = { ...cells[to], ...one.next };
+      줄.push(to);
+    }
+  }
+  return 놓인것.every(Boolean) ? (놓인것 as 굴린칸[]) : null;
+};
+
+/** 격자 위의 한 점이 상자의 어느 꼭짓점이 되는지입니다. 세 면의 이름으로 적습니다. */
+const 점이름 = (
+  visual: Extract<QuestionVisual, { kind: 'box-net' }>,
+   굴린: 굴린칸[],
+): Map<string, string> => {
+  const 앞까지 = (sizes: number[], upto: number) => sizes.slice(0, upto).reduce((sum, one) => sum + one, 0);
+  const out = new Map<string, string>();
+  for (const cell of 굴린) {
+    const x = 앞까지(visual.cols, cell.col);
+    const y = 앞까지(visual.rows, cell.row);
+    const w = visual.cols[cell.col];
+    const h = visual.rows[cell.row];
+    const 네모퉁이: Array<[number, number, number[]]> = [
+      [x, y, [cell.F, cell.U, 맞은편(cell.R)]],
+      [x + w, y, [cell.F, cell.U, cell.R]],
+      [x + w, y + h, [cell.F, 맞은편(cell.U), cell.R]],
+      [x, y + h, [cell.F, 맞은편(cell.U), 맞은편(cell.R)]],
+    ];
+    for (const [px, py, faces] of 네모퉁이) {
+      const name = [...faces].sort((a, b) => a - b).join('');
+      const already = out.get(`${px},${py}`);
+      // 한 점을 여러 칸이 나누어 가지더라도 접으면 한 꼭짓점이어야 합니다.
+      if (already && already !== name) return new Map();
+      out.set(`${px},${py}`, name);
+    }
+  }
+  return out;
+};
+
+describe('5-2 5단원 — 다른 방법으로 다시 구해 보기', () => {
+  const 다섯단원 = every.filter(([lesson]) => lesson.unitNo === 5);
+
+  it('5단원 차시가 모두 문항을 내놓는다', () => {
+    expect(다섯단원.length).toBe(7 * 3);
+    for (const [, , questions] of 다섯단원) expect(questions.length).toBe(30);
+  });
+
+  it('평행한 면과 수직인 면을 꼭짓점 이름에서 다시 구해도 답이 같다', () => {
+    const broken: string[] = [];
+    let 본것 = 0;
+    for (const [, , questions] of 다섯단원) {
+      for (const question of questions) {
+        const 물음 = /색칠한 면 ([ㄱ-ㅇ]{4})[과와] (평행한 면|수직인 면이 아닌 것|수직인 면)/.exec(question.prompt)
+          ?? /색칠한 면 ([ㄱ-ㅇ]{4})[을를] 한 밑면으로 정했습니다\. (옆면이 아닌 면)/.exec(question.prompt);
+        if (!물음) continue;
+        본것 += 1;
+        const 기준 = 물음[1];
+        if (!면자리(기준)) {
+          broken.push(`${question.id}: 면 ${기준}은 직육면체의 면이 아닙니다`);
+          continue;
+        }
+        if (물음[2] === '수직인 면') {
+          // 몇 개인지 묻는 문항입니다. 여섯 면 가운데 기준과 수직인 것을 셉니다.
+          const 모든면 = Object.keys(꼭짓점자리);
+          let 셈 = 0;
+          for (const axis of [0, 1, 2]) {
+            for (const value of [0, 1]) {
+              const letters = 모든면.filter((one) => 꼭짓점자리[one][axis] === value).join('');
+              if (면관계(기준, letters) === '수직') 셈 += 1;
+            }
+          }
+          if (question.answer !== `${셈}개`) broken.push(`${question.id}: 수직인 면 ${셈}개인데 답이 ${question.answer}`);
+          continue;
+        }
+        // 답은 기준과 평행한 면이어야 하고, 오답은 모두 수직이거나 기준 자신이어야 합니다.
+        const 답letters = /면 ([ㄱ-ㅇ]{4})/.exec(question.answer)?.[1] ?? '';
+        if (면관계(기준, 답letters) !== '평행') {
+          broken.push(`${question.id}: ${question.prompt} → 답 ${question.answer}는 평행한 면이 아닙니다`);
+        }
+        for (const choice of question.choices) {
+          if (choice === question.answer) continue;
+          const letters = /면 ([ㄱ-ㅇ]{4})/.exec(choice)?.[1] ?? '';
+          const 관계 = 면관계(기준, letters);
+          if (관계 !== '수직' && 관계 !== '같은면') {
+            broken.push(`${question.id}: 오답 ${choice}가 기준과 ${관계}입니다`);
+          }
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+    expect(본것).toBeGreaterThan(30);
+  });
+
+  it('전개도를 주사위 굴리기로 다시 접어도 만나는 점과 겹치는 선분이 같다', () => {
+    const broken: string[] = [];
+    let 본것 = 0;
+    for (const [, , questions] of 다섯단원) {
+      for (const question of questions) {
+        const visual = question.visual;
+        if (!visual || visual.kind !== 'box-net') continue;
+        const 굴린 = 굴리기(visual.cells);
+        if (!굴린) {
+          // 접을 수 없는 그림은 '전개도가 될 수 없다'를 묻는 문항뿐입니다.
+          continue;
+        }
+        const 이름 = 점이름(visual, 굴린);
+
+        const 만남 = /접었을 때 점 ([ㄱ-ㅎ])[과와] 만나는 점은/.exec(question.prompt);
+        if (만남 && visual.points) {
+          본것 += 1;
+          if (!이름.size) {
+            broken.push(`${question.id}: 접어 보니 한 점이 두 꼭짓점이 됩니다`);
+            continue;
+          }
+          const 자리 = new Map(visual.points.map((one) => [one.text, 이름.get(`${one.x},${one.y}`)]));
+          const 기준 = 자리.get(만남[1]);
+          const 만나는것 = visual.points
+            .filter((one) => one.text !== 만남[1] && 자리.get(one.text) === 기준)
+            .map((one) => `점 ${one.text}`);
+          if (만나는것.length !== 1) {
+            broken.push(`${question.id}: 점 ${만남[1]}과 만나는 점이 ${만나는것.length}개입니다`);
+          } else if (만나는것[0] !== question.answer) {
+            broken.push(`${question.id}: ${question.prompt} → 다시 구하니 ${만나는것[0]}인데 답은 ${question.answer}`);
+          }
+        }
+
+        const 겹침 = /접었을 때 선분 ([ㄱ-ㅎ])([ㄱ-ㅎ])[과와] 겹치는 선분은/.exec(question.prompt);
+        if (겹침 && visual.points) {
+          본것 += 1;
+          const 앞까지 = (sizes: number[], upto: number) => sizes.slice(0, upto).reduce((sum, one) => sum + one, 0);
+          const 자리 = new Map(visual.points.map((one) => [one.text, `${one.x},${one.y}`]));
+          const 있는칸 = new Set(visual.cells.map((one) => `${one.col},${one.row}`));
+          // 바깥 테두리를 모읍니다. 이웃 칸이 없는 쪽이 잘린 모서리입니다.
+          const 테두리: Array<{ a: string; b: string }> = [];
+          for (const cell of visual.cells) {
+            const x = 앞까지(visual.cols, cell.col);
+            const y = 앞까지(visual.rows, cell.row);
+            const w = visual.cols[cell.col];
+            const h = visual.rows[cell.row];
+            const 네변: Array<{ dc: number; dr: number; a: string; b: string }> = [
+              { dc: 0, dr: -1, a: `${x},${y}`, b: `${x + w},${y}` },
+              { dc: 1, dr: 0, a: `${x + w},${y}`, b: `${x + w},${y + h}` },
+              { dc: 0, dr: 1, a: `${x},${y + h}`, b: `${x + w},${y + h}` },
+              { dc: -1, dr: 0, a: `${x},${y}`, b: `${x},${y + h}` },
+            ];
+            for (const side of 네변) {
+              if (있는칸.has(`${cell.col + side.dc},${cell.row + side.dr}`)) continue;
+              테두리.push({ a: side.a, b: side.b });
+            }
+          }
+          const 모서리이름 = (one: { a: string; b: string }) =>
+            [이름.get(one.a) ?? '?', 이름.get(one.b) ?? '?'].sort().join('|');
+          const 물은자리 = [자리.get(겹침[1]) ?? '', 자리.get(겹침[2]) ?? ''];
+          const 물은변 = 테두리.find(
+            (one) => (one.a === 물은자리[0] && one.b === 물은자리[1]) || (one.a === 물은자리[1] && one.b === 물은자리[0]),
+          );
+          if (!물은변) {
+            broken.push(`${question.id}: 선분 ${겹침[1]}${겹침[2]}이 테두리에 없습니다`);
+            continue;
+          }
+          const 이름찾기 = new Map([...자리].map(([text, spot]) => [spot, text]));
+          const 짝 = 테두리.filter((one) => one !== 물은변 && 모서리이름(one) === 모서리이름(물은변));
+          if (짝.length !== 1) {
+            broken.push(`${question.id}: 겹치는 선분이 ${짝.length}개입니다`);
+            continue;
+          }
+          const 짝이름 = [이름찾기.get(짝[0].a) ?? '?', 이름찾기.get(짝[0].b) ?? '?'];
+          const 답letters = /선분 ([ㄱ-ㅎ])([ㄱ-ㅎ])/.exec(question.answer);
+          if (!답letters || [답letters[1], 답letters[2]].sort().join('') !== [...짝이름].sort().join('')) {
+            broken.push(`${question.id}: ${question.prompt} → 다시 구하니 선분 ${짝이름.join('')}인데 답은 ${question.answer}`);
+          }
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+    expect(본것).toBeGreaterThan(20);
+  });
+
+  it('마주 보는 면을 주사위 굴리기로 다시 구해도 답이 같다', () => {
+    const broken: string[] = [];
+    let 본것 = 0;
+    for (const [, , questions] of 다섯단원) {
+      for (const question of questions) {
+        const visual = question.visual;
+        if (!visual || visual.kind !== 'box-net') continue;
+        const 굴린 = 굴리기(visual.cells);
+        if (!굴린) continue;
+
+        const 면물음 = /접었을 때 색칠한 면 ([가-바])[과와] 마주 보는 면은/.exec(question.prompt);
+        if (면물음) {
+          본것 += 1;
+          const 물은칸 = visual.cells.findIndex((one) => one.text === 면물음[1]);
+          const 답이름 = /면 ([가-바])/.exec(question.answer)?.[1] ?? '';
+          const 답칸 = visual.cells.findIndex((one) => one.text === 답이름);
+          if (물은칸 < 0 || 답칸 < 0) {
+            broken.push(`${question.id}: 그림에 면 ${면물음[1]} 또는 면 ${답이름}이 없습니다`);
+            continue;
+          }
+          if (visual.cells[물은칸].shade !== 1) {
+            broken.push(`${question.id}: 물은 면에 색칠이 되어 있지 않습니다`);
+          }
+          if (굴린[답칸].F !== 맞은편(굴린[물은칸].F)) {
+            broken.push(`${question.id}: ${question.prompt} → 면 ${답이름}은 마주 보는 면이 아닙니다`);
+          }
+        }
+
+        const 주사위 = /주사위는 마주 보는 두 면의 눈의 수의 합이 7입니다/.test(question.prompt);
+        if (주사위) {
+          본것 += 1;
+          const 물은칸 = visual.cells.findIndex((one) => one.shade === 1);
+          const 답칸 = 굴린.findIndex((one) => one.F === 맞은편(굴린[물은칸].F));
+          const 물은눈 = Number(visual.cells[물은칸].text);
+          const 답눈 = Number(visual.cells[답칸].text);
+          if (물은눈 + 답눈 !== 7) {
+            broken.push(`${question.id}: 마주 보는 두 면의 눈이 ${물은눈}과 ${답눈}이라 합이 7이 아닙니다`);
+          }
+          if (String(답눈) !== question.answer) {
+            broken.push(`${question.id}: 다시 구하니 ${답눈}인데 답은 ${question.answer}`);
+          }
+          // 여섯 면의 눈이 1부터 6까지 한 번씩이어야 합니다.
+          const 눈들 = visual.cells.map((one) => Number(one.text)).sort((a, b) => a - b);
+          if (눈들.join('') !== '123456') broken.push(`${question.id}: 주사위 눈이 ${눈들.join(',')}입니다`);
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+    expect(본것).toBeGreaterThan(20);
+  });
+
+  it('전개도가 될 수 있는지 묻는 문항의 그림이 답과 맞다', () => {
+    const broken: string[] = [];
+    let 본것 = 0;
+    for (const [, , questions] of 다섯단원) {
+      for (const question of questions) {
+        if (!/^그림을 접어 .+? 만들 수 있을까요\?/.test(question.prompt)) continue;
+        const visual = question.visual;
+        if (!visual || visual.kind !== 'box-net') continue;
+        본것 += 1;
+        const 굴린 = 굴리기(visual.cells);
+        const 만들수있나 = /만들 수 있습니다\.$/.test(question.answer);
+        // 주사위를 굴려 여섯 칸이 서로 다른 면이 되면 상자가 됩니다.
+        const 여섯면 = 굴린 ? new Set(굴린.map((one) => one.F)).size === 6 && visual.cells.length === 6 : false;
+        if (만들수있나 !== 여섯면) {
+          broken.push(`${question.id}: 다시 접어 보니 ${여섯면 ? '만들 수 있는데' : '만들 수 없는데'} 답은 ${question.answer}`);
+        }
+        if (!만들수있나 && visual.cells.length !== 6 && !question.answer.includes('면이 6개가 아니')) {
+          broken.push(`${question.id}: 면이 ${visual.cells.length}개인데 까닭이 ${question.answer}`);
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+    expect(본것).toBeGreaterThan(10);
+  });
+
+  it('겨냥도 그림이 보이는 모서리 9개, 보이지 않는 모서리 3개가 되게 그려진다', () => {
+    // 그림 쪽이 이 수를 지키지 못하면, 세어 보라고 낸 문항의 답을
+    // 그림에서 확인할 수 없게 됩니다.
+    expect(보이는수).toEqual({ 면: 3, 모서리: 9, 꼭짓점: 7 });
+    expect(안보이는수).toEqual({ 면: 3, 모서리: 3, 꼭짓점: 1 });
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════
+// 6단원 — 평균과 가능성을 '다른 방법으로' 다시 구해 맞춰 보기
+// ────────────────────────────────────────────────────────────────────
+// 평균은 나누지 않고 고르게 만들어 구합니다(고르게하기). 가능성은
+// 문항이 쓰는 말로()와 수로()를 부르지 않고, 그림에서 칸과 바둑돌을
+// 직접 세어 다시 정합니다.
+// ════════════════════════════════════════════════════════════════════
+
+const 가능성말 = (좋은것: number, 모두: number): string => {
+  if (좋은것 === 0) return '불가능하다';
+  if (좋은것 === 모두) return '확실하다';
+  // 반인지 아닌지는 나누지 않고 두 배 해서 견줍니다.
+  if (좋은것 + 좋은것 === 모두) return '반반이다';
+  return 좋은것 + 좋은것 < 모두 ? '~아닐 것 같다' : '~일 것 같다';
+};
+
+const 가능성수 = (좋은것: number, 모두: number): string | null => {
+  if (좋은것 === 0) return '0';
+  if (좋은것 === 모두) return '1';
+  if (좋은것 + 좋은것 === 모두) return '1/2';
+  return null;
+};
+
+const 색말 = (text: string): string | null => {
+  const 표: Record<string, string> = {
+    빨간색: 'red', 파란색: 'blue', 노란색: 'yellow', 초록색: 'green', 흰색: 'white', 검은색: 'black',
+  };
+  return 표[text] ?? null;
+};
+
+describe('5-2 6단원 — 다른 방법으로 다시 구해 보기', () => {
+  const 여섯단원 = every.filter(([lesson]) => lesson.unitNo === 6);
+
+  it('6단원 차시가 모두 문항을 내놓는다', () => {
+    expect(여섯단원.length).toBe(8 * 3);
+    for (const [, , questions] of 여섯단원) expect(questions.length).toBe(30);
+  });
+
+  it('표와 막대그래프의 평균을 고르게 만들어 다시 구해도 답이 같다', () => {
+    const broken: string[] = [];
+    let 본것 = 0;
+    for (const [, , questions] of 여섯단원) {
+      for (const question of questions) {
+        const visual = question.visual;
+        if (!visual) continue;
+        let values: number[] | null = null;
+        if (visual.kind === 'table' && visual.columns.every((one) => typeof one.value === 'number')) {
+          values = visual.columns.map((one) => one.value as number);
+        }
+        if (visual.kind === 'bar-model') values = visual.bars.map((one) => one.value);
+        if (!values) continue;
+        if (!/고르게 하면|막대의 길이를 모두 같게|의 평균은 얼마일까요/.test(question.prompt)) continue;
+        본것 += 1;
+        const 평균값 = 고르게하기(values);
+        if (평균값 === null) {
+          broken.push(`${question.id}: 고르게 만들어지지 않는 자료입니다 — ${values.join(', ')}`);
+          continue;
+        }
+        const 답의수 = Number(question.answer.replace(/[^\d.]/g, ''));
+        if (답의수 !== 평균값) {
+          broken.push(`${question.id}: ${question.prompt} → 고르게 만드니 ${평균값}인데 답은 ${question.answer}`);
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+    expect(본것).toBeGreaterThan(20);
+  });
+
+  it('빈칸이 있는 표는 그 칸을 답으로 메우면 평균이 문제에 적힌 값이 된다', () => {
+    const broken: string[] = [];
+    let 본것 = 0;
+    for (const [, , questions] of 여섯단원) {
+      for (const question of questions) {
+        const visual = question.visual;
+        if (!visual || visual.kind !== 'table') continue;
+        if (!visual.columns.some((one) => one.value === null)) continue;
+        본것 += 1;
+        const 적힌평균 = Number(/평균이 (\d+)/.exec(question.prompt)?.[1] ?? NaN);
+        const 메운것 = visual.columns.map((one) => (one.value === null ? Number(question.answer) : one.value));
+        const 평균값 = 고르게하기(메운것);
+        if (평균값 !== 적힌평균) {
+          broken.push(`${question.id}: 빈칸을 ${question.answer}으로 메우면 평균이 ${평균값}인데 문제는 ${적힌평균}이라고 합니다`);
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+    expect(본것).toBeGreaterThan(5);
+  });
+
+  it('회전판과 주머니의 가능성을 그림에서 다시 세어도 답이 같다', () => {
+    const broken: string[] = [];
+    let 본것 = 0;
+    for (const [, , questions] of 여섯단원) {
+      for (const question of questions) {
+        const visual = question.visual;
+        if (!visual) continue;
+
+        // 하나짜리 그림에서 말이나 수를 묻는 문항입니다.
+        const 하나물음 = /가능성을 (말로 표현하면|수로 나타내면)/.exec(question.prompt);
+        if (하나물음) {
+          const 색 = /화살이 ([가-힣]+색)을 가리킬|([가-힣]+색)이 나올/.exec(question.prompt);
+          const 색코드 = 색말((색?.[1] ?? 색?.[2] ?? '').trim());
+          if (!색코드) continue;
+          let 모두 = 0;
+          let 좋은것 = 0;
+          if (visual.kind === 'spinner' && visual.items.length === 1) {
+            모두 = visual.items[0].slices.length;
+            좋은것 = visual.items[0].slices.filter((one) => one === 색코드).length;
+          } else if (visual.kind === 'marble-bag' && visual.bags.length === 1) {
+            모두 = visual.bags[0].marbles.length;
+            좋은것 = visual.bags[0].marbles.filter((one) => one === 색코드).length;
+          } else continue;
+          본것 += 1;
+          const 다시 = 하나물음[1] === '말로 표현하면' ? 가능성말(좋은것, 모두) : 가능성수(좋은것, 모두);
+          if (다시 === null) {
+            broken.push(`${question.id}: 0, 1/2, 1이 아닌 가능성을 수로 물었습니다 (${좋은것}/${모두})`);
+          } else if (다시 !== question.answer) {
+            broken.push(`${question.id}: ${question.prompt} → 다시 세니 ${다시}인데 답은 ${question.answer}`);
+          }
+          continue;
+        }
+
+        // 여럿을 견주는 문항입니다.
+        const 견줌 = /가능성이 가장 (높은|낮은) (회전판|주머니)/.exec(question.prompt);
+        if (견줌) {
+          const 색 = /화살이 ([가-힣]+색)을 가리킬|([가-힣]+색)이 나올/.exec(question.prompt);
+          const 색코드 = 색말((색?.[1] ?? 색?.[2] ?? '').trim());
+          if (!색코드) continue;
+          const 것들: Array<{ name: string; 좋은것: number; 모두: number }> = [];
+          if (visual.kind === 'spinner') {
+            for (const item of visual.items) {
+              것들.push({
+                name: item.name ?? '',
+                좋은것: item.slices.filter((one) => one === 색코드).length,
+                모두: item.slices.length,
+              });
+            }
+          } else if (visual.kind === 'marble-bag') {
+            for (const bag of visual.bags) {
+              것들.push({
+                name: bag.name ?? '',
+                좋은것: bag.marbles.filter((one) => one === 색코드).length,
+                모두: bag.marbles.length,
+              });
+            }
+          } else continue;
+          본것 += 1;
+          // 어긋셈으로만 견줍니다. 소수로 바꾸지 않습니다.
+          const 더높은가 = (a: typeof 것들[number], b: typeof 것들[number]) => a.좋은것 * b.모두 - b.좋은것 * a.모두;
+          const 고른것 = 것들.reduce((best, one) =>
+            (견줌[1] === '높은' ? 더높은가(one, best) > 0 : 더높은가(one, best) < 0) ? one : best,
+          );
+          const 같은것 = 것들.filter((one) => 더높은가(one, 고른것) === 0);
+          if (같은것.length !== 1) {
+            broken.push(`${question.id}: 가장 ${견줌[1]} 것이 ${같은것.length}개입니다`);
+          } else if (question.answer !== `${고른것.name} ${견줌[2]}`) {
+            broken.push(`${question.id}: ${question.prompt} → 다시 세니 ${고른것.name}인데 답은 ${question.answer}`);
+          }
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+    expect(본것).toBeGreaterThan(40);
+  });
+
+  it('가능성을 말로 묻는 문항의 보기는 지도서가 쓰는 다섯 말뿐이다', () => {
+    const 다섯말 = ['불가능하다', '~아닐 것 같다', '반반이다', '~일 것 같다', '확실하다'];
+    const broken: string[] = [];
+    for (const [lesson, , questions] of 여섯단원) {
+      if (lesson.lessonNo !== 5) continue;
+      for (const question of questions) {
+        if (!/가능성을 말로 표현하면/.test(question.prompt)) continue;
+        for (const choice of question.choices) {
+          if (!다섯말.includes(choice)) broken.push(`${question.id}: 보기 '${choice}'`);
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+  });
+
+  // 지도서 7차시: "가능성이 직관적으로 파악되는 상황들을 제시하여 일이
+  // 일어날 가능성을 0, 1/2, 1의 수로 나타내어 보게 한다."
+  it('7차시에서 수로 나타낸 답은 0, 1/2, 1뿐이다', () => {
+    const broken: string[] = [];
+    for (const [lesson, , questions] of 여섯단원) {
+      if (lesson.lessonNo !== 7) continue;
+      for (const question of questions) {
+        if (!/가능성을 수로 나타내면 얼마일까요/.test(question.prompt)) continue;
+        if (!['0', '1/2', '1'].includes(question.answer)) {
+          broken.push(`${question.id}: 답이 ${question.answer}`);
+        }
+      }
+    }
+    expect(broken).toEqual([]);
+  });
+
+  // 5차시 앞에서는 가능성을, 5차시 뒤에서는 평균을 묻지 않습니다.
+  it('차시가 아직 배우지 않은 것을 묻지 않는다', () => {
+    const broken: string[] = [];
+    for (const [lesson, , questions] of 여섯단원) {
+      for (const question of questions) {
+        const 글 = [question.prompt, ...question.choices].join(' ');
+        if (lesson.lessonNo <= 4 && /가능성/.test(글)) broken.push(`${lesson.id}: ${question.prompt}`);
+        if (lesson.lessonNo >= 5 && /평균/.test(글)) broken.push(`${lesson.id}: ${question.prompt}`);
       }
     }
     expect(broken).toEqual([]);
