@@ -14,6 +14,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { QuestionVisualGraphic } from './QuestionVisualGraphic';
+import { MathText } from './MathText';
 import type { AnswerRecord, Lesson, Player, Question } from '../types';
 
 interface TeacherPanelProps {
@@ -748,7 +749,7 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
                         </header>
                         <p className="pdf-mini-meta">{record.strategy}</p>
                         <QuestionVisualGraphic visual={record.visual} className="pdf-question-visual" />
-                        <p className="pdf-mini-question">{record.prompt}</p>
+                        <p className="pdf-mini-question"><MathText text={record.prompt} /></p>
                         {/* 화면에서는 보기마다 1·2·3·4 번호가 붙어 있습니다.
                             인쇄물에서도 같은 번호가 보여야 아이가 "3번을
                             골랐구나" 하고 짚어 볼 수 있습니다. 목록 기본
@@ -757,7 +758,7 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
                           {record.choices.map((choice, choiceIndex) => (
                             <li key={`${record.id}-choice-${choiceIndex}`}>
                               <span className="pdf-choice-no">{choiceIndex + 1}</span>
-                              {choice}
+                              <MathText text={choice} />
                             </li>
                           ))}
                         </ol>
@@ -782,10 +783,10 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
                           <strong>문제 {pageIndex * 6 + recordIndex + 1}</strong>
                           <span>{record.difficulty}</span>
                         </header>
-                        <p className="pdf-mini-answer">정답: {record.answer}</p>
-                        <p className="pdf-mini-concept">핵심: {record.support.coreConcept}</p>
-                        <p className="pdf-mini-explanation">풀이: {record.support.steps.join(' → ')}</p>
-                        <p className="pdf-mini-explanation">조심: {record.support.misconceptionTip}</p>
+                        <p className="pdf-mini-answer">정답: <MathText text={record.answer} /></p>
+                        <p className="pdf-mini-concept">핵심: <MathText text={record.support.coreConcept} /></p>
+                        <p className="pdf-mini-explanation">풀이: <MathText text={record.support.steps.join(' → ')} /></p>
+                        <p className="pdf-mini-explanation">조심: <MathText text={record.support.misconceptionTip} /></p>
                         <p className="pdf-mini-memo">
                           오개념: {record.misconception} / 전략: {record.strategy} / 풀이 시간: {formatMs(record.responseMs)}
                         </p>

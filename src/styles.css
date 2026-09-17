@@ -1492,7 +1492,7 @@ button:disabled {
   line-height: 1.12;
 }
 
-.player-lanes.individual .choice-grid button span {
+.player-lanes.individual .choice-grid button > span:first-child {
   width: 28px;
   height: 28px;
   font-size: 15px;
@@ -1632,7 +1632,7 @@ button:disabled {
   gap: 6px;
 }
 
-.choice-grid button span {
+.choice-grid button > span:first-child {
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -1743,9 +1743,9 @@ button:disabled {
   line-height: 1.1;
 }
 
-.players-3 .choice-grid button span,
-.players-4 .choice-grid button span,
-.players-5 .choice-grid button span {
+.players-3 .choice-grid button > span:first-child,
+.players-4 .choice-grid button > span:first-child,
+.players-5 .choice-grid button > span:first-child {
   width: 25px;
   height: 25px;
   font-size: 13px;
@@ -1927,7 +1927,10 @@ button:disabled {
   background: #f1fcfc;
 }
 
-.support-card span {
+/* 도움말 줄머리의 이름표('핵심', '볼 곳' …)입니다. 그냥 span으로
+   짚으면 분수를 그리는 KaTeX의 span까지 한 줄짜리 작은 글씨가 되어,
+   분수가 조각조각 흩어집니다. */
+.support-card p > span:first-child {
   display: block;
   margin-bottom: 3px;
   color: #0f6f70;
@@ -1996,7 +1999,7 @@ button:disabled {
   background: #fff8df;
 }
 
-.quick-support-card p span {
+.quick-support-card p > span:first-child {
   flex: 0 0 auto;
   min-width: 34px;
   margin: 0;
@@ -2134,7 +2137,7 @@ button:disabled {
   line-height: 1.4;
 }
 
-.hint-text-panel p span {
+.hint-text-panel p > span:first-child {
   flex: 0 0 auto;
   min-width: 34px;
   color: var(--teal-dark);
@@ -3393,7 +3396,7 @@ button:disabled {
   font-size: clamp(22px, 6vw, 32px);
 }
 
-.app-shell.mobile-entry .player-lanes.individual .choice-grid button span {
+.app-shell.mobile-entry .player-lanes.individual .choice-grid button > span:first-child {
   width: 34px;
   height: 34px;
   font-size: 18px;
@@ -3557,7 +3560,7 @@ body {
   box-shadow: 0 0 0 #dfe9f0;
 }
 
-.choice-grid button span {
+.choice-grid button > span:first-child {
   border-radius: 999px;
 }
 
@@ -4071,7 +4074,7 @@ body::before {
   box-shadow: 0 0 0 #9dc2d8, 0 0 16px rgba(69, 214, 255, 0.35);
 }
 
-.choice-grid button span {
+.choice-grid button > span:first-child {
   background: linear-gradient(180deg, #45d6ff 0%, #1f8bd8 100%);
   color: #04203a;
 }
@@ -4380,9 +4383,9 @@ select:focus {
 
 /* 도움말 안의 '핵심 / 볼 곳 / 정답 / 왜?' 꼬리표입니다.
    원래 규칙이 더 구체적이라 어두운 청록색이 그대로 남아 있었습니다. */
-.support-card span,
-.quick-support-card p span,
-.student-feedback .support-card span {
+.support-card p > span:first-child,
+.quick-support-card p > span:first-child,
+.student-feedback .support-card p > span:first-child {
   color: #8ce6ff;
 }
 
@@ -4400,8 +4403,8 @@ select:focus {
   color: #ffe3a6;
 }
 
-.quick-support-card .quick-core span,
-.quick-support-card .quick-reason span {
+.quick-support-card .quick-core > span:first-child,
+.quick-support-card .quick-reason > span:first-child {
   color: #8ce6ff;
 }
 
@@ -4554,7 +4557,7 @@ body::after {
 
 /* ── 숫자는 오락실 계기판 글꼴로 ──────────────────────────────────── */
 .timer-card strong,
-.choice-grid button span,
+.choice-grid button > span:first-child,
 .round-status span,
 .command-status span,
 .student-result-summary strong {
@@ -4857,7 +4860,7 @@ body::before {
   transform: translate(3px, 3px);
 }
 
-.choice-grid button span {
+.choice-grid button > span:first-child {
   background: #4fb8ff;
   color: #001428;
   border-radius: 2px;
@@ -5576,8 +5579,8 @@ body::before {
   display: none;
 }
 
-/* 보기 버튼 안의 span은 자리 번호 뱃지로 쓰려고 28px 동그라미로
-   정해져 있습니다(.choice-grid button span). 그림을 감싼 span과 이름표도
+/* 보기 버튼 안의 첫째 span은 자리 번호 뱃지로 쓰려고 28px 동그라미로
+   정해져 있습니다(.choice-grid button > span:first-child). 그림을 감싼 span과 이름표도
    그 규칙에 걸려 28px로 오그라들어, 그래프가 손톱만 하게 그려졌습니다.
    여기서는 그 규칙보다 좁게 짚어 되돌립니다. */
 /* 이름표(㉠)를 그림 아래 제 줄에 두면 보기 네 개가 네 줄을 더 먹고,
@@ -6555,4 +6558,73 @@ body::before {
   font-size: 11.5px;
   font-weight: 700;
   line-height: 1.45;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   분수 (MathText / KaTeX)
+   ────────────────────────────────────────────────────────────────
+   분수는 KaTeX가 그립니다. 분자와 분모의 크기, 가로선의 자리, 글줄
+   위에서의 높이가 수학 조판 규칙대로 잡혀야 '1/5'처럼 옆으로 누운
+   글자가 되지 않습니다.
+
+   다만 글자체는 앱 것을 그대로 씁니다. KaTeX가 들고 오는 글자체는
+   세리프라 한글 옆에서 혼자 튀고, 그 글자 파일만 1 MB가 넘는데
+   교실에서는 인터넷이 끊겨도 앱이 열려야 합니다(vite.config.ts에서
+   그 글자 파일을 오프라인 저장에서 뺍니다).
+   ════════════════════════════════════════════════════════════════ */
+
+.math-fraction {
+  display: inline-block;
+}
+
+.math-fraction .katex {
+  /* 앱 글자체 그대로. KaTeX는 자기 글자체를 기울여 쓰지만 숫자는
+     곧게 세워야 합니다. */
+  font-family: inherit;
+  font-style: normal;
+  font-weight: inherit;
+  /* 분수는 두 층이라 글줄 사이가 좁으면 위아래가 겹칩니다. 문제글과
+     보기에서 줄 간격을 넉넉히 둡니다. */
+  font-size: 1.02em;
+  line-height: 1.2;
+  text-rendering: auto;
+}
+
+.math-fraction .katex * {
+  font-family: inherit;
+  font-style: normal;
+}
+
+/* 가로선은 숫자 색을 그대로 따릅니다. 노란 강조 칸 안에서도, 흰 글씨
+   위에서도 선이 보여야 합니다. */
+.math-fraction .katex .frac-line {
+  border-bottom-color: currentColor;
+  border-bottom-width: 0.06em;
+  min-height: 0.06em;
+}
+
+/* 분수가 든 줄은 두 층을 담을 만큼 벌려 둡니다. */
+.hint-highlighted-prompt,
+.choice-grid button,
+.pdf-mini-question,
+.pdf-mini-choices li,
+.hint-text-panel p,
+.quick-support-card p {
+  line-height: 1.65;
+}
+
+/* 보기 단추는 [번호 뱃지 | 글] 두 칸짜리 격자입니다. 분수가 든 보기는
+   글이 여러 조각(글자 + 분수 + 글자)으로 나뉘므로, 한 span으로 싸서
+   격자 칸 하나에 담습니다. 싸지 않으면 셋째 조각부터 다음 줄로
+   떨어져 나갑니다. */
+.choice-grid button > .choice-text {
+  display: inline;
+  min-width: 0;
+}
+
+/* 도움말 한 줄은 [이름표 | 글]입니다. 이름표만 제자리에 두고, 글 쪽은
+   분수가 들어와 두 층이 되어도 이름표 옆에서 그대로 흐르게 둡니다. */
+.hint-text-panel p,
+.quick-support-card p {
+  align-items: flex-start;
 }

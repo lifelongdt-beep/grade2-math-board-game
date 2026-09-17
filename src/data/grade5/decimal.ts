@@ -34,6 +34,20 @@ export const mulDecimal = (a: string, b: string): string => {
   return formatDecimal({ scaled: left.scaled * right.scaled, places: left.places + right.places });
 };
 
+/**
+ * 두 소수를 곱하되, 끝자리의 0을 지우지 않고 그대로 둡니다.
+ * 0.5 × 0.04는 0.020입니다 — '두 자리 수를 더한 만큼 소수점을 찍는다'는
+ * 규칙이 실제로 어떻게 되는지 보여 줄 때 이 꼴이 필요합니다.
+ */
+export const mulDecimalKeepingZeros = (a: string, b: string): string => {
+  const left = parseDecimal(a);
+  const right = parseDecimal(b);
+  const places = left.places + right.places;
+  if (places === 0) return (left.scaled * right.scaled).toString();
+  const text = (left.scaled * right.scaled).toString().padStart(places + 1, '0');
+  return `${text.slice(0, text.length - places)}.${text.slice(text.length - places)}`;
+};
+
 /** 소수점 아래 자리 수입니다. '2.40'은 2입니다(적힌 그대로 셉니다). */
 export const placesOf = (text: string): number => (text.split('.')[1] ?? '').length;
 

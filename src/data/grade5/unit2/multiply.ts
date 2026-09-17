@@ -26,10 +26,16 @@ const 곱한과정 = (operands: Operands, 결론까지 = true): string[] => {
   if (leftParts) lines.push(`대분수를 가분수로 고칩니다. ${mixedToImproper(leftParts.whole, leftParts.n, leftParts.d)}`);
   if (rightParts) lines.push(`대분수를 가분수로 고칩니다. ${mixedToImproper(rightParts.whole, rightParts.n, rightParts.d)}`);
 
-  if (kind === 'proper-whole') {
-    lines.push(`분모는 그대로 두고 분자와 자연수를 곱합니다. ${leftText} × ${rightText} = (${left.n}×${right.n})/${left.d} = ${left.n * right.n}/${left.d}`);
-  } else if (kind === 'whole-proper') {
+  // 방법에도 차례가 있습니다. '분자는 분자끼리, 분모는 분모끼리'는
+  // (진분수)×(진분수)를 배우는 6차시에서 처음 나오는 방법입니다.
+  // 자연수가 낀 곱셈(2~5차시)에서는 지도서대로 '분모는 그대로 두고
+  // 분자와 자연수를 곱한다'로 풀어야, 아이가 그 차시에 배운 방법으로
+  // 풀이를 읽을 수 있습니다.
+  if (kind === 'whole-proper') {
     lines.push(`${eul(leftText)} ${right.d}묶음으로 똑같이 나눈 것 중 ${right.n}묶음입니다. ${leftText} × ${rightText} = (${left.n}×${right.n})/${right.d} = ${left.n * right.n}/${right.d}`);
+  } else if (left.d === 1 || right.d === 1) {
+    const 분모 = left.d === 1 ? right.d : left.d;
+    lines.push(`분모는 그대로 두고 분자와 자연수를 곱합니다. ${improperText(left)} × ${improperText(right)} = (${left.n}×${right.n})/${분모} = ${left.n * right.n}/${분모}`);
   } else {
     lines.push(`분자는 분자끼리, 분모는 분모끼리 곱합니다. ${improperText(left)} × ${improperText(right)} = (${left.n}×${right.n})/(${left.d}×${right.d}) = ${left.n * right.n}/${left.d * right.d}`);
   }
@@ -45,6 +51,17 @@ const 곱한과정 = (operands: Operands, 결론까지 = true): string[] => {
   return lines;
 };
 
+// 차시마다 짚을 곳이 다릅니다. 진분수끼리 곱하는 문항에 '대분수를 고치라'는
+// 말이 붙으면 아이는 있지도 않은 대분수를 찾고, 자연수가 낀 곱셈에
+// '분자끼리 곱하라'는 말이 붙으면 아직 배우지 않은 방법을 먼저 듣습니다.
+const 핵심 = (kind: Kind): string => {
+  if (kind === 'proper-whole' || kind === 'whole-proper') {
+    return '분모는 그대로 두고 분자와 자연수를 곱합니다.';
+  }
+  if (kind === 'proper-proper') return '분자는 분자끼리, 분모는 분모끼리 곱합니다.';
+  return '대분수는 먼저 가분수로 고치세요.';
+};
+
 const 계산문항 = (kind: Kind, index: number): G5Family => ({
   id: `calc-${index}`,
   make: (seed) => {
@@ -55,10 +72,14 @@ const 계산문항 = (kind: Kind, index: number): G5Family => ({
       answer: text(answer),
       wrongs: wrongAnswersFor(operands),
       tag: 'fraction',
+      concept: 핵심(kind),
       strategy: `${kindName[kind]} 계산하기`,
+      // 곱하기 전에 약분하는 것은 교과서와 학교 현장이 함께 권하는
+      // 방법입니다. 큰 수를 곱해 놓고 나중에 약분하면 계산도 어렵고
+      // 약분을 빠뜨리기도 쉽습니다.
       hint: operands.leftParts || operands.rightParts
         ? '대분수가 있으면 먼저 가분수로 고쳐 적으세요. 고치기 전에 곱하면 자연수 부분이 빠집니다.'
-        : '분자에 무엇을 곱하고 분모에 무엇을 곱해야 하는지 먼저 적어 보세요.',
+        : '곱하기 전에 약분할 수 있는지 먼저 살펴보세요. 미리 약분하면 수가 작아져 계산이 쉬워집니다.',
       steps: 곱한과정(operands),
       visual: modelFor(operands),
     };
@@ -72,6 +93,7 @@ const 방법문항 = (kind: Kind): G5Family => ({
     answer: methodText[kind],
     wrongs: wrongMethods[kind],
     tag: 'fraction',
+    concept: 핵심(kind),
     strategy: `${kindName[kind]}의 계산 방법 알기`,
     hint: '분자에 무엇이 곱해지고 분모는 어떻게 되는지를 나누어 생각해 보세요.',
     steps: [
@@ -103,6 +125,7 @@ export const multiplyEasy = (kind: Kind): G5Family[] => {
             `${operands.leftText} + ${operands.rightText}`,
           ],
           tag: 'fraction',
+          concept: 핵심(kind),
           strategy: '분수의 곱셈을 덧셈식으로 나타내기',
           hint: '곱하는 자연수가 몇 번 더하라는 뜻인지 세어 보세요.',
           steps: [
@@ -124,6 +147,7 @@ export const multiplyEasy = (kind: Kind): G5Family[] => {
           answer: text(answer),
           wrongs: wrongAnswersFor(operands),
           tag: 'fraction',
+          concept: 핵심(kind),
           strategy: '그림에서 분수의 곱셈 읽기',
           hint: '띠 하나에 칠해진 칸이 몇 칸인지, 그런 띠가 몇 개인지 세어 보세요.',
           steps: [
@@ -150,6 +174,7 @@ export const multiplyEasy = (kind: Kind): G5Family[] => {
           answer: text(answer),
           wrongs: [text(frac(k, d * d)), String(k * d), String(k - d), text(frac(k + 1, d))],
           tag: 'fraction',
+          concept: 핵심(kind),
           strategy: '자연수의 단위분수만큼 구하기',
           hint: `${eul(String(k))} 똑같이 ${d}묶음으로 나누면 한 묶음이 얼마가 되는지 세어 보세요.`,
           steps: [
@@ -188,6 +213,7 @@ export const multiplyEasy = (kind: Kind): G5Family[] => {
             `${parts.n}/${parts.d}`,
           ],
           tag: 'fraction',
+          concept: 핵심(kind),
           strategy: '대분수를 가분수로 고치기',
           hint: '자연수 1이 분모만큼의 칸으로 이루어져 있다고 생각해 보세요. 자연수 부분이 몇 칸인지 먼저 구합니다.',
           steps: [
@@ -211,6 +237,7 @@ export const multiplyEasy = (kind: Kind): G5Family[] => {
           answer: text(answer),
           wrongs: wrongAnswersFor(operands),
           tag: 'fraction',
+          concept: 핵심(kind),
           strategy: '넓이 그림에서 분수의 곱 읽기',
           hint: '전체가 몇 칸으로 나누어졌는지 먼저 세고, 두 번 칠해진 칸이 몇 칸인지 세어 보세요.',
           steps: [
@@ -254,7 +281,10 @@ const 상황들: Record<Kind, 상황[]> = {
   ],
   'whole-proper': [
     { id: 'thread', 글: (l, r) => `가죽 필통을 만들려고 실 ${l} m의 ${eul(r)} 사용했습니다.`, 단위: 'm', 물음: '사용한 실은 몇 m일까요?' },
-    { id: 'candy', 글: (l, r) => `사탕 ${l}개의 ${eul(r)} 동생에게 주었습니다.`, 단위: '개', 물음: '동생에게 준 사탕은 몇 개일까요?' },
+    // 사탕 4개의 7/9은 3과 1/9개입니다. 사탕을 9조각으로 쪼개 그중
+    // 한 조각을 준다는 말이 되어, 답이 맞아도 장면이 말이 되지 않습니다.
+    // 나누어 쓸 수 있는 양(주스)으로 바꿉니다.
+    { id: 'juice', 글: (l, r) => `주스 ${l} L의 ${eul(r)} 마셨습니다.`, 단위: 'L', 물음: '마신 주스는 몇 L일까요?' },
     { id: 'land', 글: (l, r) => `밭 ${l} m²의 ${r}에 배추를 심었습니다.`, 단위: 'm²', 물음: '배추를 심은 넓이는 몇 m²일까요?' },
   ],
   'whole-mixed': [
@@ -270,7 +300,7 @@ const 상황들: Record<Kind, 상황[]> = {
   'mixed-mixed': [
     { id: 'room', 글: (l, r) => `가로가 ${l} m, 세로가 ${r} m인 직사각형 모양의 체험장이 있습니다.`, 단위: 'm²', 물음: '체험장의 넓이는 몇 m²일까요?' },
     { id: 'board', 글: (l, r) => `가로가 ${l} m, 세로가 ${r} m인 직사각형 모양의 게시판이 있습니다.`, 단위: 'm²', 물음: '게시판의 넓이는 몇 m²일까요?' },
-    { id: 'walkfast', 글: (l, r) => `한 시간에 ${l} km를 걷습니다. ${r}시간 동안 걷는다면`, 단위: 'km', 물음: '모두 몇 km를 걸을까요?' },
+    { id: 'walkfast', 글: (l, r) => `한 시간에 ${l} km를 걷습니다. ${r} 시간 동안 걷는다면`, 단위: 'km', 물음: '모두 몇 km를 걸을까요?' },
   ],
 };
 
@@ -288,6 +318,7 @@ export const multiplyMiddle = (kind: Kind): G5Family[] => {
         answer: `${text(answer)} ${상.단위}`,
         wrongs: wrongAnswersFor(operands).map((w) => `${w} ${상.단위}`),
         tag: 'fraction',
+        concept: 핵심(kind),
         strategy: `${kindName[kind]} 상황에서 문제 해결하기`,
         hint: '먼저 곱셈식으로 나타내 보세요. 무엇을 몇 번, 또는 무엇의 얼마만큼인지를 찾으면 됩니다.',
         steps: [
@@ -321,6 +352,7 @@ export const multiplyMiddle = (kind: Kind): G5Family[] => {
             `${operands.rightText} ÷ ${operands.leftText}`,
           ],
           tag: 'fraction',
+          concept: 핵심(kind),
           strategy: '상황을 곱셈식으로 나타내기',
           hint: '같은 양이 여러 번인지, 아니면 어떤 양의 몇 분의 몇인지 가려 보세요. 둘 다 곱셈입니다.',
           steps: [
@@ -342,6 +374,7 @@ export const multiplyMiddle = (kind: Kind): G5Family[] => {
           answer: text(answer),
           wrongs: wrongAnswersFor(operands).filter((w) => w !== 잘못),
           tag: 'fraction',
+          concept: 핵심(kind),
           strategy: '잘못된 계산을 바로잡기',
           hint: '어디에 무엇을 곱해야 하는지 차례대로 다시 적어 보세요. 대분수가 있으면 가분수로 고치는 것이 먼저입니다.',
           steps: 곱한과정(operands),
@@ -372,6 +405,7 @@ export const multiplyHard = (kind: Kind): G5Family[] => [
           text(frac(answer.n, answer.d + 1)),
         ],
         tag: 'fraction',
+        concept: 핵심(kind),
         strategy: '곱셈식에서 빠진 수 구하기',
         hint: '보기의 수를 ▢에 하나씩 넣어 곱해 보세요. 결과가 오른쪽과 같아지는 것을 찾으면 됩니다.',
         steps: [
@@ -394,10 +428,13 @@ export const multiplyHard = (kind: Kind): G5Family[] => [
       const 작은값 = compare(곱1, 곱2) > 0 ? 곱2 : 곱1;
       const 식 = (o: Operands) => `${o.leftText} × ${o.rightText}`;
       return {
-        prompt: `${식(a)}${particleOf(a.rightText, '과')} ${식(b)} 중에서 계산 결과가 더 큰 것은 어느 것일까요?`,
+        // 두 식을 '과'로 이으면 대분수의 '과'와 겹쳐 '3과 1/3과 5 × …'처럼
+        // 어디까지가 한 식인지 알기 어렵습니다. 쉼표로 끊어 적습니다.
+        prompt: `두 식 ${식(a)}, ${식(b)} 중에서 계산 결과가 더 큰 것은 어느 것일까요?`,
         answer: 식(큰쪽),
         wrongs: [식(큰쪽 === a ? b : a), '두 식의 결과는 같습니다.', text(큰값), text(작은값)],
         tag: 'fraction',
+        concept: 핵심(kind),
         strategy: '두 곱셈의 결과 비교하기',
         hint: '두 식을 각각 끝까지 계산해 같은 꼴로 만든 다음 견주세요.',
         steps: [
@@ -428,6 +465,7 @@ export const multiplyHard = (kind: Kind): G5Family[] => [
           '알 수 없습니다.',
         ],
         tag: 'fraction',
+        concept: 핵심(kind),
         strategy: '곱한 결과의 크기를 어림하기',
         hint: `곱하는 수 ${iJosa(operands.rightText)} 1보다 큰지 작은지를 먼저 보세요. 어떤 수에 1을 곱하면 그 수 그대로입니다.`,
         steps: [
@@ -446,24 +484,31 @@ export const multiplyHard = (kind: Kind): G5Family[] => [
     make: (seed) => {
       const operands = operandsFor(kind, seed + 7);
       const next = rand(seed + 7);
+      // 셋째 수를 무엇으로 둘지는 이 차시가 어디까지 배웠는지가
+      // 정합니다. 앞의 둘을 곱하면 대개 분수가 나오므로, 거기에 진분수를
+      // 곱하면 (분수)×(분수)가 되어 6차시 내용이 됩니다. 아직 자연수가
+      // 낀 곱셈만 배운 차시에서는 셋째 수도 자연수로 둡니다.
+      const 분수끼리배웠나 = kind === 'proper-proper' || kind === 'mixed-mixed';
       const d = 2 + next(5);
-      const third = frac(1, d);
+      const third = 분수끼리배웠나 ? frac(1, d) : whole(2 + next(4));
+      const thirdText = text(third);
       const answer = mul(mul(operands.left, operands.right), third);
       return {
-        prompt: `${operands.leftText} × ${operands.rightText} × ${eul(`1/${d}`)} 계산하면 얼마일까요?`,
+        prompt: `${operands.leftText} × ${operands.rightText} × ${eul(thirdText)} 계산하면 얼마일까요?`,
         answer: text(answer),
         wrongs: [
           text(mul(operands.left, operands.right)),
           text(mul(operands.left, third)),
-          text(frac(answer.n * d, answer.d)),
+          text(frac(answer.n * third.d, answer.d * third.n)),
           text(add(mul(operands.left, operands.right), third)),
         ],
         tag: 'fraction',
-        strategy: '세 분수의 곱셈 계산하기',
-        hint: '앞의 두 수를 먼저 곱한 다음, 그 결과에 남은 수를 곱하세요. 한꺼번에 분자끼리, 분모끼리 곱해도 됩니다.',
+        concept: 핵심(kind),
+        strategy: '세 수의 곱셈 계산하기',
+        hint: '한 번에 셋을 곱하려 하지 말고, 앞의 두 수를 먼저 곱한 다음 그 결과에 남은 수를 곱하세요.',
         steps: [
           ...곱한과정(operands),
-          `여기에 ${eul(`1/${d}`)} 곱하면 ${text(answer)}입니다.`,
+          `여기에 ${eul(thirdText)} 곱하면 ${text(answer)}입니다.`,
         ],
       };
     },
@@ -492,6 +537,7 @@ export const multiplyHard = (kind: Kind): G5Family[] => [
           .map(([, value]) => value)
           .concat('약분을 하지 않았습니다.'),
         tag: 'fraction',
+        concept: 핵심(kind),
         strategy: '계산에서 잘못된 곳 찾기',
         hint: '바르게 계산한 값을 먼저 구하고, 잘못 나온 값과 어디가 다른지 견주어 보세요.',
         steps: [

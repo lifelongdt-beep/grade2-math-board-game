@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { MathFraction, splitMath } from './MathText';
 
 // 1단계 힌트: 문제에서 붙잡아야 할 말을 색으로 미리 보여 줍니다.
 // 숫자와, 그 문제가 무엇을 묻는지 정하는 핵심 낱말입니다.
@@ -103,26 +104,37 @@ export const splitPrompt = (text: string): Piece[] => {
   return pieces;
 };
 
+// 분수는 색칠하기 전에 먼저 떼어 냅니다. 분수도 하나의 수라 노란색으로
+// 칠하지만, 그 안은 글자가 아니라 분자·가로선·분모로 그려야 합니다.
+// 떼어 내지 않고 splitPrompt에 그냥 넣으면 '5/8'이 글자 그대로 남습니다.
 export function HighlightedPrompt({ text }: { text: string }) {
-  return (
-    <p className="hint-highlighted-prompt">
-      {splitPrompt(text).map((piece, index) => {
-        if (piece.kind === 'number') {
-          return (
-            <mark key={index} className="hint-number">
-              {piece.text}
-            </mark>
-          );
-        }
-        if (piece.kind === 'keyword') {
-          return (
-            <mark key={index} className="hint-keyword">
-              {piece.text}
-            </mark>
-          );
-        }
-        return <Fragment key={index}>{piece.text}</Fragment>;
-      })}
-    </p>
-  );
+  let key = 0;
+  const 조각 = splitMath(text).flatMap((one) => {
+    if (one.kind === 'fraction') {
+      return [
+        <mark key={(key += 1)} className="hint-number">
+          <MathFraction piece={one} />
+        </mark>,
+      ];
+    }
+    return splitPrompt(one.text).map((piece) => {
+      if (piece.kind === 'number') {
+        return (
+          <mark key={(key += 1)} className="hint-number">
+            {piece.text}
+          </mark>
+        );
+      }
+      if (piece.kind === 'keyword') {
+        return (
+          <mark key={(key += 1)} className="hint-keyword">
+            {piece.text}
+          </mark>
+        );
+      }
+      return <Fragment key={(key += 1)}>{piece.text}</Fragment>;
+    });
+  });
+
+  return <p className="hint-highlighted-prompt">{조각}</p>;
 }

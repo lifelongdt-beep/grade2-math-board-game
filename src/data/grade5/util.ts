@@ -142,6 +142,11 @@ const unitFinal: Array<[string, boolean]> = [
 const hasFinal = (word: string): boolean => {
   const unit = unitFinal.find(([suffix]) => word.endsWith(suffix));
   if (unit) return unit[1];
+  // 분수는 '분모분의 분자'로 읽습니다. 3/5는 '오분의 삼'이라 마지막에
+  // 나는 소리가 분자(3 → 삼)입니다. 글자 차례대로 맨 뒤인 분모(5 → 오)로
+  // 정하면 '3/5와', '3/4를'처럼 어긋납니다.
+  const fraction = /(\d+)\/\d+$/.exec(word);
+  if (fraction) return hasFinal(fraction[1]);
   const last = word[word.length - 1];
   // 자모 낱자(ㄱ, ㄴ, ㅁ …)는 이름으로 읽습니다 — 기역, 니은, 미음.
   // 모두 받침으로 끝나므로 '점 ㄱ과', '점 ㅁ은'이 맞습니다.
@@ -155,8 +160,9 @@ const hasFinal = (word: string): boolean => {
  * 조사만 돌려줍니다.
  *
  * '1과 3/4을'처럼 앞말과 조사를 따로 적어야 할 때 씁니다. 조사는 바로
- * 앞에 오는 소리를 따르므로, 대분수에서는 자연수 부분이 아니라 분수
- * 부분('3/4' → 사분의 삼 → 받침 없음)을 보고 골라야 합니다.
+ * 앞에 나는 소리를 따르므로, 대분수에서는 자연수 부분이 아니라 분수
+ * 부분을 보고 골라야 합니다. 그 분수도 '분모분의 분자'로 읽으므로
+ * 마지막 소리는 분자입니다 — '3/4' → 사분의 삼 → 받침 있음 → '3/4을'.
  */
 export const particleOf = (word: string, kind: '을' | '은' | '이' | '과'): string => {
   const final = hasFinal(word);

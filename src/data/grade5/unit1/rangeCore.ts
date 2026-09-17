@@ -55,8 +55,15 @@ export const rangeLine = (
 };
 
 /** '49 초과 59 이하인 수'처럼 범위를 말로 씁니다. */
+// 단위를 수 뒤에 붙입니다. cm, kg처럼 알파벳 단위는 한 칸 띄우고,
+// 세·권처럼 우리말 단위(의존 명사)는 '18세', '5권'처럼 붙여 씁니다.
+export const unitTail = (unit: string) => {
+  if (!unit) return '';
+  return /^[가-힣]+$/.test(unit) ? unit : ` ${unit}`;
+};
+
 export const rangeText = (lower?: Edge, upper?: Edge, unit = ''): string => {
-  const tail = unit ? ` ${unit}` : '';
+  const tail = unitTail(unit);
   if (lower && upper) {
     return `${lower.value}${tail} ${aboveWord(lower.included)} ${upper.value}${tail} ${belowWord(upper.included)}인 수`;
   }

@@ -738,11 +738,21 @@ describe('5-2 문항', () => {
     for (const [, , questions] of every) {
       for (const question of questions) {
         const 글 = [question.prompt, question.support.studentHint, ...question.support.steps].join(' ');
-        for (const [, number, josa] of 글.matchAll(/(\d+)(을|를|은|는|이|가|과|와)(?![가-힣])/g)) {
+        // 분수는 '분모분의 분자'로 읽으므로, 조사는 글자 차례대로 맨 뒤인
+        // 분모가 아니라 분자를 따릅니다(3/5 → 오분의 삼 → '3/5과').
+        // 그래서 조사 앞의 수가 분모이면 분자를 보고 따져야 합니다.
+        for (const one of 글.matchAll(/(\d+)(\/)?(\d+)?(을|를|은|는|이|가|과|와)(?![가-힣])/g)) {
+          const [, 앞, 빗금, 뒤, josa] = one;
+          // 분수든 그냥 수든 조사를 정하는 것은 늘 앞의 수입니다.
+          // 분모(뒤)는 여기서 조사와 떼어 놓기만 하면 됩니다.
+          const number = 앞;
+          if (빗금 && !뒤) continue;
           const 받침 = 받침있는끝.test(number);
           const 옳은것 = 받침 ? ['을', '은', '이', '과'] : ['를', '는', '가', '와'];
           if (받침있는끝.test(number) || 받침없는끝.test(number)) {
-            if (!옳은것.includes(josa)) broken.push(`${question.id}: "${number}${josa}" — ${글.slice(0, 80)}`);
+            if (!옳은것.includes(josa)) {
+              broken.push(`${question.id}: "${one[0]}" — ${글.slice(0, 80)}`);
+            }
           }
         }
       }

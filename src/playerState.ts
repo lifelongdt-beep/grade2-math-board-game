@@ -111,7 +111,15 @@ export const advancePlayerState = (
 };
 
 
-export const createQuestionState = (players: Player[], now = Date.now()): Record<number, PlayerQuestionState> =>
+// 검사용 시작 수준입니다. 수업에서는 늘 '하'에서 시작합니다. 화면을
+// 단원·차시·수준별로 모두 훑어보는 검사에서만, 상 수준 문항까지 실제로
+// 그려 보려고 다른 수준을 넣습니다. 수준을 정할 뿐 답을 알려 주지는
+// 않으므로 이 문으로 얻을 수 있는 것은 더 어려운 문제뿐입니다.
+export const createQuestionState = (
+  players: Player[],
+  now = Date.now(),
+  startLevel: Difficulty = '하',
+): Record<number, PlayerQuestionState> =>
   Object.fromEntries(
     players.map((player, index) => [
       player.id,
@@ -126,7 +134,7 @@ export const createQuestionState = (players: Player[], now = Date.now()): Record
         retries: [],
         activeRetry: null,
         // 모두 하에서 시작합니다. 어디까지 갈 수 있는지는 풀면서 정해집니다.
-        level: '하',
+        level: startLevel,
         justMoved: null,
         streak: 0,
         missStreak: 0,
