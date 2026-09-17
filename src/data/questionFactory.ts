@@ -23,6 +23,7 @@ import {
 } from './lifeContexts';
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, PlaneShapeKind, PlaneShapeVisualItem, Question, QuestionVisual } from '../types';
 import { questionBank } from './questionBank';
+import { generateGrade5Questions } from './grade5';
 import { buildFromTemplate, templateFits } from './questionTemplate';
 import type { DrawnVisual } from './questionTemplate';
 
@@ -91,6 +92,13 @@ const tagLabel: Record<ConceptTag, string> = {
   time: '시각과 시간',
   data: '표와 그래프 해석',
   pattern: '규칙 찾기',
+  range: '수의 범위',
+  rounding: '어림하기',
+  fraction: '분수의 곱셈',
+  decimal: '소수의 곱셈',
+  congruence: '합동과 대칭',
+  average: '평균',
+  possibility: '일이 일어날 가능성',
 };
 
 const tagAdvice: Record<ConceptTag, string> = {
@@ -106,6 +114,13 @@ const tagAdvice: Record<ConceptTag, string> = {
   time: '시각은 한 순간이고 시간은 두 시각 사이의 길이입니다. 60분은 1시간입니다.',
   data: '자료는 항목별 수, 전체 수, 차이를 읽고 그 결과로 알 수 있는 내용을 말해야 합니다.',
   pattern: '규칙은 반복되는 묶음이나 일정하게 변하는 양을 찾고 말로 설명하는 것이 핵심입니다.',
+  range: '이상과 이하는 기준이 되는 수를 넣고, 초과와 미만은 넣지 않습니다. 넣는지 빼는지가 이 갈래의 전부입니다.',
+  rounding: '올림은 모자라지 않게, 버림은 넘치지 않게, 반올림은 가장 가깝게 어림합니다. 상황이 방법을 정합니다.',
+  fraction: '분수의 곱셈은 분자끼리, 분모끼리 곱합니다. 대분수는 먼저 가분수로 고칩니다.',
+  decimal: '소수의 곱셈은 자연수처럼 곱한 뒤, 두 수의 소수점 아래 자리 수를 더한 만큼 소수점을 찍습니다.',
+  congruence: '합동은 포개었을 때 완전히 겹치는 것이고, 대칭은 접거나 돌렸을 때 겹치는 것입니다.',
+  average: '평균은 자료 값을 모두 더해 자료의 수로 나눈 값, 곧 고르게 나누어 가진 값입니다.',
+  possibility: '가능성은 0(불가능하다)에서 1(확실하다) 사이의 수로 나타냅니다. 반반인 경우가 1/2입니다.',
 };
 
 const coreConceptGuide: Record<ConceptTag, string> = {
@@ -121,6 +136,13 @@ const coreConceptGuide: Record<ConceptTag, string> = {
   time: '시각은 어느 한 순간이고, 시간은 두 시각 사이의 길이입니다. 60분은 1시간입니다.',
   data: '표와 그래프는 항목별 수, 차이, 전체 수를 읽고 비교해서 의미를 찾습니다.',
   pattern: '규칙은 반복되는 모양이나 일정하게 변하는 양을 찾아 다음을 예상하는 힘입니다.',
+  range: '이상과 이하는 기준이 되는 수를 포함하고, 초과와 미만은 포함하지 않습니다.',
+  rounding: '어림값은 참값이 아니라 목적에 맞게 고른 가까운 값입니다. 목적이 어림 방법을 정합니다.',
+  fraction: '분수끼리의 곱셈은 분자끼리 곱해 분자로, 분모끼리 곱해 분모로 삼습니다.',
+  decimal: '곱하는 두 소수의 소수점 아래 자리 수를 더한 수가 곱의 소수점 아래 자리 수입니다.',
+  congruence: '합동인 두 도형에서 대응변의 길이는 서로 같고, 대응각의 크기도 서로 같습니다.',
+  average: '(평균)=(자료 값의 합)÷(자료의 수)이고, (자료 값의 합)=(평균)×(자료의 수)입니다.',
+  possibility: '일어날 수 있는 경우가 모두 같은 정도일 때, 가능성은 조건에 맞는 경우의 수를 전체 경우의 수로 나눈 값입니다.',
 };
 
 const studentConceptGuide: Record<ConceptTag, string> = {
@@ -139,6 +161,13 @@ const studentConceptGuide: Record<ConceptTag, string> = {
   time: '시각인지 시간인지 먼저 보세요.',
   data: '묻는 항목의 수를 찾아 비교하세요.',
   pattern: '반복되거나 변하는 규칙을 찾으세요.',
+  range: '기준이 되는 수가 범위에 들어가는지 보세요.',
+  rounding: '어떤 방법으로 어림해야 하는 상황인지 보세요.',
+  fraction: '대분수는 먼저 가분수로 고치세요.',
+  decimal: '소수점 아래 자리 수를 세어 보세요.',
+  congruence: '포개었을 때 겹치는 곳을 찾으세요.',
+  average: '모두 더한 다음 자료의 수로 나누세요.',
+  possibility: '일어날 수 있는 경우를 모두 세어 보세요.',
 };
 
 // 문항에서 수를 읽어 내지 못했을 때 쓰는 말입니다.
@@ -159,6 +188,13 @@ const studentHintGuide: Record<ConceptTag, string> = {
   time: '짧은바늘로 시를, 긴바늘로 분을 따로 읽으세요. 긴바늘이 숫자 한 칸을 지나면 5분입니다.',
   data: '묻는 것이 어느 줄, 어느 칸인지 손가락으로 짚은 뒤 그 수만 읽으세요.',
   pattern: '되풀이되는 한 묶음이 어디서 끝나는지 끊어 보세요. 그 묶음을 이어 붙이면 다음이 보입니다.',
+  range: '기준이 되는 수를 먼저 찾아 ●(넣는다)나 ○(넣지 않는다)로 표시하고, 어느 쪽으로 뻗는지 화살표를 그어 보세요.',
+  rounding: '구하려는 자리에 밑줄을 긋고 그 아래 자리의 수를 따로 적어 보세요. 그 수를 어떻게 할지가 답을 정합니다.',
+  fraction: '대분수가 있으면 먼저 가분수로 고쳐 적으세요. 그다음에 분자끼리, 분모끼리 곱합니다.',
+  decimal: '소수점을 잠시 지우고 자연수처럼 곱해 보세요. 곱한 뒤에 지운 자리 수만큼 오른쪽에서 세어 소수점을 찍습니다.',
+  congruence: '두 도형을 겹쳐 놓았다고 생각하고 서로 짝이 되는 점, 변, 각을 하나씩 짚어 보세요.',
+  average: '자료의 수를 먼저 세고, 값을 모두 더해 적어 보세요. 나눗셈은 그다음입니다.',
+  possibility: '일어날 수 있는 경우를 빠짐없이 적어 보세요. 그중 조건에 맞는 것이 몇 가지인지 세면 됩니다.',
 };
 
 const readStrategyGuide: Record<ConceptTag, string> = {
@@ -174,6 +210,13 @@ const readStrategyGuide: Record<ConceptTag, string> = {
   time: '시작 시각, 끝 시각, 구해야 하는 것이 시각인지 시간인지 먼저 나눕니다.',
   data: '표 제목과 항목 이름을 먼저 읽고, 묻는 항목의 수만 골라 봅니다.',
   pattern: '앞에서 반복되는 묶음이나 계속 더해지는 수를 먼저 표시합니다.',
+  range: '기준이 되는 수와, 거기 붙은 말이 이상·이하·초과·미만 중 무엇인지를 먼저 확인합니다.',
+  rounding: '구하려는 자리가 어디인지, 그리고 모자라면 안 되는 상황인지 넘치면 안 되는 상황인지 먼저 봅니다.',
+  fraction: '곱하는 두 수가 자연수인지 진분수인지 대분수인지 먼저 구별합니다.',
+  decimal: '두 수의 소수점 아래 자리 수를 각각 세어 적어 둡니다.',
+  congruence: '합동인지, 선대칭도형인지, 점대칭도형인지 문제에서 말한 것을 먼저 확인합니다.',
+  average: '구하는 것이 평균인지, 자료 값의 합인지, 자료의 수인지 먼저 구별합니다.',
+  possibility: '일어날 수 있는 경우가 모두 같은 정도인 상황인지 먼저 확인합니다.',
 };
 
 const misconceptionGuide: Record<ConceptTag, string> = {
@@ -189,6 +232,13 @@ const misconceptionGuide: Record<ConceptTag, string> = {
   time: '분은 60이 되면 1시간으로 바뀝니다. 100분처럼 계산하지 마세요.',
   data: '막대가 길어 보이는 느낌보다 정확한 칸 수와 숫자를 읽어야 합니다.',
   pattern: '마지막 두 개만 보지 말고 처음부터 같은 규칙이 계속되는지 확인하세요.',
+  range: '이상과 초과를 같은 말로 읽지 마세요. 기준이 되는 수가 들어가는지 아닌지가 다릅니다.',
+  rounding: '반올림은 구하려는 자리 바로 아래 자리의 숫자만 봅니다. 올림·버림처럼 아래 수를 모두 보는 것이 아닙니다.',
+  fraction: '대분수를 자연수 부분과 분수 부분으로 나누어 따로 곱하면 안 됩니다. 먼저 가분수로 고치세요.',
+  decimal: '곱의 소수점 아래 자리 수는 두 수의 자리 수를 더한 만큼입니다. 더 많은 쪽에 맞추는 것이 아닙니다.',
+  congruence: '모양이 비슷해 보인다고 합동인 것은 아닙니다. 대응변의 길이와 대응각의 크기가 모두 같아야 합니다.',
+  average: '가장 많이 나온 값이나 가운데 값은 평균이 아닙니다. 모두 더해 자료의 수로 나눈 값입니다.',
+  possibility: '바라는 결과라고 해서 가능성이 커지지 않습니다. 경우의 수로만 판단하세요.',
 };
 
 const selfCheckGuide: Record<ConceptTag, string> = {
@@ -204,6 +254,13 @@ const selfCheckGuide: Record<ConceptTag, string> = {
   time: '시계에서 긴바늘과 짧은바늘이 가리키는 뜻을 다시 확인했나요?',
   data: '문제에서 묻는 항목만 골라 비교했나요?',
   pattern: '찾은 규칙을 다음 자리에도 적용했을 때 맞나요?',
+  range: '기준이 되는 수 자체가 범위에 들어가는지 다시 확인했나요?',
+  rounding: '어림한 값이 참값보다 큰지 작은지, 그것이 상황에 맞는 쪽인지 확인했나요?',
+  fraction: '약분할 수 있는지, 가분수를 대분수로 고쳐야 하는지 확인했나요?',
+  decimal: '곱의 소수점 아래 자리 수가 두 수의 자리 수를 더한 것과 같나요?',
+  congruence: '대응변과 대응각을 짝지어 다시 확인했나요?',
+  average: '구한 평균에 자료의 수를 곱하면 처음의 합이 되나요?',
+  possibility: '구한 가능성이 0과 1 사이의 수인가요?',
 };
 
 const primaryTag = (lesson: Lesson): ConceptTag => {
@@ -800,6 +857,11 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'year-calendar' ||
     visual.kind === 'pictograph' ||
     visual.kind === 'cube-pattern' ||
+    // range-line과 fraction-model은 5학년 그림이라 2학년 말로 다듬을
+    // 것이 이름표뿐입니다.
+    visual.kind === 'range-line' ||
+    visual.kind === 'fraction-model' ||
+    visual.kind === 'figure-set' ||
     visual.kind === 'array'
   ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };
@@ -16744,6 +16806,13 @@ export const generateQuestions = (
   difficulty: Difficulty,
   options?: GenerateQuestionsOptions,
 ): Question[] => {
+  // 5학년 차시는 자기 길로 갑니다. 아래의 생성기들은 모두 2학년 차시
+  // 제목에 맞추어 갈래를 정하므로, 5학년 차시가 여기까지 내려오면
+  // 어느 것도 맞지 않아 맨 끝의 기본 문항으로 떨어집니다. 그러면 5학년
+  // 차시에 2학년 문제가 나옵니다.
+  const grade5 = generateGrade5Questions(lesson, difficulty);
+  if (grade5) return grade5;
+
   if (lesson.title === '구구단, 몬스터를 막아라!') {
     const dans = options?.castleDans?.length ? options.castleDans : ALL_CASTLE_DEFENSE_DANS;
     return generateCastleDefenseQuestions(lesson, difficulty, dans);
