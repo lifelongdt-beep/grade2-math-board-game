@@ -485,15 +485,19 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
         </div>
         <div>
           <dt>취약 유형</dt>
-          <dd>{item.weakest}</dd>
+          <dd><MathText text={item.weakest} /></dd>
         </div>
         <div>
           <dt>취약 전략</dt>
-          <dd>{item.weakStrategy}</dd>
+          <dd><MathText text={item.weakStrategy} /></dd>
         </div>
         <div>
           <dt>되풀이되는 실수</dt>
-          <dd>{item.commonMistake ? `${item.commonMistake.what} ${item.commonMistake.times}회` : '아직 없음'}</dd>
+          <dd>
+            {item.commonMistake
+              ? <><MathText text={item.commonMistake.what} /> {item.commonMistake.times}회</>
+              : '아직 없음'}
+          </dd>
         </div>
         <div>
           <dt>우리 반에 보탬</dt>
@@ -511,13 +515,13 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
           </dd>
         </div>
       </dl>
-      <p className="student-narrative">{narrativeFor(item, lesson)}</p>
+      <p className="student-narrative"><MathText text={narrativeFor(item, lesson)} /></p>
       <div className="type-chips">
         {Object.entries(item.typeCounts).length === 0 ? (
           <span>아직 누적 오답 없음</span>
         ) : (
           Object.entries(item.typeCounts).map(([type, count]) => (
-            <span key={type}>{type} {count}</span>
+            <span key={type}><MathText text={type} /> {count}</span>
           ))
         )}
       </div>
@@ -709,7 +713,7 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
               {filteredWrongRecords.slice().reverse().map((record) => (
                 <div className="records-row" role="row" key={record.id}>
                   <span>{record.playerName}</span>
-                  <span>{record.prompt}</span>
+                  <span><MathText text={record.prompt} /></span>
                   <span>{record.strategy}</span>
                   <span>{record.misconception}</span>
                   <span>{formatMs(record.responseMs)}</span>
