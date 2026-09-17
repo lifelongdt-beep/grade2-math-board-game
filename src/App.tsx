@@ -10,6 +10,7 @@ import {
   Maximize2,
   Minimize2,
   MonitorUp,
+  PencilLine,
   QrCode,
   RefreshCcw,
   Smartphone,
@@ -22,6 +23,7 @@ import {
   VolumeX,
   XCircle,
 } from 'lucide-react';
+import { ScratchPad } from './components/ScratchPad';
 import { meaningOfChoice } from './data/choiceMeaning';
 import {
   DEFAULT_DB_URL,
@@ -645,6 +647,11 @@ function App() {
   // 이 문제에서 조작형 힌트를 열어 본 적이 있는지입니다. 정답 기록에
   // 실어 두면 교사가 어느 문제에서 도움이 더 필요했는지 볼 수 있습니다.
   const [hintUsedThisQuestion, setHintUsedThisQuestion] = useState<Record<number, boolean>>({});
+  // 계산판을 펴 두었는지입니다. 힌트와 달리 문제가 바뀌어도 닫지
+  // 않습니다 — 손으로 써야 풀리는 아이는 다음 문제에서도 써야 하는데,
+  // 문제마다 다시 펴게 하면 그것이 곧 쓰지 말라는 말이 됩니다.
+  // 쓴 내용은 문제마다 지웁니다(ScratchPad의 key).
+  const [scratchOpen, setScratchOpen] = useState<Record<number, boolean>>({});
   const [round, setRound] = useState(1);
   // 맞힐 때마다 시간이 조금씩 늘어납니다. 줄어들기만 하는 시계는 2학년에게
   // 재미보다 불안이라, 잘 풀수록 더 오래 놀 수 있게 합니다.
@@ -2129,7 +2136,7 @@ function App() {
                     </div>
                   ) : (
                     <>
-                      <div className={`student-question-body ${question.prompt.length > 70 ? 'long-question' : ''} ${question.prompt.length > 100 ? 'very-long-question' : ''}`.trim()}>
+                      <div className={`student-question-body ${scratchOpen[player.id] ? 'scratch-open' : ''} ${question.prompt.length > 70 ? 'long-question' : ''} ${question.prompt.length > 100 ? 'very-long-question' : ''}`.trim()}>
                         <div className="student-question-meta">
                           <span>{((state.activeRetry?.index ?? state.questionIndex) % playerQuestions.length) + 1} / {playerQuestions.length}</span>
                           {/* 아까 틀린 문제가 돌아왔다는 것을 알려 줍니다.
@@ -2190,6 +2197,22 @@ function App() {
                                 <Search size={16} /> 자세히 보기
                               </button>
                             )}
+                            {/* 고학년 계산은 암산으로 되지 않습니다. 적을
+                                자리가 없으면 아이는 머릿속으로 하다 틀리거나
+                                찍습니다. 손으로 풀 자리를 문제 옆에 둡니다. */}
+                            {!isCastleDefense && (
+                              <button
+                                type="button"
+                                className="scratch-toggle-button"
+                                aria-expanded={Boolean(scratchOpen[player.id])}
+                                onClick={() => {
+                                  playTapSound();
+                                  setScratchOpen((prev) => ({ ...prev, [player.id]: !prev[player.id] }));
+                                }}
+                              >
+                                <PencilLine size={16} /> 계산판
+                              </button>
+                            )}
                           </div>
                         )}
 
@@ -2210,6 +2233,22 @@ function App() {
                               </div>
                             )}
                           </div>
+                        )}
+
+                        {/* 계산판입니다. 문제 칸을 그대로 덮되 답 칸은
+                            덮지 않습니다 — 쓰다가 답이 보이면 접지 않고
+                            바로 누를 수 있어야 합니다. key에 문제 번호를
+                            넣어, 다음 문제로 넘어가면 쓴 것이 지워집니다.
+                            성 지키기는 몬스터가 내려오는 화면이라 덮지
+                            않습니다. */}
+                        {!isCastleDefense && (
+                          <ScratchPad
+                            key={`${player.id}-${question.id}-${state.answered}`}
+                            open={Boolean(scratchOpen[player.id])}
+                            prompt={question.prompt}
+                            onTap={playTapSound}
+                            onClose={() => setScratchOpen((prev) => ({ ...prev, [player.id]: false }))}
+                          />
                         )}
                       </div>
 
