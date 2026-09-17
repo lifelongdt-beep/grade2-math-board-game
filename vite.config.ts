@@ -32,11 +32,6 @@ export default defineConfig({
         // 교실에서 인터넷이 끊겼을 때 앱이 열리지 않습니다. 오프라인이
         // 이 앱의 쓰임새라 한도를 올려 둡니다.
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
-        // KaTeX의 수학 글자 파일입니다. 분수는 KaTeX가 그리되 글자체는
-        // 앱 것을 쓰므로(styles.css) 이 파일들은 한 번도 내려받지
-        // 않습니다. 오프라인 저장에까지 넣으면 교실에서 쓰지도 않을
-        // 1 MB를 받아 두는 셈이라 뺍니다.
-        globIgnores: ['**/KaTeX_*'],
         // Everything the game needs (data, visuals, sounds) is bundled client-side,
         // so caching the app shell is enough to make it fully playable offline.
         runtimeCaching: [
