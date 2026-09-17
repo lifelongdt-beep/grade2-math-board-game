@@ -27,6 +27,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // 문항이 모두 코드 안에 들어 있어 번들이 큽니다. 워크박스는
+        // 기본으로 2 MiB가 넘는 파일을 프리캐시에서 빼는데, 그러면
+        // 교실에서 인터넷이 끊겼을 때 앱이 열리지 않습니다. 오프라인이
+        // 이 앱의 쓰임새라 한도를 올려 둡니다.
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         // Everything the game needs (data, visuals, sounds) is bundled client-side,
         // so caching the app shell is enough to make it fully playable offline.
         runtimeCaching: [

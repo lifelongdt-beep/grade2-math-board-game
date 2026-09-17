@@ -190,3 +190,13 @@ export const euro = (word: string) => `${word}${hasFinal(word) && !endsWithRieul
 
 /** 조사 '으로/로'만 돌려줍니다. */
 export const euroOf = (word: string) => euro(word).slice(word.length);
+
+/**
+ * 풀이의 마지막 줄은 늘 이 문항의 답을 말해야 합니다. 까닭만 적어 두면
+ * 아이가 풀이를 읽고도 무엇이 답인지 모르는 일이 생깁니다.
+ */
+export const 답으로맺기 = (까닭: string, 답: string): string[] => {
+  const 알맹이 = 답.replace(/[.]$/, '');
+  if (까닭.includes(알맹이)) return [까닭];
+  return [까닭, `그러므로 ${답.endsWith('.') ? 답 : `${답}입니다.`}`];
+};

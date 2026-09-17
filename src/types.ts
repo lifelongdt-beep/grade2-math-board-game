@@ -375,6 +375,34 @@ export interface BoxNetVisual {
   edgeLabels?: Array<{ col: number; row: number; side: 'top' | 'bottom' | 'left' | 'right'; text: string }>;
 }
 
+// ── 5-2 6단원 평균과 가능성 ─────────────────────────────────────────
+// 가능성은 눈으로 보이는 상황에서 시작해야 합니다(지도서: "확률은
+// 형식적인 정의로 학습될 수 없고 그렇게 학습되어서도 안 된다. 오히려
+// 다양한 예나 활동을 제시하는 것이 개념을 설명하고 규명하는 데
+// 도움이 된다"). 그래서 회전판과 주머니를 그림으로 보입니다.
+export type ChanceColor = 'red' | 'blue' | 'yellow' | 'green' | 'white' | 'black';
+
+export interface SpinnerVisual {
+  kind: 'spinner';
+  label: string;
+  items: Array<{
+    // 가, 나, 다 … 회전판 밑에 붙이는 이름입니다.
+    name?: string;
+    // 칸의 색입니다. 적은 수만큼 똑같은 크기로 나눕니다. 둘이면 반반,
+    // 하나면 판 전체가 한 색입니다.
+    slices: ChanceColor[];
+  }>;
+}
+
+export interface MarbleBagVisual {
+  kind: 'marble-bag';
+  label: string;
+  bags: Array<{
+    name?: string;
+    marbles: ChanceColor[];
+  }>;
+}
+
 export interface PlaceValueVisual {
   kind: 'place-value';
   label: string;
@@ -551,6 +579,8 @@ export type QuestionVisual =
   | FigureSetVisual
   | BoxDrawingVisual
   | BoxNetVisual
+  | SpinnerVisual
+  | MarbleBagVisual
   | GridTableVisual
   | UnitMeasureVisual
   | PlaceValueVisual

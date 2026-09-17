@@ -1261,6 +1261,137 @@ function BoxNetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'bo
   );
 }
 
+// ── 회전판과 주머니 (5-2 6단원) ─────────────────────────────────────
+// 가능성은 눈으로 보이는 상황에서 시작합니다. 칸은 모두 같은 크기로
+// 나눕니다 — 칸의 크기가 조금씩 다르면 '반반이다'인지 아닌지를 아이가
+// 그림에서 읽을 수 없습니다.
+const CHANCE_FILL: Record<string, string> = {
+  red: '#e8615a',
+  blue: '#4a8fe0',
+  yellow: '#f2c53d',
+  green: '#54b878',
+  white: '#ffffff',
+  black: '#33404d',
+};
+
+function SpinnerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'spinner' }> }) {
+  const count = Math.max(1, visual.items.length);
+  const width = 376;
+  const height = count <= 2 ? 200 : 168;
+  const cellWidth = width / count;
+  const radius = Math.min(cellWidth / 2 - 14, count <= 2 ? 66 : 44);
+  const centerY = height / 2 - 8;
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.items.map((item, index) => {
+        const cx = cellWidth * index + cellWidth / 2;
+        const slices = item.slices.length ? item.slices : ['white'];
+        const step = (Math.PI * 2) / slices.length;
+        return (
+          <g key={index}>
+            {slices.length === 1 ? (
+              <circle cx={cx} cy={centerY} r={radius} fill={CHANCE_FILL[slices[0]]} stroke="#2f4f68" strokeWidth="2.5" />
+            ) : (
+              slices.map((color, at) => {
+                // 12시 방향에서 시작해 시계 방향으로 나눕니다.
+                const from = -Math.PI / 2 + step * at;
+                const to = from + step;
+                const x1 = cx + radius * Math.cos(from);
+                const y1 = centerY + radius * Math.sin(from);
+                const x2 = cx + radius * Math.cos(to);
+                const y2 = centerY + radius * Math.sin(to);
+                const big = step > Math.PI ? 1 : 0;
+                return (
+                  <path
+                    key={at}
+                    d={`M ${cx} ${centerY} L ${x1.toFixed(1)} ${y1.toFixed(1)} A ${radius} ${radius} 0 ${big} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`}
+                    fill={CHANCE_FILL[color]}
+                    stroke="#2f4f68"
+                    strokeWidth="2"
+                  />
+                );
+              })
+            )}
+            <circle cx={cx} cy={centerY} r={radius} fill="none" stroke="#2f4f68" strokeWidth="2.5" />
+            {/* 화살은 칸과 칸 사이 경계에 세워 둡니다. 어느 한 칸을
+                가리키게 그리면, 아이가 '이미 그 색에 멈췄다'로 읽고
+                묻는 색과 다르다는 이유만으로 '불가능하다'를 고르게
+                됩니다. 칸은 12시 방향에서 시작하므로 위쪽이 늘
+                경계입니다. */}
+            <line x1={cx} y1={centerY} x2={cx} y2={centerY - radius * 0.86} stroke="#24364a" strokeWidth="3.5" strokeLinecap="round" />
+            <circle cx={cx} cy={centerY} r="4.5" fill="#24364a" />
+            {item.name && (
+              <text x={cx} y={height - 10} textAnchor="middle" fill="#24364a" fontSize="16" fontWeight="900">
+                {item.name}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function MarbleBagGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'marble-bag' }> }) {
+  const count = Math.max(1, visual.bags.length);
+  const width = 376;
+  const height = count <= 2 ? 176 : 156;
+  const cellWidth = width / count;
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.bags.map((bag, index) => {
+        const cx = cellWidth * index + cellWidth / 2;
+        const bagWidth = Math.min(cellWidth - 16, 108);
+        const bagHeight = height - 62;
+        const left = cx - bagWidth / 2;
+        const top = 22;
+        // 바둑돌은 한 줄에 셋씩 담습니다.
+        const perRow = Math.min(3, Math.max(2, Math.ceil(Math.sqrt(bag.marbles.length))));
+        const r = Math.min(13, (bagWidth - 20) / (perRow * 2.4));
+        const rows = Math.ceil(bag.marbles.length / perRow);
+        return (
+          <g key={index}>
+            <path
+              d={`M ${left} ${top + 14} Q ${left} ${top} ${left + 14} ${top} L ${left + bagWidth - 14} ${top} Q ${left + bagWidth} ${top} ${left + bagWidth} ${top + 14} L ${left + bagWidth} ${top + bagHeight - 16} Q ${left + bagWidth} ${top + bagHeight} ${left + bagWidth - 18} ${top + bagHeight} L ${left + 18} ${top + bagHeight} Q ${left} ${top + bagHeight} ${left} ${top + bagHeight - 16} Z`}
+              fill="#fff8ea"
+              stroke="#b08a52"
+              strokeWidth="2.5"
+            />
+            {bag.marbles.map((color, at) => {
+              const row = Math.floor(at / perRow);
+              const col = at % perRow;
+              const inRow = Math.min(perRow, bag.marbles.length - row * perRow);
+              const spanX = (inRow - 1) * r * 2.4;
+              const x = cx - spanX / 2 + col * r * 2.4;
+              const y = top + bagHeight / 2 - ((rows - 1) * r * 2.4) / 2 + row * r * 2.4;
+              return (
+                <circle
+                  key={at}
+                  cx={x}
+                  cy={y}
+                  r={r}
+                  fill={CHANCE_FILL[color]}
+                  stroke={color === 'white' ? '#6d7f8d' : '#24364a'}
+                  strokeWidth="2"
+                />
+              );
+            })}
+            {bag.name && (
+              <text x={cx} y={height - 12} textAnchor="middle" fill="#24364a" fontSize="16" fontWeight="900">
+                {bag.name}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 const RULER_TRACK_WIDTH = 316;
 const RULER_LABEL_STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200];
 
@@ -1979,6 +2110,8 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'figure-set' && <FigureSetGraphic visual={visual} />}
       {visual.kind === 'box-drawing' && <BoxDrawingGraphic visual={visual} />}
       {visual.kind === 'box-net' && <BoxNetGraphic visual={visual} />}
+      {visual.kind === 'spinner' && <SpinnerGraphic visual={visual} />}
+      {visual.kind === 'marble-bag' && <MarbleBagGraphic visual={visual} />}
       {visual.kind === 'unit-measure' && <UnitMeasureGraphic visual={visual} />}
       {visual.kind === 'place-value' && <PlaceValueGraphic visual={visual} />}
       {visual.kind === 'bar-model' && <BarModelGraphic visual={visual} />}

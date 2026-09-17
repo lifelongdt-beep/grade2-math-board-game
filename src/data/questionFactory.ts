@@ -866,6 +866,8 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     // 않지만 여기를 지나가므로 이름표만 다듬습니다.
     visual.kind === 'box-drawing' ||
     visual.kind === 'box-net' ||
+    visual.kind === 'spinner' ||
+    visual.kind === 'marble-bag' ||
     visual.kind === 'array'
   ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };
