@@ -317,6 +317,64 @@ export interface FigureSetVisual {
   }>;
 }
 
+// ── 5-2 5단원 직육면체와 정육면체 ──────────────────────────────────
+// 입체도형은 평면도형과 달리 한눈에 전체를 볼 수 없습니다(지도서 이론적
+// 배경). 그래서 이 단원은 그림 둘로 입체를 평면에 옮깁니다.
+//   · 겨냥도(box-drawing): 한 방향에서 보고 보이는 그대로 그린 그림
+//   · 전개도(box-net):     모서리를 잘라 평면 위에 펼친 그림
+//
+// 꼭짓점 이름은 지도서와 같은 차례입니다. 윗면이 ㄱㄴㄷㄹ, 아랫면이
+// ㅁㅂㅅㅇ이고 ㄱ 아래가 ㅁ, ㄴ 아래가 ㅂ, ㄷ 아래가 ㅅ, ㄹ 아래가
+// ㅇ입니다. 이렇게 두면 지도서에 나오는 여섯 면(면 ㄱㄴㄷㄹ, 면 ㅁㅂㅅㅇ,
+// 면 ㄴㅂㅅㄷ, 면 ㄱㅁㅇㄹ, 면 ㄱㄴㅂㅁ, 면 ㄹㄷㅅㅇ)이 그림의 여섯 면과
+// 하나씩 맞아떨어집니다.
+export type BoxFace = 'top' | 'bottom' | 'front' | 'back' | 'left' | 'right';
+
+export interface BoxDrawingVisual {
+  kind: 'box-drawing';
+  label: string;
+  // 그림의 비율입니다. 셋이 모두 같으면 정육면체로 보입니다.
+  width: number;
+  depth: number;
+  height: number;
+  // 꼭짓점에 ㄱ~ㅇ을 붙입니다. 붙이면 여덟 개 모두 붙습니다 — 몇 개만
+  // 붙이면 아이가 나머지를 마음대로 읽게 됩니다.
+  labelVertices?: boolean;
+  // 면을 색칠합니다. shaded는 파랑, shaded2는 주황입니다. 평행한 면과
+  // 수직인 면을 한 그림에서 가려 보일 때 둘을 함께 씁니다.
+  shaded?: BoxFace[];
+  shaded2?: BoxFace[];
+  // 모서리에 길이를 적습니다. 가로·세로·높이 한 군데씩만 적습니다.
+  edgeLabels?: { width?: string; depth?: string; height?: string };
+  // 일부러 잘못 그린 겨냥도입니다(5차시 '잘못 그린 겨냥도를 찾고 그
+  // 이유를 말해 봅시다').
+  //   hidden-solid  보이지 않는 모서리를 실선으로 그림
+  //   missing-edges 보이지 않는 모서리를 빠뜨림
+  //   not-parallel  평행한 모서리를 평행하게 그리지 않음
+  // 셋 다 지도서가 아이에게 말하게 하는 까닭 그대로입니다. '보이는
+  // 모서리를 점선으로 그림'은 넣지 않았습니다 — 그렇게 그린 그림은
+  // 반대쪽에서 본 겨냥도로도 읽혀서, 무엇이 잘못인지가 하나로
+  // 정해지지 않습니다.
+  flaw?: 'hidden-solid' | 'missing-edges' | 'not-parallel';
+}
+
+export interface BoxNetVisual {
+  kind: 'box-net';
+  label: string;
+  // 칸의 가로 길이와 세로 길이입니다. 직육면체의 전개도는 칸마다 크기가
+  // 다르므로 세로줄의 너비와 가로줄의 높이를 따로 둡니다.
+  cols: number[];
+  rows: number[];
+  // 면이 놓인 자리입니다. col, row는 0부터 셉니다.
+  cells: Array<{ col: number; row: number; text?: string; shade?: 1 | 2 }>;
+  // 꼭짓점 이름입니다. 격자 단위 좌표로 가리킵니다(x는 cols를, y는
+  // rows를 앞에서부터 더한 값). 이름을 적을 자리는 그림 쪽에서 면이
+  // 없는 모퉁이를 찾아 정합니다.
+  points?: Array<{ x: number; y: number; text: string }>;
+  // 변의 길이입니다.
+  edgeLabels?: Array<{ col: number; row: number; side: 'top' | 'bottom' | 'left' | 'right'; text: string }>;
+}
+
 export interface PlaceValueVisual {
   kind: 'place-value';
   label: string;
@@ -491,6 +549,8 @@ export type QuestionVisual =
   | RangeLineVisual
   | FractionModelVisual
   | FigureSetVisual
+  | BoxDrawingVisual
+  | BoxNetVisual
   | GridTableVisual
   | UnitMeasureVisual
   | PlaceValueVisual

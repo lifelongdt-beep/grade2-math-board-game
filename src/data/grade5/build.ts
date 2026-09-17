@@ -98,6 +98,8 @@ const tagLabel: Partial<Record<ConceptTag, string>> = {
   congruence: '합동과 대칭',
   average: '평균',
   possibility: '일이 일어날 가능성',
+  solid: '직육면체와 정육면체',
+  shape: '평면도형',
   number: '수 세기와 크기 비교',
 };
 
