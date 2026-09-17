@@ -936,6 +936,331 @@ function BarModelGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: '
   );
 }
 
+// ── 직육면체의 겨냥도 (5-2 5단원) ───────────────────────────────────
+// 지도서가 못박아 둔 그리는 방법 그대로입니다.
+//   · 평행한 모서리는 평행하게 그린다
+//   · 보이는 모서리는 실선으로, 보이지 않는 모서리는 점선으로 그린다
+//   · 각의 크기는 고려하지 않는다
+// 보이는 모서리 9개, 보이지 않는 모서리 3개, 보이지 않는 꼭짓점 1개가
+// 되도록 그립니다. 그 수를 묻는 문항이 있으므로 그림이 그 수와 다르면
+// 안 됩니다.
+const BOX_VISIBLE_EDGES: Array<[string, string]> = [
+  ['ㄴ', 'ㄷ'], ['ㄷ', 'ㅅ'], ['ㅅ', 'ㅂ'], ['ㅂ', 'ㄴ'],
+  ['ㄱ', 'ㄹ'], ['ㄹ', 'ㅇ'],
+  ['ㄴ', 'ㄱ'], ['ㄷ', 'ㄹ'], ['ㅅ', 'ㅇ'],
+];
+const BOX_HIDDEN_EDGES: Array<[string, string]> = [['ㄱ', 'ㅁ'], ['ㅁ', 'ㅂ'], ['ㅁ', 'ㅇ']];
+// 잘못 그린 겨냥도에서 점선으로 잘못 그을 '보이는 모서리' 셋입니다.
+
+
+const BOX_FACE_CORNERS: Record<string, string[]> = {
+  top: ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ'],
+  bottom: ['ㅁ', 'ㅂ', 'ㅅ', 'ㅇ'],
+  front: ['ㄴ', 'ㅂ', 'ㅅ', 'ㄷ'],
+  back: ['ㄱ', 'ㅁ', 'ㅇ', 'ㄹ'],
+  left: ['ㄱ', 'ㄴ', 'ㅂ', 'ㅁ'],
+  right: ['ㄹ', 'ㄷ', 'ㅅ', 'ㅇ'],
+};
+const BOX_HIDDEN_FACES = new Set(['bottom', 'back', 'left']);
+
+function BoxDrawingGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'box-drawing' }> }) {
+  const width = 376;
+  const height = 214;
+  const { width: bw, depth: bd, height: bh } = visual;
+
+  // 세 길이를 그대로 쓰면 납작하거나 가느다란 그림이 나옵니다. 비율은
+  // 살리되 너무 치우치지 않게 눌러 줍니다.
+  const tame = (value: number, other: number) => Math.min(Math.max(value / other, 0.45), 2.2);
+  const unitW = 1;
+  const unitH = tame(bh, bw);
+  const unitD = tame(bd, bw);
+
+  // 평행하게 그리지 않은 잘못을 보일 때는 오른쪽 뒤 두 꼭짓점만 더
+  // 멀리 밀어 놓습니다. 그러면 모서리 ㄱㄹ이 모서리 ㄴㄷ과, 모서리
+  // ㄷㄹ이 모서리 ㄴㄱ과 평행하지 않게 됩니다. 더 멀리 밀어 놓는
+  // 만큼 그림도 커지므로, 크기를 정할 때 이것부터 셈에 넣습니다 —
+  // 넣지 않으면 오른쪽 위 모퉁이가 그림 밖으로 잘려 나갑니다.
+  const skew = visual.flaw === 'not-parallel' ? 1.75 : 1;
+
+  const slant = 0.52;
+  const spanX = unitW + unitD * slant * skew;
+  const spanY = unitH + unitD * slant * 0.82 * skew;
+  const scale = Math.min((width - 104) / spanX, (height - 62) / spanY);
+
+  const faceW = unitW * scale;
+  const faceH = unitH * scale;
+  const offX = unitD * slant * scale;
+  const offY = unitD * slant * 0.82 * scale;
+
+  const left = (width - (faceW + offX * skew)) / 2;
+  const top = (height - (faceH + offY * skew)) / 2 + offY * skew;
+  const point: Record<string, [number, number]> = {
+    ㄴ: [left, top],
+    ㄷ: [left + faceW, top],
+    ㅂ: [left, top + faceH],
+    ㅅ: [left + faceW, top + faceH],
+    ㄱ: [left + offX, top - offY],
+    ㄹ: [left + faceW + offX * skew, top - offY * skew],
+    ㅁ: [left + offX, top + faceH - offY],
+    ㅇ: [left + faceW + offX * skew, top + faceH - offY * skew],
+  };
+
+  const polygon = (face: string) => BOX_FACE_CORNERS[face].map((name) => point[name].join(',')).join(' ');
+  const shaded = visual.shaded ?? [];
+  const shaded2 = visual.shaded2 ?? [];
+  const boxCenter: [number, number] = [left + (faceW + offX) / 2, top + (faceH - offY) / 2];
+
+  const edge = (from: string, to: string, dashed: boolean, key: string) => (
+    <line
+      key={key}
+      x1={point[from][0]}
+      y1={point[from][1]}
+      x2={point[to][0]}
+      y2={point[to][1]}
+      stroke="#41607a"
+      strokeWidth="3"
+      strokeLinecap="round"
+      {...(dashed ? { strokeDasharray: '7 6' } : {})}
+    />
+  );
+
+  const hiddenSolid = visual.flaw === 'hidden-solid';
+  const hiddenGone = visual.flaw === 'missing-edges';
+
+  const label = (from: string, to: string, text: string, push: [number, number]) => {
+    const midX = (point[from][0] + point[to][0]) / 2;
+    const midY = (point[from][1] + point[to][1]) / 2;
+    return (
+      <text
+        x={midX + push[0]}
+        y={midY + push[1]}
+        textAnchor="middle"
+        fill="#24364a"
+        fontSize="14"
+        fontWeight="800"
+      >
+        {text}
+      </text>
+    );
+  };
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+
+      {/* 가려진 쪽의 색칠은 옅게 깔아 둡니다. 앞쪽 면보다 뒤에 있다는 것이
+          보여야 합니다. */}
+      {[...shaded.map((face) => [face, '#9fdcea'] as const), ...shaded2.map((face) => [face, '#f7c98b'] as const)].map(
+        ([face, color]) => (
+          <polygon
+            key={`f-${face}`}
+            points={polygon(face)}
+            fill={color}
+            fillOpacity={BOX_HIDDEN_FACES.has(face) ? 0.42 : 0.85}
+          />
+        ),
+      )}
+
+      {!hiddenGone && BOX_HIDDEN_EDGES.map(([from, to]) => edge(from, to, !hiddenSolid, `h-${from}${to}`))}
+      {BOX_VISIBLE_EDGES.map(([from, to]) => edge(from, to, false, `v-${from}${to}`))}
+
+      {/* 꼭짓점 이름을 놓을 자리입니다. 가운데에서 밀어내는 식으로
+          잡으면 ㄷ과 ㅁ이 갈 곳이 없습니다 — 이 둘은 그림의 테두리가
+          아니라 안쪽에서 세 면이 만나는 점이라 바깥이 없습니다.
+          그래서 꼭짓점마다 놓을 자리를 따로 적어 둡니다. */}
+      {visual.labelVertices &&
+        Object.entries(point).map(([name, [x, y]]) => {
+          const push: Record<string, [number, number]> = {
+            ㄱ: [-4, -9],
+            ㄴ: [-15, -3],
+            ㄷ: [-13, 17],
+            ㄹ: [13, -9],
+            ㅁ: [-14, -4],
+            ㅂ: [-14, 16],
+            ㅅ: [4, 20],
+            ㅇ: [17, 8],
+          };
+          const [dx, dy] = push[name] ?? [0, 0];
+          return (
+            <text
+              key={`p-${name}`}
+              x={x + dx}
+              y={y + dy}
+              textAnchor="middle"
+              fill="#0f7175"
+              fontSize="15"
+              fontWeight="900"
+            >
+              {name}
+            </text>
+          );
+        })}
+
+      {visual.edgeLabels?.width && label('ㅂ', 'ㅅ', visual.edgeLabels.width, [0, 18])}
+      {visual.edgeLabels?.height && label('ㄴ', 'ㅂ', visual.edgeLabels.height, [-20, 4])}
+      {visual.edgeLabels?.depth && label('ㅅ', 'ㅇ', visual.edgeLabels.depth, [24, 12])}
+    </svg>
+  );
+}
+
+// ── 직육면체·정육면체의 전개도 (5-2 5단원) ──────────────────────────
+// 지도서: "전개도에서 잘린 모서리는 실선으로, 잘리지 않은 모서리는
+// 점선으로 그린다." 그래서 이웃한 칸이 있는 쪽은 점선(접는 선),
+// 바깥 테두리는 실선으로 그립니다. 어느 쪽인지는 칸의 자리에서
+// 스스로 알아내므로, 손으로 잘못 적을 자리가 없습니다.
+function BoxNetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'box-net' }> }) {
+  const width = 376;
+  const height = 224;
+  const { cols, rows, cells } = visual;
+  const totalW = cols.reduce((sum, one) => sum + one, 0);
+  const totalH = rows.reduce((sum, one) => sum + one, 0);
+  const pad = 30;
+  const scale = Math.min((width - pad * 2) / totalW, (height - pad * 2) / totalH);
+
+  const before = (sizes: number[], upto: number) => sizes.slice(0, upto).reduce((sum, one) => sum + one, 0);
+  const drawnW = totalW * scale;
+  const drawnH = totalH * scale;
+  const originX = (width - drawnW) / 2;
+  const originY = (height - drawnH) / 2;
+  const atX = (units: number) => originX + units * scale;
+  const atY = (units: number) => originY + units * scale;
+
+  const taken = new Set(cells.map((one) => `${one.col},${one.row}`));
+  const fill = ['#ffffff', '#cdeef6', '#fbe0bd'];
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+
+      {cells.map((cell) => {
+        const x = atX(before(cols, cell.col));
+        const y = atY(before(rows, cell.row));
+        const w = cols[cell.col] * scale;
+        const h = rows[cell.row] * scale;
+        return (
+          <rect
+            key={`c-${cell.col}-${cell.row}`}
+            x={x}
+            y={y}
+            width={w}
+            height={h}
+            fill={fill[cell.shade ?? 0]}
+          />
+        );
+      })}
+
+      {cells.map((cell) => {
+        const x = atX(before(cols, cell.col));
+        const y = atY(before(rows, cell.row));
+        const w = cols[cell.col] * scale;
+        const h = rows[cell.row] * scale;
+        const sides: Array<{ dc: number; dr: number; from: [number, number]; to: [number, number] }> = [
+          { dc: 0, dr: -1, from: [x, y], to: [x + w, y] },
+          { dc: 1, dr: 0, from: [x + w, y], to: [x + w, y + h] },
+          { dc: 0, dr: 1, from: [x, y + h], to: [x + w, y + h] },
+          { dc: -1, dr: 0, from: [x, y], to: [x, y + h] },
+        ];
+        return sides.map((side, at) => {
+          const folds = taken.has(`${cell.col + side.dc},${cell.row + side.dr}`);
+          // 잘린 모서리(바깥 테두리)와 접는 선(칸과 칸 사이)은 아이가
+          // 세어 답해야 하는 것이라, 굵기만 다르게 해서는 화면에서
+          // 가려지지 않습니다. 색까지 바꿉니다.
+          return (
+            <line
+              key={`s-${cell.col}-${cell.row}-${at}`}
+              x1={side.from[0]}
+              y1={side.from[1]}
+              x2={side.to[0]}
+              y2={side.to[1]}
+              stroke={folds ? '#8fb0c4' : '#2f4f68'}
+              strokeWidth={folds ? 2 : 4}
+              strokeLinecap="round"
+              {...(folds ? { strokeDasharray: '7 6' } : {})}
+            />
+          );
+        });
+      })}
+
+      {cells.map((cell) =>
+        cell.text ? (
+          <text
+            key={`t-${cell.col}-${cell.row}`}
+            x={atX(before(cols, cell.col) + cols[cell.col] / 2)}
+            y={atY(before(rows, cell.row) + rows[cell.row] / 2) + 6}
+            textAnchor="middle"
+            fill="#24364a"
+            fontSize="17"
+            fontWeight="900"
+          >
+            {cell.text}
+          </text>
+        ) : null,
+      )}
+
+      {visual.edgeLabels?.map((one, at) => {
+        const x = before(cols, one.col);
+        const y = before(rows, one.row);
+        const w = cols[one.col];
+        const h = rows[one.row];
+        const spot =
+          one.side === 'top'
+            ? [atX(x + w / 2), atY(y) - 7]
+            : one.side === 'bottom'
+              ? [atX(x + w / 2), atY(y + h) + 16]
+              : one.side === 'left'
+                ? [atX(x) - 15, atY(y + h / 2) + 5]
+                : [atX(x + w) + 15, atY(y + h / 2) + 5];
+        return (
+          <text key={`e-${at}`} x={spot[0]} y={spot[1]} textAnchor="middle" fill="#24364a" fontSize="13" fontWeight="800">
+            {one.text}
+          </text>
+        );
+      })}
+
+      {/* 꼭짓점 이름은 면이 없는 모퉁이 쪽에 적습니다. 면 위에 겹쳐
+          적으면 어느 점을 가리키는지 알 수 없습니다. */}
+      {visual.points?.map((one) => {
+        const col = cols.reduce((found, size, at) => (before(cols, at) === one.x ? at : found), -1);
+        const row = rows.reduce((found, size, at) => (before(rows, at) === one.y ? at : found), -1);
+        const colBefore = cols.reduce((found, size, at) => (before(cols, at) + size === one.x ? at : found), -1);
+        const rowBefore = rows.reduce((found, size, at) => (before(rows, at) + size === one.y ? at : found), -1);
+        const quads: Array<[number, number, boolean]> = [
+          [1, 1, col >= 0 && row >= 0 && taken.has(`${col},${row}`)],
+          [-1, 1, colBefore >= 0 && row >= 0 && taken.has(`${colBefore},${row}`)],
+          [1, -1, col >= 0 && rowBefore >= 0 && taken.has(`${col},${rowBefore}`)],
+          [-1, -1, colBefore >= 0 && rowBefore >= 0 && taken.has(`${colBefore},${rowBefore}`)],
+        ];
+        // 바깥쪽으로 밀어 놓습니다. 비어 있기만 하면 아무 쪽이나 쓰면,
+        // 왼쪽 끝 꼭짓점의 이름이 오른쪽 아래에 붙어 어느 점을
+        // 가리키는지 알 수 없게 됩니다.
+        const away: [number, number] = [
+          one.x * 2 <= totalW ? -1 : 1,
+          one.y * 2 <= totalH ? -1 : 1,
+        ];
+        const free =
+          quads.find(([dx, dy, used]) => !used && dx === away[0] && dy === away[1]) ??
+          quads.find(([dx, , used]) => !used && dx === away[0]) ??
+          quads.find(([, dy, used]) => !used && dy === away[1]) ??
+          quads.find(([, , used]) => !used) ??
+          quads[0];
+        return (
+          <text
+            key={`v-${one.text}`}
+            x={atX(one.x) + free[0] * 12}
+            y={atY(one.y) + free[1] * 13 + 4}
+            textAnchor="middle"
+            fill="#0f7175"
+            fontSize="14"
+            fontWeight="900"
+          >
+            {one.text}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
 const RULER_TRACK_WIDTH = 316;
 const RULER_LABEL_STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200];
 
@@ -1652,6 +1977,8 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'range-line' && <RangeLineGraphic visual={visual} />}
       {visual.kind === 'fraction-model' && <FractionModelGraphic visual={visual} />}
       {visual.kind === 'figure-set' && <FigureSetGraphic visual={visual} />}
+      {visual.kind === 'box-drawing' && <BoxDrawingGraphic visual={visual} />}
+      {visual.kind === 'box-net' && <BoxNetGraphic visual={visual} />}
       {visual.kind === 'unit-measure' && <UnitMeasureGraphic visual={visual} />}
       {visual.kind === 'place-value' && <PlaceValueGraphic visual={visual} />}
       {visual.kind === 'bar-model' && <BarModelGraphic visual={visual} />}

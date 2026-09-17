@@ -862,6 +862,10 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'range-line' ||
     visual.kind === 'fraction-model' ||
     visual.kind === 'figure-set' ||
+    // box-drawing과 box-net도 5학년 그림입니다. 2학년 문항에는 나오지
+    // 않지만 여기를 지나가므로 이름표만 다듬습니다.
+    visual.kind === 'box-drawing' ||
+    visual.kind === 'box-net' ||
     visual.kind === 'array'
   ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };
