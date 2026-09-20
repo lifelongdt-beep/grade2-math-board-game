@@ -666,6 +666,11 @@ const FIGURE_POINTS: Record<string, Array<[number, number]>> = {
   정삼각형: [[0, -1], [0.866, 0.5], [-0.866, 0.5]],
   이등변삼각형: [[0, -1], [0.62, 0.7], [-0.62, 0.7]],
   직각삼각형: [[-0.8, -0.7], [-0.8, 0.7], [0.9, 0.7]],
+  // 높이가 도형 밖에 있는 삼각형입니다. 지도서가 "삼각형의 넓이를 구할
+  // 때는 높이가 삼각형의 외부에 있는 것도 다룬다"고 적어 두었습니다.
+  // 꼭짓점이 밑변의 오른쪽 끝보다 더 오른쪽에 있어, 수직으로 내린 발이
+  // 밑변 밖에 떨어집니다.
+  둔각삼각형: [[1, -0.8], [0.2, 0.6], [-0.95, 0.6]],
   정사각형: [[-0.75, -0.75], [0.75, -0.75], [0.75, 0.75], [-0.75, 0.75]],
   직사각형: [[-1, -0.6], [1, -0.6], [1, 0.6], [-1, 0.6]],
   마름모: [[0, -0.95], [0.8, 0], [0, 0.95], [-0.8, 0]],
@@ -692,7 +697,9 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
   const cellWidth = width / count;
   // 도형이 셋 넷 늘어서면 하나하나가 작아집니다. 꼭짓점 이름과 길이가
   // 붙는 그림은 도형이 한둘뿐이므로, 개수에 따라 반지름을 정합니다.
-  const radius = Math.min(cellWidth / 2 - 22, count <= 2 ? 62 : 40);
+  // 도형이 하나뿐이면 크게 그립니다. 길이를 적어 넣는 그림(넓이)은
+  // 글자가 들어갈 자리가 있어야 읽힙니다.
+  const radius = Math.min(cellWidth / 2 - 22, count === 1 ? 72 : count === 2 ? 62 : 40);
   const height = count <= 2 ? 190 : 160;
   const centerY = height / 2 - 6;
 
@@ -728,7 +735,9 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
           );
         }
 
-        const base = FIGURE_POINTS[item.shape] ?? FIGURE_POINTS.정사각형;
+        // 꼭짓점을 직접 준 그림(넓이 문항)은 그것을 그대로 씁니다.
+        // 길이에서 계산한 자리라, 그림과 적힌 수가 어긋나지 않습니다.
+        const base = item.points ?? FIGURE_POINTS[item.shape] ?? FIGURE_POINTS.정사각형;
         const drawn = base.map(place);
         const points = drawn.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
 
@@ -765,6 +774,87 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
             })}
 
             {item.center && <circle cx={cx} cy={centerY} r="5" fill="#f0a202" stroke="#8a5a00" strokeWidth="2" />}
+
+            {/* 밑변에 수직으로 그은 높이입니다.
+                넓이를 구할 때 쓰는 길이가 비스듬한 변이 아니라는 것을
+                그림이 말해 주어야 합니다. 점선과 직각 표시로 그립니다. */}
+            {item.heightMark && (() => {
+              const [hx, hy] = drawn[item.heightMark.fromVertex] ?? [cx, centerY];
+              const baseY = Math.max(...drawn.map(([, y]) => y));
+              const baseXs = drawn.filter(([, y]) => Math.abs(y - baseY) < 0.5).map(([x]) => x);
+              const 밖 = baseXs.length >= 2 && (hx > Math.max(...baseXs) + 0.5 || hx < Math.min(...baseXs) - 0.5);
+              const 위쪽 = hy < baseY;
+              const mark = 위쪽 ? 10 : -10;
+              return (
+                <g>
+                  {밖 && (
+                    <line
+                      x1={Math.max(...baseXs)}
+                      y1={baseY}
+                      x2={hx}
+                      y2={baseY}
+                      stroke="#8aa0b8"
+                      strokeWidth="2"
+                      strokeDasharray="3 4"
+                    />
+                  )}
+                  <line x1={hx} y1={hy} x2={hx} y2={baseY} stroke="#f0a202" strokeWidth="2.5" strokeDasharray="6 4" />
+                  {/* 직각 표시 */}
+                  <polyline
+                    points={`${hx - 9},${baseY - Math.sign(mark) * 0} ${hx - 9},${baseY - mark} ${hx},${baseY - mark}`}
+                    fill="none"
+                    stroke="#f0a202"
+                    strokeWidth="2"
+                  />
+                  {/* 높이를 적는 자리입니다.
+                      높이를 내린 선은 늘 비스듬한 변 옆에 붙어 있어서,
+                      가운데 높이에 적으면 그 변에 붙은 길이와 겹칩니다.
+                      그래서 자리를 두 가지로 비켜 둡니다 — 옆으로는 빈
+                      쪽으로, 위아래로는 밑변에 가깝게. 비스듬한 변의
+                      길이는 변의 한가운데에 적히므로 서로 떨어집니다. */}
+                  {(() => {
+                    const xs = drawn.map(([x]) => x);
+                    const 오른쪽 = Math.max(...xs) - hx >= hx - Math.min(...xs);
+                    return (
+                      <text
+                        x={hx + (오른쪽 ? 7 : -7)}
+                        y={hy + (baseY - hy) * 0.72 + 4}
+                        textAnchor={오른쪽 ? 'start' : 'end'}
+                        fill="#8a5a00"
+                        fontSize="15"
+                        fontWeight="900"
+                      >
+                        {item.heightMark?.text}
+                      </text>
+                    );
+                  })()}
+                </g>
+              );
+            })()}
+
+            {/* 대각선입니다. 마름모의 넓이에서 씁니다. */}
+            {item.diagonals?.map((line, at) => {
+              const [x1, y1] = drawn[line.from] ?? [cx, centerY];
+              const [x2, y2] = drawn[line.to] ?? [cx, centerY];
+              return (
+                <g key={`d-${at}`}>
+                  <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#f0a202" strokeWidth="2.5" strokeDasharray="6 4" />
+                  {/* 두 대각선은 한가운데에서 만납니다. 길이를 가운데에
+                      적으면 두 글자가 겹치므로, 각자 자기 쪽으로 조금
+                      물러나 적습니다. */}
+                  <text
+                    x={x1 + (x2 - x1) * 0.27 + (y1 === y2 ? 0 : 14)}
+                    y={y1 + (y2 - y1) * 0.27 + (y1 === y2 ? -8 : 5)}
+                    textAnchor="middle"
+                    fill="#8a5a00"
+                    fontSize="15"
+                    fontWeight="900"
+                  >
+                    {line.text}
+                  </text>
+                </g>
+              );
+            })}
 
             {/* 꼭짓점 이름은 도형 바깥쪽으로 조금 밀어 놓습니다. */}
             {item.vertexLabels?.map((label, at) => {
