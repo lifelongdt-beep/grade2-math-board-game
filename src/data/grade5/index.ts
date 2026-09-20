@@ -10,15 +10,12 @@ import { unit2Lesson1Easy, unit2Lesson1Hard, unit2Lesson1Middle } from './unit2/
 import { multiplyEasy, multiplyHard, multiplyMiddle } from './unit2/multiply';
 import { unit3Lesson1Easy } from './unit3/lesson1';
 import {
-  대칭성질,
-  선대칭Easy,
-  선대칭Middle,
-  점대칭Easy,
-  점대칭Middle,
-  합동Easy,
-  합동Middle,
+  대칭수준,
+  도입수준,
+  도형수준,
   합동성질Easy,
   합동성질Hard,
+  합동수준,
 } from './unit3/lessons';
 import type { DecimalKind } from './unit4/multiply';
 import { decimalEasy, decimalHard, decimalMiddle } from './unit4/multiply';
@@ -108,39 +105,20 @@ const unit2Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
 //   6 점대칭  7 점대칭의 성질
 // 로 이어집니다. 성질 차시(5·7)는 뭉치 다섯을 수준에 따라 나눕니다.
 const unit3Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
-  if (lessonNo === 1) return unit3Lesson1Easy;
-  if (lessonNo === 2) {
-    if (difficulty === '하') return 합동Easy;
-    if (difficulty === '중') return 합동Middle;
-    return [...합동Middle, ...합동Easy.slice(2)];
-  }
+  // 수준마다 다른 뭉치를 줍니다. 차례만 돌리면 서른 자리를 채우고 나서
+  // 남는 것이 수준마다 같습니다 — 6차시는 중과 상이 스물하나를 똑같이
+  // 내고 있었습니다. lessons.ts의 '수준 나누기에 쓰는 뭉치'를 보세요.
+  if (lessonNo === 1) return 도입수준(difficulty);
+  if (lessonNo === 2) return 합동수준(difficulty);
   if (lessonNo === 3) {
     if (difficulty === '하') return 합동성질Easy;
     if (difficulty === '중') return [...합동성질Easy.slice(1), ...합동성질Hard.slice(1)];
     return 합동성질Hard;
   }
-  if (lessonNo === 4) {
-    if (difficulty === '하') return 선대칭Easy;
-    if (difficulty === '중') return 선대칭Middle;
-    return [...선대칭Middle, ...선대칭Easy.slice(2)];
-  }
-  if (lessonNo === 5) {
-    const 뭉치 = 대칭성질(true);
-    if (difficulty === '하') return 뭉치.slice(0, 4);
-    if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0]];
-    return [...뭉치.slice(3), ...뭉치.slice(0, 3)];
-  }
-  if (lessonNo === 6) {
-    if (difficulty === '하') return 점대칭Easy;
-    if (difficulty === '중') return [...점대칭Middle, ...점대칭Easy.slice(3)];
-    return [...점대칭Middle, ...점대칭Easy.slice(2)];
-  }
-  if (lessonNo === 7) {
-    const 뭉치 = 대칭성질(false);
-    if (difficulty === '하') return 뭉치.slice(0, 4);
-    if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0]];
-    return [...뭉치.slice(3), ...뭉치.slice(0, 3)];
-  }
+  if (lessonNo === 4) return 도형수준(true, difficulty);
+  if (lessonNo === 5) return 대칭수준(true, difficulty);
+  if (lessonNo === 6) return 도형수준(false, difficulty);
+  if (lessonNo === 7) return 대칭수준(false, difficulty);
   return null;
 };
 
