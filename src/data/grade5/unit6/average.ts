@@ -727,3 +727,196 @@ export const unit6Lesson4: G5Family[] = [
     },
   },
 ];
+
+// ════════════════════════════════════════════════════════════════════
+// 1·2차시의 수준 나누기
+// ────────────────────────────────────────────────────────────────────
+// 세 수준이 같은 뭉치를 차례만 바꾸어 쓰던 자리입니다. 그러면 서른
+// 자리를 채우고 나서 남는 것이 수준마다 같습니다 — 2차시는 하와 상이
+// 서른 문항 가운데 열넷을 똑같이 내고 있었습니다.
+//
+// 1차시는 아직 '평균'이라는 말을 쓰지 않습니다. 지도서의 도입은 '한
+// 사람당 얼마인지'까지만 묻고, 그 값을 평균이라 부르는 것은 2차시에서
+// 합니다. 그래서 아래 1차시 뭉치도 '한 사람당'으로만 적습니다.
+// ════════════════════════════════════════════════════════════════════
+
+/** 표에서 가장 작은 값을 읽습니다. */
+const 표에서작은값: G5Family = {
+  id: 'smallest-from-table',
+  make: (seed) => {
+    const next = rand(seed + 13);
+    const 하나 = 상황들[Math.abs(seed + 2) % 상황들.length];
+    const count = 4;
+    const values = 자료만들기(seed + 11, count, 6 + next(6), 3);
+    if (!values.length) return null;
+    const 이름 = 칸이름들(하나, count, seed + 4);
+    const 가장작은 = Math.min(...values);
+    if (values.filter((one) => one === 가장작은).length !== 1) return null;
+    const 누가 = 이름[values.indexOf(가장작은)];
+    return {
+      prompt: `표는 ${eul(하나.일)} 나타낸 것입니다. 가장 작은 값은 얼마일까요?`,
+      answer: `${가장작은}${하나.단위}`,
+      wrongs: [...new Set(values.filter((one) => one !== 가장작은))].map((one) => `${one}${하나.단위}`),
+      tag: 'data',
+      strategy: '표에서 값 읽기',
+      hint: '표의 아랫줄을 차례로 읽으며 가장 작은 수를 찾으세요.',
+      steps: [`표에 적힌 ${eul(하나.일)} 차례로 읽습니다.`, `가장 작은 값은 ${누가}의 ${가장작은}${하나.단위}입니다.`],
+      visual: 표그림(`${하나.일}`, 하나.칸이름, `${하나.짧은이름}(${하나.단위})`, 이름, values),
+    };
+  },
+};
+
+/** 사람 수가 다른 두 모둠을 한 사람당으로 견줍니다. 도입의 핵심입니다. */
+const 한사람당견주기: G5Family = {
+  id: 'per-person-compare',
+  make: (seed) => {
+    const next = rand(seed);
+    const 하나 = 상황들[Math.abs(seed) % 상황들.length];
+    if (하나.누구 === '날') return null;
+    const 가사람 = 4 + next(3);
+    const 나사람 = 가사람 + 1 + next(2);
+    const 가한명 = 3 + next(5);
+    const 나한명 = 3 + next(5);
+    if (가한명 === 나한명) return null;
+    const 가합 = 가사람 * 가한명;
+    const 나합 = 나사람 * 나한명;
+    // 합이 많은 쪽과 한 사람당이 많은 쪽이 어긋나야 물음에 뜻이 있습니다.
+    if ((가합 > 나합) === (가한명 > 나한명)) return null;
+    const 이긴쪽 = 가한명 > 나한명 ? '가' : '나';
+    return {
+      prompt: `가 모둠은 ${가사람}명이 ${eul(하나.일)} 모두 ${가합}${하나.단위} 기록했고, 나 모둠은 ${나사람}명이 모두 ${나합}${하나.단위} 기록했습니다. 한 사람당으로 견주면 어느 모둠이 더 많을까요?`,
+      answer: `${이긴쪽} 모둠`,
+      wrongs: [`${이긴쪽 === '가' ? '나' : '가'} 모둠`, '두 모둠이 같습니다.', '사람 수가 달라 견줄 수 없습니다.'],
+      tag: 'average',
+      strategy: '사람 수가 다른 두 무리 견주기',
+      hint: '합만 보면 사람이 많은 쪽이 유리합니다. 합을 사람 수로 나누어 한 사람당 얼마인지 구해 견주세요.',
+      steps: [
+        `가 모둠은 ${가합}÷${가사람}=${가한명}이므로 한 사람당 ${가한명}${하나.단위}입니다.`,
+        `나 모둠은 ${나합}÷${나사람}=${나한명}이므로 한 사람당 ${나한명}${하나.단위}입니다.`,
+        `${가한명}${하나.단위}${가한명 > 나한명 ? '이' : '보다'} ${나한명}${하나.단위}${가한명 > 나한명 ? '보다 많으므로' : '이 더 많으므로'} ${이긴쪽} 모둠이 더 많습니다.`,
+      ],
+      misconceptionTip: '합이 큰 쪽이 늘 많은 것이 아닙니다. 사람 수가 다르면 한 사람당으로 견주어야 공평합니다.',
+      selfCheck: '합이 아니라 한 사람당으로 견주었나요?',
+    };
+  },
+};
+
+/** 한 사람당 얼마인지 구합니다(평균이라는 말은 아직 쓰지 않습니다). */
+const 한사람당구하기: G5Family = {
+  id: 'per-person',
+  make: (seed) => {
+    const next = rand(seed + 5);
+    const 하나 = 상황들[Math.abs(seed + 3) % 상황들.length];
+    const count = 3 + next(3);
+    const 한명 = 3 + next(7);
+    const 모두 = count * 한명;
+    return {
+      prompt: `${하나.누구 === '날' ? `${count}일 동안` : `${count}명이`} ${eul(하나.일)} 모두 ${모두}${하나.단위} 기록했습니다. 고르게 나누면 ${하나.누구 === '날' ? '하루에' : '한 사람당'} 얼마일까요?`,
+      answer: `${한명}${하나.단위}`,
+      wrongs: [`${모두}${하나.단위}`, `${한명 + 1}${하나.단위}`, `${count}${하나.단위}`, `${한명 - 1}${하나.단위}`],
+      tag: 'average',
+      strategy: '고르게 나누어 한 사람당 구하기',
+      hint: '모두 몇인지와 몇으로 나누는지를 찾아 나눗셈식을 세우세요.',
+      steps: [`${모두}÷${count}=${한명}`, `${하나.누구 === '날' ? '하루에' : '한 사람당'} ${한명}${하나.단위}입니다.`],
+    };
+  },
+};
+
+/** 고르게 만들려면 어디서 어디로 얼마를 옮겨야 하는지 봅니다. */
+const 옮겨서고르게: G5Family = {
+  id: 'move-to-level',
+  make: (seed) => {
+    const next = rand(seed + 17);
+    const 하나 = 상황들[Math.abs(seed + 5) % 상황들.length];
+    const count = 4;
+    const 참평균 = 5 + next(5);
+    const values = 자료만들기(seed + 19, count, 참평균, 3);
+    if (!values.length || 평균(values) !== 참평균) return null;
+    const 이름 = 칸이름들(하나, count, seed + 6);
+    const 가장큰 = Math.max(...values);
+    if (values.filter((one) => one === 가장큰).length !== 1) return null;
+    const 넘는만큼 = 가장큰 - 참평균;
+    if (넘는만큼 < 1) return null;
+    const 누가 = 이름[values.indexOf(가장큰)];
+    return {
+      prompt: `표는 ${eul(하나.일)} 나타낸 것입니다. 값을 모두 고르게 만들려고 합니다. ${누가}에게서 얼마를 덜어 내야 할까요?`,
+      answer: `${넘는만큼}${하나.단위}`,
+      wrongs: [`${가장큰}${하나.단위}`, `${참평균}${하나.단위}`, `${넘는만큼 + 1}${하나.단위}`, `${Math.max(1, 넘는만큼 - 1)}${하나.단위}`],
+      tag: 'average',
+      strategy: '고르게 만들려면 얼마를 옮겨야 하는지 알기',
+      hint: '먼저 모두 고르게 했을 때 얼마가 되는지 구하고, 그 값과의 차이를 보세요.',
+      steps: [
+        `${values.join(' + ')} = ${합(values)}`,
+        `${합(values)} ÷ ${count} = ${참평균}이므로 고르게 하면 ${참평균}${하나.단위}씩입니다.`,
+        `${eun(누가)} ${가장큰}${하나.단위}이므로 ${가장큰}-${참평균}=${넘는만큼}입니다.`,
+        `그러므로 ${넘는만큼}${하나.단위}을 덜어 내야 합니다.`,
+      ],
+      visual: 표그림(`${하나.일}`, 하나.칸이름, `${하나.짧은이름}(${하나.단위})`, 이름, values),
+      misconceptionTip: '덜어 내는 양은 가장 큰 값이 아니라, 가장 큰 값과 고르게 한 값의 차이입니다.',
+      selfCheck: '고르게 한 값을 먼저 구했나요?',
+    };
+  },
+};
+
+/** 두 자료를 고르게 했을 때 같은 값이 되는지 봅니다. */
+const 고르면같은가: G5Family = {
+  id: 'same-when-levelled',
+  make: (seed) => {
+    const next = rand(seed + 23);
+    const 하나 = 상황들[Math.abs(seed + 7) % 상황들.length];
+    const 참평균 = 5 + next(5);
+    const 가 = 자료만들기(seed + 29, 4, 참평균, 3);
+    const 나같음 = next(2) === 0;
+    const 나 = 자료만들기(seed + 31, 4, 나같음 ? 참평균 : 참평균 + 1 + next(2), 2);
+    if (!가.length || !나.length) return null;
+    const 가평균 = 평균(가);
+    const 나평균 = 평균(나);
+    if (가평균 === null || 나평균 === null) return null;
+    if (가.join() === 나.join()) return null;
+    const 같은가 = 가평균 === 나평균;
+    return {
+      prompt: `가 모둠의 ${하나.짧은이름}은 ${가.join(', ')}이고 나 모둠의 ${하나.짧은이름}은 ${나.join(', ')}입니다. 두 모둠의 값을 저마다 고르게 만들면 어떻게 될까요?`,
+      answer: 같은가
+        ? `두 모둠 모두 ${가평균}${하나.단위}이 되어 같습니다.`
+        : `가 모둠은 ${가평균}${하나.단위}, 나 모둠은 ${나평균}${하나.단위}이 되어 나 모둠이 더 큽니다.`,
+      wrongs: [
+        같은가
+          ? `가 모둠은 ${가평균}${하나.단위}, 나 모둠은 ${가평균 + 1}${하나.단위}이 되어 나 모둠이 더 큽니다.`
+          : `두 모둠 모두 ${가평균}${하나.단위}이 되어 같습니다.`,
+        `가 모둠은 ${합(가)}${하나.단위}, 나 모둠은 ${합(나)}${하나.단위}이 됩니다.`,
+        `가 모둠은 ${Math.max(...가)}${하나.단위}, 나 모둠은 ${Math.max(...나)}${하나.단위}이 됩니다.`,
+      ],
+      tag: 'average',
+      strategy: '두 자료를 고르게 하여 견주기',
+      hint: '두 모둠을 각각 고르게 만들어 보고, 나온 두 값을 견주세요.',
+      steps: [
+        `가 모둠: ${가.join(' + ')} = ${합(가)}, ${합(가)} ÷ ${가.length} = ${가평균}`,
+        `나 모둠: ${나.join(' + ')} = ${합(나)}, ${합(나)} ÷ ${나.length} = ${나평균}`,
+        같은가
+          ? `두 값이 같으므로 두 모둠 모두 ${가평균}${하나.단위}이 되어 같습니다.`
+          : `가 모둠은 ${가평균}${하나.단위}, 나 모둠은 ${나평균}${하나.단위}이 되어 나 모둠이 더 큽니다.`,
+      ],
+      misconceptionTip: '자료의 값이 달라도 고르게 한 값은 같을 수 있습니다. 값을 하나씩 견주지 말고 고르게 한 값을 견주세요.',
+      selfCheck: '두 모둠을 각각 고르게 만들어 보았나요?',
+    };
+  },
+};
+
+type 수준 = '하' | '중' | '상';
+
+const 골라내기 = (모두: G5Family[], ids: string[]) =>
+  ids.map((id) => 모두.find((one) => one.id === id)).filter((one): one is G5Family => Boolean(one));
+
+export const unit6Lesson1For = (수준: 수준): G5Family[] => {
+  const 모두 = [...unit6Lesson1, 표에서작은값, 한사람당견주기, 한사람당구하기];
+  if (수준 === '하') return 골라내기(모두, ['read-table', 'smallest-from-table', 'graph-name']);
+  if (수준 === '중') return 골라내기(모두, ['total-from-table', 'per-person', 'why-average', 'graph-name']);
+  return 골라내기(모두, ['per-person-compare', 'per-person', 'total-from-table']);
+};
+
+export const unit6Lesson2For = (수준: 수준): G5Family[] => {
+  const 모두 = [...unit6Lesson2, 옮겨서고르게, 고르면같은가];
+  if (수준 === '하') return 골라내기(모두, ['level-out', 'bar-level', 'average-meaning', 'pick-representative']);
+  if (수준 === '중') return 골라내기(모두, ['average-property', 'impossible-average', 'bar-level', 'average-meaning']);
+  return 골라내기(모두, ['move-to-level', 'same-when-levelled', 'impossible-average']);
+};
