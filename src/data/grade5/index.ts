@@ -26,8 +26,8 @@ import { unit4Lesson1Easy, 소수점위치Easy } from './unit4/lessons';
 import { unit5Lesson1, unit5Lesson2, unit5Lesson3, unit5Lesson4 } from './unit5/lessons';
 import { unit5Lesson5 } from './unit5/drawing';
 import { 전개도Families } from './unit5/netLessons';
-import { unit6Lesson1, unit6Lesson2, unit6Lesson3, unit6Lesson4 } from './unit6/average';
-import { unit6Lesson5, unit6Lesson6, unit6Lesson7, unit6Lesson8 } from './unit6/chance';
+import { unit6Lesson1For, unit6Lesson2For, unit6Lesson3, unit6Lesson4 } from './unit6/average';
+import { unit6Lesson5For, unit6Lesson6For, unit6Lesson7For, unit6Lesson8For } from './unit6/chance';
 import type { Rounding } from './util';
 
 // ════════════════════════════════════════════════════════════════════
@@ -206,15 +206,23 @@ const unit6Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
     if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0]];
     return [...뭉치.slice(2), ...뭉치.slice(0, 2)];
   };
+  // 5~8차시(가능성)는 수준마다 하는 일이 다릅니다 — 하는 그림을 세어
+  // 옮기고, 중은 글로 된 상황을 읽고, 상은 거꾸로 말이나 수를 먼저 주고
+  // 그렇게 되는 상황을 찾습니다. chance.ts를 보세요.
+  const 가능성차시: Record<number, (수준: Difficulty) => G5Family[]> = {
+    5: unit6Lesson5For,
+    6: unit6Lesson6For,
+    7: unit6Lesson7For,
+    8: unit6Lesson8For,
+  };
+  if (가능성차시[lessonNo]) return 가능성차시[lessonNo](difficulty);
+
+  if (lessonNo === 1) return unit6Lesson1For(difficulty);
+  if (lessonNo === 2) return unit6Lesson2For(difficulty);
+
   const 차시별: Record<number, G5Family[]> = {
-    1: unit6Lesson1,
-    2: unit6Lesson2,
     3: unit6Lesson3,
     4: unit6Lesson4,
-    5: unit6Lesson5,
-    6: unit6Lesson6,
-    7: unit6Lesson7,
-    8: unit6Lesson8,
   };
   const 뭉치 = 차시별[lessonNo];
   return 뭉치 ? 수준대로(뭉치) : null;

@@ -21,19 +21,46 @@ type 상황 = { 글: string; 값: 가능성; visual?: QuestionVisual };
 
 const 색들: ChanceColor[] = ['red', 'blue', 'yellow'];
 
+// 회전판의 생김새입니다. 앞쪽 여덟은 어느 색을 물어도 값이 0, 1/2, 1
+// 가운데 하나여서 7차시(수로 나타내기)에 쓸 수 있고, 뒤쪽은 그 사이의
+// 값이 나와 5·6차시(말로 표현·견주기)에만 씁니다.
+const 뚜렷한판들: ChanceColor[][] = [
+  ['red'],
+  ['blue'],
+  ['yellow'],
+  ['red', 'blue'],
+  ['red', 'yellow'],
+  ['blue', 'yellow'],
+  ['red', 'red', 'blue', 'blue'],
+  ['blue', 'blue', 'yellow', 'yellow'],
+  ['red', 'blue', 'red', 'blue'],
+  ['red', 'red', 'red', 'red'],
+];
+
+const 어중간한판들: ChanceColor[][] = [
+  ['red', 'blue', 'yellow'],
+  ['red', 'red', 'red', 'blue'],
+  ['red', 'blue', 'blue', 'blue'],
+  ['red', 'red', 'blue', 'yellow'],
+  ['red', 'blue', 'yellow', 'yellow'],
+  ['red', 'red', 'red', 'blue', 'blue', 'blue', 'yellow', 'yellow'],
+];
+
+// 수준마다 다른 판을 쓰게 하려고 뭉치를 반으로 가릅니다. 같은 판에서
+// 뽑으면 씨앗이 달라도 서른 자리를 채우고 나면 같은 그림이 나옵니다.
+export type 쪽 = 'a' | 'b' | 'all';
+
+const 쪽나누기 = <T,>(items: T[], 쪽: 쪽): T[] => {
+  if (쪽 === 'all') return items;
+  const 반 = Math.ceil(items.length / 2);
+  return 쪽 === 'a' ? items.slice(0, 반) : items.slice(반);
+};
+
 /** 회전판 하나와, 그 판에서 한 색에 멈출 가능성입니다. */
-const 회전판상황 = (seed: number, 반만: boolean): 상황 => {
+const 회전판상황 = (seed: number, 반만: boolean, 어느쪽: 쪽 = 'all'): 상황 => {
   const next = rand(seed);
-  const 모양 = 반만 ? next(3) : next(6);
-  const 판: ChanceColor[][] = [
-    ['red'],                                   // 전부 빨강 → 빨강 1, 파랑 0
-    ['red', 'blue'],                           // 반반
-    ['red', 'red', 'blue', 'blue'],            // 반반
-    ['red', 'blue', 'yellow'],                 // 1/3씩
-    ['red', 'red', 'red', 'blue'],             // 3/4, 1/4
-    ['red', 'blue', 'blue', 'blue'],           // 1/4, 3/4
-  ];
-  const slices = 판[모양];
+  const 판 = 쪽나누기(반만 ? 뚜렷한판들 : [...뚜렷한판들, ...어중간한판들], 어느쪽);
+  const slices = 판[next(판.length)];
   const 물을색 = 색들[next(색들.length)];
   return {
     글: `화살이 ${eul(색이름[물을색])} 가리킬`,
@@ -42,18 +69,30 @@ const 회전판상황 = (seed: number, 반만: boolean): 상황 => {
   };
 };
 
+const 뚜렷한주머니들: ChanceColor[][] = [
+  ['black', 'black', 'black'],
+  ['black', 'black'],
+  ['white', 'white', 'white'],
+  ['white', 'white'],
+  ['black', 'white'],
+  ['black', 'black', 'white', 'white'],
+  ['black', 'white', 'black', 'white'],
+  ['black', 'black', 'black', 'white', 'white', 'white'],
+];
+
+const 어중간한주머니들: ChanceColor[][] = [
+  ['black', 'white', 'white', 'white'],
+  ['black', 'black', 'black', 'white'],
+  ['black', 'black', 'white'],
+  ['black', 'white', 'white'],
+  ['black', 'black', 'black', 'black', 'white'],
+];
+
 /** 주머니 하나와, 거기서 한 색 바둑돌이 나올 가능성입니다. */
-const 주머니상황 = (seed: number, 반만: boolean): 상황 => {
+const 주머니상황 = (seed: number, 반만: boolean, 어느쪽: 쪽 = 'all'): 상황 => {
   const next = rand(seed);
-  const 모양 = 반만 ? next(3) : next(5);
-  const 담긴것: ChanceColor[][] = [
-    ['black', 'black', 'black'],
-    ['black', 'white'],
-    ['black', 'black', 'white', 'white'],
-    ['black', 'white', 'white', 'white'],
-    ['black', 'black', 'black', 'white'],
-  ];
-  const marbles = 담긴것[모양];
+  const 담긴것 = 쪽나누기(반만 ? 뚜렷한주머니들 : [...뚜렷한주머니들, ...어중간한주머니들], 어느쪽);
+  const marbles = 담긴것[next(담긴것.length)];
   const 물을색: ChanceColor = next(2) === 0 ? 'black' : 'white';
   return {
     글: `${iJosa(색이름[물을색])} 나올`,
@@ -77,17 +116,35 @@ const 딱떨어지는상황들: 상황[] = [
   { 글: '빨간색 공만 들어 있는 주머니에서 공 한 개를 꺼낼 때 빨간색 공이 나올', 값: { 바라는것: 5, 전체: 5 } },
   { 글: '오늘이 월요일일 때 내일이 화요일일', 값: { 바라는것: 1, 전체: 1 } },
   { 글: '계산기에서 3 + 4를 눌렀을 때 8이 나올', 값: { 바라는것: 0, 전체: 1 } },
+  { 글: '주사위를 한 번 굴릴 때 홀수인 눈이 나올', 값: { 바라는것: 3, 전체: 6 } },
+  { 글: '주사위를 한 번 굴릴 때 4 이상인 눈이 나올', 값: { 바라는것: 3, 전체: 6 } },
+  { 글: '주사위를 한 번 굴릴 때 0인 눈이 나올', 값: { 바라는것: 0, 전체: 6 } },
+  { 글: '주사위를 한 번 굴릴 때 6 이하인 눈이 나올', 값: { 바라는것: 6, 전체: 6 } },
+  { 글: '1부터 10까지의 수 카드 중 한 장을 뽑을 때 짝수가 나올', 값: { 바라는것: 5, 전체: 10 } },
+  { 글: '1부터 10까지의 수 카드 중 한 장을 뽑을 때 6 이상의 수가 나올', 값: { 바라는것: 5, 전체: 10 } },
+  { 글: '1부터 10까지의 수 카드 중 한 장을 뽑을 때 0이 나올', 값: { 바라는것: 0, 전체: 10 } },
+  { 글: '1월 1일 다음 날이 1월 2일일', 값: { 바라는것: 1, 전체: 1 } },
+  { 글: '해가 서쪽에서 뜰', 값: { 바라는것: 0, 전체: 1 } },
+  { 글: '내년 2월이 30일까지 있을', 값: { 바라는것: 0, 전체: 1 } },
+  { 글: '흰색 바둑돌만 든 주머니에서 한 개를 꺼낼 때 흰색이 나올', 값: { 바라는것: 4, 전체: 4 } },
+  { 글: '흰색 바둑돌만 든 주머니에서 한 개를 꺼낼 때 검은색이 나올', 값: { 바라는것: 0, 전체: 4 } },
 ];
 
 /** 값이 0, 1/2, 1이 아닌 것까지 섞은, 말로만 답하는 상황입니다. */
-const 어림상황들: 상황[] = [
+const 어중간한상황들: 상황[] = [
   { 글: '주사위를 한 번 굴릴 때 2 이상인 눈이 나올', 값: { 바라는것: 5, 전체: 6 } },
   { 글: '주사위를 한 번 굴릴 때 6인 눈이 나올', 값: { 바라는것: 1, 전체: 6 } },
+  { 글: '주사위를 한 번 굴릴 때 5 이상인 눈이 나올', 값: { 바라는것: 2, 전체: 6 } },
+  { 글: '주사위를 한 번 굴릴 때 2 이하인 눈이 나올', 값: { 바라는것: 2, 전체: 6 } },
   { 글: '1부터 10까지의 수 카드 중 한 장을 뽑을 때 2 이하의 수가 나올', 값: { 바라는것: 2, 전체: 10 } },
   { 글: '1부터 10까지의 수 카드 중 한 장을 뽑을 때 9 이하의 수가 나올', 값: { 바라는것: 9, 전체: 10 } },
+  { 글: '1부터 10까지의 수 카드 중 한 장을 뽑을 때 3의 배수가 나올', 값: { 바라는것: 3, 전체: 10 } },
   { 글: '동전 20개를 동시에 던질 때 20개 모두 그림 면이 나올', 값: { 바라는것: 1, 전체: 100 } },
-  ...딱떨어지는상황들,
+  { 글: '흰색 공 9개와 검은색 공 1개가 든 상자에서 한 개를 꺼낼 때 검은색이 나올', 값: { 바라는것: 1, 전체: 10 } },
+  { 글: '흰색 공 9개와 검은색 공 1개가 든 상자에서 한 개를 꺼낼 때 흰색이 나올', 값: { 바라는것: 9, 전체: 10 } },
 ];
+
+const 어림상황들: 상황[] = [...어중간한상황들, ...딱떨어지는상황들];
 
 // 다섯 말 가운데 오답 셋입니다. 씨앗마다 다르게 고르면, 글도 그림도
 // 똑같은 문항이 보기만 바꾸어 한 차시에 두 번 나옵니다. 그래서 답에서
@@ -696,3 +753,620 @@ export const unit6Lesson8: G5Family[] = [
 ];
 
 const 합계 = (values: number[]) => values.reduce((sum, one) => sum + one, 0);
+
+// ════════════════════════════════════════════════════════════════════
+// 수준 나누기
+// ────────────────────────────────────────────────────────────────────
+// 5~8차시는 오래도록 세 수준이 같은 뭉치를 차례만 바꾸어 썼습니다.
+// 그러면 서른 자리를 채우고 나서 남는 것이 수준마다 같습니다 — 7차시는
+// 하와 상이 서른 문항 가운데 스물여덟을 똑같이 내고 있었습니다.
+//
+// 그래서 수준마다 '하는 일'을 다르게 둡니다.
+//   하  그림을 보고 세어 말하거나 수로 옮긴다
+//   중  글로 된 상황을 읽고 옮기고, 잘못 말한 것을 가려낸다
+//   상  거꾸로 간다 — 말이나 수를 먼저 주고 그렇게 되는 상황을 찾는다
+//
+// 거꾸로 묻는 것이 왜 더 어려운가: 앞의 둘은 눈앞의 하나만 보면
+// 되지만, 거꾸로 물으면 보기 넷을 모두 따져 보아야 합니다.
+// ════════════════════════════════════════════════════════════════════
+
+/** 보기 넷 가운데 하나만 그 말(또는 수)이 되게 상황을 고릅니다. */
+const 고르기문항 = (
+  seed: number,
+   뽑을곳: 상황[],
+   맞는가: (one: 상황) => boolean,
+) => {
+  const next = rand(seed);
+  const 맞는것 = 뽑을곳.filter(맞는가);
+  const 아닌것 = 뽑을곳.filter((one) => !맞는가(one));
+  if (!맞는것.length || 아닌것.length < 3) return null;
+  const 답 = 맞는것[next(맞는것.length)];
+  const 섞은 = [...아닌것];
+  for (let at = 섞은.length - 1; at > 0; at -= 1) {
+    const to = next(at + 1);
+    [섞은[at], 섞은[to]] = [섞은[to], 섞은[at]];
+  }
+  return { 답, 오답: 섞은.slice(0, 3) };
+};
+
+// ── 5차시에 더하는 뭉치 ─────────────────────────────────────────────
+
+/** 그 말이 되는 상황을 찾습니다. 말 → 상황이라 거꾸로입니다. */
+const 말에맞는상황: G5Family = {
+  id: 'situation-for-word',
+  make: (seed) => {
+    const next = rand(seed);
+    const 찾을말 = 가능성말들[next(가능성말들.length)];
+    const 뽑은 = 고르기문항(seed, 어림상황들, (one) => 말로(one.값) === 찾을말);
+    if (!뽑은) return null;
+    return {
+      prompt: `다음 가운데 가능성이 ‘${찾을말}’인 것은 어느 것일까요?`,
+      answer: `${뽑은.답.글} 경우`,
+      wrongs: 뽑은.오답.map((one) => `${one.글} 경우`),
+      tag: 'possibility',
+      strategy: '말에 맞는 상황 찾기',
+      hint: '보기마다 일어날 수 있는 경우를 모두 세고, 그 가운데 바라는 경우가 몇 가지인지 세어 보세요.',
+      steps: [
+        `‘${찾을말}’은 ${찾을말 === '불가능하다' ? '바라는 경우가 하나도 없는' : 찾을말 === '확실하다' ? '모든 경우가 바라는 경우인' : 찾을말 === '반반이다' ? '바라는 경우가 꼭 반인' : 찾을말 === '~일 것 같다' ? '바라는 경우가 반보다 많은' : '바라는 경우가 반보다 적은'} 때 쓰는 말입니다.`,
+        `${뽑은.답.글} 경우는 ${뽑은.답.값.전체}가지 가운데 ${뽑은.답.값.바라는것}가지입니다.`,
+        `그러므로 답은 ${뽑은.답.글} 경우입니다.`,
+      ],
+      misconceptionTip: '보기를 하나만 보고 고르지 마세요. 넷을 모두 세어 보아야 합니다.',
+    };
+  },
+};
+
+/** 가능성을 잘못 말한 것을 찾습니다. */
+const 잘못말한것: G5Family = {
+  id: 'wrong-word',
+  make: (seed) => {
+    const next = rand(seed);
+    const 넷: 상황[] = [];
+    const 남은 = [...어림상황들];
+    for (let at = 0; at < 4 && 남은.length; at += 1) 넷.push(남은.splice(next(남은.length), 1)[0]);
+    if (넷.length < 4) return null;
+    const 틀린자리 = next(4);
+    const 틀린말 = 다른말들(말로(넷[틀린자리].값))[0];
+    const 적기 = (one: 상황, 말: string) => `${one.글} 가능성은 ‘${말}’입니다.`;
+    const 답 = 적기(넷[틀린자리], 틀린말);
+    const 오답 = 넷.filter((_, at) => at !== 틀린자리).map((one) => 적기(one, 말로(one.값)));
+    if (new Set([답, ...오답]).size < 4) return null;
+    return {
+      prompt: '가능성을 잘못 말한 것은 어느 것일까요?',
+      answer: 답,
+      wrongs: 오답,
+      tag: 'possibility',
+      strategy: '잘못 말한 가능성 가려내기',
+      hint: '보기를 하나씩 읽으며 일어날 수 있는 경우와 바라는 경우를 세어 보세요.',
+      steps: [
+        `${넷[틀린자리].글} 경우는 ${넷[틀린자리].값.전체}가지 가운데 ${넷[틀린자리].값.바라는것}가지입니다.`,
+        `그러므로 ‘${말로(넷[틀린자리].값)}’라고 해야 합니다.`,
+        `잘못 말한 것은 ${답}`,
+      ],
+      misconceptionTip: '틀린 것을 찾는 문제입니다. 맞는 것을 고르지 않도록 물음을 다시 읽으세요.',
+    };
+  },
+};
+
+// ── 6차시에 더하는 뭉치 ─────────────────────────────────────────────
+
+/** 세 상황을 가능성이 낮은 차례로 늘어놓습니다. */
+const 셋줄세우기: G5Family = {
+  id: 'rank-three',
+  make: (seed) => {
+    const next = rand(seed);
+    const 셋: 상황[] = [];
+    const 남은 = [...어림상황들];
+    for (let at = 0; at < 3 && 남은.length; at += 1) 셋.push(남은.splice(next(남은.length), 1)[0]);
+    if (셋.length < 3) return null;
+    const 기호 = ['㉠', '㉡', '㉢'];
+    const 차례 = [0, 1, 2].sort((a, b) => 견주기(셋[a].값, 셋[b].값));
+    // 값이 같은 것이 있으면 차례가 하나로 정해지지 않습니다.
+    if (견주기(셋[차례[0]].값, 셋[차례[1]].값) === 0) return null;
+    if (견주기(셋[차례[1]].값, 셋[차례[2]].값) === 0) return null;
+    const 적기 = (order: number[]) => order.map((at) => 기호[at]).join(' < ');
+    const 답 = 적기(차례);
+    const 오답 = [
+      적기([...차례].reverse()),
+      적기([차례[1], 차례[0], 차례[2]]),
+      적기([차례[0], 차례[2], 차례[1]]),
+    ].filter((one) => one !== 답);
+    return {
+      prompt: `${기호.map((mark, at) => `${mark} ${셋[at].글} 가능성`).join(', ')}을 가능성이 낮은 것부터 차례로 늘어놓은 것은 어느 것일까요?`,
+      answer: 답,
+      wrongs: 오답,
+      tag: 'possibility',
+      strategy: '세 상황의 가능성 줄 세우기',
+      hint: '셋을 먼저 저마다 말로 표현한 다음, 그 말의 차례로 늘어놓으세요.',
+      steps: [
+        ...셋.map((one, at) => `${기호[at]}은 ${one.값.전체}가지 가운데 ${one.값.바라는것}가지이므로 ‘${말로(one.값)}’입니다.`),
+        `낮은 것부터 늘어놓으면 ${답}입니다.`,
+      ],
+    };
+  },
+};
+
+/** 회전판과 주머니를 견줍니다. 칸 수가 서로 달라 세어 보아야 합니다. */
+const 판과주머니견주기: G5Family = {
+  id: 'spinner-vs-bag',
+  make: (seed) => {
+    const 판 = 회전판상황(seed, false);
+    const 주머니 = 주머니상황(seed + 11, false);
+    const 차이 = 견주기(판.값, 주머니.값);
+    if (차이 === 0) return null;
+    const 판이큰가 = 차이 > 0;
+    return {
+      prompt: `㉠ 회전판을 돌릴 때 ${판.글} 가능성과 ㉡ 주머니에서 바둑돌 한 개를 꺼낼 때 ${주머니.글} 가능성 가운데 더 높은 것은 어느 것일까요?`,
+      answer: 판이큰가 ? '㉠' : '㉡',
+      wrongs: [판이큰가 ? '㉡' : '㉠', '두 가능성이 같습니다.', '칸 수가 달라 견줄 수 없습니다.'],
+      tag: 'possibility',
+      strategy: '그림이 다른 두 가능성 견주기',
+      hint: '칸 수가 서로 달라도 괜찮습니다. 저마다 몇 가지 가운데 몇 가지인지 세어 말로 표현한 다음 견주세요.',
+      steps: [
+        `㉠은 ${판.값.전체}칸 가운데 ${판.값.바라는것}칸이므로 ‘${말로(판.값)}’입니다.`,
+        `㉡은 바둑돌 ${주머니.값.전체}개 가운데 ${주머니.값.바라는것}개이므로 ‘${말로(주머니.값)}’입니다.`,
+        `${판이큰가 ? '㉠' : '㉡'}의 가능성이 더 높습니다.`,
+      ],
+      visual: 회전판그림('㉠ 회전판', [{ slices: (판.visual as { items: Array<{ slices: ChanceColor[] }> }).items[0].slices }]),
+      misconceptionTip: '칸 수가 많다고 가능성이 높은 것이 아닙니다. 전체 가운데 몇 가지인지를 보아야 합니다.',
+    };
+  },
+};
+
+// ── 7차시에 더하는 뭉치 ─────────────────────────────────────────────
+
+/** 수로 주고 그 수가 되는 상황을 찾습니다. 거꾸로입니다. */
+const 수에맞는상황: G5Family = {
+  id: 'situation-for-number',
+  make: (seed) => {
+    const next = rand(seed);
+    const 찾을수 = ['0', '1/2', '1'][next(3)];
+    const 뽑은 = 고르기문항(seed, 딱떨어지는상황들, (one) => 수로(one.값) === 찾을수);
+    if (!뽑은) return null;
+    return {
+      prompt: `가능성을 수로 나타내면 ${찾을수}이 되는 것은 어느 것일까요?`,
+      answer: `${뽑은.답.글} 경우`,
+      wrongs: 뽑은.오답.map((one) => `${one.글} 경우`),
+      tag: 'possibility',
+      strategy: '수에 맞는 상황 찾기',
+      hint: `${찾을수}은 ${찾을수 === '0' ? '일어날 수 없다' : 찾을수 === '1' ? '반드시 일어난다' : '반반이다'}는 뜻입니다. 보기마다 경우를 세어 보세요.`,
+      steps: [
+        `가능성 ${찾을수}은 말로 하면 ‘${찾을수 === '0' ? '불가능하다' : 찾을수 === '1' ? '확실하다' : '반반이다'}’입니다.`,
+        `${뽑은.답.글} 경우는 ${뽑은.답.값.전체}가지 가운데 ${뽑은.답.값.바라는것}가지입니다.`,
+        `그러므로 답은 ${뽑은.답.글} 경우입니다.`,
+      ],
+      misconceptionTip: '보기를 하나만 보고 고르지 마세요. 넷을 모두 세어 보아야 합니다.',
+    };
+  },
+};
+
+/** 두 상황의 가능성을 수로 나타내어 견줍니다. */
+const 수로견주기: G5Family = {
+  id: 'compare-as-number',
+  make: (seed) => {
+    const next = rand(seed);
+    const 둘: 상황[] = [];
+    const 남은 = [...딱떨어지는상황들];
+    for (let at = 0; at < 2 && 남은.length; at += 1) 둘.push(남은.splice(next(남은.length), 1)[0]);
+    if (둘.length < 2) return null;
+    const 수들 = 둘.map((one) => 수로(one.값));
+    if (!수들[0] || !수들[1] || 수들[0] === 수들[1]) return null;
+    const 큰쪽 = 견주기(둘[0].값, 둘[1].값) > 0 ? 0 : 1;
+    return {
+      prompt: `㉠ ${둘[0].글} 가능성과 ㉡ ${둘[1].글} 가능성을 각각 수로 나타내어 견주면 어느 것이 더 클까요?`,
+      answer: `㉠은 ${수들[0]}, ㉡은 ${수들[1]}이므로 ${큰쪽 === 0 ? '㉠' : '㉡'}이 더 큽니다.`,
+      wrongs: [
+        `㉠은 ${수들[0]}, ㉡은 ${수들[1]}이므로 ${큰쪽 === 0 ? '㉡' : '㉠'}이 더 큽니다.`,
+        `㉠과 ㉡ 모두 ${수들[0]}이므로 두 가능성은 같습니다.`,
+        '가능성은 수로 나타낼 수 없으므로 견줄 수 없습니다.',
+      ],
+      tag: 'possibility',
+      strategy: '가능성을 수로 나타내어 견주기',
+      hint: '먼저 저마다 0, 1/2, 1 가운데 무엇인지 정한 다음 그 수를 견주세요.',
+      steps: [
+        `㉠은 ${둘[0].값.전체}가지 가운데 ${둘[0].값.바라는것}가지이므로 ${수들[0]}입니다.`,
+        `㉡은 ${둘[1].값.전체}가지 가운데 ${둘[1].값.바라는것}가지이므로 ${수들[1]}입니다.`,
+        `㉠은 ${수들[0]}, ㉡은 ${수들[1]}이므로 ${큰쪽 === 0 ? '㉠' : '㉡'}이 더 큽니다.`,
+      ],
+    };
+  },
+};
+
+/** 말과 수를 서로 옮깁니다. */
+const 말과수: G5Family = {
+  id: 'word-number-swap',
+  make: (seed) => {
+    const 짝: Array<{ 말: string; 수: string }> = [
+      { 말: '불가능하다', 수: '0' },
+      { 말: '반반이다', 수: '1/2' },
+      { 말: '확실하다', 수: '1' },
+    ];
+    const next = rand(seed);
+    const 하나 = 짝[next(3)];
+    const 말에서수로 = next(2) === 0;
+    if (말에서수로) {
+      return {
+        prompt: `가능성이 ‘${하나.말}’인 일을 수로 나타내면 얼마일까요?`,
+        answer: 하나.수,
+        wrongs: [...짝.filter((one) => one.수 !== 하나.수).map((one) => one.수), '1/4'],
+        tag: 'possibility',
+        strategy: '말을 수로 옮기기',
+        hint: '일어날 수 없을 때, 반드시 일어날 때, 그 한가운데일 때에 각각 어떤 수를 쓰는지 떠올려 보세요.',
+        steps: [`‘${하나.말}’를 수로 나타내면 ${하나.수}입니다.`],
+      };
+    }
+    return {
+      prompt: `가능성을 수로 나타내면 ${하나.수}인 일을 말로 표현하면 어느 것일까요?`,
+      answer: 하나.말,
+      wrongs: [...짝.filter((one) => one.말 !== 하나.말).map((one) => one.말), '~일 것 같다'],
+      tag: 'possibility',
+      strategy: '수를 말로 옮기기',
+      hint: '0은 일어날 수 없을 때, 1은 반드시 일어날 때, 1/2은 그 한가운데입니다.',
+      steps: [`${하나.수}을 말로 표현하면 ‘${하나.말}’입니다.`],
+    };
+  },
+};
+
+// ── 8차시에 더하는 뭉치 ─────────────────────────────────────────────
+
+/** 실험 횟수에서 회전판의 생김새를 어림합니다. */
+const 몇번쯤: G5Family = {
+  id: 'about-how-many',
+  make: (seed) => {
+    const next = rand(seed);
+    const 횟수 = [20, 40, 50, 100][next(4)];
+    const 어떤것 = [
+      { 글: '동전을 던져 그림 면이 나오는', 몫: 2 },
+      { 글: '주사위를 굴려 짝수인 눈이 나오는', 몫: 2 },
+      { 글: '검은색과 흰색 바둑돌이 반반씩 든 주머니에서 검은색이 나오는', 몫: 2 },
+      { 글: '똑같이 넷으로 나눈 회전판에서 화살이 한 색을 가리키는', 몫: 4 },
+    ][next(4)];
+    if (횟수 % 어떤것.몫 !== 0) return null;
+    const 값 = 횟수 / 어떤것.몫;
+    return {
+      prompt: `${어떤것.글} 일을 ${횟수}번 되풀이하면 그 일은 대략 몇 번쯤 일어날까요?`,
+      answer: `${값}번쯤`,
+      wrongs: [`${횟수}번쯤`, '0번', `${Math.max(1, Math.round(값 / 2))}번쯤`].filter((one) => one !== `${값}번쯤`),
+      tag: 'possibility',
+      strategy: '가능성으로 횟수 어림하기',
+      hint: '한 번 할 때 일어날 가능성을 먼저 말로 표현한 다음, 되풀이한 횟수를 그만큼 나누어 보세요.',
+      steps: [
+        `한 번 할 때 ${어떤것.몫 === 2 ? '두' : '네'} 경우가 똑같이 있으므로 그 가운데 하나입니다.`,
+        `${횟수}÷${어떤것.몫}=${값}`,
+        `그러므로 대략 ${값}번쯤 일어납니다.`,
+      ],
+      misconceptionTip: '‘대략’입니다. 꼭 그 횟수만큼 일어난다는 뜻이 아닙니다.',
+    };
+  },
+};
+
+// ── 같은 일을 수준마다 다른 그림으로 ───────────────────────────────
+// 아래 넷은 앞의 뭉치와 하는 일이 같고 뽑는 그림만 다릅니다. 하와 중이
+// 같은 뭉치를 쓰면 씨앗이 달라도 같은 그림이 나오므로, 뽑을 곳을
+// 반으로 갈라 둡니다.
+
+const 판말하기 = (어느쪽: 쪽): G5Family => ({
+  id: `spinner-word-${어느쪽}`,
+  make: (seed) => {
+    const 하나 = 회전판상황(seed, false, 어느쪽);
+    const 답 = 말로(하나.값);
+    return {
+      prompt: `그림의 회전판을 돌릴 때 ${하나.글} 가능성을 말로 표현하면 어느 것일까요?`,
+      answer: 답,
+      wrongs: 다른말들(답),
+      tag: 'possibility',
+      strategy: '회전판을 보고 가능성을 말로 표현하기',
+      hint: '판이 몇 칸으로 나뉘어 있고 그 가운데 몇 칸이 그 색인지 세어 보세요.',
+      steps: [`회전판은 ${하나.값.전체}칸으로 나뉘어 있습니다.`, 까닭(하나.값), `그러므로 가능성은 ‘${답}’입니다.`],
+      visual: 하나.visual,
+    };
+  },
+});
+
+const 주머니말하기 = (어느쪽: 쪽): G5Family => ({
+  id: `bag-word-${어느쪽}`,
+  make: (seed) => {
+    const 하나 = 주머니상황(seed, false, 어느쪽);
+    const 답 = 말로(하나.값);
+    return {
+      prompt: `그림의 주머니에서 바둑돌 한 개를 꺼낼 때 ${하나.글} 가능성을 말로 표현하면 어느 것일까요?`,
+      answer: 답,
+      wrongs: 다른말들(답),
+      tag: 'possibility',
+      strategy: '주머니를 보고 가능성을 말로 표현하기',
+      hint: '주머니에 바둑돌이 모두 몇 개이고 그 가운데 그 색이 몇 개인지 세어 보세요.',
+      steps: [`주머니에 바둑돌이 모두 ${하나.값.전체}개 들어 있습니다.`, 까닭(하나.값), `그러므로 가능성은 ‘${답}’입니다.`],
+      visual: 하나.visual,
+    };
+  },
+});
+
+const 판수로하기 = (어느쪽: 쪽): G5Family => ({
+  id: `spinner-number-${어느쪽}`,
+  make: (seed) => {
+    const 하나 = 회전판상황(seed, true, 어느쪽);
+    const 답 = 수로(하나.값);
+    if (!답) return null;
+    return {
+      prompt: `그림의 회전판을 돌릴 때 ${하나.글} 가능성을 수로 나타내면 얼마일까요?`,
+      answer: 답,
+      wrongs: 수오답(답, 하나.값.전체, seed),
+      tag: 'possibility',
+      strategy: '회전판의 가능성을 수로 나타내기',
+      hint: '먼저 ‘불가능하다’, ‘반반이다’, ‘확실하다’ 가운데 어느 것인지 말로 표현해 보세요.',
+      steps: [
+        `회전판은 ${하나.값.전체}칸으로 나뉘어 있고 그 가운데 ${하나.값.바라는것}칸입니다.`,
+        `말로 하면 ‘${말로(하나.값)}’입니다.`,
+        `수로 나타내면 ${답}입니다.`,
+      ],
+      visual: 하나.visual,
+    };
+  },
+});
+
+const 주머니수로하기 = (어느쪽: 쪽): G5Family => ({
+  id: `bag-number-${어느쪽}`,
+  make: (seed) => {
+    const 하나 = 주머니상황(seed, true, 어느쪽);
+    const 답 = 수로(하나.값);
+    if (!답) return null;
+    return {
+      prompt: `그림의 주머니에서 바둑돌 한 개를 꺼낼 때 ${하나.글} 가능성을 수로 나타내면 얼마일까요?`,
+      answer: 답,
+      wrongs: 수오답(답, 하나.값.전체, seed + 1),
+      tag: 'possibility',
+      strategy: '주머니의 가능성을 수로 나타내기',
+      hint: '먼저 ‘불가능하다’, ‘반반이다’, ‘확실하다’ 가운데 어느 것인지 말로 표현해 보세요.',
+      steps: [
+        `주머니에 바둑돌이 모두 ${하나.값.전체}개 있고 그 가운데 ${하나.값.바라는것}개입니다.`,
+        `말로 하면 ‘${말로(하나.값)}’입니다.`,
+        `수로 나타내면 ${답}입니다.`,
+      ],
+      visual: 하나.visual,
+    };
+  },
+});
+
+/** 글로만 주는 상황입니다. 뽑을 곳을 밖에서 정합니다. */
+const 글말하기 = (이름: string, 뽑을곳: 상황[]): G5Family => ({
+  id: `story-word-${이름}`,
+  make: (seed) => {
+    const 하나 = 뽑을곳[Math.abs(seed) % 뽑을곳.length];
+    const 답 = 말로(하나.값);
+    return {
+      prompt: `${하나.글} 가능성을 말로 표현하면 어느 것일까요?`,
+      answer: 답,
+      wrongs: 다른말들(답),
+      tag: 'possibility',
+      strategy: '상황을 읽고 가능성을 말로 표현하기',
+      hint: '일어날 수 있는 경우를 모두 세고, 그 가운데 바라는 경우가 몇 가지인지 세어 보세요.',
+      steps: [`일어날 수 있는 경우는 모두 ${하나.값.전체}가지입니다.`, 까닭(하나.값), `그러므로 가능성은 ‘${답}’입니다.`],
+    };
+  },
+});
+
+/** 말(또는 수)을 먼저 주고, 그렇게 되는 회전판을 그림에서 고릅니다. */
+const 말에맞는판 = (수로묻기: boolean): G5Family => ({
+  id: 수로묻기 ? 'spinner-for-number' : 'spinner-for-word',
+  make: (seed) => {
+    const next = rand(seed);
+    const 물을색 = 색들[next(색들.length)];
+    const 판들 = 수로묻기 ? 뚜렷한판들 : [...뚜렷한판들, ...어중간한판들];
+    const 값들 = 판들.map((slices) => 세어보기(slices, 물을색));
+    const 이름표 = 수로묻기 ? 값들.map(수로) : 값들.map((one) => 말로(one));
+    const 찾을것 = 이름표[next(이름표.length)];
+    if (!찾을것) return null;
+    const 맞는자리 = 판들.map((_, at) => at).filter((at) => 이름표[at] === 찾을것);
+    const 아닌자리 = 판들.map((_, at) => at).filter((at) => 이름표[at] !== 찾을것 && 이름표[at] !== null);
+    if (!맞는자리.length || 아닌자리.length < 3) return null;
+    const 고른 = [맞는자리[next(맞는자리.length)]];
+    const 섞은 = [...아닌자리];
+    for (let at = 섞은.length - 1; at > 0; at -= 1) {
+      const to = next(at + 1);
+      [섞은[at], 섞은[to]] = [섞은[to], 섞은[at]];
+    }
+    고른.push(...섞은.slice(0, 3));
+    // 그림에 놓을 차례를 섞되, 답이 어디인지는 기억해 둡니다.
+    const 자리표 = [0, 1, 2, 3];
+    for (let at = 자리표.length - 1; at > 0; at -= 1) {
+      const to = next(at + 1);
+      [자리표[at], 자리표[to]] = [자리표[to], 자리표[at]];
+    }
+    const 이름 = ['가', '나', '다', '라'];
+    const 정답자리 = 자리표.indexOf(0);
+    const 값 = 값들[고른[0]];
+    return {
+      prompt: 수로묻기
+        ? `그림은 회전판 네 개입니다. 화살이 ${eul(색이름[물을색])} 가리킬 가능성을 수로 나타내면 ${찾을것}인 회전판은 어느 것일까요?`
+        : `그림은 회전판 네 개입니다. 화살이 ${eul(색이름[물을색])} 가리킬 가능성이 ‘${찾을것}’인 회전판은 어느 것일까요?`,
+      answer: `${이름[정답자리]} 회전판`,
+      wrongs: 이름.filter((_, at) => at !== 정답자리).map((one) => `${one} 회전판`),
+      tag: 'possibility',
+      strategy: 수로묻기 ? '수에 맞는 회전판 찾기' : '말에 맞는 회전판 찾기',
+      hint: '판마다 전체가 몇 칸이고 그 색이 몇 칸인지 세어, 네 개를 모두 견주어 보세요.',
+      steps: [
+        `${이름[정답자리]} 회전판은 ${값.전체}칸 가운데 ${eul(색이름[물을색])} ${값.바라는것}칸입니다.`,
+        까닭(값),
+        `그러므로 답은 ${이름[정답자리]} 회전판입니다.`,
+      ],
+      visual: 회전판그림('회전판 네 개', 자리표.map((which, at) => ({ name: 이름[at], slices: 판들[고른[which]] }))),
+      misconceptionTip: '하나만 보고 고르지 마세요. 넷을 모두 세어 보아야 합니다.',
+    };
+  },
+});
+
+/** 공평하지 않은 놀이를 공평하게 고치는 방법을 찾습니다. */
+const 공평하게고치기: G5Family = {
+  id: 'make-it-fair',
+  make: (seed) => {
+    const next = rand(seed);
+    const 검은 = 1 + next(4);
+    const 흰 = 검은 + 1 + next(3);
+    const marbles: ChanceColor[] = [
+      ...Array<ChanceColor>(검은).fill('black'),
+      ...Array<ChanceColor>(흰).fill('white'),
+    ];
+    const 더넣을것 = 흰 - 검은;
+    return {
+      prompt: `주머니에 검은색 바둑돌 ${검은}개와 흰색 바둑돌 ${흰}개가 들어 있습니다. 바둑돌 한 개를 꺼내어 색으로 순서를 정하려고 합니다. 두 사람에게 공평하게 하려면 어떻게 해야 할까요?`,
+      answer: `검은색 바둑돌을 ${더넣을것}개 더 넣습니다.`,
+      wrongs: [
+        `흰색 바둑돌을 ${더넣을것}개 더 넣습니다.`,
+        `검은색 바둑돌을 ${검은}개 모두 빼냅니다.`,
+        '지금도 공평하므로 그대로 두면 됩니다.',
+      ],
+      tag: 'possibility',
+      strategy: '가능성이 반반이 되게 고치기',
+      hint: '공평하다는 것은 두 색이 나올 가능성이 반반이라는 뜻입니다. 두 색의 개수를 같게 만들어 보세요.',
+      steps: [
+        `지금은 검은색 ${검은}개, 흰색 ${흰}개이므로 흰색이 나올 가능성이 더 높습니다.`,
+        '공평하려면 두 색의 개수가 같아야 합니다.',
+        `${흰}-${검은}=${더넣을것}이므로 검은색 바둑돌을 ${더넣을것}개 더 넣습니다.`,
+      ],
+      visual: 주머니그림('주머니', [{ marbles }]),
+      misconceptionTip: '많은 쪽을 더 넣으면 더 치우칩니다. 적은 쪽을 채워 같게 만들어야 합니다.',
+    };
+  },
+};
+
+/** 꺼낸 횟수를 세어 어느 색의 가능성이 높은지 판단합니다(주머니 쪽). */
+const 많이나온색: G5Family = {
+  id: 'most-often-bag',
+  make: (seed) => {
+    const next = rand(seed);
+    const 색차례: ChanceColor[] = ['black', 'white'];
+    const 검은 = 10 + next(20);
+    const 흰 = 10 + next(20);
+    if (검은 === 흰) return null;
+    return {
+      prompt: `주머니에서 바둑돌을 한 개 꺼내어 색을 보고 다시 넣기를 ${검은 + 흰}번 했더니 검은색 ${검은}번, 흰색 ${흰}번 나왔습니다. 이 주머니에 더 많이 들어 있다고 볼 수 있는 색은 무엇일까요?`,
+      answer: 색이름[색차례[검은 > 흰 ? 0 : 1]],
+      wrongs: [
+        색이름[색차례[검은 > 흰 ? 1 : 0]],
+        '두 색이 똑같이 들어 있습니다.',
+        '꺼낸 횟수로는 알 수 없습니다.',
+      ],
+      tag: 'possibility',
+      strategy: '실험 결과로 주머니 속 어림하기',
+      hint: '여러 번 꺼내 보면 많이 들어 있는 색이 더 자주 나옵니다. 두 횟수를 견주세요.',
+      steps: [
+        `검은색 ${검은}번, 흰색 ${흰}번 나왔습니다.`,
+        `${검은 > 흰 ? '검은색' : '흰색'}이 더 자주 나왔습니다.`,
+        `그러므로 ${검은 > 흰 ? '검은색' : '흰색'}이 더 많이 들어 있다고 볼 수 있습니다.`,
+      ],
+      misconceptionTip: '꺼냈다 다시 넣었으므로 주머니 속은 그대로입니다. 횟수의 차이만 봅니다.',
+      selfCheck: '더 많이 나온 색을 골랐나요?',
+    };
+  },
+};
+
+/** 실험 결과에 맞는 주머니를 그림에서 고릅니다. */
+const 결과에맞는주머니: G5Family = {
+  id: 'tally-to-bag',
+  make: (seed) => {
+    const next = rand(seed);
+    const 검은많은: ChanceColor[] = ['black', 'black', 'black', 'white'];
+    const 흰많은: ChanceColor[] = ['white', 'white', 'white', 'black'];
+    const 반반: ChanceColor[] = ['black', 'black', 'white', 'white'];
+    const 검은만: ChanceColor[] = ['black', 'black', 'black', 'black'];
+    const 검은쪽 = next(2) === 0;
+    const 정답 = 검은쪽 ? 검은많은 : 흰많은;
+    const 판들 = [정답, 반반, 검은쪽 ? 흰많은 : 검은많은, 검은만];
+    const 자리표 = [0, 1, 2, 3];
+    for (let at = 자리표.length - 1; at > 0; at -= 1) {
+      const to = next(at + 1);
+      [자리표[at], 자리표[to]] = [자리표[to], 자리표[at]];
+    }
+    const 이름 = ['가', '나', '다', '라'];
+    const 정답자리 = 자리표.indexOf(0);
+    const 전체 = 40;
+    const 많은횟수 = 28 + next(5);
+    const 많은색 = 검은쪽 ? '검은색' : '흰색';
+    return {
+      prompt: `어떤 주머니에서 바둑돌 한 개를 꺼냈다 넣기를 ${전체}번 했더니 ${많은색}이 ${많은횟수}번 나왔습니다. 실험에 쓴 주머니와 가장 비슷한 것은 어느 것일까요?`,
+      answer: `${이름[정답자리]} 주머니`,
+      wrongs: 이름.filter((_, at) => at !== 정답자리).map((one) => `${one} 주머니`),
+      tag: 'possibility',
+      strategy: '실험 결과에 맞는 주머니 찾기',
+      hint: `${전체}번 가운데 ${많은횟수}번이면 반보다 훨씬 많습니다. ${많은색}이 더 많이 든 주머니를 찾으세요. 다만 다른 색도 나왔으므로 한 색만 든 주머니는 아닙니다.`,
+      steps: [
+        `${전체}번 가운데 ${많은횟수}번이므로 ${많은색}이 반보다 훨씬 자주 나왔습니다.`,
+        `${전체 - 많은횟수}번은 다른 색이 나왔으므로 다른 색도 들어 있습니다.`,
+        `${많은색}이 더 많고 다른 색도 있는 ${이름[정답자리]} 주머니가 가장 비슷합니다.`,
+      ],
+      visual: 주머니그림('주머니 네 개', 자리표.map((which, at) => ({ name: 이름[at], marbles: 판들[which] }))),
+      misconceptionTip: '한 번이라도 다른 색이 나왔다면 그 색도 들어 있습니다.',
+    };
+  },
+};
+
+// ── 수준별 뭉치 ─────────────────────────────────────────────────────
+
+type 수준 = '하' | '중' | '상';
+
+const 뭉치고르기 = (모두: G5Family[], 하: string[], 중: string[], 상: string[], 수준: 수준) => {
+  const 고를것 = 수준 === '하' ? 하 : 수준 === '중' ? 중 : 상;
+  const 찾기 = (id: string) => 모두.find((one) => one.id === id);
+  return 고를것.map(찾기).filter((one): one is G5Family => Boolean(one));
+};
+
+export const unit6Lesson5For = (수준: 수준): G5Family[] => {
+  const 모두 = [
+    ...unit6Lesson5,
+    말에맞는상황,
+    잘못말한것,
+    말에맞는판(false),
+    판말하기('a'), 판말하기('b'),
+    주머니말하기('a'), 주머니말하기('b'),
+    글말하기('clear', 딱떨어지는상황들),
+    글말하기('vague', 어중간한상황들),
+  ];
+  return 뭉치고르기(
+    모두,
+    ['words', 'spinner-word-a', 'bag-word-a', 'story-word-clear'],
+    ['spinner-word-b', 'bag-word-b', 'story-word-vague', 'wrong-word'],
+    ['situation-for-word', 'wrong-word', 'spinner-for-word'],
+    수준,
+  );
+};
+
+export const unit6Lesson6For = (수준: 수준): G5Family[] => {
+  const 모두 = [...unit6Lesson6, 셋줄세우기, 판과주머니견주기];
+  return 뭉치고르기(
+    모두,
+    ['spinner-highest', 'bag-highest', 'word-order'],
+    ['story-compare', 'spinner-vs-bag', 'spinner-highest', 'bag-highest'],
+    ['rank-three', 'spinner-vs-bag', 'story-compare'],
+    수준,
+  );
+};
+
+export const unit6Lesson7For = (수준: 수준): G5Family[] => {
+  const 모두 = [
+    ...unit6Lesson7,
+    수에맞는상황,
+    수로견주기,
+    말과수,
+    말에맞는판(true),
+    판수로하기('a'), 판수로하기('b'),
+    주머니수로하기('a'), 주머니수로하기('b'),
+  ];
+  return 뭉치고르기(
+    모두,
+    ['number-rule', 'spinner-number-a', 'bag-number-a', 'story-number'],
+    ['word-number-swap', 'spinner-number-b', 'bag-number-b', 'story-number'],
+    ['situation-for-number', 'compare-as-number', 'spinner-for-number'],
+    수준,
+  );
+};
+
+export const unit6Lesson8For = (수준: 수준): G5Family[] => {
+  const 모두 = [...unit6Lesson8, 몇번쯤, 공평하게고치기, 많이나온색, 결과에맞는주머니];
+  return 뭉치고르기(
+    모두,
+    ['most-often', 'most-often-bag', 'judge-fair'],
+    ['guess-spinner', 'tally-to-bag', 'judge-use'],
+    ['about-how-many', 'make-it-fair', 'judge-use', 'tally-to-bag'],
+    수준,
+  );
+};
