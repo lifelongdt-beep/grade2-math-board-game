@@ -140,6 +140,14 @@ const unitFinal: Array<[string, boolean]> = [
 ];
 
 const hasFinal = (word: string): boolean => {
+  // 식은 ')'로 끝나기도 합니다 — '3×(32÷8)'. 소리로는 괄호가 나지
+  // 않으므로 닫는 괄호를 떼고 그 안의 마지막 소리로 정합니다.
+  // 떼지 않으면 ')'가 한글도 숫자도 아니라 늘 받침이 없는 것으로
+  // 읽혀, '3×(32÷8)를'처럼 어긋납니다(팔 → '을').
+  if (word.endsWith(')')) {
+    const open = word.lastIndexOf('(');
+    if (open >= 0) return hasFinal(word.slice(open + 1, -1));
+  }
   const unit = unitFinal.find(([suffix]) => word.endsWith(suffix));
   if (unit) return unit[1];
   // 분수는 '분모분의 분자'로 읽습니다. 3/5는 '오분의 삼'이라 마지막에

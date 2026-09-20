@@ -24,6 +24,7 @@ import {
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, PlaneShapeKind, PlaneShapeVisualItem, Question, QuestionVisual } from '../types';
 import { questionBank } from './questionBank';
 import { generateGrade5Questions } from './grade5';
+import { generateGrade51Questions } from './grade51';
 import { buildFromTemplate, templateFits } from './questionTemplate';
 import type { DrawnVisual } from './questionTemplate';
 
@@ -99,6 +100,12 @@ const tagLabel: Record<ConceptTag, string> = {
   congruence: '합동과 대칭',
   average: '평균',
   possibility: '일이 일어날 가능성',
+  mixedCalc: '자연수의 혼합 계산',
+  divisor: '약수와 배수',
+  correspondence: '대응 관계',
+  fractionCompare: '약분과 통분',
+  fractionAdd: '분수의 덧셈과 뺄셈',
+  area: '다각형의 둘레와 넓이',
 };
 
 const tagAdvice: Record<ConceptTag, string> = {
@@ -121,6 +128,12 @@ const tagAdvice: Record<ConceptTag, string> = {
   congruence: '합동은 포개었을 때 완전히 겹치는 것이고, 대칭은 접거나 돌렸을 때 겹치는 것입니다.',
   average: '평균은 자료 값을 모두 더해 자료의 수로 나눈 값, 곧 고르게 나누어 가진 값입니다.',
   possibility: '가능성은 0(불가능하다)에서 1(확실하다) 사이의 수로 나타냅니다. 반반인 경우가 1/2입니다.',
+  mixedCalc: '섞여 있는 식은 곱셈과 나눗셈을 먼저, ( )가 있으면 ( ) 안을 가장 먼저 계산합니다.',
+  divisor: '약수는 나누어떨어지게 하는 수, 배수는 몇 배 한 수입니다. 두 말은 한 곱셈식에서 함께 읽힙니다.',
+  correspondence: '두 양이 함께 변할 때, 한 양에서 다른 양을 구하는 방법 하나가 대응 관계입니다.',
+  fractionCompare: '약분은 분모와 분자를 공약수로 나누는 것, 통분은 분모를 같게 만드는 것입니다.',
+  fractionAdd: '분모가 다르면 더하거나 뺄 수 없습니다. 통분해서 분모를 같게 만든 뒤 분자끼리 계산합니다.',
+  area: '둘레는 변의 길이를 모두 더한 것, 넓이는 1 cm²가 몇 개인지입니다.',
 };
 
 const coreConceptGuide: Record<ConceptTag, string> = {
@@ -143,6 +156,12 @@ const coreConceptGuide: Record<ConceptTag, string> = {
   congruence: '합동인 두 도형에서 대응변의 길이는 서로 같고, 대응각의 크기도 서로 같습니다.',
   average: '(평균)=(자료 값의 합)÷(자료의 수)이고, (자료 값의 합)=(평균)×(자료의 수)입니다.',
   possibility: '일어날 수 있는 경우가 모두 같은 정도일 때, 가능성은 조건에 맞는 경우의 수를 전체 경우의 수로 나눈 값입니다.',
+  mixedCalc: '한 식에 여러 연산이 섞이면 계산 순서가 답을 정합니다. 순서가 달라지면 값도 달라집니다.',
+  divisor: '어떤 수를 나누어떨어지게 하는 수가 약수이고, 어떤 수를 몇 배 한 수가 배수입니다. 두 수는 서로의 약수와 배수입니다.',
+  correspondence: '한 양이 변할 때 다른 양이 그에 따라 변하면 두 양 사이에 대응 관계가 있습니다.',
+  fractionCompare: '분모와 분자에 0이 아닌 같은 수를 곱하거나 나누어도 분수의 크기는 변하지 않습니다.',
+  fractionAdd: '분모가 다른 분수의 덧셈과 뺄셈은 통분하여 분모를 같게 만든 뒤 분자끼리 더하거나 뺍니다.',
+  area: '넓이는 1 cm²인 정사각형이 몇 개인지를 나타낸 것이고, 넓이 공식은 그 개수를 빨리 세는 방법입니다.',
 };
 
 const studentConceptGuide: Record<ConceptTag, string> = {
@@ -168,6 +187,12 @@ const studentConceptGuide: Record<ConceptTag, string> = {
   congruence: '포개었을 때 겹치는 곳을 찾으세요.',
   average: '모두 더한 다음 자료의 수로 나누세요.',
   possibility: '일어날 수 있는 경우를 모두 세어 보세요.',
+  mixedCalc: '어느 것을 먼저 계산해야 하는지 찾으세요.',
+  divisor: '나누어떨어지는지 먼저 확인하세요.',
+  correspondence: '한 양이 1 늘 때 다른 양이 어떻게 변하는지 보세요.',
+  fractionCompare: '두 분모를 같게 만들 수 있는 수를 찾으세요.',
+  fractionAdd: '먼저 통분하고 나서 분자끼리 계산하세요.',
+  area: '무엇을 구하라고 했는지 — 둘레인지 넓이인지 보세요.',
 };
 
 // 문항에서 수를 읽어 내지 못했을 때 쓰는 말입니다.
@@ -195,6 +220,12 @@ const studentHintGuide: Record<ConceptTag, string> = {
   congruence: '두 도형을 겹쳐 놓았다고 생각하고 서로 짝이 되는 점, 변, 각을 하나씩 짚어 보세요.',
   average: '자료의 수를 먼저 세고, 값을 모두 더해 적어 보세요. 나눗셈은 그다음입니다.',
   possibility: '일어날 수 있는 경우를 빠짐없이 적어 보세요. 그중 조건에 맞는 것이 몇 가지인지 세면 됩니다.',
+  mixedCalc: '가장 먼저 계산할 곳에 ○표를 하고, 그 자리만 먼저 계산해 한 줄로 다시 써 보세요.',
+  divisor: '곱셈식으로 만들어 보세요. 1부터 차례대로 나누어 보면 약수를 빠뜨리지 않습니다.',
+  correspondence: '표를 만들어 한 줄에 한 양씩 적어 보세요. 세로로 짝지어 보면 관계가 보입니다.',
+  fractionCompare: '두 분모의 곱이나 최소공배수를 공통분모로 삼아 두 분수를 다시 써 보세요.',
+  fractionAdd: '통분한 두 분수를 먼저 적고, 그다음에 분자끼리 더하거나 빼세요.',
+  area: '밑변과 높이가 어디인지 그림에 표시해 보세요. 높이는 밑변과 수직인 선분입니다.',
 };
 
 const readStrategyGuide: Record<ConceptTag, string> = {
@@ -217,6 +248,12 @@ const readStrategyGuide: Record<ConceptTag, string> = {
   congruence: '합동인지, 선대칭도형인지, 점대칭도형인지 문제에서 말한 것을 먼저 확인합니다.',
   average: '구하는 것이 평균인지, 자료 값의 합인지, 자료의 수인지 먼저 구별합니다.',
   possibility: '일어날 수 있는 경우가 모두 같은 정도인 상황인지 먼저 확인합니다.',
+  mixedCalc: '식에 어떤 연산이 섞여 있는지, ( )가 있는지 먼저 봅니다.',
+  divisor: '구하는 것이 약수인지 배수인지, 공약수인지 공배수인지 먼저 구별합니다.',
+  correspondence: '어느 양이 변할 때 어느 양이 따라 변하는지 먼저 정합니다.',
+  fractionCompare: '구하는 것이 약분인지 통분인지 크기 비교인지 먼저 구별합니다.',
+  fractionAdd: '두 분수의 분모가 같은지 다른지 먼저 봅니다.',
+  area: '구하는 것이 둘레인지 넓이인지, 도형이 무엇인지 먼저 확인합니다.',
 };
 
 const misconceptionGuide: Record<ConceptTag, string> = {
@@ -239,6 +276,12 @@ const misconceptionGuide: Record<ConceptTag, string> = {
   congruence: '모양이 비슷해 보인다고 합동인 것은 아닙니다. 대응변의 길이와 대응각의 크기가 모두 같아야 합니다.',
   average: '가장 많이 나온 값이나 가운데 값은 평균이 아닙니다. 모두 더해 자료의 수로 나눈 값입니다.',
   possibility: '바라는 결과라고 해서 가능성이 커지지 않습니다. 경우의 수로만 판단하세요.',
+  mixedCalc: '앞에서부터 차례대로만 계산하면 안 됩니다. 곱셈과 나눗셈이 먼저이고, ( ) 안은 그보다 먼저입니다.',
+  divisor: '약수와 배수를 바꾸어 말하지 마세요. 약수는 그 수보다 작거나 같고, 배수는 그 수보다 크거나 같습니다.',
+  correspondence: '한 양만 보고 규칙을 정하면 안 됩니다. 두 양을 짝지어 보아야 대응 관계입니다.',
+  fractionCompare: '분모가 다른 두 분수는 분자만 보고 크기를 정할 수 없습니다. 먼저 통분하세요.',
+  fractionAdd: '분모끼리 더하면 안 됩니다. 통분해서 분모를 같게 만든 뒤 분자끼리만 계산합니다.',
+  area: '넓이를 구할 때 쓰는 높이는 비스듬한 변의 길이가 아니라 밑변과 수직인 길이입니다.',
 };
 
 const selfCheckGuide: Record<ConceptTag, string> = {
@@ -261,6 +304,12 @@ const selfCheckGuide: Record<ConceptTag, string> = {
   congruence: '대응변과 대응각을 짝지어 다시 확인했나요?',
   average: '구한 평균에 자료의 수를 곱하면 처음의 합이 되나요?',
   possibility: '구한 가능성이 0과 1 사이의 수인가요?',
+  mixedCalc: '먼저 계산해야 할 곳을 빠뜨리지 않았는지 한 줄씩 다시 짚어 보았나요?',
+  divisor: '구한 수로 나누어떨어지는지, 하나도 빠뜨리지 않았는지 확인했나요?',
+  correspondence: '만든 식에 표의 다른 값을 넣어도 맞는지 확인했나요?',
+  fractionCompare: '통분한 두 분수가 처음 분수와 크기가 같은지 확인했나요?',
+  fractionAdd: '계산 결과를 기약분수로 나타냈나요? 가분수라면 대분수로 고쳤나요?',
+  area: '단위를 cm²나 m²로 알맞게 썼는지 확인했나요?',
 };
 
 const primaryTag = (lesson: Lesson): ConceptTag => {
@@ -16818,6 +16867,8 @@ export const generateQuestions = (
   // 차시에 2학년 문제가 나옵니다.
   const grade5 = generateGrade5Questions(lesson, difficulty);
   if (grade5) return grade5;
+  const grade51 = generateGrade51Questions(lesson, difficulty);
+  if (grade51) return grade51;
 
   if (lesson.title === '구구단, 몬스터를 막아라!') {
     const dans = options?.castleDans?.length ? options.castleDans : ALL_CASTLE_DEFENSE_DANS;

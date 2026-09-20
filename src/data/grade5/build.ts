@@ -51,6 +51,14 @@ export type G5Spec = {
   // 씁니다 — 진분수끼리 곱하는 문항에 '대분수는 먼저 가분수로 고치세요'가
   // 붙으면 아이는 있지도 않은 대분수를 찾게 됩니다.
   concept?: string;
+  // 보기에 값이 같은 분수가 함께 있어도 된다고 알립니다.
+  //
+  // 아래 usableWrongs는 값이 같은 보기를 걸러 냅니다 — 1/2과 2/4가 함께
+  // 있으면 '더 큰 것은?'에 답이 둘이 되기 때문입니다. 그런데 꼴을 묻는
+  // 문항은 사정이 다릅니다. '다음 중 기약분수는?'에서 3/4과 6/8은 같은
+  // 수이지만 기약분수는 3/4 하나뿐이고, '크기가 같지 않은 분수는?'에서는
+  // 보기 셋이 모두 같은 값인 것이 문항의 뜻입니다. 이런 자리에만 켭니다.
+  sameValueOk?: boolean;
 };
 
 export type G5Family = {
@@ -107,6 +115,14 @@ const tagLabel: Partial<Record<ConceptTag, string>> = {
   data: '자료와 그래프',
   shape: '평면도형',
   number: '수 세기와 크기 비교',
+  // 5-1에서 쓰는 갈래입니다. 5-2의 'fraction'이 분수의 곱셈이므로,
+  // 5-1의 약분·통분과 분수의 덧셈·뺄셈은 이름을 따로 둡니다.
+  mixedCalc: '자연수의 혼합 계산',
+  divisor: '약수와 배수',
+  correspondence: '대응 관계',
+  fractionCompare: '약분과 통분',
+  fractionAdd: '분수의 덧셈과 뺄셈',
+  area: '다각형의 둘레와 넓이',
 };
 
 // 글에 붙은 단위를 떼고 수만 남깁니다. '3과 1/5 km' → '3과 1/5'
@@ -129,9 +145,13 @@ const 같은값 = (a: string, b: string) => {
 
 const usableWrongs = (spec: G5Spec): string[] => {
   const kept: string[] = [];
+  // 꼴을 묻는 문항에서는 값이 같아도 글자가 다르면 다른 보기입니다.
+  const 같은가 = spec.sameValueOk
+    ? (a: string, b: string) => a === b
+    : 같은값;
   for (const wrong of spec.wrongs) {
-    if (같은값(wrong, spec.answer)) continue;
-    if (kept.some((one) => 같은값(one, wrong))) continue;
+    if (같은가(wrong, spec.answer)) continue;
+    if (kept.some((one) => 같은가(one, wrong))) continue;
     // 초등에서는 음수를 다루지 않습니다.
     if (/-\d/.test(wrong)) continue;
     kept.push(wrong);
