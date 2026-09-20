@@ -5,7 +5,7 @@ export type SessionDuration = 30 | 60 | 120;
 // 어느 학기인지입니다. 2학년 1·2학기로 시작했고, 5학년 2학기가 뒤에
 // 붙었습니다. 5학년은 차시도 문항도 따로 만들기 때문에(grade5 폴더),
 // 여기서 하는 일은 '어느 학기의 차시인가'를 한 곳에 적어 두는 것뿐입니다.
-export type Semester = '2-1' | '2-2' | '5-2';
+export type Semester = '2-1' | '2-2' | '5-1' | '5-2';
 
 export type ConceptTag =
   | 'number'
@@ -30,7 +30,19 @@ export type ConceptTag =
   | 'decimal'
   | 'congruence'
   | 'average'
-  | 'possibility';
+  | 'possibility'
+  // ── 5학년 1학기에서 쓰는 갈래입니다 ────────────────────────────
+  // 분수를 'fraction' 하나로 묶지 않고 나눕니다. 5-2의 'fraction'은
+  // 분수의 곱셈이고, 5-1에는 약분·통분과 분수의 덧셈·뺄셈이 따로
+  // 있습니다. 교사용 분석의 '취약 유형'은 이 이름으로 적히므로,
+  // 셋을 한 이름으로 묶으면 선생님이 무엇을 다시 가르쳐야 하는지
+  // 알 수 없게 됩니다.
+  | 'mixedCalc'
+  | 'divisor'
+  | 'correspondence'
+  | 'fractionCompare'
+  | 'fractionAdd'
+  | 'area';
 
 // 차시가 '무엇을 물어도 되는가'를 적어 둔 선언입니다.
 //
@@ -284,7 +296,7 @@ export interface FractionModelVisual {
 // 세 가지가 모두 '도형을 놓고 그 위에 무엇을 표시한다'는 같은 일이라
 // 하나로 둡니다.
 export type FigureShapeName =
-  | '정삼각형' | '이등변삼각형' | '직각삼각형'
+  | '정삼각형' | '이등변삼각형' | '직각삼각형' | '둔각삼각형'
   | '정사각형' | '직사각형' | '마름모' | '평행사변형'
   | '사다리꼴' | '사각형'
   | '정오각형' | '정육각형' | '원';
@@ -314,6 +326,25 @@ export interface FigureSetVisual {
     angleLabels?: Array<{ at: number; text: string }>;
     // 눈에 띄게 그립니다.
     active?: boolean;
+    // 꼭짓점을 직접 정합니다(5-1 6단원 넓이).
+    //
+    // 넓이 문항에서는 그림이 적힌 길이와 어긋나면 안 됩니다. 밑변 4 cm,
+    // 높이 6 cm인 사다리꼴을 밑변이 더 길어 보이게 그려 놓으면, 아이는
+    // 그림을 믿을 수 없다는 것을 먼저 배웁니다. 그래서 이 단원은 정해
+    // 둔 모양(FIGURE_POINTS)을 쓰지 않고 길이에서 꼭짓점을 계산해
+    // 넘깁니다. -1~1 사이의 자리로 적습니다.
+    points?: Array<[number, number]>;
+    // 밑변에 수직으로 그은 높이입니다(5-1 6단원 넓이).
+    //
+    // 넓이 문항에서 아이가 가장 많이 하는 실수는 높이 대신 비스듬한
+    // 변의 길이를 쓰는 것입니다. 길이를 글로만 주면 그 실수를 막을 수
+    // 없어, 높이를 점선으로 긋고 직각 표시를 함께 찍습니다. fromVertex
+    // 에서 밑변 쪽으로 수직으로 내립니다. 삼각형의 높이가 도형 밖에
+    // 있는 경우(지도서가 다루라고 한 것)에는 밑변을 점선으로 늘여
+    // 그립니다.
+    heightMark?: { fromVertex: number; text: string };
+    // 대각선입니다. 마름모의 넓이에서 씁니다.
+    diagonals?: Array<{ from: number; to: number; text: string }>;
   }>;
 }
 

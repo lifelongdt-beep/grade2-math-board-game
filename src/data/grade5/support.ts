@@ -25,6 +25,13 @@ export const g5StudentConcept: Partial<Record<ConceptTag, string>> = {
   data: '표나 그래프에서 무엇을 읽어야 하는지 먼저 정하세요.',
   shape: '변의 길이와 각의 크기 가운데 무엇이 정해진 도형인지 보세요.',
   number: '수의 크기를 자리별로 견주어 보세요.',
+  // ── 5-1 ──
+  mixedCalc: '어느 것을 먼저 계산해야 하는지 찾으세요.',
+  divisor: '구하는 것이 약수인지 배수인지 먼저 가리세요.',
+  correspondence: '한 양이 1 늘 때 다른 양이 어떻게 변하는지 보세요.',
+  fractionCompare: '두 분모를 같게 만들 수 있는 수를 찾으세요.',
+  fractionAdd: '먼저 통분하고 나서 분자끼리 계산하세요.',
+  area: '구하는 것이 둘레인지 넓이인지 보세요.',
 };
 
 export const g5CoreConcept: Partial<Record<ConceptTag, string>> = {
@@ -39,6 +46,13 @@ export const g5CoreConcept: Partial<Record<ConceptTag, string>> = {
   solid: '입체도형은 평면도형과 달리 한눈에 전체를 볼 수 없습니다. 보이는 쪽과 가려진 쪽을 함께 생각해야 합니다.',
   shape: '도형의 이름은 변의 길이와 각의 크기에 어떤 조건이 붙어 있는지로 정해집니다.',
   number: '수의 크기는 가장 높은 자리부터 차례로 견주어 정합니다.',
+  // ── 5-1 ──
+  mixedCalc: '한 식에 여러 연산이 섞이면 계산 순서가 답을 정합니다. 곱셈과 나눗셈을 먼저, ( ) 안은 그보다 먼저 계산합니다.',
+  divisor: '어떤 수를 나누어떨어지게 하는 수가 약수이고, 어떤 수를 몇 배 한 수가 배수입니다. ■=▲×●이면 ▲와 ●는 ■의 약수이고 ■는 ▲와 ●의 배수입니다.',
+  correspondence: '한 양이 변할 때 다른 양이 그에 따라 변하면 두 양 사이에 대응 관계가 있고, 그 관계를 ○, △ 같은 기호로 식에 담을 수 있습니다.',
+  fractionCompare: '분모와 분자에 0이 아닌 같은 수를 곱하거나 같은 수로 나누어도 분수의 크기는 변하지 않습니다.',
+  fractionAdd: '분모가 다른 분수의 덧셈과 뺄셈은 통분하여 분모를 같게 만든 뒤 분자끼리 더하거나 뺍니다.',
+  area: '넓이는 1 cm²인 정사각형이 몇 개인지를 나타낸 것이고, 넓이를 구하는 식은 그 개수를 빨리 세는 방법입니다.',
 };
 
 export const g5ReadStrategy: Partial<Record<ConceptTag, string>> = {
@@ -53,6 +67,13 @@ export const g5ReadStrategy: Partial<Record<ConceptTag, string>> = {
   solid: '문제가 무엇을 세라고 했는지, 보이는 것만인지 전부인지 먼저 구별합니다.',
   shape: '조건을 하나씩 짚어 가며 그 조건을 모두 갖춘 도형을 찾습니다.',
   number: '어느 자리에서 두 수가 처음 달라지는지 찾습니다.',
+  // ── 5-1 ──
+  mixedCalc: '식에 어떤 연산이 섞여 있는지, ( )가 있는지 먼저 봅니다.',
+  divisor: '구하는 것이 약수인지 배수인지, 공약수인지 공배수인지 먼저 구별합니다.',
+  correspondence: '어느 양이 변할 때 어느 양이 따라 변하는지 먼저 정합니다.',
+  fractionCompare: '구하는 것이 약분인지 통분인지 크기 비교인지 먼저 구별합니다.',
+  fractionAdd: '두 분수의 분모가 같은지 다른지, 대분수가 있는지 먼저 봅니다.',
+  area: '구하는 것이 둘레인지 넓이인지, 도형이 무엇인지 먼저 확인합니다.',
 };
 
 export const g5Misconception: Partial<Record<ConceptTag, string>> = {
@@ -67,6 +88,13 @@ export const g5Misconception: Partial<Record<ConceptTag, string>> = {
   solid: '입체도형은 한눈에 전체가 보이지 않습니다. 그림에서 가려진 쪽까지 생각했는지 확인하세요.',
   shape: '비슷해 보인다고 같은 도형이 아닙니다. 조건을 하나씩 확인하세요.',
   number: '눈에 익은 숫자를 고르지 말고 자리마다 견주어 보세요.',
+  // ── 5-1 ──
+  mixedCalc: '앞에서부터 차례대로만 계산하면 안 됩니다. 곱셈과 나눗셈이 먼저이고, ( ) 안은 그보다 먼저입니다.',
+  divisor: '약수와 배수를 바꾸어 말하지 마세요. 약수는 그 수보다 작거나 같고, 배수는 그 수보다 크거나 같습니다.',
+  correspondence: '한 양만 보고 규칙을 정하면 안 됩니다. 두 양을 짝지어 보아야 대응 관계입니다.',
+  fractionCompare: '분모가 다른 두 분수는 분자만 보고 크기를 정할 수 없습니다. 먼저 통분하세요.',
+  fractionAdd: '분모끼리 더하면 안 됩니다. 통분해서 분모를 같게 만든 뒤 분자끼리만 계산합니다.',
+  area: '넓이를 구할 때 쓰는 높이는 비스듬한 변의 길이가 아니라 밑변과 수직인 길이입니다.',
 };
 
 export const g5SelfCheck: Partial<Record<ConceptTag, string>> = {
@@ -81,4 +109,11 @@ export const g5SelfCheck: Partial<Record<ConceptTag, string>> = {
   data: '표의 값을 하나도 빠뜨리지 않고 보았나요?',
   shape: '고른 도형이 조건을 모두 갖추었는지 다시 확인했나요?',
   number: '답을 넣었을 때 두 수의 크기 관계가 그대로인가요?',
+  // ── 5-1 ──
+  mixedCalc: '먼저 계산해야 할 곳을 빠뜨리지 않았는지 한 줄씩 다시 짚어 보았나요?',
+  divisor: '구한 수로 나누어떨어지는지, 하나도 빠뜨리지 않았는지 확인했나요?',
+  correspondence: '만든 식에 표의 다른 값을 넣어도 맞는지 확인했나요?',
+  fractionCompare: '통분한 두 분수가 처음 분수와 크기가 같은지 확인했나요?',
+  fractionAdd: '계산 결과를 기약분수로 나타냈나요? 가분수라면 대분수로 고쳤나요?',
+  area: '단위를 cm²나 m²로 알맞게 썼는지 확인했나요?',
 };
