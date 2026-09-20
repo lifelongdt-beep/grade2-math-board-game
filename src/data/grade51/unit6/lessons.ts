@@ -764,8 +764,17 @@ const 직각짝: Array<[높이: number, 오프셋: number, 비스듬: number]> =
 // 안에서만 수를 뽑습니다.
 const 그릴만한가 = (가로: number, 세로: number) => {
   const 비 = 가로 / 세로;
-  return 비 >= 0.45 && 비 <= 2.2;
+  // 밑변 6 cm에 높이 12 cm인 삼각형은 옳은 도형이지만 화면에서는
+  // 바늘처럼 보이고, 그 안에 '높이 12 cm'를 적을 자리가 없습니다.
+  return 비 >= 0.6 && 비 <= 1.9;
 };
+
+// 그림에 적는 수가 풀이의 한 걸음과 같아지면, 그림이 답을 미리 흘립니다.
+// 비스듬한 변의 길이는 넓이를 구하는 데 쓰지 않는 수인데, 그 수가 하필
+// (밑변)+(높이)나 넓이와 같으면 아이는 그것을 셈의 결과로 읽습니다.
+// 실제로 사다리꼴에서 비스듬한 변이 15 cm이고 (윗변)+(아랫변)이 3+12=15인
+// 문항이 나갔습니다.
+const 흘리는수인가 = (비스듬: number, 값들: number[]) => 값들.includes(비스듬);
 
 const dimsFor = (kind: AreaKind, next: (bound: number) => number, 밖으로 = false): Dims | null => {
   if (kind === 'rhombus') {
@@ -784,14 +793,18 @@ const dimsFor = (kind: AreaKind, next: (bound: number) => number, 밖으로 = fa
     // 높이를 내린 발이 밑변 안에 떨어져야 그림이 읽힙니다.
     if (밑변 <= 오프셋) return null;
     if (!그릴만한가(밑변 + 오프셋, 높이)) return null;
-    return { 밑변, 높이, 비스듬, 오프셋, 넓이: 밑변 * 높이 };
+    const 넓이 = 밑변 * 높이;
+    if (흘리는수인가(비스듬, [넓이, 밑변 + 높이, 넓이 * 2, 넓이 / 2])) return null;
+    return { 밑변, 높이, 비스듬, 오프셋, 넓이 };
   }
   if (kind === 'triangle') {
     if ((밑변 * 높이) % 2 !== 0) return null;
     // 높이가 도형 안에 있는 삼각형은 꼭짓점이 밑변 위에 놓여야 합니다.
     if (!밖으로 && 밑변 <= 오프셋) return null;
     if (!그릴만한가(밖으로 ? 밑변 + 오프셋 : 밑변, 높이)) return null;
-    return { 밑변, 높이, 비스듬, 오프셋, 넓이: (밑변 * 높이) / 2 };
+    const 넓이 = (밑변 * 높이) / 2;
+    if (흘리는수인가(비스듬, [넓이, 밑변 + 높이, 밑변 * 높이, 넓이 * 2])) return null;
+    return { 밑변, 높이, 비스듬, 오프셋, 넓이 };
   }
   // 사다리꼴은 왼쪽 변이 기울어지고 오른쪽 변이 수직입니다. 그러려면
   // 윗변이 아랫변에서 가로 밀림만큼 짧아야 합니다.
@@ -844,7 +857,7 @@ const 넓이그림 = (kind: AreaKind, dims: Dims, 밖으로: boolean): QuestionV
         active: true,
         points: 자리맞추기([[o, 0], [o + b, 0], [b, h], [0, h]]),
         edgeLabels: [
-          { from: 3, to: 2, text: `밑변 ${b} cm` },
+          { from: 3, to: 2, text: `밑변 ${b} cm`, span: true },
           { from: 0, to: 3, text: `${dims.비스듬} cm` },
         ],
         heightMark: { fromVertex: 0, text: `높이 ${h} cm` },
@@ -863,7 +876,7 @@ const 넓이그림 = (kind: AreaKind, dims: Dims, 밖으로: boolean): QuestionV
         active: true,
         points: 자리맞추기([[꼭짓점x, 0], [b, h], [0, h]]),
         edgeLabels: [
-          { from: 1, to: 2, text: `밑변 ${b} cm` },
+          { from: 1, to: 2, text: `밑변 ${b} cm`, span: true },
           // 비스듬한 변은 꼭짓점에서 '가로로 오프셋만큼 떨어진' 쪽입니다.
           // 높이가 도형 밖에 있으면 그쪽이 오른쪽 끝입니다.
           밖으로
@@ -883,9 +896,12 @@ const 넓이그림 = (kind: AreaKind, dims: Dims, 밖으로: boolean): QuestionV
       active: true,
       points: 자리맞추기([[o, 0], [b, 0], [b, h], [0, h]]),
       edgeLabels: [
-        { from: 0, to: 1, text: `윗변 ${dims.윗변} cm` },
-        { from: 3, to: 2, text: `아랫변 ${b} cm` },
-        { from: 0, to: 3, text: `${dims.비스듬} cm` },
+        { from: 0, to: 1, text: `윗변 ${dims.윗변} cm`, span: true },
+        { from: 3, to: 2, text: `아랫변 ${b} cm`, span: true },
+        // 비스듬한 변에는 길이를 적지 않습니다. 지도서 5-1 150쪽의
+        // 사다리꼴도 윗변·아랫변·높이 셋만 적습니다. 여기에 수를 하나
+        // 더 적으면 그 수가 (윗변)+(아랫변)과 같아지는 일이 생기고,
+        // 그러면 그림이 풀이의 한 걸음을 미리 보여 주게 됩니다.
       ],
       heightMark: { fromVertex: 0, text: `높이 ${h} cm` },
     },

@@ -321,7 +321,13 @@ export interface FigureSetVisual {
     // 대칭의 중심을 찍습니다.
     center?: boolean;
     // 변에 길이를 적습니다. 꼭짓점 번호 두 개로 변을 가리킵니다.
-    edgeLabels?: Array<{ from: number; to: number; text: string }>;
+    //
+    // span을 켜면 지도서가 그리는 대로, 그 변의 범위를 점선 호로
+    // 감싸고 이름과 길이를 호 바깥에 적습니다. 지도서 5-1 150쪽의
+    // 사다리꼴과 142쪽의 평행사변형이 이 꼴입니다 — 윗변·아랫변·밑변은
+    // 어느 변인지가 문제의 핵심이라, 길이만 적어 두면 아이가 어느 변을
+    // 가리키는지 알 수 없습니다.
+    edgeLabels?: Array<{ from: number; to: number; text: string; span?: boolean }>;
     // 꼭짓점에 각의 크기를 적습니다.
     angleLabels?: Array<{ at: number; text: string }>;
     // 눈에 띄게 그립니다.
