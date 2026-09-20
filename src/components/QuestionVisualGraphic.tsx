@@ -721,6 +721,46 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
     Math.min(height - 8, Math.max(16, y)),
   ];
 
+  // '여기서 여기까지'를 나타내는 표시입니다. 지도서가 밑변과 윗변을
+  // 이렇게 그립니다.
+  //
+  //   ╎          ╎     ← 두 끝에서 곧게 내려 긋는 짧은 점선.
+  //    ╲______╱        이 선이 어디서 시작해 어디서 끝나는지를
+  //                    한 점의 어긋남도 없이 짚어 줍니다.
+  //
+  // 끝점은 재는 것의 실제 끝점 그대로 씁니다. 호만 그리고 끝을 짚지
+  // 않으면 '대충 이 근처'가 되어, 길이를 재는 그림이 되지 못합니다.
+  const 범위표시 = (
+    key: string,
+    A: [number, number],
+    B: [number, number],
+    n: [number, number],
+    색: string,
+    띄움 = 6,
+    굽이 = 26,
+  ) => {
+    const [nx, ny] = n;
+    const a = [A[0] + nx * 띄움, A[1] + ny * 띄움] as const;
+    const b = [B[0] + nx * 띄움, B[1] + ny * 띄움] as const;
+    const mid = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2] as const;
+    return (
+      <g key={key}>
+        <line x1={A[0]} y1={A[1]} x2={a[0]} y2={a[1]} stroke={색} strokeWidth="1.4" strokeDasharray="3 3" />
+        <line x1={B[0]} y1={B[1]} x2={b[0]} y2={b[1]} stroke={색} strokeWidth="1.4" strokeDasharray="3 3" />
+        <path
+          d={`M ${a[0].toFixed(1)} ${a[1].toFixed(1)} Q ${(mid[0] + nx * 굽이).toFixed(1)} ${(mid[1] + ny * 굽이).toFixed(1)} ${b[0].toFixed(1)} ${b[1].toFixed(1)}`}
+          fill="none"
+          stroke={색}
+          strokeWidth="1.6"
+          strokeDasharray="4 4"
+        />
+      </g>
+    );
+  };
+  // 호가 가장 부풀어 오르는 곳까지의 거리입니다. 글자는 그 바깥에
+  // 적어야 호와 겹치지 않습니다.
+  const 호높이 = 0.25 * 6 + 0.5 * 26 + 0.25 * 6;
+
   return (
     <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
       <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
@@ -784,7 +824,7 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
         // 고를 때 이 자리들을 피해야 하기 때문입니다.
         const 변글자자리 = (item.edgeLabels ?? []).map((edge) => {
           const { midX, midY, nx, ny } = 바깥쪽(edge.from, edge.to);
-          const 밖으로 = (edge.span ? 34 : 20) + Math.abs(nx) * (글자너비(edge.text, 14) / 2);
+          const 밖으로 = (edge.span ? 호높이 + 8 : 20) + Math.abs(nx) * (글자너비(edge.text, 14) / 2);
           return { x: midX + nx * 밖으로, y: midY + ny * 밖으로 + 4, text: edge.text };
         });
 
@@ -850,28 +890,69 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
               const 오른쪽끝 = 자른곳.length ? 자른곳[자른곳.length - 1] : Math.max(...drawn.map(([x]) => x));
               const 반너비 = 글자너비(item.heightMark?.text ?? '', 15) / 2;
 
+              // 도형을 어느 높이에서 가로로 자른 자리입니다.
+              const 자른자리 = (y: number) => {
+                const 곳: number[] = [];
+                for (let at = 0; at < drawn.length; at += 1) {
+                  const [ax, ay] = drawn[at];
+                  const [bx, by] = drawn[(at + 1) % drawn.length];
+                  if ((ay - y) * (by - y) > 0 || ay === by) continue;
+                  곳.push(ax + ((y - ay) / (by - ay)) * (bx - ax));
+                }
+                곳.sort((a, b) => a - b);
+                return 곳.length
+                  ? ([곳[0], 곳[곳.length - 1]] as const)
+                  : ([Math.min(...drawn.map(([x]) => x)), Math.max(...drawn.map(([x]) => x))] as const);
+              };
+
+              // 호가 도형의 변을 뚫고 나가는지 봅니다. 높이의 한가운데만
+              // 보면 넉넉해 보여도, 위아래로 갈수록 좁아지는 도형에서는
+              // 호가 변을 타고 넘습니다.
+              const 호가삐져나감 = (쪽: number) => {
+                let 삐져나간곳 = 0;
+                for (let t = 0.1; t < 0.95; t += 0.1) {
+                  const y = hy + (baseY - hy) * t;
+                  const 호x = hx + 쪽 * (6 + 2 * t * (1 - t) * 20);
+                  const [왼, 오] = 자른자리(y);
+                  if (쪽 > 0 ? 호x > 오 + 0.5 : 호x < 왼 - 0.5) 삐져나간곳 += 1;
+                }
+                return 삐져나간곳;
+              };
+
               const 자리 = (쪽: number) => {
                 const 가장자리 = 쪽 > 0 ? 오른쪽끝 : 왼쪽끝;
-                const x = 가장자리 + 쪽 * (11 + 반너비);
+                // 도형의 가장자리 바깥이면서, 높이를 감싼 호보다도
+                // 바깥이어야 합니다.
+                const 밀어낼거리 = Math.max(
+                  Math.abs(가장자리 - hx) + 11,
+                  호높이 + 8,
+                );
+                const x = hx + 쪽 * (밀어낼거리 + 반너비);
                 const 밖으로나감 = x - 반너비 < 8 || x + 반너비 > width - 8;
                 // 글자는 높이의 한가운데보다 다섯쯤 아래에 찍힙니다.
                 // 그 자리로 견주어야 실제로 부딪히는지 알 수 있습니다.
                 const 부딪힘 = 변글자자리.some(
                   (one) =>
                     Math.abs(one.x - x) < 반너비 + 글자너비(one.text, 14) / 2 + 4 &&
-                    Math.abs(one.y - (높이가운데 + 5)) < 17,
+                    Math.abs(one.y - (높이가운데 + 5)) < 24,
                 );
                 // 판 밖으로 나가는 것이 가장 나쁘고, 다음이 다른 글자와
                 // 부딪히는 것입니다. 둘 다 아니면 점선에 가까운 쪽입니다.
                 return {
                   x,
-                  점수: (밖으로나감 ? 1000 : 0) + (부딪힘 ? 500 : 0) + Math.abs(가장자리 - hx),
+                  점수: (밖으로나감 ? 1000 : 0) + (부딪힘 ? 500 : 0) + 밀어낼거리,
                 };
               };
               const 오른쪽자리 = 자리(1);
               const 왼쪽자리 = 자리(-1);
-              const 높이쪽 = 오른쪽자리.점수 <= 왼쪽자리.점수;
-              const 높이글자x = 높이쪽 ? 오른쪽자리.x : 왼쪽자리.x;
+              // 글자를 적을 쪽과 호를 그릴 쪽을 따로 정합니다. 호는
+              // 도형 안에 머물러야 하고, 글자는 빈 자리로 나가야 합니다.
+              // 좁은 삼각형에서는 이 둘이 서로 반대쪽입니다.
+              const 높이글자쪽 = 오른쪽자리.점수 <= 왼쪽자리.점수;
+              const 높이글자x = 높이글자쪽 ? 오른쪽자리.x : 왼쪽자리.x;
+              const 오른쪽삐짐 = 호가삐져나감(1);
+              const 왼쪽삐짐 = 호가삐져나감(-1);
+              const 높이쪽 = 오른쪽삐짐 === 왼쪽삐짐 ? 높이글자쪽 : 오른쪽삐짐 < 왼쪽삐짐;
 
               return (
                 <g>
@@ -894,24 +975,15 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
                     stroke="#f0a202"
                     strokeWidth="2"
                   />
-                  {/* 높이의 범위를 점선 호로 감쌉니다.
-                      윗변·아랫변과 같은 표시라, 아이가 '어디서 어디까지가
-                      높이인가'를 그림에서 바로 읽습니다. 지도서도 밑변을
-                      이렇게 감싸 표시합니다. */}
-                  {(() => {
-                    const 쪽 = 높이쪽 ? 1 : -1;
-                    const 가까운 = hy < baseY ? hy : baseY;
-                    const 먼 = hy < baseY ? baseY : hy;
-                    return (
-                      <path
-                        d={`M ${(hx + 쪽 * 5).toFixed(1)} ${가까운.toFixed(1)} Q ${(hx + 쪽 * 16).toFixed(1)} ${((가까운 + 먼) / 2).toFixed(1)} ${(hx + 쪽 * 5).toFixed(1)} ${먼.toFixed(1)}`}
-                        fill="none"
-                        stroke="#e0a33a"
-                        strokeWidth="1.6"
-                        strokeDasharray="4 4"
-                      />
-                    );
-                  })()}
+                  {/* 높이의 범위도 같은 표시로 감쌉니다. 어디서
+                      어디까지가 높이인지를 그림에서 바로 읽습니다. */}
+                  {범위표시(
+                    'height-span',
+                    [hx, hy],
+                    [hx, baseY],
+                    [높이쪽 ? 1 : -1, 0],
+                    '#e0a33a',
+                  )}
                   {/* 높이를 적는 자리입니다. 호의 불룩한 곳 바깥,
                       곧 높이의 한가운데 옆에 적습니다. 어느 쪽에 적을지는
                       위에서 이미 정했습니다. */}
@@ -927,32 +999,44 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
               );
             })()}
 
-            {/* 대각선입니다. 마름모의 넓이에서 씁니다. */}
+            {/* 대각선입니다. 마름모의 넓이에서 씁니다.
+                대각선은 도형 안을 가로지르므로, 범위를 호로 감싸면 다른
+                대각선과 엉킵니다. 그래서 두 끝에 짧은 점선을 곧게 그어
+                '여기서 여기까지'를 짚습니다. 자로 재는 그림에서 눈금을
+                긋는 것과 같은 표시이고, 끝점은 대각선의 실제 끝점입니다. */}
             {item.diagonals?.map((line, at) => {
               const [x1, y1] = drawn[line.from] ?? [cx, centerY];
               const [x2, y2] = drawn[line.to] ?? [cx, centerY];
+              const 길이 = Math.hypot(x2 - x1, y2 - y1) || 1;
+              // 대각선에 수직인 방향입니다. 끝 표시와 글자가 이 방향으로
+              // 놓입니다.
+              const px = -(y2 - y1) / 길이;
+              const py = (x2 - x1) / 길이;
+              const 끝표시 = 9;
+              const 끝 = (x: number, y: number, key: string) => (
+                <line
+                  key={key}
+                  x1={x - px * 끝표시}
+                  y1={y - py * 끝표시}
+                  x2={x + px * 끝표시}
+                  y2={y + py * 끝표시}
+                  stroke="#e0a33a"
+                  strokeWidth="1.8"
+                  strokeDasharray="3 3"
+                />
+              );
+              const [tx, ty] = 가두기(
+                x1 + (x2 - x1) * 0.3 + px * 14,
+                y1 + (y2 - y1) * 0.3 + py * 14 + 5,
+              );
               return (
                 <g key={`d-${at}`}>
                   <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#f0a202" strokeWidth="2.5" strokeDasharray="6 4" />
-                  {/* 두 대각선은 한가운데에서 만납니다. 길이를 가운데에
-                      적으면 두 글자가 겹치므로, 각자 자기 쪽으로 조금
-                      물러나 적습니다. 그리고 선 위에 글자가 얹히지
-                      않도록 선에 수직으로 비켜 놓습니다. */}
-                  {(() => {
-                    const 길이 = Math.hypot(x2 - x1, y2 - y1) || 1;
-                    const 비켜 = 13;
-                    const px = (-(y2 - y1) / 길이) * 비켜;
-                    const py = ((x2 - x1) / 길이) * 비켜;
-                    const [tx, ty] = 가두기(
-                      x1 + (x2 - x1) * 0.3 + px,
-                      y1 + (y2 - y1) * 0.3 + py + 5,
-                    );
-                    return (
-                      <text x={tx} y={ty} textAnchor="middle" fill="#8a5a00" fontSize="15" fontWeight="900">
-                        {line.text}
-                      </text>
-                    );
-                  })()}
+                  {끝(x1, y1, 'a')}
+                  {끝(x2, y2, 'b')}
+                  <text x={tx} y={ty} textAnchor="middle" fill="#8a5a00" fontSize="15" fontWeight="900">
+                    {line.text}
+                  </text>
                 </g>
               );
             })}
@@ -991,22 +1075,13 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
               }
 
               // 지도서가 밑변·윗변·아랫변을 그리는 꼴입니다. 변의 범위를
-              // 점선 호로 감싸고, 이름과 길이를 호 바깥에 적습니다.
+              // 점선으로 감싸고, 이름과 길이를 그 바깥에 적습니다.
               // 길이만 적어 두면 그 수가 어느 변의 것인지 알 수 없습니다.
-              const 시작 = [x1 + nx * 7, y1 + ny * 7];
-              const 끝 = [x2 + nx * 7, y2 + ny * 7];
-              const 굽이 = [midX + nx * 28, midY + ny * 28];
-              const 글자밖으로 = 34 + Math.abs(nx) * (글자너비(edge.text, 14) / 2);
+              const 글자밖으로 = 호높이 + 8 + Math.abs(nx) * (글자너비(edge.text, 14) / 2);
               const [tx, ty] = 가두기(midX + nx * 글자밖으로, midY + ny * 글자밖으로 + 5);
               return (
                 <g key={`e-${at}`}>
-                  <path
-                    d={`M ${시작[0].toFixed(1)} ${시작[1].toFixed(1)} Q ${굽이[0].toFixed(1)} ${굽이[1].toFixed(1)} ${끝[0].toFixed(1)} ${끝[1].toFixed(1)}`}
-                    fill="none"
-                    stroke="#8aa0b8"
-                    strokeWidth="1.6"
-                    strokeDasharray="4 4"
-                  />
+                  {범위표시(`span-${at}`, [x1, y1], [x2, y2], [nx, ny], '#8aa0b8')}
                   <text x={tx} y={ty} textAnchor="middle" fill="#24364a" fontSize="14" fontWeight="800">
                     {edge.text}
                   </text>
