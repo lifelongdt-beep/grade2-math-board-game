@@ -47,7 +47,8 @@ const 정다각형모양: Record<number, FigureShapeName> = {
 // ── 1차시 단원 도입 ─────────────────────────────────────────────────
 // 4학년에서 배운 도형의 이름과 길이 단위를 떠올립니다. 아직 '넓이'라는
 // 말은 쓰지 않습니다 — 넓이의 단위는 3차시에서 처음 나옵니다.
-export const unit6Lesson1: G5Family[] = [
+export const unit6Lesson1 = (difficulty: '하' | '중' | '상'): G5Family[] => {
+  const 기본뭉치: G5Family[] = [
   {
     id: 'name-shape',
     make: (seed) => {
@@ -186,16 +187,154 @@ export const unit6Lesson1: G5Family[] = [
       };
     },
   },
-];
+  ];
+
+  // 이 차시는 앞 학년에서 배운 것을 떠올리는 자리라, 말의 뜻을 묻는
+  // 뭉치가 대부분입니다. 그런 뭉치는 뽑을 것이 넷다섯뿐이어서 세
+  // 수준이 나란히 쓰면 서른 자리가 같은 문항으로 찹니다 — 하와 상이
+  // 스물둘을 똑같이 내고 있었습니다. 그래서 수를 주고 재거나 세게 하는
+  // 뭉치를 새로 씁니다.
+  const 범위 = 쓸수(difficulty);
+
+  // 길이의 단위를 바꿉니다(3학년). 넓이의 단위는 3차시에서 처음이므로
+  // 여기서는 길이만 다룹니다.
+  const 길이바꾸기: G5Family = {
+    id: 'length-convert',
+    make: (seed) => {
+      const next = rand(seed + 31);
+      const k = 1 + next(범위.작은 + 범위.폭);
+      const m쪽 = next(2) === 0;
+      const 큰단위 = m쪽 ? 'm' : 'km';
+      const 작은단위 = m쪽 ? 'cm' : 'm';
+      const 배 = m쪽 ? 100 : 1000;
+      return {
+        prompt: `${k} ${큰단위}는 몇 ${작은단위}일까요?`,
+        answer: `${k * 배} ${작은단위}`,
+        wrongs: [
+          `${k * (배 / 10)} ${작은단위}`,
+          `${k * 배 * 10} ${작은단위}`,
+          `${k + 배} ${작은단위}`,
+          `${k} ${작은단위}`,
+        ],
+        tag: 'area',
+        concept: m쪽 ? '1 m=100 cm' : '1 km=1000 m',
+        strategy: '길이의 단위 바꾸기',
+        hint: m쪽 ? '1 m가 몇 cm인지 먼저 떠올리세요.' : '1 km가 몇 m인지 먼저 떠올리세요.',
+        steps: [
+          m쪽 ? '1 m=100 cm입니다.' : '1 km=1000 m입니다.',
+          `${k}×${배}=${k * 배}(${작은단위})`,
+        ],
+        misconceptionTip: '작은 단위로 바꿀 때는 곱합니다. 나누면 값이 작아져 말이 되지 않습니다.',
+        selfCheck: '바꾼 값이 처음보다 커졌나요?',
+      };
+    },
+  };
+
+  // 나머지 한 각을 구합니다(4학년). 삼각형은 180도, 사각형은 360도입니다.
+  const 남은각: G5Family = {
+    id: 'angle-left',
+    make: (seed) => {
+      const next = rand(seed + 37);
+      const 사각형인가 = Math.abs(seed) % 2 === 0;
+      const 합 = 사각형인가 ? 360 : 180;
+      const 개수 = 사각형인가 ? 4 : 3;
+      const 각들: number[] = [];
+      for (let at = 0; at < 개수 - 1; at += 1) 각들.push(20 + next(사각형인가 ? 80 : 50));
+      const 남은 = 합 - 각들.reduce((sum, one) => sum + one, 0);
+      if (남은 < 15 || 남은 > 160) return null;
+      return {
+        prompt: `${사각형인가 ? '사각형' : '삼각형'}의 ${개수 - 1}개의 각의 크기가 ${각들.join('도, ')}도입니다. 나머지 한 각의 크기는 몇 도일까요?`,
+        answer: `${남은}도`,
+        wrongs: [`${남은 + 10}도`, `${남은 - 10}도`, `${합 - 남은}도`, `${Math.round(합 / 개수)}도`],
+        tag: 'area',
+        concept: '삼각형의 세 각의 크기의 합은 180도, 사각형의 네 각의 크기의 합은 360도입니다.',
+        strategy: '각의 크기의 합으로 남은 각 구하기',
+        hint: `${사각형인가 ? '사각형' : '삼각형'}의 각의 크기의 합이 몇 도인지 먼저 떠올리세요.`,
+        steps: [
+          `${사각형인가 ? '사각형' : '삼각형'}의 각의 크기의 합은 ${합}도입니다.`,
+          `${합}-${각들.join('-')}=${남은}`,
+          `나머지 한 각의 크기는 ${남은}도입니다.`,
+        ],
+        misconceptionTip: '삼각형은 180도, 사각형은 360도입니다. 두 값을 바꾸어 쓰지 마세요.',
+        selfCheck: '구한 각을 모두 더하면 합이 맞나요?',
+      };
+    },
+  };
+
+  // 이등변삼각형은 두 밑각이 같다는 조건을 먼저 써야 해서 두 걸음입니다.
+  const 이등변각: G5Family = {
+    id: 'isosceles-angle',
+    make: (seed) => {
+      const next = rand(seed + 43);
+      const 꼭지각먼저 = Math.abs(seed) % 2 === 0;
+      if (꼭지각먼저) {
+        const 꼭지각 = 20 + next(6) * 10;
+        if ((180 - 꼭지각) % 2 !== 0) return null;
+        const 밑각 = (180 - 꼭지각) / 2;
+        return {
+          prompt: `이등변삼각형의 꼭지각의 크기가 ${꼭지각}도입니다. 한 밑각의 크기는 몇 도일까요?`,
+          answer: `${밑각}도`,
+          wrongs: [`${180 - 꼭지각}도`, `${꼭지각}도`, `${밑각 + 10}도`, `${Math.max(5, 밑각 - 10)}도`],
+          tag: 'area',
+          concept: '이등변삼각형은 두 밑각의 크기가 같습니다.',
+          strategy: '이등변삼각형의 두 밑각이 같음을 쓰기',
+          hint: '세 각의 합에서 꼭지각을 뺀 것을 둘로 나누세요.',
+          steps: [
+            `두 밑각의 합은 180-${꼭지각}=${180 - 꼭지각}(도)입니다.`,
+            '두 밑각의 크기가 같으므로 둘로 나눕니다.',
+            `${180 - 꼭지각}÷2=${밑각}이므로 한 밑각은 ${밑각}도입니다.`,
+          ],
+          misconceptionTip: '두 밑각의 합을 그대로 답하지 마세요. 한 밑각을 물었습니다.',
+          selfCheck: '세 각을 모두 더하면 180도가 되나요?',
+        };
+      }
+      const 밑각 = 25 + next(6) * 5;
+      const 꼭지각 = 180 - 밑각 * 2;
+      if (꼭지각 < 15) return null;
+      return {
+        prompt: `이등변삼각형의 한 밑각의 크기가 ${밑각}도입니다. 꼭지각의 크기는 몇 도일까요?`,
+        answer: `${꼭지각}도`,
+        wrongs: [`${밑각}도`, `${180 - 밑각}도`, `${꼭지각 + 10}도`, `${Math.max(5, 꼭지각 - 10)}도`],
+        tag: 'area',
+        concept: '이등변삼각형은 두 밑각의 크기가 같습니다.',
+        strategy: '이등변삼각형의 두 밑각이 같음을 쓰기',
+        hint: '밑각이 둘이라는 것을 먼저 쓰세요. 세 각의 합에서 두 밑각을 모두 빼야 합니다.',
+        steps: [
+          `두 밑각의 합은 ${밑각}×2=${밑각 * 2}(도)입니다.`,
+          `180-${밑각 * 2}=${꼭지각}`,
+          `꼭지각의 크기는 ${꼭지각}도입니다.`,
+        ],
+        misconceptionTip: '밑각을 한 번만 빼면 안 됩니다. 밑각은 둘입니다.',
+        selfCheck: '세 각을 모두 더하면 180도가 되나요?',
+      };
+    },
+  };
+
+  const 골라 = (ids: string[]) =>
+    ids.map((id) => 기본뭉치.find((one) => one.id === id)).filter((one): one is G5Family => Boolean(one));
+
+  if (difficulty === '하') return [...골라(['name-shape', 'count-sides', 'perpendicular']), 길이바꾸기];
+  if (difficulty === '중') {
+    return [...골라(['length-unit', 'parallel-or-perpendicular', 'perpendicular']), 남은각, 길이바꾸기];
+  }
+  return [이등변각, 남은각, 길이바꾸기, ...골라(['perpendicular'])];
+};
 
 // ── 2차시 다각형의 둘레 ─────────────────────────────────────────────
+// 2~5차시에서 쓰는 수의 크기입니다. 세 수준이 같은 범위에서 뽑으면
+// 씨앗이 달라도 서른 자리를 채우고 나면 같은 문항이 나옵니다. 수의
+// 크기가 수준을 따라 올라가는 것은 그 자체로 난이도이기도 합니다.
+const 쓸수 = (수준: '하' | '중' | '상') =>
+  수준 === '하' ? { 작은: 2, 폭: 8 } : 수준 === '중' ? { 작은: 7, 폭: 11 } : { 작은: 13, 폭: 15 };
+
 export const unit6Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
   const 정다각형둘레: G5Family = {
     id: 'regular-perimeter',
     make: (seed) => {
       const next = rand(seed);
       const 변수 = pick([3, 4, 5, 6], seed);
-      const 한변 = 2 + next(12);
+      const 범위 = 쓸수(difficulty);
+      const 한변 = 범위.작은 + next(범위.폭);
       const 둘레 = 한변 * 변수;
       return {
         prompt: `한 변의 길이가 ${한변} cm인 ${정다각형이름[변수]}의 둘레는 몇 cm일까요?`,
@@ -222,8 +361,9 @@ export const unit6Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'rect-perimeter',
     make: (seed) => {
       const next = rand(seed + 5);
-      const a = 2 + next(14);
-      const b = 2 + next(14);
+      const 범위 = 쓸수(difficulty);
+      const a = 범위.작은 + next(범위.폭);
+      const b = 범위.작은 + next(범위.폭);
       if (a === b) return null;
       const 둘레 = (a + b) * 2;
       return {
@@ -258,9 +398,10 @@ export const unit6Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'para-perimeter',
     make: (seed) => {
       const next = rand(seed + 11);
+      const 범위 = 쓸수(difficulty);
       const 마름모인가 = next(2) === 0;
-      const a = 3 + next(12);
-      const b = 마름모인가 ? a : 3 + next(12);
+      const a = 범위.작은 + 1 + next(범위.폭);
+      const b = 마름모인가 ? a : 범위.작은 + 1 + next(범위.폭);
       if (!마름모인가 && a === b) return null;
       const 둘레 = 마름모인가 ? a * 4 : (a + b) * 2;
       const 이름 = 마름모인가 ? '마름모' : '평행사변형';
@@ -304,7 +445,8 @@ export const unit6Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     make: (seed) => {
       const next = rand(seed + 17);
       const 변수 = pick([3, 4, 5, 6], seed);
-      const 한변 = 2 + next(12);
+      const 범위 = 쓸수(difficulty);
+      const 한변 = 범위.작은 + next(범위.폭);
       const 둘레 = 한변 * 변수;
       return {
         prompt: `둘레가 ${둘레} cm인 ${정다각형이름[변수]} 모양의 타일이 있습니다. 이 타일의 한 변의 길이는 몇 cm일까요?`,
@@ -324,10 +466,9 @@ export const unit6Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     },
   };
 
-  const 뭉치 = [정다각형둘레, 직사각형둘레, 평행사변형둘레, 거꾸로둘레];
   if (difficulty === '하') return [정다각형둘레, 직사각형둘레, 평행사변형둘레];
-  if (difficulty === '중') return 뭉치;
-  return [거꾸로둘레, 평행사변형둘레, 정다각형둘레, 직사각형둘레];
+  if (difficulty === '중') return [직사각형둘레, 평행사변형둘레, 거꾸로둘레, 정다각형둘레];
+  return [거꾸로둘레, 정다각형둘레, 직사각형둘레, 평행사변형둘레];
 };
 
 // ── 3차시 1 cm²는 무엇일까요 ────────────────────────────────────────
@@ -360,8 +501,9 @@ export const unit6Lesson3 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'count-cells',
     make: (seed) => {
       const next = rand(seed + 3);
-      const a = 2 + next(6);
-      const b = 2 + next(6);
+      const 모눈 = 쓸수(difficulty);
+      const a = 2 + next(Math.min(모눈.폭, 10));
+      const b = 2 + Math.floor(모눈.작은 / 2) + next(Math.min(모눈.폭, 10));
       const 넓이 = a * b;
       return {
         prompt: `1 cm²인 정사각형 ${a}칸씩 ${b}줄로 이루어진 도형이 있습니다. 이 도형의 넓이는 몇 cm²일까요?`,
@@ -411,8 +553,9 @@ export const unit6Lesson3 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'count-lshape',
     make: (seed) => {
       const next = rand(seed + 7);
-      const a = 3 + next(5);
-      const b = 2 + next(4);
+      const 모눈 = 쓸수(difficulty);
+      const a = 3 + Math.floor(모눈.작은 / 2) + next(Math.min(모눈.폭, 9));
+      const b = 2 + Math.floor(모눈.작은 / 3) + next(Math.min(모눈.폭, 8));
       const c = 1 + next(Math.max(1, a - 2));
       const d = 1 + next(Math.max(1, b - 1));
       const 넓이 = a * b - c * d;
@@ -440,10 +583,12 @@ export const unit6Lesson3 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'compare-area',
     make: (seed) => {
       const next = rand(seed + 13);
-      const a1 = 2 + next(6);
-      const b1 = 2 + next(6);
-      const a2 = 2 + next(6);
-      const b2 = 2 + next(6);
+      const 모눈 = 쓸수(difficulty);
+      const 고르기 = () => 2 + Math.floor(모눈.작은 / 2) + next(Math.min(모눈.폭, 9));
+      const a1 = 고르기();
+      const b1 = 고르기();
+      const a2 = 고르기();
+      const b2 = 고르기();
       if (a1 * b1 === a2 * b2) return null;
       const 가넓이 = a1 * b1;
       const 나넓이 = a2 * b2;
@@ -470,7 +615,7 @@ export const unit6Lesson3 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'read-unit',
     make: (seed) => {
       const next = rand(seed + 19);
-      const k = 1 + next(30);
+      const k = 1 + next(difficulty === '하' ? 12 : difficulty === '중' ? 30 : 90);
       const 한글수 = (value: number): string => {
         const 일 = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
         if (value < 10) return 일[value];
@@ -498,10 +643,11 @@ export const unit6Lesson3 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     },
   };
 
-  const 뭉치 = [칸세기, 단위뜻, 왜단위, 조각모양, 넓이비교, 읽기];
-  if (difficulty === '하') return [칸세기, 단위뜻, 넓이비교, 읽기, 조각모양, 왜단위];
-  if (difficulty === '중') return 뭉치;
-  return [조각모양, 넓이비교, 칸세기, 읽기, 왜단위, 단위뜻];
+  // 수준마다 다른 뭉치를 줍니다. 차례만 돌리면 서른 자리를 채우고 나서
+  // 남는 것이 수준마다 같습니다.
+  if (difficulty === '하') return [칸세기, 넓이비교, 단위뜻, 읽기];
+  if (difficulty === '중') return [조각모양, 넓이비교, 왜단위, 읽기];
+  return [조각모양, 넓이비교, 칸세기, 읽기];
 };
 
 // ── 4차시 직사각형의 넓이 ───────────────────────────────────────────
@@ -510,8 +656,9 @@ export const unit6Lesson4 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'rect-area',
     make: (seed) => {
       const next = rand(seed);
-      const a = 2 + next(14);
-      const b = 2 + next(14);
+      const 범위 = 쓸수(difficulty);
+      const a = 범위.작은 + next(범위.폭);
+      const b = 범위.작은 + next(범위.폭);
       if (a === b) return null;
       const 넓이 = a * b;
       return {
@@ -546,7 +693,8 @@ export const unit6Lesson4 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'square-area',
     make: (seed) => {
       const next = rand(seed + 7);
-      const a = 2 + next(14);
+      const 범위 = 쓸수(difficulty);
+      const a = 범위.작은 + next(범위.폭);
       return {
         prompt: `한 변의 길이가 ${a} cm인 정사각형의 넓이는 몇 cm²일까요?`,
         answer: `${a * a} cm²`,
@@ -569,8 +717,9 @@ export const unit6Lesson4 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'area-back',
     make: (seed) => {
       const next = rand(seed + 13);
-      const a = 2 + next(12);
-      const b = 2 + next(12);
+      const 범위 = 쓸수(difficulty);
+      const a = 범위.작은 + next(범위.폭);
+      const b = 범위.작은 + next(범위.폭);
       const 넓이 = a * b;
       return {
         prompt: `넓이가 ${넓이} cm²이고 가로가 ${a} cm인 직사각형이 있습니다. 세로는 몇 cm일까요?`,
@@ -587,10 +736,49 @@ export const unit6Lesson4 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     },
   };
 
-  const 뭉치 = [직사각형넓이, 정사각형넓이, 거꾸로넓이];
-  if (difficulty === '하') return 뭉치;
-  if (difficulty === '중') return [정사각형넓이, 거꾸로넓이, 직사각형넓이];
-  return [거꾸로넓이, 직사각형넓이, 정사각형넓이];
+  // 둘레와 넓이를 한 문항에서 함께 묻습니다. 두 가지를 모두 구해야
+  // 하나를 고를 수 있어서, 같은 수로도 한 걸음 더 갑니다. 둘레는
+  // 2차시에서, 넓이는 3차시에서 이미 배웠습니다.
+  const 넓이와둘레: G5Family = {
+    id: 'area-and-perimeter',
+    make: (seed) => {
+      const next = rand(seed + 17);
+      const 범위 = 쓸수(difficulty);
+      const a = 범위.작은 + next(범위.폭);
+      const b = 범위.작은 + next(범위.폭);
+      if (a === b) return null;
+      const 넓이 = a * b;
+      const 둘레 = (a + b) * 2;
+      const 적기 = (넓이값: number, 둘레값: number) => `넓이 ${넓이값} cm², 둘레 ${둘레값} cm`;
+      return {
+        prompt: `가로가 ${a} cm, 세로가 ${b} cm인 직사각형의 넓이와 둘레를 바르게 구한 것은 어느 것일까요?`,
+        answer: 적기(넓이, 둘레),
+        wrongs: [
+          // 넓이와 둘레를 맞바꾼 것
+          적기(둘레, 넓이),
+          // 둘레에서 2를 곱하는 것을 빠뜨린 것
+          적기(넓이, a + b),
+          // 넓이를 더해 구한 것
+          적기(a + b, 둘레),
+        ],
+        tag: 'area',
+        concept: '(직사각형의 넓이)=(가로)×(세로), (직사각형의 둘레)=((가로)+(세로))×2',
+        strategy: '넓이와 둘레를 함께 구하기',
+        hint: '넓이는 곱하고 둘레는 더합니다. 두 가지를 따로 구한 다음 보기와 맞춰 보세요.',
+        steps: [
+          `넓이: ${a}×${b}=${넓이}(cm²)`,
+          `둘레: (${a}+${b})×2=${둘레}(cm)`,
+          `그러므로 ${적기(넓이, 둘레)}입니다.`,
+        ],
+        misconceptionTip: '넓이는 cm², 둘레는 cm입니다. 단위가 다르면 다른 것을 잰 것입니다.',
+        selfCheck: '넓이는 곱해서, 둘레는 더해서 구했나요?',
+      };
+    },
+  };
+
+  if (difficulty === '하') return [직사각형넓이, 정사각형넓이, 넓이와둘레, 거꾸로넓이];
+  if (difficulty === '중') return [거꾸로넓이, 직사각형넓이, 정사각형넓이, 넓이와둘레];
+  return [넓이와둘레, 거꾸로넓이, 직사각형넓이, 정사각형넓이];
 };
 
 // ── 5차시 1 m²와 1 km² ──────────────────────────────────────────────
@@ -602,11 +790,13 @@ export const unit6Lesson5 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     make: (seed) => {
       const next = rand(seed);
       const 위로 = next(2) === 0;
-      const cm쪽 = next(2) === 0;
+      // 어느 단위 쌍을 쓸지도 수준에 묶습니다. 셋이 같은 쌍에서 뽑으면
+      // 씨앗이 달라도 서른 자리를 채우고 나면 같은 문항이 나옵니다.
+      const cm쪽 = difficulty === '하' ? true : difficulty === '상' ? false : next(2) === 0;
       const 배 = cm쪽 ? 10000 : 1000000;
       const 작은단위 = cm쪽 ? 'cm²' : 'm²';
       const 큰단위 = cm쪽 ? 'm²' : 'km²';
-      const k = 1 + next(9);
+      const k = 1 + next(difficulty === '하' ? 12 : difficulty === '중' ? 20 : 60);
       if (위로) {
         return {
           prompt: `${k} ${큰단위}는 몇 ${작은단위}일까요?`,
@@ -686,8 +876,9 @@ export const unit6Lesson5 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'big-area',
     make: (seed) => {
       const next = rand(seed + 11);
-      const a = 1 + next(9);
-      const b = 1 + next(9);
+      const 범위 = 쓸수(difficulty);
+      const a = 1 + next(범위.폭);
+      const b = 1 + Math.floor(범위.작은 / 2) + next(범위.폭);
       return {
         prompt: `가로가 ${a} km, 세로가 ${b} km인 직사각형 모양의 공원이 있습니다. 이 공원의 넓이는 몇 km²일까요?`,
         answer: `${a * b} km²`,
@@ -703,10 +894,72 @@ export const unit6Lesson5 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     },
   };
 
-  const 뭉치 = [환산, 알맞은단위, 큰넓이];
+  // m로 주어진 길이를 cm²로, 또는 그 반대로 바꾸어 넓이를 구합니다.
+  // 단위를 바꾸는 걸음과 넓이를 구하는 걸음이 함께 있어 두 걸음입니다.
+  const 바꿔서구하기: G5Family = {
+    id: 'convert-then-area',
+    make: (seed) => {
+      const next = rand(seed + 23);
+      const 범위 = 쓸수(difficulty);
+      const a = 1 + next(범위.폭);
+      const b = 1 + next(범위.폭);
+      return {
+        prompt: `가로가 ${a * 100} cm, 세로가 ${b * 100} cm인 직사각형 모양의 텃밭이 있습니다. 이 텃밭의 넓이는 몇 m²일까요?`,
+        answer: `${a * b} m²`,
+        wrongs: [
+          `${a * b * 10000} m²`,
+          `${a * 100 * b * 100} m²`,
+          `${a * b * 100} m²`,
+          `${(a + b) * 2} m²`,
+        ],
+        tag: 'area',
+        concept: '1 m=100 cm이므로 1 m²=10000 cm²입니다.',
+        strategy: '길이를 m로 바꾼 다음 넓이 구하기',
+        hint: '길이를 먼저 m로 바꾸고 나서 곱하세요. cm로 곱한 다음 바꾸려면 10000으로 나누어야 합니다.',
+        steps: [
+          `${a * 100} cm=${a} m, ${b * 100} cm=${b} m입니다.`,
+          `${a}×${b}=${a * b}(m²)`,
+        ],
+        misconceptionTip: '길이는 100배지만 넓이는 10000배입니다. 길이를 먼저 바꾸면 헷갈리지 않습니다.',
+        selfCheck: '길이를 먼저 m로 바꾸었나요?',
+      };
+    },
+  };
+
+  // 단위가 다른 두 넓이를 견줍니다. 하나를 다른 쪽 단위로 바꾸어야
+  // 견줄 수 있습니다.
+  const 단위섞어견주기: G5Family = {
+    id: 'compare-across-units',
+    make: (seed) => {
+      const next = rand(seed + 29);
+      const 범위 = 쓸수(difficulty);
+      const 가m2 = 1 + next(범위.폭);
+      const 나m2 = 1 + next(범위.폭);
+      if (가m2 === 나m2) return null;
+      const 나cm2 = 나m2 * 10000;
+      const 가큰가 = 가m2 > 나m2;
+      return {
+        prompt: `㉠ ${가m2} m²와 ㉡ ${나cm2} cm² 가운데 더 넓은 것은 어느 것일까요?`,
+        answer: 가큰가 ? '㉠' : '㉡',
+        wrongs: [가큰가 ? '㉡' : '㉠', '두 넓이가 같습니다.', '단위가 달라 견줄 수 없습니다.'],
+        tag: 'area',
+        concept: '1 m²=10000 cm²이므로 단위를 맞추면 견줄 수 있습니다.',
+        strategy: '단위를 맞추어 넓이 견주기',
+        hint: '수의 크기만 보면 안 됩니다. 한쪽을 다른 쪽 단위로 바꾼 다음 견주세요.',
+        steps: [
+          `1 m²=10000 cm²이므로 ${나cm2} cm²=${나cm2}÷10000=${나m2}(m²)입니다.`,
+          `${가m2} m²와 ${나m2} m²를 견주면 ${Math.max(가m2, 나m2)} m²가 더 넓습니다.`,
+          `그러므로 ${가큰가 ? '㉠' : '㉡'}입니다.`,
+        ],
+        misconceptionTip: 'cm²로 적힌 수가 크다고 더 넓은 것이 아닙니다. 단위가 작으면 수가 커집니다.',
+        selfCheck: '두 넓이를 같은 단위로 맞추었나요?',
+      };
+    },
+  };
+
   if (difficulty === '하') return [알맞은단위, 환산, 큰넓이];
-  if (difficulty === '중') return 뭉치;
-  return [환산, 큰넓이, 알맞은단위];
+  if (difficulty === '중') return [환산, 바꿔서구하기, 큰넓이];
+  return [단위섞어견주기, 환산, 바꿔서구하기, 큰넓이];
 };
 
 // ── 6~9차시 평행사변형·삼각형·사다리꼴·마름모의 넓이 ────────────────
@@ -764,34 +1017,94 @@ const 직각짝: Array<[높이: number, 오프셋: number, 비스듬: number]> =
 // 안에서만 수를 뽑습니다.
 const 그릴만한가 = (가로: number, 세로: number) => {
   const 비 = 가로 / 세로;
-  return 비 >= 0.45 && 비 <= 2.2;
+  // 밑변 6 cm에 높이 12 cm인 삼각형은 옳은 도형이지만 화면에서는
+  // 바늘처럼 보입니다. 글자는 자리가 없으면 도형 밖으로 나가도록
+  // 해 두었으므로, 읽을 수 있는 만큼만 막습니다.
+  return 비 >= 0.5 && 비 <= 2.1;
 };
 
-const dimsFor = (kind: AreaKind, next: (bound: number) => number, 밖으로 = false): Dims | null => {
+// 그림에 적는 수가 풀이의 한 걸음과 같아지면, 그림이 답을 미리 흘립니다.
+// 비스듬한 변의 길이는 넓이를 구하는 데 쓰지 않는 수인데, 그 수가 하필
+// (밑변)+(높이)나 넓이와 같으면 아이는 그것을 셈의 결과로 읽습니다.
+// 실제로 사다리꼴에서 비스듬한 변이 15 cm이고 (윗변)+(아랫변)이 3+12=15인
+// 문항이 나갔습니다.
+const 흘리는수인가 = (비스듬: number, 값들: number[]) => 값들.includes(비스듬);
+
+// 수준에 따라 쓰는 수의 크기를 달리합니다.
+//
+// 이것을 두지 않으면 세 수준이 같은 수에서 뽑게 되고, 그러면 문제도
+// 같아집니다. 실제로 평행사변형 차시는 하와 상이 서른 문항 가운데
+// 아홉을 똑같이 내고 있었고, 문제에 나오는 수의 크기도 세 수준이
+// 나란히 14였습니다. 수준을 고르는 뜻이 없었습니다.
+//
+// 피타고라스 수도 수준마다 나누어 씁니다. 같은 짝에서 뽑으면 씨앗이
+// 달라도 서른 자리를 채우고 나면 같은 도형이 나옵니다.
+export type 수준 = '하' | '중' | '상';
+
+// 피타고라스 수는 슬라이스가 아니라 건너뛰며 나눕니다. 앞에서부터
+// 잘라 주면 한 수준이 작은 도형만, 다른 수준이 큰 도형만 갖게 되어
+// 그릴 수 있는 짝이 몇 개 남지 않습니다.
+const 수범위: Record<수준, { 작은수: number; 폭: number; 나머지: number }> = {
+  하: { 작은수: 3, 폭: 14, 나머지: 0 },
+  중: { 작은수: 5, 폭: 15, 나머지: 1 },
+  상: { 작은수: 7, 폭: 16, 나머지: 2 },
+};
+
+const dimsFor = (
+  kind: AreaKind,
+  next: (bound: number) => number,
+  밖으로 = false,
+  수준: 수준 = '중',
+  // 그림을 그리지 않는 문항은 비스듬한 변의 길이를 적지 않습니다.
+  // 그러면 세 변이 모두 자연수가 되는 짝(피타고라스 수)에 매일 까닭이
+  // 없어지고, 쓸 수 있는 수가 열 배로 늘어납니다. 그림을 그리는
+  // 문항만 그 짝에서 뽑습니다.
+  그림 = true,
+): Dims | null => {
+  const 범위 = 수범위[수준];
+
+  if (!그림 && kind !== 'rhombus') {
+    const 밑변 = 범위.작은수 + next(범위.폭);
+    const 높이 = 범위.작은수 + next(범위.폭);
+    if (kind === 'para') return { 밑변, 높이, 비스듬: 0, 오프셋: 0, 넓이: 밑변 * 높이 };
+    if (kind === 'triangle') {
+      if ((밑변 * 높이) % 2 !== 0) return null;
+      return { 밑변, 높이, 비스듬: 0, 오프셋: 0, 넓이: (밑변 * 높이) / 2 };
+    }
+    const 윗변 = 1 + next(밑변 - 1);
+    if (윗변 >= 밑변) return null;
+    if (((윗변 + 밑변) * 높이) % 2 !== 0) return null;
+    return { 밑변, 높이, 윗변, 비스듬: 0, 오프셋: 0, 넓이: ((윗변 + 밑변) * 높이) / 2 };
+  }
   if (kind === 'rhombus') {
     // 마름모는 두 대각선으로 정해집니다. 비스듬한 변은 쓰지 않습니다.
-    const 가로 = 2 + next(13);
-    const 세로 = 2 + next(13);
+    const 가로 = 범위.작은수 + next(범위.폭 + 3);
+    const 세로 = 범위.작은수 + next(범위.폭 + 3);
     if ((가로 * 세로) % 2 !== 0) return null;
     if (!그릴만한가(가로, 세로)) return null;
     return { 밑변: 가로, 높이: 세로, 비스듬: 0, 오프셋: 0, 넓이: (가로 * 세로) / 2 };
   }
 
-  const [높이, 오프셋, 비스듬] = 직각짝[next(직각짝.length)];
-  const 밑변 = 3 + next(13);
+  const 쓸짝 = 직각짝.filter((_, at) => at % 3 === 범위.나머지);
+  const [높이, 오프셋, 비스듬] = 쓸짝[next(쓸짝.length)];
+  const 밑변 = 범위.작은수 + next(범위.폭);
 
   if (kind === 'para') {
     // 높이를 내린 발이 밑변 안에 떨어져야 그림이 읽힙니다.
     if (밑변 <= 오프셋) return null;
     if (!그릴만한가(밑변 + 오프셋, 높이)) return null;
-    return { 밑변, 높이, 비스듬, 오프셋, 넓이: 밑변 * 높이 };
+    const 넓이 = 밑변 * 높이;
+    if (흘리는수인가(비스듬, [넓이, 밑변 + 높이, 넓이 * 2, 넓이 / 2])) return null;
+    return { 밑변, 높이, 비스듬, 오프셋, 넓이 };
   }
   if (kind === 'triangle') {
     if ((밑변 * 높이) % 2 !== 0) return null;
     // 높이가 도형 안에 있는 삼각형은 꼭짓점이 밑변 위에 놓여야 합니다.
     if (!밖으로 && 밑변 <= 오프셋) return null;
     if (!그릴만한가(밖으로 ? 밑변 + 오프셋 : 밑변, 높이)) return null;
-    return { 밑변, 높이, 비스듬, 오프셋, 넓이: (밑변 * 높이) / 2 };
+    const 넓이 = (밑변 * 높이) / 2;
+    if (흘리는수인가(비스듬, [넓이, 밑변 + 높이, 밑변 * 높이, 넓이 * 2])) return null;
+    return { 밑변, 높이, 비스듬, 오프셋, 넓이 };
   }
   // 사다리꼴은 왼쪽 변이 기울어지고 오른쪽 변이 수직입니다. 그러려면
   // 윗변이 아랫변에서 가로 밀림만큼 짧아야 합니다.
@@ -844,7 +1157,7 @@ const 넓이그림 = (kind: AreaKind, dims: Dims, 밖으로: boolean): QuestionV
         active: true,
         points: 자리맞추기([[o, 0], [o + b, 0], [b, h], [0, h]]),
         edgeLabels: [
-          { from: 3, to: 2, text: `밑변 ${b} cm` },
+          { from: 3, to: 2, text: `밑변 ${b} cm`, span: true },
           { from: 0, to: 3, text: `${dims.비스듬} cm` },
         ],
         heightMark: { fromVertex: 0, text: `높이 ${h} cm` },
@@ -863,7 +1176,7 @@ const 넓이그림 = (kind: AreaKind, dims: Dims, 밖으로: boolean): QuestionV
         active: true,
         points: 자리맞추기([[꼭짓점x, 0], [b, h], [0, h]]),
         edgeLabels: [
-          { from: 1, to: 2, text: `밑변 ${b} cm` },
+          { from: 1, to: 2, text: `밑변 ${b} cm`, span: true },
           // 비스듬한 변은 꼭짓점에서 '가로로 오프셋만큼 떨어진' 쪽입니다.
           // 높이가 도형 밖에 있으면 그쪽이 오른쪽 끝입니다.
           밖으로
@@ -883,9 +1196,12 @@ const 넓이그림 = (kind: AreaKind, dims: Dims, 밖으로: boolean): QuestionV
       active: true,
       points: 자리맞추기([[o, 0], [b, 0], [b, h], [0, h]]),
       edgeLabels: [
-        { from: 0, to: 1, text: `윗변 ${dims.윗변} cm` },
-        { from: 3, to: 2, text: `아랫변 ${b} cm` },
-        { from: 0, to: 3, text: `${dims.비스듬} cm` },
+        { from: 0, to: 1, text: `윗변 ${dims.윗변} cm`, span: true },
+        { from: 3, to: 2, text: `아랫변 ${b} cm`, span: true },
+        // 비스듬한 변에는 길이를 적지 않습니다. 지도서 5-1 150쪽의
+        // 사다리꼴도 윗변·아랫변·높이 셋만 적습니다. 여기에 수를 하나
+        // 더 적으면 그 수가 (윗변)+(아랫변)과 같아지는 일이 생기고,
+        // 그러면 그림이 풀이의 한 걸음을 미리 보여 주게 됩니다.
       ],
       heightMark: { fromVertex: 0, text: `높이 ${h} cm` },
     },
@@ -930,12 +1246,12 @@ const 넓이오답 = (kind: AreaKind, dims: Dims): string[] => {
   return out.map((value) => `${value} cm²`);
 };
 
-const 넓이구하기 = (kind: AreaKind, 밖으로: boolean): G5Family => ({
+const 넓이구하기 = (kind: AreaKind, 밖으로: boolean, 수준: 수준): G5Family => ({
   id: `area-${밖으로 ? 'out' : 'in'}`,
   make: (seed) => {
     const next = rand(seed);
     let dims: Dims | null = null;
-    for (let attempt = 0; attempt < 40 && !dims; attempt += 1) dims = dimsFor(kind, next, 밖으로);
+    for (let attempt = 0; attempt < 40 && !dims; attempt += 1) dims = dimsFor(kind, next, 밖으로, 수준);
     if (!dims) return null;
     const 오답 = 넓이오답(kind, dims);
     if (오답.length < 3) return null;
@@ -1028,12 +1344,12 @@ const 공식고르기 = (kind: AreaKind): G5Family => ({
   }),
 });
 
-const 거꾸로넓이 = (kind: AreaKind): G5Family => ({
+const 거꾸로넓이 = (kind: AreaKind, 수준: 수준): G5Family => ({
   id: 'area-back',
   make: (seed) => {
     const next = rand(seed + 7);
     let dims: Dims | null = null;
-    for (let attempt = 0; attempt < 40 && !dims; attempt += 1) dims = dimsFor(kind, next);
+    for (let attempt = 0; attempt < 40 && !dims; attempt += 1) dims = dimsFor(kind, next, false, 수준, false);
     if (!dims) return null;
     const 묻는것 = kind === 'rhombus' ? '다른 대각선의 길이' : '높이';
     return {
@@ -1069,13 +1385,13 @@ const 거꾸로넓이 = (kind: AreaKind): G5Family => ({
   },
 });
 
-const 같은넓이 = (kind: AreaKind): G5Family => ({
+const 같은넓이 = (kind: AreaKind, 수준: 수준): G5Family => ({
   id: 'same-area',
   make: (seed) => {
     if (kind !== 'para' && kind !== 'triangle') return null;
     const next = rand(seed + 13);
     let dims: Dims | null = null;
-    for (let attempt = 0; attempt < 40 && !dims; attempt += 1) dims = dimsFor(kind, next);
+    for (let attempt = 0; attempt < 40 && !dims; attempt += 1) dims = dimsFor(kind, next, false, 수준, false);
     if (!dims) return null;
     return {
       prompt: `밑변의 길이가 ${dims.밑변} cm, 높이가 ${dims.높이} cm인 ${areaName[kind]}이 여러 개 있습니다. 이 ${areaName[kind]}들의 넓이에 대해 바르게 말한 것은 어느 것일까요?`,
@@ -1102,12 +1418,12 @@ const 같은넓이 = (kind: AreaKind): G5Family => ({
 
 // 넓이를 실제로 쓰는 자리입니다. 지도서의 장면(타일, 땅, 밭, 색종이)을
 // 그대로 씁니다.
-const 넓이문장 = (kind: AreaKind): G5Family => ({
+const 넓이문장 = (kind: AreaKind, 수준: 수준): G5Family => ({
   id: 'area-story',
   make: (seed) => {
     const next = rand(seed + 23);
     let dims: Dims | null = null;
-    for (let attempt = 0; attempt < 40 && !dims; attempt += 1) dims = dimsFor(kind, next);
+    for (let attempt = 0; attempt < 40 && !dims; attempt += 1) dims = dimsFor(kind, next, false, 수준, false);
     if (!dims) return null;
     const 오답 = 넓이오답(kind, dims);
     if (오답.length < 3) return null;
@@ -1132,20 +1448,125 @@ const 넓이문장 = (kind: AreaKind): G5Family => ({
   },
 });
 
-export const unit6Area = (kind: AreaKind, difficulty: '하' | '중' | '상'): G5Family[] => {
-  const 뭉치: G5Family[] = [넓이구하기(kind, false), 공식고르기(kind)];
-  // 거꾸로 묻는 문항입니다. 사다리꼴은 윗변과 아랫변을 함께 주어
-  // 모르는 자리를 높이 하나로 둡니다.
-  뭉치.push(거꾸로넓이(kind));
-  // '모양이 달라도 넓이가 같다'는 밑변과 높이만으로 넓이가 정해지는
-  // 도형에서만 뜻이 있습니다.
-  if (kind === 'para' || kind === 'triangle') 뭉치.push(같은넓이(kind));
-  // 지도서: "삼각형의 넓이를 구할 때는 높이가 삼각형의 외부에 있는
-  // 것도 다룬다."
-  if (kind === 'triangle') 뭉치.push(넓이구하기(kind, true));
-  뭉치.push(넓이문장(kind));
+// 그림에서 높이를 짚어 내는 문항입니다. 이 단원에서 가장 잦은 실수가
+// 높이 대신 비스듬한 변의 길이를 쓰는 것이라, 넓이를 구하기 전에 그
+// 하나만 따로 묻습니다. 그림에 비스듬한 변의 길이가 함께 적혀 있어야
+// 묻는 뜻이 있습니다.
+const 높이찾기 = (kind: AreaKind, 수준: 수준): G5Family => ({
+  id: 'find-height',
+  make: (seed) => {
+    const next = rand(seed + 41);
+    let dims: Dims | null = null;
+    for (let attempt = 0; attempt < 40 && !dims; attempt += 1) dims = dimsFor(kind, next, false, 수준);
+    if (!dims) return null;
+    if (kind === 'rhombus') {
+      return {
+        prompt: '그림의 마름모에서 두 대각선의 길이를 모두 더하면 몇 cm일까요?',
+        answer: `${dims.밑변 + dims.높이} cm`,
+        wrongs: [
+          `${dims.밑변} cm`,
+          `${dims.높이} cm`,
+          `${(dims.밑변 * dims.높이) / 2} cm`,
+          `${dims.밑변 * dims.높이} cm`,
+        ],
+        tag: 'area',
+        concept: areaRule[kind],
+        strategy: '그림에서 두 대각선 읽기',
+        hint: '마름모의 대각선은 마주 보는 꼭짓점끼리 이은 선분입니다. 그림에서 둘을 찾아 길이를 더하세요.',
+        steps: [
+          `두 대각선의 길이는 ${dims.밑변} cm와 ${dims.높이} cm입니다.`,
+          `${dims.밑변}+${dims.높이}=${dims.밑변 + dims.높이}(cm)`,
+        ],
+        misconceptionTip: '대각선은 변이 아닙니다. 도형의 둘레를 이루는 선이 아니라 안을 가로지르는 선입니다.',
+        selfCheck: '그림에서 대각선 둘을 모두 찾았나요?',
+        visual: 넓이그림(kind, dims, false),
+      } satisfies G5Spec;
+    }
+    return {
+      prompt: `그림의 ${areaName[kind]}에서 넓이를 구할 때 쓰는 높이는 몇 cm일까요?`,
+      answer: `${dims.높이} cm`,
+      wrongs: [
+        `${dims.비스듬} cm`,
+        `${dims.밑변} cm`,
+        `${dims.높이 + dims.밑변} cm`,
+        `${dims.높이 + 1} cm`,
+      ],
+      tag: 'area',
+      concept: areaRule[kind],
+      strategy: '그림에서 높이 짚어 내기',
+      hint: '높이는 밑변과 수직으로 잰 길이입니다. 그림에서 점선으로 긋고 직각 표시를 한 선을 찾으세요.',
+      steps: [
+        '높이는 밑변에 수직으로 그은 선분의 길이입니다.',
+        '그림에서 점선과 직각 표시로 그린 선이 높이입니다.',
+        `그러므로 높이는 ${dims.높이} cm입니다.`,
+      ],
+      misconceptionTip: '비스듬한 변의 길이는 높이가 아닙니다. 직각 표시가 있는 선을 보세요.',
+      selfCheck: '고른 길이에 직각 표시가 붙어 있었나요?',
+      visual: 넓이그림(kind, dims, false),
+    } satisfies G5Spec;
+  },
+});
 
-  if (difficulty === '하') return 뭉치;
-  if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0]];
-  return [...뭉치.slice(2), ...뭉치.slice(0, 2)];
+// 두 도형의 넓이를 저마다 구해 견줍니다. 한 번에 답이 나오지 않고
+// 두 번 구한 다음 견주어야 해서, 같은 공식으로도 한 걸음 더 갑니다.
+const 넓이견주기 = (kind: AreaKind, 수준: 수준): G5Family => ({
+  id: 'compare-area',
+  make: (seed) => {
+    const next = rand(seed + 53);
+    let 가: Dims | null = null;
+    let 나: Dims | null = null;
+    for (let attempt = 0; attempt < 40 && !가; attempt += 1) 가 = dimsFor(kind, next, false, 수준, false);
+    for (let attempt = 0; attempt < 40 && !나; attempt += 1) 나 = dimsFor(kind, next, false, 수준, false);
+    if (!가 || !나 || 가.넓이 === 나.넓이) return null;
+    const 가가큰가 = 가.넓이 > 나.넓이;
+    const 적기 = (dims: Dims) =>
+      kind === 'rhombus'
+        ? `두 대각선의 길이가 ${dims.밑변} cm, ${dims.높이} cm인 마름모`
+        : kind === 'trapezoid'
+          ? `윗변의 길이가 ${dims.윗변} cm, 아랫변의 길이가 ${dims.밑변} cm, 높이가 ${dims.높이} cm인 사다리꼴`
+          : `밑변의 길이가 ${dims.밑변} cm, 높이가 ${dims.높이} cm인 ${areaName[kind]}`;
+    return {
+      prompt: `㉠ ${적기(가)}과 ㉡ ${적기(나)}이 있습니다. 넓이가 더 넓은 것은 어느 것일까요?`,
+      answer: 가가큰가 ? '㉠' : '㉡',
+      wrongs: [가가큰가 ? '㉡' : '㉠', '두 도형의 넓이가 같습니다.', '넓이를 견줄 수 없습니다.'],
+      tag: 'area',
+      concept: areaRule[kind],
+      strategy: '두 도형의 넓이를 구해 견주기',
+      hint: '한눈에 견주려 하지 말고, 두 도형의 넓이를 저마다 구한 다음 두 수를 견주세요.',
+      steps: [
+        areaRule[kind],
+        `㉠의 넓이: ${넓이식(kind, 가)}(cm²)`,
+        `㉡의 넓이: ${넓이식(kind, 나)}(cm²)`,
+        `${Math.max(가.넓이, 나.넓이)}${particleOf(String(Math.max(가.넓이, 나.넓이)), '이')} 더 크므로 ${가가큰가 ? '㉠' : '㉡'}이 더 넓습니다.`,
+      ],
+      misconceptionTip: '길이가 큰 쪽이 늘 넓은 것은 아닙니다. 넓이를 직접 구해 견주어야 합니다.',
+      selfCheck: '두 도형의 넓이를 모두 구했나요?',
+    } satisfies G5Spec;
+  },
+});
+
+export const unit6Area = (kind: AreaKind, difficulty: 수준): G5Family[] => {
+  // 수준마다 하는 일과 수의 크기를 함께 올립니다.
+  //   하  그림을 보고 공식에 넣어 넓이를 구한다 (작은 수)
+  //   중  거꾸로 구하거나, 모양이 달라도 넓이가 같은 것을 가린다
+  //   상  글로 된 상황에서 스스로 식을 세운다 (큰 수)
+  //
+  // 차례만 돌리던 때에는 하와 상이 서른 문항 가운데 열하나까지 똑같이
+  // 냈습니다. 문제에 나오는 수의 크기도 세 수준이 나란히 같았습니다.
+  if (difficulty === '하') {
+    const 뭉치 = [넓이구하기(kind, false, '하'), 높이찾기(kind, '하'), 공식고르기(kind), 넓이문장(kind, '하')];
+    if (kind === 'triangle') 뭉치.push(넓이구하기(kind, true, '하'));
+    return 뭉치;
+  }
+  if (difficulty === '중') {
+    const 뭉치 = [거꾸로넓이(kind, '중'), 넓이구하기(kind, false, '중'), 넓이문장(kind, '중')];
+    if (kind === 'para' || kind === 'triangle') 뭉치.push(같은넓이(kind, '중'));
+    else 뭉치.push(공식고르기(kind));
+    return 뭉치;
+  }
+  const 뭉치 = [넓이문장(kind, '상'), 거꾸로넓이(kind, '상'), 넓이견주기(kind, '상')];
+  if (kind === 'triangle') 뭉치.push(넓이구하기(kind, true, '상'));
+  else if (kind === 'para') 뭉치.push(같은넓이(kind, '상'));
+  else 뭉치.push(넓이구하기(kind, false, '상'));
+  return 뭉치;
 };

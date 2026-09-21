@@ -1,6 +1,7 @@
 import type { FigureShapeName } from '../../../types';
 import type { G5Family } from '../build';
 import { eul, eun, gwa, i as iJosa, particleOf, pick, rand } from '../util';
+import { unit3Lesson1Easy } from './lesson1';
 import type { AxisKind } from './figures';
 import {
   FIGURE_FACTS,
@@ -1313,4 +1314,515 @@ export const 대칭성질 = (선대칭인가: boolean): G5Family[] => {
       }),
     },
   ];
+};
+
+// ════════════════════════════════════════════════════════════════════
+// 수준 나누기에 쓰는 뭉치
+// ────────────────────────────────────────────────────────────────────
+// 이 단원도 수준을 나눈다면서 뭉치의 차례만 돌리고 있었습니다. 뜻과
+// 성질을 묻는 뭉치는 뽑을 것이 한둘뿐이라(대응점끼리 이은 선분의
+// 성질은 하나뿐입니다) 차례를 바꾸어도 세 수준이 같은 문항으로 찹니다.
+// 6차시는 중과 상이 서른 문항 가운데 스물하나를 똑같이 내고 있었습니다.
+//
+// 그래서 수를 주고 계산하게 하는 뭉치를 새로 썼습니다. 합동과 대칭은
+// '같다'는 성질이라, 그 성질을 한 번 쓰면 길이와 각을 구할 수 있고
+// 두 번 쓰면 두 걸음짜리 문항이 됩니다.
+// ════════════════════════════════════════════════════════════════════
+
+/** 합동인 두 도형의 둘레(또는 넓이)가 같다는 것을 씁니다. */
+const 합동인두도형 = (넓이인가: boolean): G5Family => ({
+  id: 넓이인가 ? 'congruent-area' : 'congruent-perimeter',
+  make: (seed) => {
+    const next = rand(seed);
+    const 도형 = (['삼각형', '사각형', '오각형'] as const)[next(3)];
+    const 값 = 넓이인가 ? 12 + next(60) : 14 + next(40);
+    const 단위 = 넓이인가 ? 'cm²' : 'cm';
+    const 무엇 = 넓이인가 ? '넓이' : '둘레';
+    return {
+      prompt: `두 ${도형}은 서로 합동입니다. 한 ${도형}의 ${무엇}가 ${값} ${단위}일 때, 다른 ${도형}의 ${무엇}는 몇 ${단위}일까요?`,
+      answer: `${값} ${단위}`,
+      wrongs: [`${값 * 2} ${단위}`, `${Math.round(값 / 2)} ${단위}`, `${값 + 10} ${단위}`, `${값 - 5} ${단위}`],
+      tag: 'congruence',
+      strategy: `합동인 두 도형의 ${무엇} 알기`,
+      hint: '합동인 두 도형은 포개었을 때 완전히 겹칩니다. 겹치는 도형의 크기는 어떠할지 생각해 보세요.',
+      steps: [
+        '합동인 두 도형은 모양과 크기가 같아 포개면 완전히 겹칩니다.',
+        `완전히 겹치므로 ${무엇}도 서로 같습니다.`,
+        `그러므로 다른 ${도형}의 ${무엇}도 ${값} ${단위}입니다.`,
+      ],
+      misconceptionTip: '합동이라고 해서 두 도형의 크기를 더하거나 반으로 나누지 않습니다. 둘은 그냥 같습니다.',
+      selfCheck: '합동인 두 도형의 크기가 같다는 것을 썼나요?',
+    };
+  },
+});
+
+/** 합동인 두 도형의 둘레(넓이)의 합에서 하나를 거꾸로 구합니다. */
+const 합동두걸음 = (넓이인가: boolean): G5Family => ({
+  id: 넓이인가 ? 'congruent-area-two-step' : 'congruent-perimeter-two-step',
+  make: (seed) => {
+    const next = rand(seed);
+    const 도형 = (['삼각형', '사각형', '오각형'] as const)[next(3)];
+    const 하나 = 넓이인가 ? 8 + next(40) : 12 + next(30);
+    const 합 = 하나 * 2;
+    const 단위 = 넓이인가 ? 'cm²' : 'cm';
+    const 무엇 = 넓이인가 ? '넓이' : '둘레';
+    return {
+      prompt: `서로 합동인 두 ${도형}이 있습니다. 두 ${도형}의 ${무엇}를 더하면 ${합} ${단위}입니다. 한 ${도형}의 ${무엇}는 몇 ${단위}일까요?`,
+      answer: `${하나} ${단위}`,
+      wrongs: [`${합} ${단위}`, `${하나 * 2} ${단위}`.replace(`${합} ${단위}`, `${합 + 2} ${단위}`), `${하나 + 5} ${단위}`, `${Math.round(하나 / 2)} ${단위}`],
+      tag: 'congruence',
+      strategy: `합동을 써서 ${무엇} 거꾸로 구하기`,
+      hint: `두 도형이 합동이므로 ${무엇}가 서로 같습니다. 같은 것 둘을 더한 값이 주어졌다면 하나는 어떻게 구할까요?`,
+      steps: [
+        `합동인 두 도형은 ${무엇}가 서로 같습니다.`,
+        `같은 값 둘을 더해 ${eun(String(합))} 되었으므로 ${합}÷2=${하나}입니다.`,
+        `한 ${도형}의 ${무엇}는 ${하나} ${단위}입니다.`,
+      ],
+      misconceptionTip: '두 도형이 합동이라는 것을 먼저 써야 2로 나눌 수 있습니다. 합동이 아니면 나눌 수 없습니다.',
+      selfCheck: '구한 값을 두 배 하면 주어진 합이 되나요?',
+    };
+  },
+});
+
+/** 대응변의 길이를 구합니다. */
+const 대응변길이 = (선대칭인가: boolean): G5Family => ({
+  id: 'corresponding-side-value',
+  make: (seed) => {
+    const next = rand(seed);
+    const { first } = 대응이름(4);
+    const 길이 = 4 + next(20);
+    const 이름 = 선대칭인가 ? '선대칭도형' : '점대칭도형';
+    const 자리 = next(4);
+    return {
+      prompt: `${이름}인 사각형 ${first.join('')}에서 변 ${first[자리]}${first[(자리 + 1) % 4]}의 길이가 ${길이} cm입니다. 그 대응변의 길이는 몇 cm일까요?`,
+      answer: `${길이} cm`,
+      wrongs: [`${길이 * 2} cm`, `${Math.round(길이 / 2)} cm`, `${길이 + 3} cm`, `${Math.max(1, 길이 - 3)} cm`],
+      tag: 'congruence',
+      strategy: '대응변의 길이 구하기',
+      hint: `${이름}에서 대응변의 길이는 서로 같습니다. 새로 계산할 것이 없습니다.`,
+      steps: [
+        선대칭인가
+          ? '선대칭도형을 대칭축으로 접으면 대응변이 완전히 겹칩니다.'
+          : '점대칭도형을 180° 돌리면 대응변이 완전히 겹칩니다.',
+        '겹치므로 대응변의 길이는 서로 같습니다.',
+        `그러므로 대응변의 길이도 ${길이} cm입니다.`,
+      ],
+    };
+  },
+});
+
+/** 대응각 둘의 크기의 합을 구합니다. 성질을 한 번 쓰고 더합니다. */
+const 대응각의합 = (선대칭인가: boolean): G5Family => ({
+  id: 'two-angle-sum',
+  make: (seed) => {
+    const next = rand(seed);
+    const { first } = 대응이름(4);
+    const 각 = 40 + next(100);
+    const 이름 = 선대칭인가 ? '선대칭도형' : '점대칭도형';
+    const 자리 = next(4);
+    return {
+      prompt: `${이름}인 사각형 ${first.join('')}에서 각 ${first[(자리 + 3) % 4]}${first[자리]}${first[(자리 + 1) % 4]}의 크기가 ${각}°입니다. 이 각과 그 대응각의 크기를 더하면 몇 도일까요?`,
+      answer: `${각 * 2}°`,
+      wrongs: [`${각}°`, `${180 - 각}°`, `${각 + 90}°`, `${360 - 각 * 2}°`],
+      tag: 'congruence',
+      strategy: '대응각의 성질을 쓴 다음 더하기',
+      hint: '먼저 대응각의 크기가 얼마인지 정하고, 그다음에 두 각을 더하세요.',
+      steps: [
+        `${이름}에서 대응각의 크기는 서로 같으므로 대응각도 ${각}°입니다.`,
+        `${각}+${각}=${각 * 2}`,
+        `두 각의 크기의 합은 ${각 * 2}°입니다.`,
+      ],
+      misconceptionTip: '대응각이라고 해서 더해서 180°가 되는 것이 아닙니다. 두 각은 크기가 같습니다.',
+      selfCheck: '대응각의 크기를 먼저 구하고 나서 더했나요?',
+    };
+  },
+});
+
+/** 완성한 둘레에서 반쪽의 변의 길이의 합을 거꾸로 구합니다. */
+const 둘레에서반쪽 = (선대칭인가: boolean): G5Family => ({
+  id: 'half-from-perimeter',
+  make: (seed) => {
+    const next = rand(seed);
+    const 이름 = 선대칭인가 ? '선대칭도형' : '점대칭도형';
+    const 반쪽 = 7 + next(18);
+    const 둘레 = 반쪽 * 2;
+    return {
+      prompt: `${eul(이름)} 완성했더니 둘레가 ${둘레} cm였습니다. 완성하기 전 그려져 있던 반쪽에서 ${eul(선대칭인가 ? '대칭축' : '대칭의 중심')} 뺀 변의 길이의 합은 몇 cm일까요?`,
+      answer: `${반쪽} cm`,
+      wrongs: [`${둘레} cm`, `${둘레 * 2} cm`, `${반쪽 + 2} cm`, `${Math.round(반쪽 / 2)} cm`],
+      tag: 'congruence',
+      strategy: '완성한 둘레에서 반쪽 거꾸로 구하기',
+      hint: '완성한 도형은 반쪽과 그 대응이 붙은 것입니다. 둘은 길이가 같습니다.',
+      steps: [
+        `${이름}에서 대응변의 길이는 서로 같으므로 완성한 둘레는 반쪽의 두 배입니다.`,
+        `${둘레}÷2=${반쪽}`,
+        `반쪽의 변의 길이의 합은 ${반쪽} cm입니다.`,
+      ],
+      misconceptionTip: '완성한 둘레를 그대로 답하지 마세요. 물은 것은 반쪽입니다.',
+      selfCheck: '구한 값을 두 배 하면 주어진 둘레가 되나요?',
+    };
+  },
+});
+
+/** 대칭축의 개수로 도형을 찾습니다. 거꾸로 묻는 자리입니다. */
+const 축개수로도형찾기: G5Family = {
+  id: 'shape-from-axis-count',
+  make: (seed) => {
+    const next = rand(seed);
+    const 셀수있는것 = FIGURE_FACTS.filter((one) => one.axisCount !== '무수히 많음');
+    const 찾을수 = 셀수있는것[next(셀수있는것.length)].axisCount as number;
+    const 맞는것 = 셀수있는것.filter((one) => one.axisCount === 찾을수);
+    const 아닌것 = 셀수있는것.filter((one) => one.axisCount !== 찾을수);
+    if (!맞는것.length || 아닌것.length < 3) return null;
+    const 답 = 맞는것[next(맞는것.length)];
+    const 섞은 = [...아닌것];
+    for (let at = 섞은.length - 1; at > 0; at -= 1) {
+      const to = next(at + 1);
+      [섞은[at], 섞은[to]] = [섞은[to], 섞은[at]];
+    }
+    const 보기 = [답, ...섞은.slice(0, 3)];
+    const 자리표 = [0, 1, 2, 3];
+    for (let at = 자리표.length - 1; at > 0; at -= 1) {
+      const to = next(at + 1);
+      [자리표[at], 자리표[to]] = [자리표[to], 자리표[at]];
+    }
+    const 이름 = ['가', '나', '다', '라'];
+    const 정답자리 = 자리표.indexOf(0);
+    return {
+      prompt: `그림의 도형 가운데 대칭축이 ${찾을수}개인 것은 어느 것일까요?`,
+      answer: 이름[정답자리],
+      wrongs: 이름.filter((_, at) => at !== 정답자리),
+      tag: 'congruence',
+      strategy: '대칭축의 개수로 도형 찾기',
+      hint: '보기마다 접어서 완전히 겹치는 선을 모두 찾아 세어 보세요. 하나만 보고 고르면 안 됩니다.',
+      steps: [
+        `${이름[정답자리]}${particleOf(이름[정답자리], '은')} ${답.shape}입니다.`,
+        `${eun(답.shape)} 접어서 완전히 겹치는 선이 ${찾을수}개입니다.`,
+        `그러므로 답은 ${이름[정답자리]}입니다.`,
+      ],
+      visual: figureChoices('여러 도형', 자리표.map((which) => 보기[which].shape), 이름),
+      misconceptionTip: '직사각형과 평행사변형의 대각선은 대칭축이 아닙니다. 접어 보면 겹치지 않습니다.',
+    };
+  },
+};
+
+/** 삼각형과 사각형에서 나머지 각을 구합니다. */
+const 남은각찾기 = (어려운가: boolean): G5Family => ({
+  id: 어려운가 ? 'angle-back-hard' : 'angle-back',
+  make: (seed) => {
+    const next = rand(seed);
+    if (!어려운가) {
+      const 사각형인가 = Math.abs(seed) % 2 === 0;
+      const 합 = 사각형인가 ? 360 : 180;
+      const 개수 = 사각형인가 ? 4 : 3;
+      const 각들: number[] = [];
+      for (let at = 0; at < 개수 - 1; at += 1) 각들.push(20 + next(사각형인가 ? 80 : 50));
+      const 남은 = 합 - 각들.reduce((sum, one) => sum + one, 0);
+      if (남은 < 15 || 남은 > 160) return null;
+      return {
+        prompt: `${사각형인가 ? '사각형' : '삼각형'}의 ${개수 - 1}개의 각의 크기가 ${각들.join('도, ')}도입니다. 나머지 한 각의 크기는 몇 도일까요?`,
+        answer: `${남은}도`,
+        wrongs: [`${남은 + 10}도`, `${남은 - 10}도`, `${합 - 남은}도`, `${Math.round(합 / 개수)}도`],
+        tag: 'shape',
+        strategy: '각의 크기의 합으로 남은 각 구하기',
+        hint: `${사각형인가 ? '사각형' : '삼각형'}의 각의 크기의 합이 몇 도인지 먼저 떠올리세요.`,
+        steps: [
+          `${사각형인가 ? '사각형' : '삼각형'}의 각의 크기의 합은 ${합}도입니다.`,
+          `${합}-${각들.join('-')}=${남은}`,
+          `나머지 한 각의 크기는 ${남은}도입니다.`,
+        ],
+        misconceptionTip: '삼각형은 180도, 사각형은 360도입니다. 두 값을 바꾸어 쓰지 마세요.',
+      };
+    }
+    // 도전은 두 걸음입니다 — 같은 각이 둘이라는 조건을 먼저 쓴 다음
+    // 나머지를 구합니다.
+    const 꼭지각먼저 = Math.abs(seed) % 2 === 0;
+    if (꼭지각먼저) {
+      const 꼭지각 = 20 + next(6) * 10;
+      if ((180 - 꼭지각) % 2 !== 0) return null;
+      const 밑각 = (180 - 꼭지각) / 2;
+      return {
+        prompt: `이등변삼각형의 꼭지각의 크기가 ${꼭지각}도입니다. 한 밑각의 크기는 몇 도일까요?`,
+        answer: `${밑각}도`,
+        wrongs: [`${180 - 꼭지각}도`, `${꼭지각}도`, `${밑각 + 10}도`, `${Math.max(5, 밑각 - 10)}도`],
+        tag: 'shape',
+        strategy: '이등변삼각형의 두 밑각이 같음을 쓰기',
+        hint: '이등변삼각형은 두 밑각의 크기가 같습니다. 세 각의 합에서 꼭지각을 뺀 것을 둘로 나누세요.',
+        steps: [
+          `삼각형의 세 각의 크기의 합은 180도이므로 두 밑각의 합은 180-${꼭지각}=${180 - 꼭지각}(도)입니다.`,
+          '이등변삼각형은 두 밑각의 크기가 같습니다.',
+          `${180 - 꼭지각}÷2=${밑각}이므로 한 밑각은 ${밑각}도입니다.`,
+        ],
+        misconceptionTip: '두 밑각의 합을 그대로 답하지 마세요. 한 밑각을 물었습니다.',
+        selfCheck: '세 각을 모두 더하면 180도가 되나요?',
+      };
+    }
+    const 밑각 = 25 + next(6) * 5;
+    const 꼭지각 = 180 - 밑각 * 2;
+    if (꼭지각 < 15) return null;
+    return {
+      prompt: `이등변삼각형의 한 밑각의 크기가 ${밑각}도입니다. 꼭지각의 크기는 몇 도일까요?`,
+      answer: `${꼭지각}도`,
+      wrongs: [`${밑각}도`, `${180 - 밑각}도`, `${꼭지각 + 10}도`, `${Math.max(5, 꼭지각 - 10)}도`],
+      tag: 'shape',
+      strategy: '이등변삼각형의 두 밑각이 같음을 쓰기',
+      hint: '밑각이 둘이라는 것을 먼저 쓰세요. 세 각의 합에서 두 밑각을 모두 빼야 합니다.',
+      steps: [
+        `이등변삼각형은 두 밑각의 크기가 같으므로 두 밑각의 합은 ${밑각}×2=${밑각 * 2}(도)입니다.`,
+        `180-${밑각 * 2}=${꼭지각}`,
+        `꼭지각의 크기는 ${꼭지각}도입니다.`,
+      ],
+      misconceptionTip: '밑각을 한 번만 빼면 안 됩니다. 밑각은 둘입니다.',
+      selfCheck: '세 각을 모두 더하면 180도가 되나요?',
+    };
+  },
+});
+
+/** 변의 수로 도형의 이름을 찾습니다. */
+const 변수로도형: G5Family = {
+  id: 'shape-from-parts',
+  make: (seed) => {
+    const next = rand(seed);
+    const 셀것 = FIGURE_FACTS.filter((one) => one.vertexCount >= 3);
+    const 찾을수 = 셀것[next(셀것.length)].vertexCount;
+    const 맞는것 = 셀것.filter((one) => one.vertexCount === 찾을수);
+    const 아닌것 = 셀것.filter((one) => one.vertexCount !== 찾을수);
+    if (아닌것.length < 3) return null;
+    const 답 = 맞는것[next(맞는것.length)];
+    const 섞은 = [...아닌것];
+    for (let at = 섞은.length - 1; at > 0; at -= 1) {
+      const to = next(at + 1);
+      [섞은[at], 섞은[to]] = [섞은[to], 섞은[at]];
+    }
+    return {
+      prompt: `꼭짓점이 ${찾을수}개인 도형은 어느 것일까요?`,
+      answer: 답.shape,
+      wrongs: 섞은.slice(0, 3).map((one) => one.shape),
+      tag: 'shape',
+      strategy: '꼭짓점의 수로 도형 찾기',
+      hint: '보기의 도형을 하나씩 떠올리며 꼭짓점을 세어 보세요.',
+      steps: [
+        `${eun(답.shape)} 꼭짓점이 ${찾을수}개입니다.`,
+        `그러므로 답은 ${답.shape}입니다.`,
+      ],
+    };
+  },
+};
+
+/** 넷 가운데 대칭이 '아닌' 것을 찾습니다. 맞는 것 찾기의 거꾸로입니다. */
+const 아닌것찾기 = (선대칭인가: boolean): G5Family => ({
+  id: 선대칭인가 ? 'not-line-symmetric' : 'not-point-symmetric',
+  make: (seed) => {
+    const next = rand(seed);
+    const 맞는것 = 선대칭인가 ? 선대칭도형들 : 점대칭도형들;
+    const 아닌것 = 선대칭인가 ? 선대칭아닌것들 : 점대칭아닌것들;
+    if (!아닌것.length || 맞는것.length < 3) return null;
+    const 답 = 아닌것[next(아닌것.length)];
+    const 섞은 = [...맞는것];
+    for (let at = 섞은.length - 1; at > 0; at -= 1) {
+      const to = next(at + 1);
+      [섞은[at], 섞은[to]] = [섞은[to], 섞은[at]];
+    }
+    const 보기 = [답, ...섞은.slice(0, 3)];
+    const 자리표 = [0, 1, 2, 3];
+    for (let at = 자리표.length - 1; at > 0; at -= 1) {
+      const to = next(at + 1);
+      [자리표[at], 자리표[to]] = [자리표[to], 자리표[at]];
+    }
+    const 이름 = ['가', '나', '다', '라'];
+    const 정답자리 = 자리표.indexOf(0);
+    const 이름말 = 선대칭인가 ? '선대칭도형' : '점대칭도형';
+    return {
+      prompt: `그림의 도형 가운데 ${이름말}이 아닌 것은 어느 것일까요?`,
+      answer: 이름[정답자리],
+      wrongs: 이름.filter((_, at) => at !== 정답자리),
+      tag: 'congruence',
+      strategy: `${이름말}이 아닌 것 가려내기`,
+      hint: 선대칭인가
+        ? '보기마다 접어서 완전히 겹치는 선이 하나라도 있는지 찾아보세요. 하나도 없는 것이 답입니다.'
+        : '보기마다 한 점을 중심으로 180° 돌려 보세요. 처음 도형과 겹치지 않는 것이 답입니다.',
+      steps: [
+        `${이름[정답자리]}${particleOf(이름[정답자리], '은')} ${답.shape}입니다.`,
+        선대칭인가
+          ? `${eun(답.shape)} 어떤 선으로 접어도 완전히 겹치지 않습니다.`
+          : `${eun(답.shape)} 180° 돌리면 처음 도형과 겹치지 않습니다.`,
+        `그러므로 답은 ${이름[정답자리]}입니다.`,
+      ],
+      visual: figureChoices('여러 도형', 자리표.map((which) => 보기[which].shape), 이름),
+      misconceptionTip: '아닌 것을 찾는 문제입니다. 맞는 것을 고르지 않도록 물음을 다시 읽으세요.',
+      selfCheck: '나머지 셋이 모두 ' + 이름말 + '인지도 확인했나요?',
+    };
+  },
+});
+
+/** 선대칭과 점대칭을 한 그림에서 함께 가립니다. 두 성질을 동시에 봅니다. */
+const 둘다가리기 = (둘다인가: boolean): G5Family => ({
+  id: 둘다인가 ? 'both-symmetric' : 'line-only-symmetric',
+  make: (seed) => {
+    const next = rand(seed);
+    const 맞는것 = FIGURE_FACTS.filter((one) =>
+      둘다인가 ? one.axisCount !== 0 && one.pointSymmetric : one.axisCount !== 0 && !one.pointSymmetric,
+    );
+    const 아닌것 = FIGURE_FACTS.filter((one) => !맞는것.includes(one));
+    if (!맞는것.length || 아닌것.length < 3) return null;
+    const 답 = 맞는것[next(맞는것.length)];
+    const 섞은 = [...아닌것];
+    for (let at = 섞은.length - 1; at > 0; at -= 1) {
+      const to = next(at + 1);
+      [섞은[at], 섞은[to]] = [섞은[to], 섞은[at]];
+    }
+    const 보기 = [답, ...섞은.slice(0, 3)];
+    const 자리표 = [0, 1, 2, 3];
+    for (let at = 자리표.length - 1; at > 0; at -= 1) {
+      const to = next(at + 1);
+      [자리표[at], 자리표[to]] = [자리표[to], 자리표[at]];
+    }
+    const 이름 = ['가', '나', '다', '라'];
+    const 정답자리 = 자리표.indexOf(0);
+    return {
+      prompt: 둘다인가
+        ? '그림의 도형 가운데 선대칭도형이면서 점대칭도형인 것은 어느 것일까요?'
+        : '그림의 도형 가운데 선대칭도형이지만 점대칭도형은 아닌 것은 어느 것일까요?',
+      answer: 이름[정답자리],
+      wrongs: 이름.filter((_, at) => at !== 정답자리),
+      tag: 'congruence',
+      strategy: '선대칭과 점대칭을 함께 가리기',
+      hint: '보기마다 두 가지를 모두 해 보세요. 접어서 겹치는지, 그리고 180° 돌려 겹치는지입니다.',
+      steps: [
+        `${이름[정답자리]}${particleOf(이름[정답자리], '은')} ${답.shape}입니다.`,
+        `${eun(답.shape)} 접어서 겹치는 선이 ${답.axisCount === '무수히 많음' ? '무수히 많습니다' : `${답.axisCount}개 있습니다`}.`,
+        둘다인가
+          ? `또 180° 돌려도 처음 도형과 겹치므로 답은 ${이름[정답자리]}입니다.`
+          : `그러나 180° 돌리면 처음 도형과 겹치지 않으므로 답은 ${이름[정답자리]}입니다.`,
+      ],
+      visual: figureChoices('여러 도형', 자리표.map((which) => 보기[which].shape), 이름),
+      misconceptionTip: '한 가지만 보고 고르면 안 됩니다. 접는 것과 돌리는 것을 모두 해 보아야 합니다.',
+      selfCheck: '두 가지를 모두 해 보았나요?',
+    };
+  },
+});
+
+/** 넷 가운데 대칭인 것이 몇 개인지 셉니다. 보기 넷을 모두 보아야 합니다. */
+const 대칭몇개 = (선대칭인가: boolean): G5Family => ({
+  id: 선대칭인가 ? 'count-line-symmetric' : 'count-point-symmetric',
+  make: (seed) => {
+    const next = rand(seed);
+    const 맞는것 = 선대칭인가 ? 선대칭도형들 : 점대칭도형들;
+    const 아닌것 = 선대칭인가 ? 선대칭아닌것들 : 점대칭아닌것들;
+    const 몇개 = 1 + next(3);
+    if (맞는것.length < 몇개 || 아닌것.length < 4 - 몇개) return null;
+    const 뽑기 = <T,>(items: T[], count: number): T[] => {
+      const 섞은 = [...items];
+      for (let at = 섞은.length - 1; at > 0; at -= 1) {
+        const to = next(at + 1);
+        [섞은[at], 섞은[to]] = [섞은[to], 섞은[at]];
+      }
+      return 섞은.slice(0, count);
+    };
+    const 보기 = [...뽑기(맞는것, 몇개), ...뽑기(아닌것, 4 - 몇개)];
+    const 자리표 = [0, 1, 2, 3];
+    for (let at = 자리표.length - 1; at > 0; at -= 1) {
+      const to = next(at + 1);
+      [자리표[at], 자리표[to]] = [자리표[to], 자리표[at]];
+    }
+    const 놓인것 = 자리표.map((which) => 보기[which]);
+    const 이름 = ['가', '나', '다', '라'];
+    const 맞는이름 = 놓인것
+      .map((one, at) => ({ one, at }))
+      .filter(({ one }) => (선대칭인가 ? one.axisCount !== 0 : one.pointSymmetric))
+      .map(({ at }) => 이름[at]);
+    const 이름말 = 선대칭인가 ? '선대칭도형' : '점대칭도형';
+    return {
+      prompt: `그림의 도형 가운데 ${이름말}은 모두 몇 개일까요?`,
+      answer: `${몇개}개`,
+      wrongs: ['0개', '1개', '2개', '3개', '4개'].filter((one) => one !== `${몇개}개`),
+      tag: 'congruence',
+      strategy: `${이름말} 세기`,
+      hint: 선대칭인가
+        ? '넷을 하나씩 접어 보세요. 완전히 겹치는 선이 하나라도 있으면 선대칭도형입니다.'
+        : '넷을 하나씩 180° 돌려 보세요. 처음 도형과 겹치면 점대칭도형입니다.',
+      steps: [
+        `${이름말}인 것은 ${맞는이름.join(', ')}입니다.`,
+        `모두 세면 ${몇개}개입니다.`,
+      ],
+      visual: figureChoices('여러 도형', 놓인것.map((one) => one.shape), 이름),
+      misconceptionTip: '하나를 찾았다고 멈추지 마세요. 넷을 모두 확인해야 합니다.',
+      selfCheck: '넷을 모두 확인했나요?',
+    };
+  },
+});
+
+export const 합동수준 = (수준: '하' | '중' | '상'): G5Family[] => {
+  const 모두 = [
+    ...합동Easy,
+    ...합동Middle,
+    합동인두도형(false),
+    합동인두도형(true),
+    합동두걸음(false),
+    합동두걸음(true),
+  ];
+  const 골라 = (ids: string[]) =>
+    ids.map((id) => 모두.find((one) => one.id === id)).filter((one): one is G5Family => Boolean(one));
+  if (수준 === '하') {
+    return 골라(['is-congruent-pair-0', 'is-congruent-pair-1', 'count-congruent', 'same-shape-different-size', 'meaning', 'moves-keep-congruence']);
+  }
+  if (수준 === '중') {
+    return 골라(['is-congruent-pair-2', 'is-congruent-pair-3', 'congruent-perimeter', 'congruent-area', 'always-congruent']);
+  }
+  return 골라(['find-congruent-pair', 'congruent-perimeter-two-step', 'congruent-area-two-step', 'judge-statements', 'cut-into-congruent']);
+};
+
+export const 대칭수준 = (선대칭인가: boolean, 수준: '하' | '중' | '상'): G5Family[] => {
+  const 모두 = [
+    ...(선대칭인가 ? 대칭성질(true) : 대칭성질(false)),
+    대응변길이(선대칭인가),
+    대응각의합(선대칭인가),
+    둘레에서반쪽(선대칭인가),
+  ];
+  const 골라 = (ids: string[]) =>
+    ids.map((id) => 모두.find((one) => one.id === id)).filter((one): one is G5Family => Boolean(one));
+  if (수준 === '하') {
+    return 골라(['corresponding-angle-value', 'corresponding-side-value', 'which-point']);
+  }
+  if (수준 === '중') {
+    return 골라(['completed-perimeter', 'find-length', 'half-distance', 'real-life-symmetry', 'length-and-angle', 'segment-property', 'how-to-draw']);
+  }
+  return 골라(['two-angle-sum', 'half-from-perimeter']);
+};
+
+export const 도형수준 = (선대칭인가: boolean, 수준: '하' | '중' | '상'): G5Family[] => {
+  const 모두 = [
+    ...(선대칭인가 ? 선대칭Easy : 점대칭Easy),
+    ...(선대칭인가 ? 선대칭Middle : 점대칭Middle),
+    축개수로도형찾기,
+    아닌것찾기(선대칭인가),
+    둘다가리기(true),
+    둘다가리기(false),
+    대칭몇개(선대칭인가),
+  ];
+  const 골라 = (ids: string[]) =>
+    ids.map((id) => 모두.find((one) => one.id === id)).filter((one): one is G5Family => Boolean(one));
+  if (선대칭인가) {
+    if (수준 === '하') {
+      return 골라(['pick-one', 'is-this-an-axis-0', 'not-line-symmetric', 'meaning', 'real-life-symmetry']);
+    }
+    if (수준 === '중') {
+      return 골라(['is-it', 'axis-count', 'letter-symmetry', 'count-symmetric', 'most-axes', 'diagonal-is-not-axis']);
+    }
+    return 골라(['is-this-an-axis-1', 'shape-from-axis-count']);
+  }
+  if (수준 === '하') return 골라(['pick-one', 'not-point-symmetric', 'count-point-symmetric', 'letter-symmetry']);
+  if (수준 === '중') {
+    return 골라(['is-it', 'line-vs-point', 'which-point', 'shape-from-axis-count', 'meaning', 'real-life-symmetry']);
+  }
+  return 골라(['both-symmetric', 'line-only-symmetric', 'center-of-symmetry', 'both-list']);
+};
+
+export const 도입수준 = (수준: '하' | '중' | '상'): G5Family[] => {
+  const 모두 = [...unit3Lesson1Easy, 남은각찾기(false), 남은각찾기(true), 변수로도형];
+  const 골라 = (ids: string[]) =>
+    ids.map((id) => 모두.find((one) => one.id === id)).filter((one): one is G5Family => Boolean(one));
+  if (수준 === '하') return 골라(['which-is', 'shape-meaning', 'vertex-count', 'move-name']);
+  if (수준 === '중') return 골라(['missing-angle', 'angle-back', 'shape-from-parts', 'angle-sum']);
+  return 골라(['angle-back-hard', 'angle-back', 'shape-from-parts']);
 };

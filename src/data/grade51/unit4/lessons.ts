@@ -24,16 +24,32 @@ import { divisorsOf, gcd, lcm, listText } from '../unit2/core';
 
 const 분수글 = (n: number, d: number) => `${n}/${d}`;
 
+type 수준 = '하' | '중' | '상';
+
+// 수준마다 쓰는 분모의 크기입니다. 셋이 같은 범위에서 뽑으면 씨앗이
+// 달라도 서른 자리를 채우고 나면 같은 분수가 나오고, 문항도 같아집니다.
+// 분모가 커지면 약분할 공약수를 찾는 일도, 통분할 공통분모를 찾는 일도
+// 함께 길어지므로 크기 자체가 난이도이기도 합니다.
+const 분수범위: Record<
+  수준,
+  { 분모작은: number; 분모폭: number; 분모최대: number; 약분분모: [number, number] }
+> = {
+  하: { 분모작은: 2, 분모폭: 6, 분모최대: 8, 약분분모: [4, 20] },
+  중: { 분모작은: 4, 분모폭: 9, 분모최대: 14, 약분분모: [21, 40] },
+  상: { 분모작은: 7, 분모폭: 13, 분모최대: 20, 약분분모: [41, 72] },
+};
+
 /** 약분할 수 있는 진분수를 하나 고릅니다. */
-const 약분할분수 = (next: (bound: number) => number): { n: number; d: number } | null => {
-  for (let attempt = 0; attempt < 60; attempt += 1) {
+const 약분할분수 = (next: (bound: number) => number, 수준: 수준 = '중'): { n: number; d: number } | null => {
+  const 범위 = 분수범위[수준];
+  for (let attempt = 0; attempt < 80; attempt += 1) {
     const g = 2 + next(6);
     const n0 = 1 + next(8);
     const d0 = n0 + 1 + next(8);
     if (gcd(n0, d0) !== 1) continue;
     const n = n0 * g;
     const d = d0 * g;
-    if (d > 60) continue;
+    if (d < 범위.약분분모[0] || d > 범위.약분분모[1]) continue;
     return { n, d };
   }
   return null;
@@ -42,19 +58,21 @@ const 약분할분수 = (next: (bound: number) => number): { n: number; d: numbe
 /** 통분하기 좋은 두 진분수를 고릅니다. 분모가 다르고 값도 달라야 합니다. */
 const 통분할두분수 = (
   next: (bound: number) => number,
-  want: { 분모최대?: number } = {},
+  want: { 분모최대?: number; 분모작은?: number } = {},
 ): { a: Frac; b: Frac } | null => {
   const 분모최대 = want.분모최대 ?? 12;
+  const 분모작은 = want.분모작은 ?? 2;
+  const 뭉뚱그린최대 = 분모최대 * 6;
   for (let attempt = 0; attempt < 60; attempt += 1) {
-    const d1 = 2 + next(분모최대 - 1);
-    const d2 = 2 + next(분모최대 - 1);
+    const d1 = 분모작은 + next(분모최대 - 분모작은 + 1);
+    const d2 = 분모작은 + next(분모최대 - 분모작은 + 1);
     if (d1 === d2) continue;
     const n1 = 1 + next(d1 - 1);
     const n2 = 1 + next(d2 - 1);
     const a = { n: n1, d: d1 };
     const b = { n: n2, d: d2 };
     if (a.n * b.d === b.n * a.d) continue;
-    if (lcm(d1, d2) > 60) continue;
+    if (lcm(d1, d2) > 뭉뚱그린최대) continue;
     return { a, b };
   }
   return null;
@@ -71,12 +89,16 @@ const 띠그림 = (n: number, d: number, label: string): QuestionVisual => ({
 // ── 1차시 단원 도입 ─────────────────────────────────────────────────
 // 아직 '약분'도 '통분'도 배우지 않았습니다. 앞에서 배운 약수·배수와
 // 분모가 같은 분수의 크기 비교만 떠올립니다.
-export const unit4Lesson1: G5Family[] = [
+// 1차시(단원 도입)입니다. 앞에서 배운 분수를 떠올리는 자리라 뽑을 것이
+// 몇 개뿐이어서, 수준마다 쓰는 수의 크기를 달리해 둡니다.
+export const unit4Lesson1 = (difficulty: 수준): G5Family[] => {
+  const 범위 = 분수범위[difficulty];
+  return [
   {
     id: 'same-denominator',
     make: (seed) => {
       const next = rand(seed);
-      const d = 5 + next(8);
+      const d = 범위.분모작은 + 3 + next(범위.분모폭 + 4);
       const n1 = 1 + next(d - 2);
       const n2 = n1 + 1 + next(d - n1 - 1);
       if (n2 >= d || n1 === n2) return null;
@@ -102,7 +124,7 @@ export const unit4Lesson1: G5Family[] = [
     id: 'divisors-recall',
     make: (seed) => {
       const next = rand(seed + 7);
-      const value = 12 + next(40);
+      const value = 범위.약분분모[0] + next(범위.약분분모[1] - 범위.약분분모[0] + 1);
       const all = divisorsOf(value);
       if (all.length < 4 || all.length > 8) return null;
       return {
@@ -127,8 +149,8 @@ export const unit4Lesson1: G5Family[] = [
     id: 'lcm-recall',
     make: (seed) => {
       const next = rand(seed + 13);
-      const a = 2 + next(8);
-      const b = 2 + next(8);
+      const a = 범위.분모작은 + next(범위.분모폭 + 2);
+      const b = 범위.분모작은 + next(범위.분모폭 + 2);
       if (a === b) return null;
       const l = lcm(a, b);
       if (l > 60) return null;
@@ -150,7 +172,8 @@ export const unit4Lesson1: G5Family[] = [
       };
     },
   },
-];
+  ];
+};
 
 // ── 2차시 크기가 같은 분수를 알아볼까요 ────────────────────────────
 export const unit4Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
@@ -158,9 +181,10 @@ export const unit4Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'find-equal',
     make: (seed) => {
       const next = rand(seed);
-      const n = 1 + next(4);
-      const d = n + 1 + next(5);
-      const k = 2 + next(4);
+      const 범위 = 분수범위[difficulty];
+      const n = 1 + next(범위.분모폭 - 2);
+      const d = n + 1 + next(범위.분모폭);
+      const k = 2 + next(Math.max(3, 범위.분모폭 - 3));
       const 답 = 분수글(n * k, d * k);
       return {
         prompt: `${gwa(분수글(n, d))} 크기가 같은 분수는 어느 것일까요?`,
@@ -194,8 +218,9 @@ export const unit4Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'find-different',
     make: (seed) => {
       const next = rand(seed + 5);
-      const n = 1 + next(4);
-      const d = n + 1 + next(5);
+      const 범위 = 분수범위[difficulty];
+      const n = 1 + next(범위.분모폭 - 2);
+      const d = n + 1 + next(범위.분모폭);
       const 같은것 = [2, 3, 4].map((k) => 분수글(n * k, d * k));
       const 답 = 분수글(n + 1, d + 1);
       // 분모와 분자에 1씩 더한 것이 우연히 같은 크기가 되면 답이 둘이
@@ -224,9 +249,10 @@ export const unit4Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'read-picture',
     make: (seed) => {
       const next = rand(seed + 11);
-      const n = 1 + next(4);
-      const d = n + 1 + next(6);
-      const k = 2 + next(3);
+      const 범위 = 분수범위[difficulty];
+      const n = 1 + next(범위.분모폭 - 2);
+      const d = n + 1 + next(범위.분모폭 + 1);
+      const k = 2 + next(Math.max(2, 범위.분모폭 - 4));
       return {
         prompt: `그림에서 색칠한 부분을 분수로 나타낸 것과 크기가 같은 분수는 어느 것일까요?`,
         answer: 분수글(n * k, d * k),
@@ -258,9 +284,10 @@ export const unit4Lesson3 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'make-by-multiply',
     make: (seed) => {
       const next = rand(seed);
-      const n = 1 + next(5);
-      const d = n + 1 + next(6);
-      const k = 2 + next(4);
+      const 범위 = 분수범위[difficulty];
+      const n = 1 + next(범위.분모폭 - 1);
+      const d = n + 1 + next(범위.분모폭 + 1);
+      const k = 2 + next(Math.max(3, 범위.분모폭 - 3));
       return {
         prompt: `${분수글(n, d)}의 분모와 분자에 각각 ${k}${particleOf(String(k), '을')} 곱하여 크기가 같은 분수를 만들면 얼마일까요?`,
         answer: 분수글(n * k, d * k),
@@ -282,7 +309,7 @@ export const unit4Lesson3 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'make-by-divide',
     make: (seed) => {
       const next = rand(seed + 5);
-      const 분수 = 약분할분수(next);
+      const 분수 = 약분할분수(next, difficulty);
       if (!분수) return null;
       const { n, d } = 분수;
       const 공약수 = divisorsOf(gcd(n, d)).filter((one) => one > 1);
@@ -309,8 +336,9 @@ export const unit4Lesson3 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'make-three',
     make: (seed) => {
       const next = rand(seed + 11);
-      const n = 1 + next(4);
-      const d = n + 1 + next(5);
+      const 범위 = 분수범위[difficulty];
+      const n = 1 + next(범위.분모폭 - 2);
+      const d = n + 1 + next(범위.분모폭);
       const 답 = [2, 3, 4].map((k) => 분수글(n * k, d * k)).join(', ');
       return {
         prompt: `${gwa(분수글(n, d))} 크기가 같은 분수를 작은 것부터 차례로 3개 만든 것은 어느 것일까요?`,
@@ -340,9 +368,10 @@ export const unit4Lesson3 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'blank-equal',
     make: (seed) => {
       const next = rand(seed + 17);
-      const n = 1 + next(5);
-      const d = n + 1 + next(6);
-      const k = 2 + next(4);
+      const 범위 = 분수범위[difficulty];
+      const n = 1 + next(범위.분모폭 - 1);
+      const d = n + 1 + next(범위.분모폭 + 1);
+      const k = 2 + next(Math.max(3, 범위.분모폭 - 3));
       return {
         prompt: `${분수글(n, d)} = ${n * k}/□ 일 때 □에 알맞은 수는 얼마일까요?`,
         answer: String(d * k),
@@ -373,7 +402,7 @@ export const unit4Lesson4 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'reduce-by',
     make: (seed) => {
       const next = rand(seed);
-      const 분수 = 약분할분수(next);
+      const 분수 = 약분할분수(next, difficulty);
       if (!분수) return null;
       const { n, d } = 분수;
       const 공약수 = divisorsOf(gcd(n, d)).filter((one) => one > 1);
@@ -401,7 +430,7 @@ export const unit4Lesson4 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'to-lowest',
     make: (seed) => {
       const next = rand(seed + 7);
-      const 분수 = 약분할분수(next);
+      const 분수 = 약분할분수(next, difficulty);
       if (!분수) return null;
       const { n, d } = 분수;
       const g = gcd(n, d);
@@ -432,7 +461,7 @@ export const unit4Lesson4 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'is-lowest',
     make: (seed) => {
       const next = rand(seed + 11);
-      const 분수 = 약분할분수(next);
+      const 분수 = 약분할분수(next, difficulty);
       if (!분수) return null;
       const { n, d } = 분수;
       const g = gcd(n, d);
@@ -461,7 +490,7 @@ export const unit4Lesson4 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'all-reduced',
     make: (seed) => {
       const next = rand(seed + 13);
-      const 분수 = 약분할분수(next);
+      const 분수 = 약분할분수(next, difficulty);
       if (!분수) return null;
       const { n, d } = 분수;
       const 공약수 = divisorsOf(gcd(n, d)).filter((one) => one > 1);
@@ -502,7 +531,7 @@ export const unit4Lesson5 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: `common-${방법}`,
     make: (seed) => {
       const next = rand(seed + (방법 === '곱' ? 0 : 5));
-      const 두분수 = 통분할두분수(next, { 분모최대: 방법 === '곱' ? 8 : 12 });
+      const 두분수 = 통분할두분수(next, { ...분수범위[difficulty], 분모최대: 방법 === '곱' ? 8 : 12  });
       if (!두분수) return null;
       const { a, b } = 두분수;
       const 분모 = 방법 === '곱' ? a.d * b.d : lcm(a.d, b.d);
@@ -547,7 +576,7 @@ export const unit4Lesson5 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'find-common-denominator',
     make: (seed) => {
       const next = rand(seed + 11);
-      const 두분수 = 통분할두분수(next);
+      const 두분수 = 통분할두분수(next, 분수범위[difficulty]);
       if (!두분수) return null;
       const { a, b } = 두분수;
       const 최소 = lcm(a.d, b.d);
@@ -575,7 +604,7 @@ export const unit4Lesson5 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'which-common',
     make: (seed) => {
       const next = rand(seed + 17);
-      const 두분수 = 통분할두분수(next);
+      const 두분수 = 통분할두분수(next, 분수범위[difficulty]);
       if (!두분수) return null;
       const { a, b } = 두분수;
       const 최소 = lcm(a.d, b.d);
@@ -616,7 +645,7 @@ export const unit4Lesson6 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'compare-two',
     make: (seed) => {
       const next = rand(seed);
-      const 두분수 = 통분할두분수(next);
+      const 두분수 = 통분할두분수(next, 분수범위[difficulty]);
       if (!두분수) return null;
       const { a, b } = 두분수;
       const 최소 = lcm(a.d, b.d);
@@ -689,7 +718,7 @@ export const unit4Lesson6 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'sign',
     make: (seed) => {
       const next = rand(seed + 13);
-      const 두분수 = 통분할두분수(next);
+      const 두분수 = 통분할두분수(next, 분수범위[difficulty]);
       if (!두분수) return null;
       const { a, b } = 두분수;
       const 최소 = lcm(a.d, b.d);
@@ -718,7 +747,7 @@ export const unit4Lesson6 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'story-compare',
     make: (seed) => {
       const next = rand(seed + 19);
-      const 두분수 = 통분할두분수(next);
+      const 두분수 = 통분할두분수(next, 분수범위[difficulty]);
       if (!두분수) return null;
       const { a, b } = 두분수;
       const 최소 = lcm(a.d, b.d);
@@ -757,11 +786,17 @@ export const unit4Lesson7 = (difficulty: '하' | '중' | '상'): G5Family[] => {
   // 분모를 10이나 100으로 고칠 수 있는 분수만 씁니다. 1/3처럼 소수로
   // 딱 떨어지지 않는 분수는 이 차시에서 다루지 않습니다.
   const 소수되는분수 = (next: (bound: number) => number): { n: number; d: number; dec: string } | null => {
-    const 분모들 = [2, 4, 5, 10, 20, 25, 50];
-    for (let attempt = 0; attempt < 40; attempt += 1) {
+    // 분모 목록도 수준마다 나눕니다. 셋이 같은 목록에서 뽑으면 씨앗이
+    // 달라도 서른 자리를 채우고 나면 같은 분수가 나옵니다.
+    const 분모들 =
+      difficulty === '하' ? [2, 4, 5, 10] : difficulty === '중' ? [20, 25] : [50, 100];
+    for (let attempt = 0; attempt < 60; attempt += 1) {
       const d = pick(분모들, next(1000));
       const n = 1 + next(d - 1);
-      if (gcd(n, d) !== 1) continue;
+      // 기초에서는 약분되는 분수(2/10 같은 것)도 씁니다. 분모가 작아
+      // 기약분수만 쓰면 뽑을 것이 열한 개뿐이라 서른 자리가 차지 않고,
+      // 2/10을 소수로 고치는 것도 이 차시가 가르치는 일입니다.
+      if (difficulty !== '하' && gcd(n, d) !== 1) continue;
       const 배 = 100 % d === 0 ? 100 / d : 0;
       if (!배) continue;
       const 백분자 = n * 배;
@@ -804,7 +839,18 @@ export const unit4Lesson7 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'to-fraction',
     make: (seed) => {
       const next = rand(seed + 5);
-      const 백분자 = 5 * (1 + next(19));
+      // 수준마다 서로 겹치지 않는 수에서 뽑습니다. 10의 배수는 소수
+      // 한 자리로 끝나 읽기 쉽고, 5의 배수가 아닌 수는 약분이 되지
+      // 않아 분모가 100 그대로 남습니다.
+      const 백분자 =
+        difficulty === '하'
+          ? 10 * (1 + next(9))
+          : difficulty === '중'
+            ? 5 + 10 * next(10)
+            : (() => {
+                const k = 1 + next(99);
+                return k % 5 === 0 ? k + 1 : k;
+              })();
       if (백분자 >= 100) return null;
       const dec = 백분자 % 10 === 0 ? `0.${백분자 / 10}` : `0.${String(백분자).padStart(2, '0')}`;
       const g = gcd(백분자, 100);
@@ -836,7 +882,10 @@ export const unit4Lesson7 = (difficulty: '하' | '중' | '상'): G5Family[] => {
       if (!one) return null;
       const { n, d, dec } = one;
       const 값 = Number(dec);
-      const 소수 = 값 + (next(2) === 0 ? 0.05 : -0.05);
+      // 견줄 소수를 얼마나 떨어뜨릴지도 수준에 따라 달리합니다.
+      const 차이 =
+        difficulty === '하' ? 0.1 * (1 + next(3)) : difficulty === '중' ? 0.05 : 0.01 * (1 + next(4));
+      const 소수 = 값 + (next(2) === 0 ? 차이 : -차이);
       if (소수 <= 0 || 소수 >= 1) return null;
       const 소수글 = 소수.toFixed(2).replace(/0$/, '').replace(/\.$/, '');
       const 답 = 값 > 소수 ? 분수글(n, d) : 소수글;

@@ -11,6 +11,7 @@ import {
   listText,
   multiplesOf,
   pairFor,
+  짝범위,
 } from './core';
 
 // ════════════════════════════════════════════════════════════════════
@@ -30,19 +31,32 @@ const 이름 = ['수지', '지윤', '제니', '민준', '소희', '재우', '기
 
 // 약수를 묻기 좋은 수입니다. 약수가 둘(1과 자기 자신)뿐인 수는 물어도
 // 답이 늘 같아 문항이 되지 않고, 약수가 너무 많으면 늘어놓기가 됩니다.
-const 약수좋은수 = (next: (bound: number) => number): number => {
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    const value = 6 + next(55);
+const 약수좋은수 = (next: (bound: number) => number, 수준: 수준 = '중'): number => {
+  // 수준마다 뽑는 범위를 달리합니다. 셋이 같은 범위에서 뽑으면 씨앗이
+  // 달라도 서른 자리를 채우고 나면 같은 수가 나오고, 문항도 같아집니다.
+  const 범위 = 수준 === '하' ? { 작은: 6, 폭: 25 } : 수준 === '중' ? { 작은: 24, 폭: 34 } : { 작은: 45, 폭: 55 };
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const value = 범위.작은 + next(범위.폭);
     const count = divisorsOf(value).length;
     if (count >= 4 && count <= 8) return value;
   }
-  return 24;
+  return 수준 === '하' ? 12 : 수준 === '중' ? 36 : 60;
 };
 
 // ── 1차시 단원 도입 ─────────────────────────────────────────────────
 // 아직 '약수'도 '배수'도 배우지 않았습니다. 나누어떨어지는지, 곱셈식과
 // 나눗셈식이 어떻게 이어지는지만 봅니다.
-export const unit2Lesson1: G5Family[] = [
+// 수준마다 쓰는 수의 크기입니다. 셋이 같은 범위에서 뽑으면 씨앗이
+// 달라도 서른 자리를 채우고 나면 같은 문항이 나옵니다.
+const 낱수범위: Record<수준, { 작은: number; 폭: number }> = {
+  하: { 작은: 2, 폭: 7 },
+  중: { 작은: 6, 폭: 10 },
+  상: { 작은: 11, 폭: 14 },
+};
+
+export const unit2Lesson1 = (difficulty: 수준): G5Family[] => {
+  const 낱 = 낱수범위[difficulty];
+  return [
   {
     id: 'divides',
     make: (seed) => {
@@ -76,8 +90,8 @@ export const unit2Lesson1: G5Family[] = [
     id: 'mul-div-pair',
     make: (seed) => {
       const next = rand(seed + 5);
-      const a = 2 + next(8);
-      const b = 3 + next(9);
+      const a = 낱.작은 + next(낱.폭);
+      const b = 낱.작은 + 1 + next(낱.폭);
       const product = a * b;
       return {
         prompt: `${a}×${b}=${product}입니다. 이 곱셈식을 나눗셈식으로 바르게 나타낸 것은 어느 것일까요?`,
@@ -100,8 +114,8 @@ export const unit2Lesson1: G5Family[] = [
     id: 'times',
     make: (seed) => {
       const next = rand(seed + 11);
-      const base = 2 + next(8);
-      const k = 3 + next(5);
+      const base = 낱.작은 + next(낱.폭);
+      const k = 3 + next(낱.폭 - 2);
       return {
         prompt: `${base}${particleOf(String(base), '을')} ${k}배 한 수는 얼마일까요?`,
         answer: String(base * k),
@@ -143,7 +157,8 @@ export const unit2Lesson1: G5Family[] = [
       };
     },
   },
-];
+  ];
+};
 
 // ── 2차시 약수와 배수는 무엇일까요 ──────────────────────────────────
 export const unit2Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
@@ -151,7 +166,7 @@ export const unit2Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'all-divisors',
     make: (seed) => {
       const next = rand(seed);
-      const value = 약수좋은수(next);
+      const value = 약수좋은수(next, difficulty);
       const all = divisorsOf(value);
       if (all.length < 4) return null;
       return {
@@ -185,7 +200,7 @@ export const unit2Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'not-divisor',
     make: (seed) => {
       const next = rand(seed + 7);
-      const value = 약수좋은수(next);
+      const value = 약수좋은수(next, difficulty);
       const all = divisorsOf(value);
       if (all.length < 4) return null;
       // 보기 넷이 비슷한 크기여야 합니다. 약수 셋을 먼저 고른 다음,
@@ -222,7 +237,7 @@ export const unit2Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'first-multiples',
     make: (seed) => {
       const next = rand(seed + 13);
-      const base = 3 + next(12);
+      const base = difficulty === '하' ? 2 + next(8) : difficulty === '중' ? 6 + next(12) : 11 + next(18);
       const three = multiplesOf(base, 3);
       return {
         prompt: `${base}의 배수를 가장 작은 수부터 차례로 3개 쓴 것은 어느 것일까요?`,
@@ -254,8 +269,8 @@ export const unit2Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'relation',
     make: (seed) => {
       const next = rand(seed + 19);
-      const a = 2 + next(7);
-      const b = 3 + next(9);
+      const a = difficulty === '하' ? 2 + next(6) : difficulty === '중' ? 5 + next(9) : 9 + next(13);
+      const b = difficulty === '하' ? 3 + next(7) : difficulty === '중' ? 7 + next(10) : 12 + next(14);
       if (a === b) return null;
       const product = a * b;
       return {
@@ -285,7 +300,7 @@ export const unit2Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'count-divisors',
     make: (seed) => {
       const next = rand(seed + 23);
-      const value = 약수좋은수(next);
+      const value = 약수좋은수(next, difficulty);
       const count = divisorsOf(value).length;
       return {
         prompt: `${value}의 약수는 모두 몇 개일까요?`,
@@ -309,7 +324,7 @@ export const unit2Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
     id: 'story-divisor',
     make: (seed) => {
       const next = rand(seed + 29);
-      const value = 약수좋은수(next);
+      const value = 약수좋은수(next, difficulty);
       const all = divisorsOf(value).filter((one) => one >= 2 && one < value);
       if (all.length < 2) return null;
       const 사람 = pick(이름, seed);
@@ -343,17 +358,18 @@ export const unit2Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
 // 가장 큰(작은) 것에 이름을 붙입니다. 그래서 한 벌로 두고 약수인지
 // 배수인지로 가릅니다.
 type Side = 'divisor' | 'multiple';
+type 수준 = '하' | '중' | '상';
 
 const 말 = {
   divisor: { 공통: '공약수', 대표: '최대공약수', 무엇: '약수', 큰작: '가장 큰' },
   multiple: { 공통: '공배수', 대표: '최소공배수', 무엇: '배수', 큰작: '가장 작은' },
 } as const;
 
-const 공통모두 = (side: Side): G5Family => ({
+const 공통모두 = (side: Side, 수준: 수준): G5Family => ({
   id: 'commons',
   make: (seed) => {
     const next = rand(seed);
-    const pair = pairFor(next, { lcmAtMost: side === 'multiple' ? 90 : 120 });
+    const pair = pairFor(next, { ...짝범위[수준], lcmAtMost: side === 'multiple' ? 90 : 120 });
     if (!pair) return null;
     const [a, b] = pair;
     if (side === 'divisor') {
@@ -401,11 +417,11 @@ const 공통모두 = (side: Side): G5Family => ({
   },
 });
 
-const 대표값 = (side: Side, 방법: 'list' | 'ladder'): G5Family => ({
+const 대표값 = (side: Side, 방법: 'list' | 'ladder', 수준: 수준): G5Family => ({
   id: `best-${방법}`,
   make: (seed) => {
     const next = rand(seed + 3);
-    const pair = pairFor(next, { lcmAtMost: side === 'multiple' ? 100 : 120 });
+    const pair = pairFor(next, { ...짝범위[수준], lcmAtMost: side === 'multiple' ? 100 : 120 });
     if (!pair) return null;
     const [a, b] = pair;
     const 답 = side === 'divisor' ? gcd(a, b) : lcm(a, b);
@@ -438,11 +454,11 @@ const 대표값 = (side: Side, 방법: 'list' | 'ladder'): G5Family => ({
   },
 });
 
-const 공통성질 = (side: Side): G5Family => ({
+const 공통성질 = (side: Side, 수준: 수준): G5Family => ({
   id: 'property',
   make: (seed) => {
     const next = rand(seed + 9);
-    const pair = pairFor(next, { gcdAtLeast: 4, lcmAtMost: side === 'multiple' ? 100 : 150 });
+    const pair = pairFor(next, { ...짝범위[수준], gcdAtLeast: 4, lcmAtMost: side === 'multiple' ? 100 : 150 });
     if (!pair) return null;
     const [a, b] = pair;
     const 이름표 = 말[side];
@@ -498,11 +514,11 @@ const 공통성질 = (side: Side): G5Family => ({
   },
 });
 
-const 아닌것 = (side: Side): G5Family => ({
+const 아닌것 = (side: Side, 수준: 수준): G5Family => ({
   id: 'not-common',
   make: (seed) => {
     const next = rand(seed + 15);
-    const pair = pairFor(next, { gcdAtLeast: 3, lcmAtMost: side === 'multiple' ? 80 : 120 });
+    const pair = pairFor(next, { ...짝범위[수준], gcdAtLeast: 3, lcmAtMost: side === 'multiple' ? 80 : 120 });
     if (!pair) return null;
     const [a, b] = pair;
     if (side === 'divisor') {
@@ -553,11 +569,11 @@ const 아닌것 = (side: Side): G5Family => ({
   },
 });
 
-const 문장공통 = (side: Side): G5Family => ({
+const 문장공통 = (side: Side, 수준: 수준): G5Family => ({
   id: 'story-common',
   make: (seed) => {
     const next = rand(seed + 21);
-    const pair = pairFor(next, { gcdAtLeast: 3, lcmAtMost: side === 'multiple' ? 90 : 150 });
+    const pair = pairFor(next, { ...짝범위[수준], gcdAtLeast: 3, lcmAtMost: side === 'multiple' ? 90 : 150 });
     if (!pair) return null;
     const [a, b] = pair;
     if (side === 'divisor') {
@@ -597,21 +613,31 @@ const 문장공통 = (side: Side): G5Family => ({
   },
 });
 
-export const unit2Common = (side: Side, difficulty: '하' | '중' | '상'): G5Family[] => {
-  const 뭉치 = [공통모두(side), 대표값(side, 'list'), 아닌것(side), 공통성질(side), 문장공통(side)];
+export const unit2Common = (side: Side, difficulty: 수준): G5Family[] => {
+  // 뭉치는 셋 다 같습니다. 대신 쓰는 두 수의 크기가 수준마다 다릅니다 —
+  // 같은 범위에서 뽑으면 씨앗이 달라도 서른 자리를 채우고 나면 같은
+  // 두 수가 나오고, 문항도 같아집니다. 수가 커지면 약수를 늘어놓는
+  // 일도 길어지므로, 크기 자체가 난이도이기도 합니다.
+  const 뭉치 = [
+    공통모두(side, difficulty),
+    대표값(side, 'list', difficulty),
+    아닌것(side, difficulty),
+    공통성질(side, difficulty),
+    문장공통(side, difficulty),
+  ];
   if (difficulty === '하') return 뭉치;
   if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0]];
-  return [문장공통(side), 공통성질(side), 대표값(side, 'list'), 아닌것(side), 공통모두(side)];
+  return [...뭉치.slice(2), ...뭉치.slice(0, 2)];
 };
 
 // ── 4차시 최대공약수 구하기 / 6차시 최소공배수 구하기 ───────────────
 // 지도서가 두 가지 방법을 나란히 둡니다 — 늘어놓기와 공약수로 나누기.
 // 소인수분해는 쓰지 않습니다(지도서 유의 사항).
-const 사다리빈칸 = (side: Side): G5Family => ({
+const 사다리빈칸 = (side: Side, 수준: 수준): G5Family => ({
   id: 'ladder-blank',
   make: (seed) => {
     const next = rand(seed + 31);
-    const pair = pairFor(next, { gcdAtLeast: 4, lcmAtMost: side === 'multiple' ? 150 : 200 });
+    const pair = pairFor(next, { ...짝범위[수준], gcdAtLeast: 4, lcmAtMost: side === 'multiple' ? 150 : 200 });
     if (!pair) return null;
     const [a, b] = pair;
     const g = gcd(a, b);
@@ -640,11 +666,11 @@ const 사다리빈칸 = (side: Side): G5Family => ({
   },
 });
 
-const 두방법비교 = (side: Side): G5Family => ({
+const 두방법비교 = (side: Side, 수준: 수준): G5Family => ({
   id: 'two-ways',
   make: (seed) => {
     const next = rand(seed + 37);
-    const pair = pairFor(next, { gcdAtLeast: 3, lcmAtMost: side === 'multiple' ? 120 : 160 });
+    const pair = pairFor(next, { ...짝범위[수준], gcdAtLeast: 3, lcmAtMost: side === 'multiple' ? 120 : 160 });
     if (!pair) return null;
     const [a, b] = pair;
     const 이름표 = 말[side];
@@ -671,15 +697,15 @@ const 두방법비교 = (side: Side): G5Family => ({
   },
 });
 
-export const unit2Find = (side: Side, difficulty: '하' | '중' | '상'): G5Family[] => {
+export const unit2Find = (side: Side, difficulty: 수준): G5Family[] => {
   const 뭉치 = [
-    대표값(side, 'ladder'),
-    대표값(side, 'list'),
-    사다리빈칸(side),
-    두방법비교(side),
-    문장공통(side),
+    대표값(side, 'ladder', difficulty),
+    대표값(side, 'list', difficulty),
+    사다리빈칸(side, difficulty),
+    두방법비교(side, difficulty),
+    문장공통(side, difficulty),
   ];
   if (difficulty === '하') return 뭉치;
-  if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0], 아닌것(side)];
-  return [문장공통(side), 두방법비교(side), 사다리빈칸(side), 대표값(side, 'ladder'), 공통성질(side)];
+  if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0], 아닌것(side, difficulty)];
+  return [...뭉치.slice(2), ...뭉치.slice(0, 2), 공통성질(side, difficulty)];
 };
