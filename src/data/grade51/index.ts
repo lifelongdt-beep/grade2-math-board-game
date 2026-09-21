@@ -139,7 +139,7 @@ const unit6Kinds: Record<number, AreaKind> = {
 };
 
 const unit6Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
-  if (lessonNo === 1) return unit6Lesson1;
+  if (lessonNo === 1) return unit6Lesson1(difficulty);
   if (lessonNo === 2) return unit6Lesson2(difficulty);
   if (lessonNo === 3) return unit6Lesson3(difficulty);
   if (lessonNo === 4) return unit6Lesson4(difficulty);
