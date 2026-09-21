@@ -132,11 +132,24 @@ export const listSteps = (a: number, b: number, want: 'gcd' | 'lcm'): string[] =
  */
 export const pairFor = (
   next: (bound: number) => number,
-  want: { gcdAtLeast?: number; lcmAtMost?: number } = {},
+  want: {
+    gcdAtLeast?: number;
+    lcmAtMost?: number;
+    atLeast?: number;
+    atMost?: number;
+    lcmScale?: number;
+  } = {},
 ): [number, number] | null => {
   const gcdAtLeast = want.gcdAtLeast ?? 2;
-  const lcmAtMost = want.lcmAtMost ?? 120;
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  // 수가 커지면 최소공배수도 함께 커집니다. 늘어놓아 찾는 방법이
+  // 여전히 되는 만큼만 늘려 줍니다.
+  const lcmAtMost = Math.round((want.lcmAtMost ?? 120) * (want.lcmScale ?? 1));
+  // 수준마다 쓰는 수의 크기를 달리할 수 있게 열어 둡니다. 세 수준이
+  // 같은 범위에서 뽑으면 씨앗이 달라도 서른 자리를 채우고 나면 같은
+  // 두 수가 나오고, 문항도 같아집니다.
+  const atLeast = want.atLeast ?? 4;
+  const atMost = want.atMost ?? 100;
+  for (let attempt = 0; attempt < 60; attempt += 1) {
     const g = 2 + next(8);
     const m = 2 + next(7);
     const n = 2 + next(7);
@@ -144,10 +157,20 @@ export const pairFor = (
     if (gcd(m, n) !== 1) continue;
     const a = g * m;
     const b = g * n;
-    if (a < 4 || b < 4 || a > 100 || b > 100) continue;
+    if (a < atLeast || b < atLeast || a > atMost || b > atMost) continue;
     if (gcd(a, b) < gcdAtLeast) continue;
     if (lcm(a, b) > lcmAtMost) continue;
     return a < b ? [a, b] : [b, a];
   }
   return null;
+};
+
+/** 수준마다 쓰는 두 수의 크기입니다. */
+export const 짝범위: Record<
+  '하' | '중' | '상',
+  { atLeast: number; atMost: number; lcmScale: number }
+> = {
+  하: { atLeast: 4, atMost: 30, lcmScale: 1 },
+  중: { atLeast: 18, atMost: 56, lcmScale: 1.8 },
+  상: { atLeast: 36, atMost: 100, lcmScale: 3.2 },
 };

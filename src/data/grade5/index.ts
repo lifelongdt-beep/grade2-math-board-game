@@ -138,7 +138,7 @@ const unit4Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
   if (lessonNo === 1) return unit4Lesson1Easy;
   if (lessonNo === 8) {
     // 8차시는 곱의 소수점 위치 하나를 여러 갈래로 묻습니다.
-    if (difficulty === '하') return 소수점위치Easy.slice(0, 4);
+    if (difficulty === '하') return 소수점위치Easy.slice(0, 5);
     if (difficulty === '중') return 소수점위치Easy;
     return [...소수점위치Easy.slice(3), ...소수점위치Easy.slice(0, 2)];
   }
