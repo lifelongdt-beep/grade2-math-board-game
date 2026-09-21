@@ -932,3 +932,439 @@ export const unit5Lesson4: G5Family[] = [
     },
   },
 ];
+
+// ════════════════════════════════════════════════════════════════════
+// 1·4차시에 더하는 뭉치와 수준 나누기
+// ────────────────────────────────────────────────────────────────────
+// 이 두 차시는 말의 뜻을 묻는 뭉치가 대부분이고, 그런 뭉치는 뽑을 것이
+// 몇 개뿐입니다(정육면체의 뜻은 두 가지, 포함 관계는 두 가지). 세
+// 수준이 그 몇 개를 나란히 쓰면 서른 자리가 같은 문항으로 찹니다 —
+// 하와 상이 스물셋, 스물둘을 똑같이 내고 있었습니다.
+//
+// 그래서 수를 주고 세거나 계산하게 하는 뭉치를 새로 썼습니다. 이쪽은
+// 수를 바꾸면 얼마든지 다른 문항이 되고, 무엇보다 '알고 있는가'에서
+// '쓸 수 있는가'로 물음이 올라갑니다.
+// ════════════════════════════════════════════════════════════════════
+
+// ── 1차시 (선수 학습) ───────────────────────────────────────────────
+
+/** 도형의 변과 꼭짓점의 수를 셉니다. */
+const 변과꼭짓점: G5Family = {
+  id: 'count-parts',
+  make: (seed) => {
+    const 도형들: Array<{ 이름: FigureShapeName; 변: number }> = [
+      { 이름: '정삼각형', 변: 3 },
+      { 이름: '직각삼각형', 변: 3 },
+      { 이름: '이등변삼각형', 변: 3 },
+      { 이름: '정사각형', 변: 4 },
+      { 이름: '직사각형', 변: 4 },
+      { 이름: '평행사변형', 변: 4 },
+      { 이름: '사다리꼴', 변: 4 },
+      { 이름: '마름모', 변: 4 },
+      { 이름: '정오각형', 변: 5 },
+      { 이름: '정육각형', 변: 6 },
+    ];
+    const 하나 = 도형들[Math.abs(seed) % 도형들.length];
+    const 변묻기 = Math.abs(seed) % 2 === 0;
+    const 이름 = 변묻기 ? '변' : '꼭짓점';
+    return {
+      prompt: `${하나.이름}의 ${eun(이름)} 모두 몇 개일까요?`,
+      answer: `${하나.변}개`,
+      wrongs: [`${하나.변 + 1}개`, `${하나.변 - 1}개`, `${하나.변 + 2}개`, `${하나.변 * 2}개`],
+      tag: 'shape',
+      strategy: '도형의 변과 꼭짓점 세기',
+      hint: '도형을 한 바퀴 돌며 선분을 하나씩 세어 보세요. 꼭짓점의 수는 변의 수와 같습니다.',
+      steps: [
+        `${eun(하나.이름)} 변이 ${하나.변}개인 도형입니다.`,
+        `다각형에서 꼭짓점의 수는 변의 수와 같으므로 ${eun(이름)} ${하나.변}개입니다.`,
+      ],
+      visual: { kind: 'figure-set', label: '도형', items: [{ shape: 하나.이름 }] },
+    };
+  },
+};
+
+/** 평행한 변이 몇 쌍인지 셉니다. */
+const 평행한변: G5Family = {
+  id: 'parallel-pairs',
+  make: (seed) => {
+    const 도형들: Array<{ 이름: FigureShapeName; 쌍: number; 까닭: string }> = [
+      { 이름: '정사각형', 쌍: 2, 까닭: '마주 보는 두 쌍의 변이 서로 평행합니다.' },
+      { 이름: '직사각형', 쌍: 2, 까닭: '마주 보는 두 쌍의 변이 서로 평행합니다.' },
+      { 이름: '평행사변형', 쌍: 2, 까닭: '마주 보는 두 쌍의 변이 서로 평행합니다.' },
+      { 이름: '마름모', 쌍: 2, 까닭: '마주 보는 두 쌍의 변이 서로 평행합니다.' },
+      { 이름: '사다리꼴', 쌍: 1, 까닭: '마주 보는 한 쌍의 변만 서로 평행합니다.' },
+      { 이름: '정삼각형', 쌍: 0, 까닭: '세 변 가운데 평행한 변이 한 쌍도 없습니다.' },
+      { 이름: '직각삼각형', 쌍: 0, 까닭: '세 변 가운데 평행한 변이 한 쌍도 없습니다.' },
+    ];
+    const 하나 = 도형들[Math.abs(seed) % 도형들.length];
+    return {
+      prompt: `${하나.이름}에서 서로 평행한 변은 몇 쌍일까요?`,
+      answer: `${하나.쌍}쌍`,
+      wrongs: ['0쌍', '1쌍', '2쌍', '3쌍', '4쌍'].filter((one) => one !== `${하나.쌍}쌍`),
+      tag: 'shape',
+      strategy: '평행한 변 찾기',
+      hint: '두 변을 양쪽으로 계속 늘였을 때 만나지 않는 쌍을 찾으세요.',
+      steps: [`${eun(하나.이름)} ${하나.까닭}`, `그러므로 ${하나.쌍}쌍입니다.`],
+      visual: { kind: 'figure-set', label: '도형', items: [{ shape: 하나.이름 }] },
+    };
+  },
+};
+
+/** 나머지 한 각의 크기를 구합니다. */
+const 남은각: G5Family = {
+  id: 'angle-back',
+  make: (seed) => {
+    const next = rand(seed);
+    const 사각형인가 = Math.abs(seed) % 2 === 0;
+    const 합 = 사각형인가 ? 360 : 180;
+    const 개수 = 사각형인가 ? 4 : 3;
+    const 각들: number[] = [];
+    for (let at = 0; at < 개수 - 1; at += 1) 각들.push(20 + next(사각형인가 ? 80 : 50));
+    const 남은 = 합 - 각들.reduce((sum, one) => sum + one, 0);
+    if (남은 < 15 || 남은 > 160) return null;
+    return {
+      prompt: `${사각형인가 ? '사각형' : '삼각형'}의 ${개수 - 1}개의 각의 크기가 ${각들.join('도, ')}도입니다. 나머지 한 각의 크기는 몇 도일까요?`,
+      answer: `${남은}도`,
+      wrongs: [`${남은 + 10}도`, `${남은 - 10}도`, `${합 - 남은}도`, `${Math.round(합 / 개수)}도`],
+      tag: 'shape',
+      strategy: '각의 크기의 합으로 남은 각 구하기',
+      hint: `${사각형인가 ? '사각형' : '삼각형'}의 각의 크기의 합이 몇 도인지 먼저 떠올리세요.`,
+      steps: [
+        `${사각형인가 ? '사각형' : '삼각형'}의 ${개수}개의 각의 크기의 합은 ${합}도입니다.`,
+        `${합}-${각들.join('-')}=${남은}`,
+        `나머지 한 각의 크기는 ${남은}도입니다.`,
+      ],
+      misconceptionTip: `삼각형은 180도, 사각형은 360도입니다. 두 값을 바꾸어 쓰지 마세요.`,
+      selfCheck: '구한 각을 모두 더해 보면 합이 맞나요?',
+    };
+  },
+};
+
+/** 둘레에서 변의 길이를 거꾸로 구합니다. */
+const 둘레에서변: G5Family = {
+  id: 'side-back',
+  make: (seed) => {
+    const next = rand(seed);
+    const 정사각형인가 = Math.abs(seed) % 2 === 0;
+    if (정사각형인가) {
+      const 한변 = 3 + next(15);
+      return {
+        prompt: `둘레가 ${한변 * 4} cm인 정사각형이 있습니다. 한 변의 길이는 몇 cm일까요?`,
+        answer: `${한변} cm`,
+        wrongs: [`${한변 * 2} cm`, `${한변 + 1} cm`, `${한변 * 4} cm`, `${Math.max(1, 한변 - 1)} cm`],
+        tag: 'shape',
+        strategy: '둘레에서 한 변 구하기',
+        hint: '정사각형은 네 변의 길이가 모두 같습니다. 둘레를 변의 수로 나누세요.',
+        steps: ['정사각형은 네 변의 길이가 모두 같습니다.', `${한변 * 4}÷4=${한변}`, `한 변의 길이는 ${한변} cm입니다.`],
+      };
+    }
+    const 가로 = 4 + next(12);
+    const 세로 = 2 + next(10);
+    if (가로 === 세로) return null;
+    return {
+      prompt: `둘레가 ${(가로 + 세로) * 2} cm이고 가로가 ${가로} cm인 직사각형이 있습니다. 세로는 몇 cm일까요?`,
+      answer: `${세로} cm`,
+      wrongs: [`${가로} cm`, `${세로 * 2} cm`, `${(가로 + 세로) * 2 - 가로} cm`, `${세로 + 1} cm`],
+      tag: 'shape',
+      strategy: '둘레와 한 변에서 다른 변 구하기',
+      hint: '직사각형의 둘레는 (가로+세로)를 두 번 더한 것입니다. 먼저 가로와 세로의 합을 구하세요.',
+      steps: [
+        `둘레를 2로 나누면 가로와 세로의 합입니다. ${(가로 + 세로) * 2}÷2=${가로 + 세로}`,
+        `${가로 + 세로}-${가로}=${세로}`,
+        `세로는 ${세로} cm입니다.`,
+      ],
+      misconceptionTip: '둘레에서 가로를 바로 빼면 안 됩니다. 먼저 2로 나누어 가로와 세로의 합을 구해야 합니다.',
+    };
+  },
+};
+
+// ── 4차시 (정육면체) ───────────────────────────────────────────────
+
+/** 한 모서리에서 한 면의 둘레를 구합니다. */
+const 정육면체면둘레: G5Family = {
+  id: 'cube-face-perimeter',
+  make: (seed) => {
+    const next = rand(seed);
+    const 한변 = 2 + next(13);
+    return {
+      prompt: `한 모서리의 길이가 ${한변} cm인 정육면체가 있습니다. 한 면의 둘레는 몇 cm일까요?`,
+      answer: `${한변 * 4} cm`,
+      wrongs: [`${한변 * 12} cm`, `${한변 * 6} cm`, `${한변 * 2} cm`, `${한변 * 4 + 한변} cm`],
+      tag: 'solid',
+      strategy: '정육면체 한 면의 둘레 구하기',
+      hint: '정육면체의 한 면은 어떤 도형인지, 그 도형의 변이 몇 개인지 떠올리세요.',
+      steps: [
+        '정육면체의 한 면은 정사각형이고 네 변의 길이가 모두 같습니다.',
+        `${한변}×4=${한변 * 4}`,
+        `한 면의 둘레는 ${한변 * 4} cm입니다.`,
+      ],
+      visual: cubePicture('정육면체', { edgeLabels: { width: `${한변} cm` } }),
+      misconceptionTip: '한 면의 둘레는 변 4개입니다. 모서리 12개를 곱하지 마세요.',
+    };
+  },
+};
+
+/** 한 모서리에서 한 면의 넓이를 구합니다. */
+const 정육면체면넓이: G5Family = {
+  id: 'cube-face-area',
+  make: (seed) => {
+    const next = rand(seed);
+    const 한변 = 2 + next(13);
+    return {
+      prompt: `한 모서리의 길이가 ${한변} cm인 정육면체가 있습니다. 한 면의 넓이는 몇 cm²일까요?`,
+      answer: `${한변 * 한변} cm²`,
+      wrongs: [`${한변 * 4} cm²`, `${한변 * 6} cm²`, `${한변 * 2} cm²`, `${한변 * 한변 * 6} cm²`],
+      tag: 'solid',
+      strategy: '정육면체 한 면의 넓이 구하기',
+      hint: '정육면체의 한 면은 정사각형입니다. 정사각형의 넓이를 구하는 방법을 떠올리세요.',
+      steps: [
+        '정육면체의 한 면은 한 변이 모서리와 같은 정사각형입니다.',
+        `${한변}×${한변}=${한변 * 한변}`,
+        `한 면의 넓이는 ${한변 * 한변} cm²입니다.`,
+      ],
+      visual: cubePicture('정육면체', { edgeLabels: { width: `${한변} cm` } }),
+      misconceptionTip: '넓이는 두 변을 곱합니다. 둘레처럼 4를 곱하지 마세요.',
+    };
+  },
+};
+
+/** 한 면의 둘레에서 한 모서리를 거꾸로 구합니다. */
+const 면둘레에서모서리: G5Family = {
+  id: 'cube-edge-from-face-perimeter',
+  make: (seed) => {
+    const next = rand(seed);
+    const 한변 = 2 + next(13);
+    return {
+      prompt: `한 면의 둘레가 ${한변 * 4} cm인 정육면체가 있습니다. 한 모서리의 길이는 몇 cm일까요?`,
+      answer: `${한변} cm`,
+      wrongs: [`${한변 * 4} cm`, `${한변 * 2} cm`, `${한변 + 1} cm`, `${한변 * 3} cm`],
+      tag: 'solid',
+      strategy: '한 면의 둘레에서 한 모서리 구하기',
+      hint: '한 면은 정사각형이므로 둘레는 한 모서리를 네 번 더한 것입니다.',
+      steps: [
+        '정육면체의 한 면은 정사각형이므로 둘레는 한 모서리의 4배입니다.',
+        `${한변 * 4}÷4=${한변}`,
+        `한 모서리의 길이는 ${한변} cm입니다.`,
+      ],
+      visual: cubePicture('정육면체'),
+    };
+  },
+};
+
+/** 한 면의 둘레에서 모든 모서리의 길이의 합까지 두 걸음 갑니다. */
+const 면둘레에서모서리합: G5Family = {
+  id: 'cube-total-from-face-perimeter',
+  make: (seed) => {
+    const next = rand(seed);
+    const 한변 = 2 + next(12);
+    return {
+      prompt: `한 면의 둘레가 ${한변 * 4} cm인 정육면체가 있습니다. 모든 모서리의 길이의 합은 몇 cm일까요?`,
+      answer: `${한변 * 12} cm`,
+      wrongs: [`${한변 * 4 * 12} cm`, `${한변 * 4 * 6} cm`, `${한변 * 8} cm`, `${한변 * 6} cm`],
+      tag: 'solid',
+      strategy: '한 면의 둘레에서 모든 모서리의 합 구하기',
+      hint: '한 번에 구하려 하지 말고, 먼저 한 모서리의 길이를 구한 다음 모서리의 수를 곱하세요.',
+      steps: [
+        `한 면은 정사각형이므로 한 모서리는 ${한변 * 4}÷4=${한변}(cm)입니다.`,
+        `정육면체의 모서리는 12개이고 길이가 모두 같습니다.`,
+        `${한변}×12=${한변 * 12}이므로 모든 모서리의 길이의 합은 ${한변 * 12} cm입니다.`,
+      ],
+      visual: cubePicture('정육면체'),
+      misconceptionTip: '주어진 것은 한 모서리가 아니라 한 면의 둘레입니다. 4로 나누는 걸음을 빠뜨리지 마세요.',
+      selfCheck: '한 모서리를 먼저 구하고 나서 12를 곱했나요?',
+    };
+  },
+};
+
+/** 여섯 면의 넓이의 합을 구합니다. */
+const 여섯면넓이: G5Family = {
+  id: 'cube-all-face-area',
+  make: (seed) => {
+    const next = rand(seed);
+    const 한변 = 2 + next(11);
+    const 한면 = 한변 * 한변;
+    return {
+      prompt: `한 모서리의 길이가 ${한변} cm인 정육면체가 있습니다. 여섯 면의 넓이의 합은 몇 cm²일까요?`,
+      answer: `${한면 * 6} cm²`,
+      wrongs: [`${한면} cm²`, `${한면 * 4} cm²`, `${한면 * 12} cm²`, `${한변 * 6} cm²`],
+      tag: 'solid',
+      strategy: '여섯 면의 넓이의 합 구하기',
+      hint: '먼저 한 면의 넓이를 구하고, 정육면체의 면이 몇 개인지 세어 곱하세요.',
+      steps: [
+        `한 면은 한 변이 ${한변} cm인 정사각형이므로 넓이는 ${한변}×${한변}=${한면}(cm²)입니다.`,
+        '정육면체의 면은 6개이고 넓이가 모두 같습니다.',
+        `${한면}×6=${한면 * 6}이므로 여섯 면의 넓이의 합은 ${한면 * 6} cm²입니다.`,
+      ],
+      visual: cubePicture('정육면체', { edgeLabels: { width: `${한변} cm` } }),
+      misconceptionTip: '면은 6개입니다. 모서리 12개를 곱하지 마세요.',
+      selfCheck: '한 면의 넓이를 먼저 구하고 6을 곱했나요?',
+    };
+  },
+};
+
+/** 직육면체와 정육면체의 모서리 길이의 합을 견줍니다. */
+const 모서리합견주기: G5Family = {
+  id: 'box-vs-cube-edge-sum',
+  make: (seed) => {
+    const next = rand(seed);
+    const 가로 = 3 + next(8);
+    const 세로 = 2 + next(8);
+    const 높이 = 2 + next(8);
+    const 직 = (가로 + 세로 + 높이) * 4;
+    const 한변 = 3 + next(8);
+    const 정 = 한변 * 12;
+    if (직 === 정) return null;
+    const 직이큰가 = 직 > 정;
+    return {
+      prompt: `가로가 ${가로} cm, 세로가 ${세로} cm, 높이가 ${높이} cm인 직육면체와 한 모서리의 길이가 ${한변} cm인 정육면체가 있습니다. 모든 모서리의 길이의 합이 더 긴 것은 어느 것일까요?`,
+      answer: 직이큰가 ? '직육면체' : '정육면체',
+      wrongs: [직이큰가 ? '정육면체' : '직육면체', '두 도형이 같습니다.', '모서리의 수가 같아 견줄 수 없습니다.'],
+      tag: 'solid',
+      strategy: '두 입체도형의 모서리 길이의 합 견주기',
+      hint: '한쪽은 길이가 같은 모서리가 4개씩 세 가지이고 다른 쪽은 12개가 모두 같습니다. 저마다 합을 구해 견주세요.',
+      steps: [
+        `직육면체: (${가로}+${세로}+${높이})×4=${직}(cm)`,
+        `정육면체: ${한변}×12=${정}(cm)`,
+        `${eun(String(Math.max(직, 정)))} 더 크므로 ${직이큰가 ? '직육면체' : '정육면체'}가 더 깁니다.`,
+      ],
+      misconceptionTip: '모서리의 수는 둘 다 12개로 같습니다. 수가 아니라 길이의 합을 견주어야 합니다.',
+      selfCheck: '두 도형의 합을 각각 구해 보았나요?',
+    };
+  },
+};
+
+/** 여러 도형 가운데 조건에 맞는 것을 셉니다(1차시 중 수준). */
+const 도형세기: G5Family = {
+  id: 'pick-shape',
+  make: (seed) => {
+    const next = rand(seed);
+    const 찾을것: FigureShapeName = Math.abs(seed) % 2 === 0 ? '평행사변형' : '마름모';
+    const 다른것: FigureShapeName[] = ['직사각형', '사다리꼴', '정오각형', '이등변삼각형', '정육각형'];
+    const 몇개 = 1 + next(3);
+    const 이름표 = ['가', '나', '다', '라'];
+    const items = 이름표.map((name, at) => ({
+      name,
+      shape: at < 몇개 ? 찾을것 : 다른것[(next(5) + at) % 다른것.length],
+    }));
+    return {
+      prompt: `그림에서 ${iJosa(찾을것)} 모두 몇 개일까요?`,
+      answer: `${몇개}개`,
+      wrongs: ['0개', '1개', '2개', '3개', '4개'].filter((one) => one !== `${몇개}개`),
+      tag: 'shape',
+      strategy: '조건에 맞는 도형 세기',
+      hint: `${찾을것}의 조건을 먼저 말한 다음, 도형을 하나씩 그 조건에 대어 보세요.`,
+      steps: [
+        `${eun(찾을것)} ${찾을것 === '평행사변형' ? '마주 보는 두 쌍의 변이 서로 평행한 사각형' : '네 변의 길이가 모두 같은 사각형'}입니다.`,
+        `조건에 맞는 도형은 ${몇개}개입니다.`,
+      ],
+      visual: { kind: 'figure-set', label: '여러 도형', items },
+    };
+  },
+};
+
+/** 가로·세로·높이에서 모든 모서리의 길이의 합을 구합니다. */
+const 직육면체모서리합: G5Family = {
+  id: 'box-edge-sum',
+  make: (seed) => {
+    const size = boxSizeFor(seed);
+    const 합 = (size.width + size.depth + size.height) * 4;
+    return {
+      prompt: `가로가 ${size.width} cm, 세로가 ${size.depth} cm, 높이가 ${size.height} cm인 직육면체가 있습니다. 모든 모서리의 길이의 합은 몇 cm일까요?`,
+      answer: `${합} cm`,
+      wrongs: [
+        `${size.width + size.depth + size.height} cm`,
+        `${(size.width + size.depth + size.height) * 2} cm`,
+        `${(size.width + size.depth + size.height) * 12} cm`,
+        `${합 + size.width} cm`,
+      ],
+      tag: 'solid',
+      strategy: '모든 모서리의 길이의 합 구하기',
+      hint: '직육면체에는 길이가 같은 모서리가 몇 개씩 몇 가지 있는지 세어 보세요.',
+      steps: [
+        '직육면체에는 길이가 같은 모서리가 4개씩 세 가지 있습니다.',
+        `(${size.width}+${size.depth}+${size.height})×4=${합}`,
+        `모든 모서리의 길이의 합은 ${합} cm입니다.`,
+      ],
+      visual: boxPicture('직육면체', seed, {
+        edgeLabels: { width: `${size.width} cm`, depth: `${size.depth} cm`, height: `${size.height} cm` },
+      }),
+      misconceptionTip: '모서리는 12개입니다. 세 길이를 한 번씩만 더하면 모자랍니다.',
+      selfCheck: '세 길이를 더한 뒤 4를 곱했나요?',
+    };
+  },
+};
+
+/** 길이가 같은 모서리가 몇 개씩인지 봅니다. */
+const 같은길이모서리: G5Family = {
+  id: 'box-edge-groups',
+  make: (seed) => {
+    const size = boxSizeFor(seed);
+    const 어느것 = ['가로', '세로', '높이'][Math.abs(seed) % 3];
+    const 길이 = 어느것 === '가로' ? size.width : 어느것 === '세로' ? size.depth : size.height;
+    return {
+      prompt: `가로가 ${size.width} cm, 세로가 ${size.depth} cm, 높이가 ${size.height} cm인 직육면체가 있습니다. 길이가 ${길이} cm인 모서리는 모두 몇 개일까요?`,
+      answer: '4개',
+      wrongs: ['2개', '3개', '6개', '12개'],
+      tag: 'solid',
+      strategy: '길이가 같은 모서리 세기',
+      hint: '직육면체를 세워 놓고 같은 방향으로 난 모서리를 하나씩 세어 보세요.',
+      steps: [
+        '직육면체의 모서리 12개는 같은 방향끼리 세 무리로 나뉩니다.',
+        `12÷3=4이므로 한 무리는 4개입니다.`,
+        `길이가 ${길이} cm인 모서리는 4개입니다.`,
+      ],
+      visual: boxPicture('직육면체', seed + 5, {
+        edgeLabels: { width: `${size.width} cm`, depth: `${size.depth} cm`, height: `${size.height} cm` },
+      }),
+      misconceptionTip: '마주 보는 것만 세면 2개가 됩니다. 눈에 보이지 않는 모서리도 세어야 합니다.',
+    };
+  },
+};
+
+// ── 수준 나누기 ─────────────────────────────────────────────────────
+
+type 수준 = '하' | '중' | '상';
+
+const 골라내기 = (모두: G5Family[], ids: string[]) =>
+  ids.map((id) => 모두.find((one) => one.id === id)).filter((one): one is G5Family => Boolean(one));
+
+export const unit5Lesson1For = (수준: 수준): G5Family[] => {
+  const 모두 = [...unit5Lesson1, 변과꼭짓점, 평행한변, 남은각, 둘레에서변, 도형세기];
+  if (수준 === '하') return 골라내기(모두, ['word-meaning', 'pick-rectangle', 'count-parts', 'right-angle']);
+  if (수준 === '중') {
+    return 골라내기(모두, ['word-from-meaning', 'shape-family', 'box-around-us', 'parallel-pairs', 'pick-shape']);
+  }
+  return 골라내기(모두, ['angle-back', 'side-back']);
+};
+
+export const unit5Lesson4For = (수준: 수준): G5Family[] => {
+  const 모두 = [
+    ...unit5Lesson4,
+    정육면체면둘레,
+    정육면체면넓이,
+    면둘레에서모서리,
+    면둘레에서모서리합,
+    여섯면넓이,
+    모서리합견주기,
+  ];
+  if (수준 === '하') {
+    return 골라내기(모두, ['cube-edge-total', 'cube-face-perimeter', 'cube-sort', 'cube-face-shape', 'cube-meaning']);
+  }
+  if (수준 === '중') {
+    return 골라내기(모두, ['cube-edge-one', 'cube-face-area', 'cube-edge-from-face-perimeter', 'cube-part-count', 'cube-is-box']);
+  }
+  return 골라내기(모두, ['cube-total-from-face-perimeter', 'cube-all-face-area', 'box-vs-cube-edge-sum', 'cube-around-us']);
+};
+
+export const unit5Lesson2For = (수준: 수준): G5Family[] => {
+  const 모두 = [...unit5Lesson2, 직육면체모서리합, 같은길이모서리];
+  if (수준 === '하') return 골라내기(모두, ['box-meaning', 'part-meaning', 'part-count', 'not-a-box']);
+  if (수준 === '중') return 골라내기(모두, ['part-from-name', 'thing-count', 'at-one-vertex']);
+  return 골라내기(모두, ['count-sum', 'box-edge-sum', 'box-edge-groups']);
+};
+
+export const unit5Lesson3For = (수준: 수준): G5Family[] => {
+  if (수준 === '하') return 골라내기(unit5Lesson3, ['parallel-face', 'base-side-meaning', 'base-misread', 'two-shaded']);
+  if (수준 === '중') return 골라내기(unit5Lesson3, ['perpendicular-count', 'pair-count']);
+  return 골라내기(unit5Lesson3, ['not-perpendicular', 'base-then-side']);
+};

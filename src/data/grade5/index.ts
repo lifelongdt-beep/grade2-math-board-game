@@ -10,24 +10,21 @@ import { unit2Lesson1Easy, unit2Lesson1Hard, unit2Lesson1Middle } from './unit2/
 import { multiplyEasy, multiplyHard, multiplyMiddle } from './unit2/multiply';
 import { unit3Lesson1Easy } from './unit3/lesson1';
 import {
-  대칭성질,
-  선대칭Easy,
-  선대칭Middle,
-  점대칭Easy,
-  점대칭Middle,
-  합동Easy,
-  합동Middle,
+  대칭수준,
+  도입수준,
+  도형수준,
   합동성질Easy,
   합동성질Hard,
+  합동수준,
 } from './unit3/lessons';
 import type { DecimalKind } from './unit4/multiply';
 import { decimalEasy, decimalHard, decimalMiddle } from './unit4/multiply';
 import { unit4Lesson1Easy, 소수점위치Easy } from './unit4/lessons';
-import { unit5Lesson1, unit5Lesson2, unit5Lesson3, unit5Lesson4 } from './unit5/lessons';
+import { unit5Lesson1For, unit5Lesson2For, unit5Lesson3For, unit5Lesson4For } from './unit5/lessons';
 import { unit5Lesson5 } from './unit5/drawing';
 import { 전개도Families } from './unit5/netLessons';
-import { unit6Lesson1, unit6Lesson2, unit6Lesson3, unit6Lesson4 } from './unit6/average';
-import { unit6Lesson5, unit6Lesson6, unit6Lesson7, unit6Lesson8 } from './unit6/chance';
+import { unit6Lesson1For, unit6Lesson2For, unit6Lesson3, unit6Lesson4 } from './unit6/average';
+import { unit6Lesson5For, unit6Lesson6For, unit6Lesson7For, unit6Lesson8For } from './unit6/chance';
 import type { Rounding } from './util';
 
 // ════════════════════════════════════════════════════════════════════
@@ -108,39 +105,20 @@ const unit2Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
 //   6 점대칭  7 점대칭의 성질
 // 로 이어집니다. 성질 차시(5·7)는 뭉치 다섯을 수준에 따라 나눕니다.
 const unit3Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
-  if (lessonNo === 1) return unit3Lesson1Easy;
-  if (lessonNo === 2) {
-    if (difficulty === '하') return 합동Easy;
-    if (difficulty === '중') return 합동Middle;
-    return [...합동Middle, ...합동Easy.slice(2)];
-  }
+  // 수준마다 다른 뭉치를 줍니다. 차례만 돌리면 서른 자리를 채우고 나서
+  // 남는 것이 수준마다 같습니다 — 6차시는 중과 상이 스물하나를 똑같이
+  // 내고 있었습니다. lessons.ts의 '수준 나누기에 쓰는 뭉치'를 보세요.
+  if (lessonNo === 1) return 도입수준(difficulty);
+  if (lessonNo === 2) return 합동수준(difficulty);
   if (lessonNo === 3) {
     if (difficulty === '하') return 합동성질Easy;
     if (difficulty === '중') return [...합동성질Easy.slice(1), ...합동성질Hard.slice(1)];
     return 합동성질Hard;
   }
-  if (lessonNo === 4) {
-    if (difficulty === '하') return 선대칭Easy;
-    if (difficulty === '중') return 선대칭Middle;
-    return [...선대칭Middle, ...선대칭Easy.slice(2)];
-  }
-  if (lessonNo === 5) {
-    const 뭉치 = 대칭성질(true);
-    if (difficulty === '하') return 뭉치.slice(0, 4);
-    if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0]];
-    return [...뭉치.slice(3), ...뭉치.slice(0, 3)];
-  }
-  if (lessonNo === 6) {
-    if (difficulty === '하') return 점대칭Easy;
-    if (difficulty === '중') return [...점대칭Middle, ...점대칭Easy.slice(3)];
-    return [...점대칭Middle, ...점대칭Easy.slice(2)];
-  }
-  if (lessonNo === 7) {
-    const 뭉치 = 대칭성질(false);
-    if (difficulty === '하') return 뭉치.slice(0, 4);
-    if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0]];
-    return [...뭉치.slice(3), ...뭉치.slice(0, 3)];
-  }
+  if (lessonNo === 4) return 도형수준(true, difficulty);
+  if (lessonNo === 5) return 대칭수준(true, difficulty);
+  if (lessonNo === 6) return 도형수준(false, difficulty);
+  if (lessonNo === 7) return 대칭수준(false, difficulty);
   return null;
 };
 
@@ -160,7 +138,7 @@ const unit4Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
   if (lessonNo === 1) return unit4Lesson1Easy;
   if (lessonNo === 8) {
     // 8차시는 곱의 소수점 위치 하나를 여러 갈래로 묻습니다.
-    if (difficulty === '하') return 소수점위치Easy.slice(0, 4);
+    if (difficulty === '하') return 소수점위치Easy.slice(0, 5);
     if (difficulty === '중') return 소수점위치Easy;
     return [...소수점위치Easy.slice(3), ...소수점위치Easy.slice(0, 2)];
   }
@@ -177,21 +155,38 @@ const unit4Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
 // 로 이어집니다. 6·7차시는 하는 일이 같고 상자만 다르므로 한 뭉치를
 // 정육면체인지 아닌지로 나누어 씁니다.
 const unit5Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
-  const 수준대로 = (뭉치: G5Family[]): G5Family[] => {
-    // 같은 뭉치라도 수준에 따라 앞뒤를 바꿔 냅니다. 앞에 오는 뭉치가
-    // 더 많은 자리를 가져가므로, 기초에서는 뜻을 묻는 것이, 도전에서는
-    // 세어 계산하는 것이 앞에 오게 합니다.
-    if (difficulty === '하') return 뭉치;
-    if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0]];
-    return [...뭉치.slice(2), ...뭉치.slice(0, 2)];
-  };
-  if (lessonNo === 1) return 수준대로(unit5Lesson1);
-  if (lessonNo === 2) return 수준대로(unit5Lesson2);
-  if (lessonNo === 3) return 수준대로(unit5Lesson3);
-  if (lessonNo === 4) return 수준대로(unit5Lesson4);
-  if (lessonNo === 5) return 수준대로(unit5Lesson5);
-  if (lessonNo === 6) return 수준대로(전개도Families(false));
-  if (lessonNo === 7) return 수준대로(전개도Families(true));
+  // 수준을 나누는 일은 뭉치의 차례를 돌리는 것이 아니라, 수준마다 다른
+  // 뭉치를 주는 것입니다. 차례만 돌리면 서른 자리를 채우고 나서 남는
+  // 것이 수준마다 같습니다 — 이 단원은 하와 상이 서른 문항 가운데
+  // 스물셋까지 똑같이 내고 있었습니다.
+  const 골라내기 = (뭉치: G5Family[], ids: string[]) =>
+    ids.map((id) => 뭉치.find((one) => one.id === id)).filter((one): one is G5Family => Boolean(one));
+  const 수준대로 = (뭉치: G5Family[], 하: string[], 중: string[], 상: string[]) =>
+    골라내기(뭉치, difficulty === '하' ? 하 : difficulty === '중' ? 중 : 상);
+
+  if (lessonNo === 1) return unit5Lesson1For(difficulty);
+  if (lessonNo === 2) return unit5Lesson2For(difficulty);
+  if (lessonNo === 3) return unit5Lesson3For(difficulty);
+  if (lessonNo === 4) return unit5Lesson4For(difficulty);
+  if (lessonNo === 5) {
+    return 수준대로(
+      unit5Lesson5,
+      ['aim-meaning', 'line-rule', 'visible-count', 'aim-vs-net'],
+      ['visible-diff', 'wrong-aim'],
+      ['aim-with-size', 'aim-total-edge'],
+    );
+  }
+  if (lessonNo === 6 || lessonNo === 7) {
+    const 뭉치 = 전개도Families(lessonNo === 7);
+    return 수준대로(
+      뭉치,
+      ['net-meaning', 'net-cut-rule', 'net-counts'],
+      ['opposite-face', 'is-net', 'meeting-point'],
+      lessonNo === 7
+        ? ['overlap-segment', 'cube-net-kinds', 'dice']
+        : ['overlap-segment', 'net-edge-length'],
+    );
+  }
   return null;
 };
 
@@ -206,15 +201,23 @@ const unit6Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
     if (difficulty === '중') return [...뭉치.slice(1), 뭉치[0]];
     return [...뭉치.slice(2), ...뭉치.slice(0, 2)];
   };
+  // 5~8차시(가능성)는 수준마다 하는 일이 다릅니다 — 하는 그림을 세어
+  // 옮기고, 중은 글로 된 상황을 읽고, 상은 거꾸로 말이나 수를 먼저 주고
+  // 그렇게 되는 상황을 찾습니다. chance.ts를 보세요.
+  const 가능성차시: Record<number, (수준: Difficulty) => G5Family[]> = {
+    5: unit6Lesson5For,
+    6: unit6Lesson6For,
+    7: unit6Lesson7For,
+    8: unit6Lesson8For,
+  };
+  if (가능성차시[lessonNo]) return 가능성차시[lessonNo](difficulty);
+
+  if (lessonNo === 1) return unit6Lesson1For(difficulty);
+  if (lessonNo === 2) return unit6Lesson2For(difficulty);
+
   const 차시별: Record<number, G5Family[]> = {
-    1: unit6Lesson1,
-    2: unit6Lesson2,
     3: unit6Lesson3,
     4: unit6Lesson4,
-    5: unit6Lesson5,
-    6: unit6Lesson6,
-    7: unit6Lesson7,
-    8: unit6Lesson8,
   };
   const 뭉치 = 차시별[lessonNo];
   return 뭉치 ? 수준대로(뭉치) : null;

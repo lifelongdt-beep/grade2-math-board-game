@@ -65,7 +65,7 @@ const unit1Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
 // 차례를 지키는 것이 여기서는 특히 중요합니다. 3·4차시 문항에
 // '최소공배수'가 나오면 두 차시를 앞지르게 됩니다.
 const unit2Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
-  if (lessonNo === 1) return unit2Lesson1;
+  if (lessonNo === 1) return unit2Lesson1(difficulty);
   if (lessonNo === 2) return unit2Lesson2(difficulty);
   if (lessonNo === 3) return unit2Common('divisor', difficulty);
   if (lessonNo === 4) return unit2Find('divisor', difficulty);
@@ -80,7 +80,7 @@ const unit2Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
 // 로 이어집니다. 2·3차시는 말로만 표현합니다 — ○, △ 기호로 식을
 // 세우는 것은 4차시에서 처음 배웁니다.
 const unit3Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
-  if (lessonNo === 1) return unit3Lesson1;
+  if (lessonNo === 1) return unit3Lesson1(difficulty);
   if (lessonNo === 2) return unit3Lesson2(difficulty);
   if (lessonNo === 3) return unit3Lesson3(difficulty);
   if (lessonNo === 4) return unit3Lesson4(difficulty);
@@ -94,7 +94,7 @@ const unit3Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
 // 로 이어집니다. 말의 차례가 곧 차시의 차례입니다 — '약분'은 4차시,
 // '통분'은 5차시에서 처음 나옵니다.
 const unit4Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
-  if (lessonNo === 1) return unit4Lesson1;
+  if (lessonNo === 1) return unit4Lesson1(difficulty);
   if (lessonNo === 2) return unit4Lesson2(difficulty);
   if (lessonNo === 3) return unit4Lesson3(difficulty);
   if (lessonNo === 4) return unit4Lesson4(difficulty);
@@ -139,7 +139,7 @@ const unit6Kinds: Record<number, AreaKind> = {
 };
 
 const unit6Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
-  if (lessonNo === 1) return unit6Lesson1;
+  if (lessonNo === 1) return unit6Lesson1(difficulty);
   if (lessonNo === 2) return unit6Lesson2(difficulty);
   if (lessonNo === 3) return unit6Lesson3(difficulty);
   if (lessonNo === 4) return unit6Lesson4(difficulty);

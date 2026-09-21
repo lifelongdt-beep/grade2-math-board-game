@@ -224,6 +224,17 @@ const relations: Relation[] = [
   },
 ];
 
+type 수준 = '하' | '중' | '상';
+
+// 수준마다 표의 시작 값을 달리합니다. 같은 자리에서 시작하면 씨앗이
+// 달라도 서른 자리를 채우고 나면 같은 표가 나옵니다. 수가 커지면
+// 몇 배인지, 얼마나 더 많은지 세는 일도 함께 길어집니다.
+const 시작칸: Record<수준, { 건너뛰기: number; 폭: number }> = {
+  하: { 건너뛰기: 0, 폭: 6 },
+  중: { 건너뛰기: 6, 폭: 8 },
+  상: { 건너뛰기: 14, 폭: 10 },
+};
+
 const 배수관계 = relations.filter((one) => one.kind === '×');
 const 더하기관계 = relations.filter((one) => one.kind === '+');
 const 빼기관계 = relations.filter((one) => one.kind === '-');
@@ -233,15 +244,20 @@ const 더빼기관계 = [...더하기관계, ...빼기관계];
 const 시작값 = (relation: Relation, next: (bound: number) => number) =>
   relation.from + next(7) * relation.step;
 
+const 시작값수준 = (relation: Relation, next: (bound: number) => number, 수준: 수준) => {
+  const 칸 = 시작칸[수준];
+  return relation.from + (칸.건너뛰기 + next(칸.폭)) * relation.step;
+};
+
 // ── 표의 빈칸 채우기 ────────────────────────────────────────────────
 const poolTag = (pool: Relation[]) => pool.map((one) => one.id[0]).join('');
 
-const 빈칸문항 = (pool: Relation[]): G5Family => ({
+const 빈칸문항 = (pool: Relation[], 수준: 수준): G5Family => ({
   id: `table-blank-${poolTag(pool)}`,
   make: (seed) => {
     const next = rand(seed);
     const relation = pick(pool, seed);
-    const from = 시작값(relation, next);
+    const from = 시작값수준(relation, next, 수준);
     const hideAt = 2 + next(3);
     const left = from + hideAt * relation.step;
     const 답 = apply(relation, left);
@@ -271,12 +287,12 @@ const 빈칸문항 = (pool: Relation[]): G5Family => ({
 });
 
 // ── 말로 나타내기 (2·3차시) ─────────────────────────────────────────
-const 말문항 = (pool: Relation[]): G5Family => ({
+const 말문항 = (pool: Relation[], 수준: 수준): G5Family => ({
   id: `in-words-${poolTag(pool)}`,
   make: (seed) => {
     const next = rand(seed + 3);
     const relation = pick(pool, seed);
-    const from = 시작값(relation, next);
+    const from = 시작값수준(relation, next, 수준);
     const wrongs = 다른말(relation);
     if (wrongs.length < 3) return null;
     return {
@@ -300,12 +316,12 @@ const 말문항 = (pool: Relation[]): G5Family => ({
 });
 
 // ── 식으로 나타내기 (4·5차시) ──────────────────────────────────────
-const 식문항 = (pool: Relation[]): G5Family => ({
+const 식문항 = (pool: Relation[], 수준: 수준): G5Family => ({
   id: `as-formula-${poolTag(pool)}`,
   make: (seed) => {
     const next = rand(seed + 7);
     const relation = pick(pool, seed);
-    const from = 시작값(relation, next);
+    const from = 시작값수준(relation, next, 수준);
     return {
       prompt: `${relation.scene} ${relation.leftName}${particleOf(relation.leftName, '을')} ○, ${relation.rightName}${particleOf(relation.rightName, '을')} △라고 할 때, 두 양 사이의 대응 관계를 바르게 나타낸 식은 어느 것일까요?`,
       answer: 식으로(relation),
@@ -327,12 +343,12 @@ const 식문항 = (pool: Relation[]): G5Family => ({
 });
 
 // ── 식을 보고 값 구하기 ─────────────────────────────────────────────
-const 값문항 = (pool: Relation[], 거꾸로: boolean): G5Family => ({
+const 값문항 = (pool: Relation[], 거꾸로: boolean, 수준: 수준): G5Family => ({
   id: `${거꾸로 ? 'from-right' : 'from-left'}-${poolTag(pool)}`,
   make: (seed) => {
     const next = rand(seed + 11);
     const relation = pick(pool, seed);
-    const left = 시작값(relation, next) + (4 + next(8)) * relation.step;
+    const left = 시작값수준(relation, next, 수준) + (4 + next(8)) * relation.step;
     const right = apply(relation, left);
     if (right < 1) return null;
     if (거꾸로) {
@@ -414,13 +430,17 @@ const 짝찾기: G5Family = {
 // ── 단원 도입 (1차시) ───────────────────────────────────────────────
 // 4학년에서 배운 '규칙 찾기'를 떠올리는 자리입니다. 아직 '대응 관계'라는
 // 말도, ○·△ 기호도 쓰지 않습니다.
-export const unit3Lesson1: G5Family[] = [
+// 1차시는 4학년의 '규칙 찾기'를 떠올리는 자리입니다. 수준마다 쓰는
+// 수의 크기를 달리해 두지 않으면 셋이 같은 문항을 냅니다.
+export const unit3Lesson1 = (difficulty: 수준): G5Family[] => {
+  const 크기 = 시작칸[difficulty];
+  return [
   {
     id: 'number-pattern',
     make: (seed) => {
       const next = rand(seed);
-      const start = 2 + next(20);
-      const step = 2 + next(8);
+      const start = 2 + 크기.건너뛰기 * 2 + next(20);
+      const step = 2 + next(크기.폭 + 2);
       const 수열 = [start, start + step, start + step * 2, start + step * 3];
       const 답 = start + step * 4;
       return {
@@ -444,8 +464,8 @@ export const unit3Lesson1: G5Family[] = [
     id: 'shape-pattern',
     make: (seed) => {
       const next = rand(seed + 5);
-      const per = 2 + next(4);
-      const k = 5 + next(6);
+      const per = 2 + next(Math.min(크기.폭, 6));
+      const k = 5 + 크기.건너뛰기 + next(6);
       return {
         prompt: `삼각형 한 개를 만드는 데 성냥개비가 ${per + 1}개 필요합니다. 성냥개비를 ${per}개씩 더 놓아 삼각형을 옆으로 이어 붙일 때, 삼각형 ${k}개를 만들려면 성냥개비는 모두 몇 개 필요할까요?`,
         answer: String(per * k + 1),
@@ -467,8 +487,8 @@ export const unit3Lesson1: G5Family[] = [
     id: 'calc-pattern',
     make: (seed) => {
       const next = rand(seed + 11);
-      const base = 2 + next(6);
-      const k = 3 + next(4);
+      const base = 2 + 크기.건너뛰기 + next(6);
+      const k = 3 + next(Math.min(크기.폭, 6));
       return {
         prompt: `규칙에 따라 ${base}×1=${base}, ${base}×2=${base * 2}, ${gwa(`${base}×3=${base * 3}`)} 같이 계산식을 늘어놓았습니다. ${차례(k)} 식의 계산 결과는 얼마일까요?`,
         answer: String(base * k),
@@ -490,8 +510,8 @@ export const unit3Lesson1: G5Family[] = [
       // '대응 관계'라는 말을 쓰지 않고 '규칙'으로만 말합니다 — 그 말은
       // 2차시에서 처음 배웁니다.
       const next = rand(seed + 17);
-      const 배 = 2 + next(5);
-      const 시작 = 1 + next(4);
+      const 배 = 2 + next(Math.min(크기.폭, 6));
+      const 시작 = 1 + Math.floor(크기.건너뛰기 / 2) + next(4);
       const 칸 = [0, 1, 2, 3, 4].map((at) => 시작 + at);
       const 답 = 칸[4] * 배;
       return {
@@ -518,36 +538,120 @@ export const unit3Lesson1: G5Family[] = [
       };
     },
   },
-];
+  ];
+};
 
 // ── 차시에 내보낼 뭉치 ──────────────────────────────────────────────
 // 2차시는 몇 배 관계(자전거와 바퀴), 3차시는 얼마 더 많은 관계(손수건과
 // 집게)가 주인공입니다. 지도서 활동 1이 그렇게 나뉘어 있습니다.
 // 두 차시 모두 말로만 표현합니다 — 기호 식은 4차시 것입니다.
-export const unit3Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
-  const 뭉치 = [빈칸문항(배수관계), 말문항(배수관계), 짝찾기, 빈칸문항(relations)];
-  if (difficulty === '하') return 뭉치;
-  if (difficulty === '중') return [말문항(배수관계), 빈칸문항(relations), 짝찾기, 빈칸문항(배수관계)];
-  return [말문항(relations), 빈칸문항(relations), 짝찾기, 말문항(배수관계)];
+export const unit3Lesson2 = (difficulty: 수준): G5Family[] => {
+  // 뭉치는 거의 같습니다. 대신 표가 시작하는 자리가 수준마다 달라서,
+  // 같은 장면이라도 다른 수를 세게 됩니다. 차례만 돌리던 때에는 하와
+  // 상이 서른 문항 가운데 여덟을 똑같이 냈습니다.
+  // 짝찾기는 뽑을 것이 여섯뿐이라 한 수준에만 둡니다. 셋이 나눠 쓰면
+  // 그 여섯이 그대로 세 번 나가 수준을 고른 뜻이 사라집니다.
+  if (difficulty === '하') {
+    return [
+      빈칸문항(배수관계, difficulty),
+      말문항(배수관계, difficulty),
+      짝찾기,
+      빈칸문항(relations, difficulty),
+    ];
+  }
+  if (difficulty === '중') {
+    return [
+      말문항(배수관계, difficulty),
+      빈칸문항(relations, difficulty),
+      빈칸문항(배수관계, difficulty),
+      말문항(relations, difficulty),
+    ];
+  }
+  return [
+    말문항(relations, difficulty),
+    빈칸문항(relations, difficulty),
+    말문항(배수관계, difficulty),
+    빈칸문항(나누기관계, difficulty),
+  ];
 };
 
-export const unit3Lesson3 = (difficulty: '하' | '중' | '상'): G5Family[] => {
-  const 뭉치 = [빈칸문항(더하기관계), 말문항(더하기관계), 빈칸문항(relations), 말문항(relations)];
-  if (difficulty === '하') return 뭉치;
-  if (difficulty === '중') return [말문항(더빼기관계), 빈칸문항(relations), 말문항(relations), 빈칸문항(더하기관계)];
-  return [말문항(relations), 빈칸문항(나누기관계), 말문항(더빼기관계), 빈칸문항(relations)];
+export const unit3Lesson3 = (difficulty: 수준): G5Family[] => {
+  if (difficulty === '하') {
+    return [
+      빈칸문항(더하기관계, difficulty),
+      말문항(더하기관계, difficulty),
+      빈칸문항(relations, difficulty),
+      말문항(relations, difficulty),
+    ];
+  }
+  if (difficulty === '중') {
+    return [
+      말문항(더빼기관계, difficulty),
+      빈칸문항(relations, difficulty),
+      말문항(relations, difficulty),
+      빈칸문항(더하기관계, difficulty),
+    ];
+  }
+  return [
+    말문항(relations, difficulty),
+    빈칸문항(나누기관계, difficulty),
+    말문항(더빼기관계, difficulty),
+    빈칸문항(relations, difficulty),
+  ];
 };
 
-export const unit3Lesson4 = (difficulty: '하' | '중' | '상'): G5Family[] => {
-  const 뭉치 = [식문항(배수관계), 식문항(더하기관계), 값문항(배수관계, false), 빈칸문항(relations), 말문항(relations)];
-  if (difficulty === '하') return 뭉치;
-  if (difficulty === '중') return [식문항(relations), 값문항(relations, false), 식문항(더하기관계), 값문항(배수관계, true), 빈칸문항(relations)];
-  return [값문항(relations, true), 식문항(relations), 값문항(relations, false), 식문항(나누기관계), 말문항(relations)];
+export const unit3Lesson4 = (difficulty: 수준): G5Family[] => {
+  if (difficulty === '하') {
+    return [
+      식문항(배수관계, difficulty),
+      식문항(더하기관계, difficulty),
+      값문항(배수관계, false, difficulty),
+      빈칸문항(relations, difficulty),
+      말문항(relations, difficulty),
+    ];
+  }
+  if (difficulty === '중') {
+    return [
+      식문항(relations, difficulty),
+      값문항(relations, false, difficulty),
+      식문항(더하기관계, difficulty),
+      값문항(배수관계, true, difficulty),
+      빈칸문항(relations, difficulty),
+    ];
+  }
+  return [
+    값문항(relations, true, difficulty),
+    식문항(relations, difficulty),
+    값문항(relations, false, difficulty),
+    식문항(나누기관계, difficulty),
+    말문항(relations, difficulty),
+  ];
 };
 
-export const unit3Lesson5 = (difficulty: '하' | '중' | '상'): G5Family[] => {
-  const 뭉치 = [식문항(relations), 값문항(relations, false), 값문항(relations, true), 말문항(relations), 빈칸문항(relations)];
-  if (difficulty === '하') return [식문항(배수관계), 값문항(배수관계, false), 빈칸문항(relations), 말문항(relations), 식문항(더하기관계)];
-  if (difficulty === '중') return 뭉치;
-  return [값문항(relations, true), 값문항(나누기관계, false), 식문항(relations), 식문항(나누기관계), 말문항(relations)];
+export const unit3Lesson5 = (difficulty: 수준): G5Family[] => {
+  if (difficulty === '하') {
+    return [
+      식문항(배수관계, difficulty),
+      값문항(배수관계, false, difficulty),
+      빈칸문항(relations, difficulty),
+      말문항(relations, difficulty),
+      식문항(더하기관계, difficulty),
+    ];
+  }
+  if (difficulty === '중') {
+    return [
+      식문항(relations, difficulty),
+      값문항(relations, false, difficulty),
+      값문항(relations, true, difficulty),
+      말문항(relations, difficulty),
+      빈칸문항(relations, difficulty),
+    ];
+  }
+  return [
+    값문항(relations, true, difficulty),
+    값문항(나누기관계, false, difficulty),
+    식문항(relations, difficulty),
+    식문항(나누기관계, difficulty),
+    말문항(relations, difficulty),
+  ];
 };
