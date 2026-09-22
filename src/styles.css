@@ -6911,3 +6911,57 @@ body::before {
 .symmetry-try span.symmetry-no {
   color: #b4532a;
 }
+
+/* 여럿 가운데 하나를 골라 해 보는 자리입니다. 가·나·다·라 단추. */
+.symmetry-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.symmetry-pick button {
+  min-width: 52px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  padding: 8px 14px;
+  color: var(--muted);
+  font-weight: 900;
+  font-size: 15px;
+}
+
+.symmetry-pick button.chosen {
+  border-color: var(--teal);
+  background: #f1fcfc;
+  color: var(--teal-dark);
+}
+
+/* 회전판을 돌리거나 바둑돌을 꺼낸 결과를 세어 둔 줄입니다. */
+.chance-tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.chance-tally span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chance-tally i {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid #41607a;
+  border-radius: 50%;
+}
+
+.chance-tally strong {
+  color: var(--teal-dark);
+}

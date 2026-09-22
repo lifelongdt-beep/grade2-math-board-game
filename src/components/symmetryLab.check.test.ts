@@ -171,3 +171,69 @@ describe('접어 보는 자리', () => {
     expect([...new Set(걸린것)].slice(0, 5).join('\n')).toBe('');
   });
 });
+
+// ════════════════════════════════════════════════════════════════════
+// 여럿 가운데 고르는 문항
+// ────────────────────────────────────────────────────────────────────
+// '가·나·다·라 가운데 선대칭도형은?' 같은 문항에서, 저절로 포개
+// 보이면 안 됩니다. 처음에는 같은 모양 두 개를 찾아 자동으로
+// 포갰는데 하필 첫 짝이 늘 정답이라, 아이가 아무것도 하기 전에 답이
+// 나와 버렸습니다.
+// ════════════════════════════════════════════════════════════════════
+describe('여럿 가운데 고르는 문항', () => {
+  it('도형이 셋 이상이면 저절로 포개지 않는다', () => {
+    const 걸린것: string[] = [];
+    for (const lesson of [...lessons51, ...lessons5]) {
+      for (const level of ['하', '중', '상'] as Difficulty[]) {
+        for (const q of generateQuestions(lesson, level)) {
+          if (!q.visual) continue;
+          const 할것 = 무엇을해볼까(q.visual, q.prompt);
+          if (할것?.갈래 !== '포개기') continue;
+          const 몇개 = ((q.visual as unknown as { items?: unknown[] }).items ?? []).length;
+          if (몇개 > 2) 걸린것.push(`${lesson.id}(${level}) 도형 ${몇개}개인데 저절로 포갬: ${q.prompt}`);
+        }
+      }
+    }
+    expect([...new Set(걸린것)].slice(0, 5).join('\n')).toBe('');
+  });
+
+  it('고르는 문항에 실제로 붙고, 고를 도형이 둘 이상이다', () => {
+    let 붙은것 = 0;
+    const 걸린것: string[] = [];
+    for (const lesson of [...lessons51, ...lessons5]) {
+      for (const level of ['하', '중', '상'] as Difficulty[]) {
+        for (const q of generateQuestions(lesson, level)) {
+          if (!q.visual) continue;
+          const 할것 = 무엇을해볼까(q.visual, q.prompt);
+          if (할것?.갈래 === '골라보기') {
+            붙은것 += 1;
+            if (할것.도형들.length < 2) 걸린것.push(`${lesson.id}(${level}) 고를 것이 하나뿐: ${q.prompt}`);
+          }
+          if (할것?.갈래 === '골라포개기') {
+            붙은것 += 1;
+            if (할것.후보들.length < 2) 걸린것.push(`${lesson.id}(${level}) 견줄 것이 하나뿐: ${q.prompt}`);
+          }
+        }
+      }
+    }
+    expect([...new Set(걸린것)].slice(0, 5).join('\n')).toBe('');
+    expect(붙은것).toBeGreaterThan(50);
+  });
+
+  it('점대칭을 묻는데 접으라고 하지 않는다(고르는 문항에서도)', () => {
+    const 걸린것: string[] = [];
+    for (const lesson of [...lessons51, ...lessons5]) {
+      for (const level of ['하', '중', '상'] as Difficulty[]) {
+        for (const q of generateQuestions(lesson, level)) {
+          if (!q.visual) continue;
+          const 할것 = 무엇을해볼까(q.visual, q.prompt);
+          if (할것?.갈래 !== '골라보기') continue;
+          if (할것.할일 === '접는선찾기' && q.prompt.includes('점대칭') && !q.prompt.includes('선대칭')) {
+            걸린것.push(`${lesson.id}(${level}) ${q.prompt}`);
+          }
+        }
+      }
+    }
+    expect([...new Set(걸린것)].slice(0, 5).join('\n')).toBe('');
+  });
+});

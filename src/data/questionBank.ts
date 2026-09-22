@@ -1762,6 +1762,24 @@ export const questionBank: Template[] = [
       { text: '일의 자리 숫자가 1씩 커집니다.', ok: false },
     ],
   },
+  // 같은 사실(10이 10개이면 100)을 한 가지 문제글로만 물으면 그
+  // 문제글이 여러 자리를 차지합니다. 모으는 쪽과 되묻는 쪽으로 나눕니다.
+  // 뛰어 세어 묻는 것도 생각했지만 '뛰어 세기'는 6차시라 여기서는
+  // 선행입니다(sequence.test.ts가 잡습니다).
+  {
+    id: 'hundred-ten-count-back',
+    when: /백을 알아볼까요/,
+    demand: 'recall',
+    tag: 'number',
+    strategy: '100이 10의 몇 개인지 알기',
+    vars: {
+      k: { from: 2, to: 9 },
+    },
+    prompt: '100은 10이 몇 개인 수일까요?',
+    answer: '10개',
+    wrongs: ['1개', '100개', '{k}개'],
+    solution: '10이 10개이면 100이므로, 100은 10이 10개인 수입니다.',
+  },
   {
     id: 'hundred-ten-count',
     when: /백을 알아볼까요/,
@@ -6101,6 +6119,21 @@ export const questionBank: Template[] = [
     answer: '{value}개',
     wrongs: ['{boxes}개', '{boxes * 100}개', '{value + 1000}개'],
     solution: '1000이 {boxes}개이므로 {value}개입니다.',
+  },
+  // 100과 같은 까닭으로 묻는 방향을 둘로 나눕니다.
+  {
+    id: 'thousand-hundred-count-back',
+    when: /천을 알아볼까요/,
+    demand: 'recall',
+    tag: 'number',
+    strategy: '1000이 100의 몇 개인지 알기',
+    vars: {
+      k: { from: 2, to: 9 },
+    },
+    prompt: '1000은 100이 몇 개인 수일까요?',
+    answer: '10개',
+    wrongs: ['1개', '1000개', '{k}개'],
+    solution: '100이 10개이면 1000이므로, 1000은 100이 10개인 수입니다.',
   },
   {
     id: 'thousand-hundred-count',
@@ -11005,6 +11038,38 @@ export const questionBank: Template[] = [
   // 자리를 지키는 0, 뛰어 셀 때의 올림, 높은 자리부터 견주기가 이 단원의
   // 고비입니다. units를 적어 두어 2-1 세 자리 수 차시로 새지 않게 합니다.
   // ══════════════════════════════════════════════════════════════════
+  // 한 문항만 두면 이 차시의 여섯 자리가 글자까지 같았습니다. 같은
+  // 것(몇 자리 수까지 있어야 하는가)을 다른 자료로 묻는 형제를 둡니다.
+  //
+  // 수는 실제 높이로 적되 세 자리까지만 씁니다 — 남산 262m, 관악산
+  // 632m, 북한산 836m입니다. 한라산(1947m)이나 백두산(2744m)을 쓰면
+  // 몇천몇백몇십몇이 되는데, 그것은 이 단원 4차시에서 배웁니다.
+  {
+    id: 'four-intro-need-namsan',
+    when: /단원 도입/,
+    units: ['네 자리 수'],
+    demand: 'recall',
+    tag: 'number',
+    strategy: '몇 자리 수가 필요한지 알기',
+    vars: {},
+    prompt: '남산의 높이는 262m이고 관악산의 높이는 632m입니다. 두 높이를 모두 나타내려면 몇 자리 수까지 있어야 할까요?',
+    answer: '세 자리 수',
+    wrongs: ['한 자리 수', '두 자리 수', '네 자리 수'],
+    solution: '632는 세 자리 수이므로 세 자리 수까지 있어야 두 높이를 모두 나타낼 수 있습니다.',
+  },
+  {
+    id: 'four-intro-need-bukhan',
+    when: /단원 도입/,
+    units: ['네 자리 수'],
+    demand: 'recall',
+    tag: 'number',
+    strategy: '몇 자리 수가 필요한지 알기',
+    vars: {},
+    prompt: '북한산의 높이는 836m입니다. 이 높이를 나타내려면 몇 자리 수가 필요할까요?',
+    answer: '세 자리 수',
+    wrongs: ['한 자리 수', '두 자리 수', '네 자리 수'],
+    solution: '836은 백의 자리까지 있는 수이므로 세 자리 수가 필요합니다.',
+  },
   {
     id: 'four-intro-need',
     when: /단원 도입/,
