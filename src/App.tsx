@@ -2292,6 +2292,7 @@ function App() {
                       {hintModalOpen[player.id] && question.visual && (
                         <InteractiveHintModal
                           visual={question.visual}
+                          prompt={question.prompt}
                           onClose={() => setHintModalOpen((prev) => ({ ...prev, [player.id]: false }))}
                         />
                       )}

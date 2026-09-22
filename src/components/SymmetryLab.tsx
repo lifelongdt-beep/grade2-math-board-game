@@ -87,7 +87,24 @@ const 축각도 = (name: string): number => {
 // 도형이 여럿이어도 모양이 서로 다르면('정사각형을 찾으면?') 포갤
 // 것이 없습니다. 같은 모양이 둘 있고 한쪽이 돌려져 있거나 뒤집혀
 // 있을 때에만 포개어 볼 거리가 생깁니다.
-export const 무엇을해볼까 = (visual: QuestionVisual | undefined): 실험 | null => {
+//
+// 도형 하나짜리 그림에서는 문제가 무엇을 묻는지까지 보아야 합니다.
+// 처음에는 그림만 보고 '접는 선 찾기'를 내주었는데, 그러면 이런 일이
+// 생겼습니다.
+//
+//   "가로가 5 cm, 세로가 3 cm인 직사각형의 둘레는?"  → 접는 선 찾기
+//   "한 변의 길이가 9 cm인 정사각형의 넓이는?"        → 접는 선 찾기
+//   "직사각형은 무엇일까요?"                          → 접는 선 찾기
+//
+// 둘레를 묻는 아이에게 접는 선을 찾아보라고 하는 것은 도움이 아니라
+// 딴 길입니다. 더 나쁜 것은 이것이었습니다.
+//
+//   "그림의 직사각형은 점대칭도형일까요?"             → 접는 선 찾기
+//
+// 점대칭은 접어서 알아보는 것이 아니라 돌려서 알아보는 것입니다.
+// 접어 보게 하면 아이가 점대칭을 선대칭으로 알아듣습니다. 그래서
+// 무엇을 묻는지에 따라 접을지 돌릴지를 가릅니다.
+export const 무엇을해볼까 = (visual: QuestionVisual | undefined, prompt = ''): 실험 | null => {
   if (visual?.kind !== 'figure-set') return null;
   const items = (visual as unknown as { items: 도형항목[] }).items ?? [];
   if (!items.length) return null;
@@ -106,9 +123,16 @@ export const 무엇을해볼까 = (visual: QuestionVisual | undefined): 실험 |
 
   if (items.length !== 1) return null;
   const 하나 = items[0];
+
+  // 그림에 대칭축이나 대칭의 중심이 찍혀 있으면 그것이 곧 무엇을
+  // 해 보라는 표시입니다.
   if (하나.axes?.length) return { 갈래: '접기', 도형: 하나, 축각도: 축각도(하나.axes[0]) };
   if (하나.center) return { 갈래: '돌리기', 도형: 하나 };
-  return { 갈래: '접는선찾기', 도형: 하나 };
+
+  // 표시가 없으면 문제가 무엇을 묻는지로 가립니다.
+  if (prompt.includes('점대칭')) return { 갈래: '돌리기', 도형: 하나 };
+  if (prompt.includes('선대칭') || prompt.includes('대칭축')) return { 갈래: '접는선찾기', 도형: 하나 };
+  return null;
 };
 
 // ── 그리기에 쓰는 공통 조각 ────────────────────────────────────────
@@ -622,8 +646,8 @@ function 접는선찾기({ 도형 }: { 도형: 도형항목 }) {
 
 // ── 바깥으로 내보내는 것 ───────────────────────────────────────────
 
-export function SymmetryLab({ visual }: { visual: QuestionVisual }) {
-  const 할것 = useMemo(() => 무엇을해볼까(visual), [visual]);
+export function SymmetryLab({ visual, prompt = '' }: { visual: QuestionVisual; prompt?: string }) {
+  const 할것 = useMemo(() => 무엇을해볼까(visual, prompt), [visual, prompt]);
   if (!할것) return null;
   if (할것.갈래 === '포개기') return <포개어보기 왼쪽={할것.왼쪽} 오른쪽={할것.오른쪽} />;
   if (할것.갈래 === '접기') return <접어보기 도형={할것.도형} 축각도={할것.축각도} />;
@@ -632,8 +656,8 @@ export function SymmetryLab({ visual }: { visual: QuestionVisual }) {
 }
 
 /** 창 제목입니다. 무엇을 해 보는 자리인지 한눈에 보여야 합니다. */
-export const 실험이름 = (visual: QuestionVisual): string | null => {
-  const 할것 = 무엇을해볼까(visual);
+export const 실험이름 = (visual: QuestionVisual, prompt = ''): string | null => {
+  const 할것 = 무엇을해볼까(visual, prompt);
   if (!할것) return null;
   if (할것.갈래 === '포개기') return '두 도형을 포개어 보세요';
   if (할것.갈래 === '접기') return '접는 선을 따라 접어 보세요';
@@ -642,8 +666,8 @@ export const 실험이름 = (visual: QuestionVisual): string | null => {
 };
 
 /** 무엇을 보아야 하는지입니다. 답은 말하지 않습니다. */
-export const 실험보는차례 = (visual: QuestionVisual): string[] | null => {
-  const 할것 = 무엇을해볼까(visual);
+export const 실험보는차례 = (visual: QuestionVisual, prompt = ''): string[] | null => {
+  const 할것 = 무엇을해볼까(visual, prompt);
   if (!할것) return null;
   if (할것.갈래 === '포개기') {
     return [
