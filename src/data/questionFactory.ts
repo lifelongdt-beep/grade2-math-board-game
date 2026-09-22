@@ -11,12 +11,19 @@ import {
   BAD_SORTING,
   SORTED_PLACES,
   UNSORTED_PLACES,
+  COUNTING_THINGS,
   COUNTING_WAYS,
-  SHAPE_THINGS,
   ADDING_SITUATIONS,
   SUBTRACTING_SITUATIONS,
+  ESTIMATE_TARGETS,
+  FIXED_PAIRS,
   LENGTH_PAIRS,
+  LONG_PLACES,
   BUNDLE_ASKS,
+  MESSY_PLACES,
+  SHAPE_THINGS,
+  SORTABLE_THINGS,
+  SURVEY_TOPICS,
   TIDYING_WAYS,
   SORTING_GOOD,
   SORTING_BAD_GOOD,
@@ -1526,6 +1533,20 @@ const makeQuestion = (
   });
 };
 
+// 한 수준 안에서 문항 모양을 고르는 것도 index를 3으로 나눈 나머지이고
+// (variantForDifficulty 참고), 그 모양 안에서 수나 색을 고르는 것도
+// index를 3으로 나눈 나머지이면 둘이 같이 움직입니다. 그러면 한 모양이
+// 맡은 열 자리에서 수가 한 번도 바뀌지 않아, 글자까지 똑같은 문제가
+// 열 번 나옵니다. 실제로 그랬습니다.
+//
+// n()도 같은 문제가 있습니다. index * 23이라 3으로 나눈 나머지는 결국
+// index의 나머지가 정합니다.
+//
+// 이 씨앗은 모양을 고르는 것과 엇갈리게 돕니다. 한 모양이 맡는 자리는
+// index가 3씩 떨어져 있으므로, 3으로 나눈 몫은 그 자리들에서 0, 1, 2로
+// 하나씩 늘어납니다. 모양 안에서 수를 고를 때는 이것을 씁니다.
+const seedWithinVariant = (index: number, add = 0) => Math.floor(index / 3) + add;
+
 const n = (lesson: Lesson, index: number, add = 0) => lesson.unitNo * 97 + lesson.lessonNo * 31 + index * 23 + add;
 
 // 서로 다른 한 자리 수를 필요한 개수만큼 만듭니다. 0은 넣지 않습니다.
@@ -1569,6 +1590,28 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       );
     }
     if (variant === 1) {
+      // 늘 '큰 것을 고르는' 문항만 나오면, 아이는 수를 견주지 않고
+      // 커 보이는 말을 고릅니다. 절반은 뒤집어 작은 쪽을 묻습니다.
+      // 묻는 것이 달라지니 문제글도 달라지고, 크기를 실제로 견주어야
+      // 답을 고를 수 있습니다.
+      if (seed % 2 === 1) {
+        const 기준 = four ? '1000' : '100';
+        const 작은것 = four
+          ? pickBySeed(OVER_HUNDRED, seed)
+          : pickBySeed(UNDER_HUNDRED, seed);
+        return makeQuestion(
+          lesson, difficulty, index,
+          `다음 중 ${기준}보다 작은 수인 것은?`,
+          작은것,
+          four
+            ? pickSome(OVER_THOUSAND, seed, 3)
+            : pickSome(OVER_HUNDRED, seed, 3),
+          four
+            ? `${작은것}는 1000을 넘지 않습니다. 다른 셋은 1000보다 큰 수입니다.`
+            : `${작은것}는 100을 넘지 않습니다. 다른 셋은 100보다 큰 수입니다.`,
+          'number', '수의 크기를 견주어 고르기',
+        );
+      }
       return makeQuestion(
         lesson, difficulty, index,
         `생활에서 ${four ? '1000보다 큰 수' : '100보다 큰 수'}를 볼 수 있는 곳으로 알맞은 것은?`,
@@ -1590,9 +1633,13 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       );
     }
     if (variant === 2) {
+      // 무엇을 세든 묶어 세는 방법은 같습니다. 그래서 예전에는 이
+      // 문제글 하나가 서른 자리 가운데 열 자리를 차지했습니다. 세는
+      // 물건을 문제글에 적으면 같은 개념을 물으면서도 글은 달라집니다.
+      const 셀것 = pickBySeed(COUNTING_THINGS, seed);
       return makeQuestion(
         lesson, difficulty, index,
-        '물건이 아주 많을 때 수를 세는 방법으로 알맞은 것은?',
+        `${셀것}가 아주 많습니다. 수를 세는 방법으로 알맞은 것은?`,
         pickBySeed(COUNTING_WAYS, seed).right,
         pickBySeed(COUNTING_WAYS, seed).wrong,
         `${pickBySeed(COUNTING_WAYS, seed).right.replace(/다$/, '면')} 많은 물건도 빠지지 않고 셀 수 있습니다.`,
@@ -1611,7 +1658,7 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
     }
     return makeQuestion(
       lesson, difficulty, index,
-      '수가 많을 때 세기 쉬운 방법으로 알맞은 것은?',
+      `${pickBySeed(COUNTING_THINGS, seed + 3)}를 셀 때 세기 쉬운 방법으로 알맞은 것은?`,
       pickBySeed(COUNTING_WAYS, seed + 2).right,
       pickBySeed(COUNTING_WAYS, seed + 2).wrong,
       `${pickBySeed(COUNTING_WAYS, seed + 2).right.replace(/다$/, '면')} 많은 물건도 빠짐없이 셀 수 있습니다.`,
@@ -1650,9 +1697,15 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
     if (variant === 2) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${unitBase}을 읽는 방법으로 알맞은 것은?`,
-        unitName,
-        four ? ['백', '만', '십'] : ['십', '천', '만'],
+        // 읽는 쪽과 쓰는 쪽을 번갈아 묻습니다. 한 쪽만 물으면 이 자리가
+        // 서른 칸 가운데 여섯 칸을 같은 문제로 채웁니다.
+        seedWithinVariant(index) % 2 === 0
+          ? `${unitBase}을 읽는 방법으로 알맞은 것은?`
+          : `${unitName}을 숫자로 바르게 쓴 것은?`,
+        seedWithinVariant(index) % 2 === 0 ? unitName : String(unitBase),
+        seedWithinVariant(index) % 2 === 0
+          ? (four ? ['백', '만', '십'] : ['십', '천', '만'])
+          : (four ? ['100', '10000', '10'] : ['10', '1000', '10000']),
         `${unitBase}은 ${unitName}이라고 읽습니다.`,
         'number', `${unitName} 읽고 쓰기`,
       );
@@ -4143,7 +4196,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
       return makeQuestion(
         lesson, difficulty, index,
         secondSemester
-          ? '교실의 긴 벽처럼 아주 긴 길이를 잴 때 어떤 점이 불편할까요?'
+          ? `${pickBySeed(LONG_PLACES, seed)}처럼 아주 긴 길이를 잴 때 어떤 점이 불편할까요?`
           : `${josa(pickBySeed(LENGTH_PAIRS, seed)[0], '과', '와')} ${pickBySeed(LENGTH_PAIRS, seed)[1]} 중 어느 것이 더 긴지 알아보려면 어떻게 할까요?`,
         secondSemester ? '짧은 자로는 여러 번 재어야 해서 불편하다' : '두 물건을 나란히 맞대어 본다',
         secondSemester
@@ -4166,6 +4219,21 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
       );
     }
     if (variant === 2) {
+      // 늘 '재야 하는 것'만 고르면, 아이는 길이라는 말이 든 보기를
+      // 찾을 뿐 무엇을 알아보려는지를 생각하지 않습니다. 절반은
+      // 뒤집어, 길이가 아니라 수나 무게나 시각을 알아보는 상황을
+      // 가려내게 합니다.
+      if (seed % 2 === 1) {
+        const 아닌것 = pickBySeed(NOT_MEASURING, seed);
+        return makeQuestion(
+          lesson, difficulty, index,
+          '다음 중 길이를 재지 않아도 되는 것은?',
+          아닌것,
+          pickSome(NEEDS_MEASURING, seed, 3),
+          `${아닌것}는 길이가 아니라 다른 것을 알아보는 일입니다. 다른 셋은 자리에 맞는지 알아보려고 길이를 재야 합니다.`,
+          'measurement', '길이를 재는 상황과 아닌 상황 가려내기',
+        );
+      }
       return makeQuestion(
         lesson, difficulty, index,
         '길이를 재야 하는 상황으로 알맞은 것은?',
@@ -4199,7 +4267,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     if (variant === 0) {
       return makeQuestion(
         lesson, difficulty, index,
-        '옮길 수 없는 두 물건의 길이를 비교하는 방법으로 알맞은 것은?',
+        `${josa(pickBySeed(FIXED_PAIRS, seed)[0], '과', '와')} ${pickBySeed(FIXED_PAIRS, seed)[1]}처럼 옮길 수 없는 두 곳의 길이를 비교하는 방법으로 알맞은 것은?`,
         '끈으로 길이를 옮겨 와서 비교한다',
         ['눈으로만 보고 정한다', '무게를 재어 비교한다', '색깔로 비교한다'],
         `직접 맞댈 수 없을 때는 끈이나 종이띠에 길이를 옮겨서 비교합니다.`,
@@ -4209,7 +4277,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        '두 물건을 직접 맞대어 길이를 비교할 때 지켜야 할 것은?',
+        `${josa(pickBySeed(LENGTH_PAIRS, seed)[0], '과', '와')} ${josa(pickBySeed(LENGTH_PAIRS, seed)[1], '을', '를')} 직접 맞대어 길이를 비교할 때 지켜야 할 것은?`,
         '한쪽 끝을 나란히 맞춘다',
         ['가운데를 맞춘다', '아무렇게나 놓는다', '서로 겹쳐 놓는다'],
         `한쪽 끝을 맞추어야 어느 것이 더 긴지 바르게 알 수 있습니다.`,
@@ -4263,7 +4331,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        '같은 물건을 뼘으로 재면 사람마다 잰 수가 다른 까닭은?',
+        `${pickBySeed(ESTIMATE_TARGETS, seed)}을(를) 뼘으로 재면 사람마다 잰 수가 다른 까닭은?`,
         '사람마다 뼘의 길이가 다르기 때문',
         ['물건이 늘어나기 때문', '잘못 세었기 때문', '뼘은 단위가 아니기 때문'],
         `뼘은 사람마다 길이가 달라서 잰 횟수도 달라집니다.`,
@@ -4498,7 +4566,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     if (variant === 0) {
       return makeQuestion(
         lesson, difficulty, index,
-        '내 몸을 이용해 길이를 어림할 때 쓸 수 있는 것은?',
+        `${pickBySeed(ESTIMATE_TARGETS, seed)}의 길이를 몸으로 어림할 때 쓸 수 있는 것은?`,
         '뼘, 걸음, 양팔 길이',
         ['눈의 크기', '목소리', '머리카락 색깔'],
         '뼘이나 걸음처럼 몸의 부분은 늘 가지고 다닐 수 있어 어림에 쓰기 좋습니다.',
@@ -4517,7 +4585,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     if (variant === 2) {
       return makeQuestion(
         lesson, difficulty, index,
-        '어림한 길이를 말할 때 쓰는 말은?',
+        `${pickBySeed(ESTIMATE_TARGETS, seed)}의 길이를 어림해 말할 때 쓰는 말은?`,
         '약', ['정확히', '반드시', '모두'],
         '어림한 길이는 정확한 값이 아니므로 약 몇 cm라고 말합니다.',
         'measurement', '어림한 값을 말하는 방법 알기',
@@ -5030,7 +5098,7 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     if (variant === 0) {
       return makeQuestion(
         lesson, difficulty, index,
-        '어질러진 학용품을 정리할 때 하면 좋은 일은?',
+        `${pickBySeed(MESSY_PLACES, index)}이(가) 어질러져 있습니다. 정리할 때 하면 좋은 일은?`,
         pickBySeed(TIDYING_WAYS, index).right,
         pickBySeed(TIDYING_WAYS, index).wrong,
         pickBySeed(TIDYING_WAYS, index).why,
@@ -5038,6 +5106,19 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
       );
     }
     if (variant === 1) {
+      // 늘 '나누어 놓은 곳'만 고르게 하면, 아이는 정돈된 말투를
+      // 고를 뿐 나누었는지를 보지 않습니다. 절반은 뒤집어 묻습니다.
+      if (index % 2 === 1) {
+        const 아닌곳 = pickBySeed(UNSORTED_PLACES, index);
+        return makeQuestion(
+          lesson, difficulty, index,
+          '다음 중 물건을 나누어 놓지 않은 곳은?',
+          아닌곳,
+          pickSome(SORTED_PLACES, index, 3),
+          `${아닌곳}에는 여러 가지가 섞여 있어 찾기 어렵습니다. 다른 셋은 비슷한 것끼리 모아 놓은 곳입니다.`,
+          'classification', '나눈 곳과 나누지 않은 곳 가려내기',
+        );
+      }
       return makeQuestion(
         lesson, difficulty, index,
         '생활에서 물건을 나누어 놓은 곳으로 알맞은 것은?',
@@ -5050,7 +5131,7 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     if (variant === 2) {
       return makeQuestion(
         lesson, difficulty, index,
-        '물건을 나누어 놓으면 좋은 점은?',
+        `${pickBySeed(SORTABLE_THINGS, index).thing}을(를) 나누어 놓으면 좋은 점은?`,
         pickBySeed(SORTING_GOOD, index),
         pickSome(SORTING_BAD_GOOD, index, 3),
         '나누어 놓으면 필요한 것을 빨리 찾을 수 있습니다.',
@@ -5189,7 +5270,7 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        '분류하여 셀 때 바르게 세는 방법은?',
+        `${pickBySeed(SORTABLE_THINGS, seedWithinVariant(index)).thing}을(를) 분류하여 셀 때 바르게 세는 방법은?`,
         '센 것에 표시를 하면서 센다',
         ['눈으로만 보고 센다', '큰 것부터 센다', '두 번씩 센다'],
         `센 것에 표시를 해야 빠뜨리거나 두 번 세지 않습니다.`,
@@ -5662,7 +5743,7 @@ const multiplyUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: num
     if (variant === 2) {
       return makeQuestion(
         lesson, difficulty, index,
-        '많은 물건의 수를 빠르게 세려면 어떻게 하면 좋을까요?',
+        `${pickBySeed(COUNTING_THINGS, n(lesson, index, 5))}가 많습니다. 수를 빠르게 세려면 어떻게 하면 좋을까요?`,
         pickBySeed(COUNTING_WAYS, n(lesson, index, 5)).right,
         pickBySeed(COUNTING_WAYS, n(lesson, index, 5)).wrong,
         `${pickBySeed(COUNTING_WAYS, n(lesson, index, 5)).right.replace(/다$/, '면')} 빠르고 정확하게 셀 수 있습니다.`,
@@ -6283,8 +6364,12 @@ const clockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (variant === 2) {
       return makeQuestion(
         lesson, difficulty, index,
-        '시계에서 짧은바늘은 무엇을 나타낼까요?',
-        '시', ['분', '초', '날짜'],
+        // 짧은바늘만 여섯 번 묻던 자리입니다. 두 바늘을 번갈아 묻습니다.
+        seedWithinVariant(index) % 2 === 0
+          ? '시계에서 짧은바늘은 무엇을 나타낼까요?'
+          : '시계에서 긴바늘은 무엇을 나타낼까요?',
+        seedWithinVariant(index) % 2 === 0 ? '시' : '분',
+        seedWithinVariant(index) % 2 === 0 ? ['분', '초', '날짜'] : ['시', '초', '날짜'],
         '짧은바늘은 몇 시인지를, 긴바늘은 몇 분인지를 나타냅니다.',
         'time', '두 바늘의 역할 알기',
       );
@@ -7306,7 +7391,7 @@ const dataIntroQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
   if (variant === 0) {
     return makeQuestion(
       lesson, difficulty, index,
-      '우리 반 친구들이 좋아하는 것을 알아보려면 먼저 무엇을 해야 할까요?',
+      `우리 반 친구들의 ${pickBySeed(SURVEY_TOPICS, index).topic}을(를) 알아보려면 먼저 무엇을 해야 할까요?`,
       '무엇을 조사할지 정한다',
       ['답을 미리 정한다', '가장 좋아하는 것을 고른다', '수를 먼저 센다'],
       '무엇을 알아볼지 정해야 자료를 모을 수 있습니다.',
@@ -7316,7 +7401,7 @@ const dataIntroQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
   if (variant === 1) {
     return makeQuestion(
       lesson, difficulty, index,
-      '친구들이 좋아하는 것을 이름만 죽 적어 놓으면 어떤 점이 불편할까요?',
+      `친구들의 ${pickBySeed(SURVEY_TOPICS, index + 2).topic}을(를) 이름만 죽 적어 놓으면 어떤 점이 불편할까요?`,
       '무엇이 가장 많은지 한눈에 알기 어렵다',
       ['이름을 쓸 수 없다', '친구가 줄어든다', '자료가 없어진다'],
       '적어 놓기만 하면 세어 보기 전에는 많고 적음을 알기 어렵습니다.',
@@ -7477,7 +7562,9 @@ const ruleUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
   if (title.includes('무늬에서 규칙을 찾아볼까요 ⑴')) {
     const shapes = ['○', '△', '□'];
     const colours = ['빨강', '노랑', '파랑'];
-    const startAt = index % 3;
+    // index % 3으로 고르면 문항 모양을 고르는 것과 같이 움직여, 한
+    // 모양이 맡은 열 자리에서 시작 자리가 한 번도 바뀌지 않습니다.
+    const startAt = seedWithinVariant(index) % 3;
     if (variant === 0) {
       const seq = [0, 1, 2, 0, 1].map((i) => shapes[(i + startAt) % 3]);
       return makeQuestion(
@@ -7546,7 +7633,7 @@ const ruleUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        '△이 오른쪽으로 조금씩 돌아가며 놓였습니다. 이것은 어떤 규칙일까요?',
+        `${무늬모양들[seedWithinVariant(index) % 3]}이 오른쪽으로 조금씩 돌아가며 놓였습니다. 이것은 어떤 규칙일까요?`,
         '방향이 일정하게 바뀌는 규칙',
         ['개수가 늘어나는 규칙', '색깔이 바뀌는 규칙', '규칙이 없다'],
         '모양은 그대로이고 방향만 일정하게 바뀌는 규칙입니다.',
@@ -7583,8 +7670,8 @@ const ruleUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
   }
 
   if (title.includes('쌓은 모양')) {
-    const start = 1 + (index % 3);
-    const step = 1 + (index % 3);
+    const start = 1 + (seedWithinVariant(index) % 3);
+    const step = 1 + (seedWithinVariant(index) % 3);
     const third = start + step * 2;
     // 이 차시는 '쌓은 모양에서' 규칙을 찾습니다. 낱개 수만 글로 적어 두면
     // 쌓기나무는 한 번도 나오지 않고 수의 규칙만 남습니다 — 그림도 무늬
@@ -8239,7 +8326,13 @@ const richNumberQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     const total = unitBase * groups;
     return makeQuestion(
       lesson, difficulty, index,
-      `${piece}이 ${groups * 10}개이면 얼마일까요?`,
+      // groups가 1일 때는 묻는 것이 늘 '10개이면?' 하나뿐이라, 이
+      // 문제글이 서른 자리 가운데 열 자리를 차지했습니다. 답이 수학으로
+      // 정해져 있어 수를 바꿀 수 없는 자리이므로, 묻는 말을 돌립니다
+      // (BUNDLE_ASKS는 바로 이런 자리를 위해 적어 둔 것입니다).
+      groups === 1
+        ? pickBySeed(BUNDLE_ASKS, n(lesson, index))(piece)
+        : `${piece}이 ${groups * 10}개이면 얼마일까요?`,
       total,
       [piece * groups, total + piece, groups * 10],
       `${piece}이 10개이면 ${unitBase}입니다. ${piece}이 ${groups * 10}개이면 ${unitBase}이 ${groups}개이므로 ${total}입니다.`,
@@ -8356,10 +8449,14 @@ const richMeasurementQuestion = (lesson: Lesson, difficulty: Difficulty, index: 
 };
 const richDataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   const unit = difficulty === '상' ? 2 : 1;
+  // 표의 주제가 늘 '좋아하는 활동' 하나였습니다. 문제글도 하나뿐이라
+  // 한 차시의 서른 자리 가운데 일곱 자리가 글자까지 같았습니다. 주제를
+  // 돌리되, 문제글과 표 제목이 같은 주제를 가리키도록 함께 바꿉니다.
+  const 주제 = pickBySeed(SURVEY_TOPICS, index);
   const items = [
-    { label: '축구', count: 5 + (index % 4) * unit },
-    { label: '줄넘기', count: 7 + ((index + 1) % 4) * unit },
-    { label: '책읽기', count: 4 + ((index + 2) % 4) * unit },
+    { label: 주제.items[0], count: 5 + (index % 4) * unit },
+    { label: 주제.items[1], count: 7 + ((index + 1) % 4) * unit },
+    { label: 주제.items[2], count: 4 + ((index + 2) % 4) * unit },
   ];
   const most = items.reduce((best, item) => (item.count > best.count ? item : best));
   const least = items.reduce((best, item) => (item.count < best.count ? item : best));
@@ -8386,7 +8483,7 @@ const richDataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
     const total = items.reduce((sum, item) => sum + item.count, 0);
     return makeQuestion(
       lesson, difficulty, index,
-      '표를 보고 가장 많은 항목과 가장 적은 항목의 차를 구하세요.',
+      `${주제.topic}을(를) 조사한 표입니다. 가장 많은 것과 가장 적은 것의 차를 구하세요.`,
       answer,
       [most.count, least.count, total],
       `표에서 가장 많은 것은 ${most.label} ${most.count}명, 가장 적은 것은 ${least.label} ${least.count}명입니다. 차는 ${most.count}-${least.count}=${answer}명입니다.`,
@@ -8565,7 +8662,12 @@ const richTimeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
     const half = index % 2 === 0;
     return makeQuestion(
       lesson, difficulty, index,
-      '시계를 보고 몇 시인지 읽어 보세요.',
+      // 답이 '몇 시 30분'인데 '몇 시인지' 묻는 것은 묻는 말과 답이
+      // 어긋납니다. 30분인 자리는 '시각을 읽어 보세요'로 묻습니다.
+      // '몇 시 몇 분인지 읽어 보세요'로는 물을 수 없습니다 — 그것은
+      // 5분 단위로 읽어 보라고 시키는 말이고, 5분 단위 읽기는 2차시에서
+      // 처음 배웁니다(sequence.test.ts가 잡습니다).
+      half ? '시계를 보고 시각을 읽어 보세요.' : '시계를 보고 몇 시인지 읽어 보세요.',
       half ? `${hour}시 30분` : `${hour}시`,
       half
         ? [`${hour}시`, `${hour + 1}시 30분`, `${hour}시 6분`]
@@ -8593,10 +8695,35 @@ const richTimeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
   );
 };
 
+const 무늬모양들 = ['○', '△', '□', '☆', '◇'];
+
 const richPatternQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
-  const shapes = difficulty === '상' ? ['○', '△', '□', '☆'] : ['○', '△', '□'];
-  const items = Array.from({ length: 9 }, (_, itemIndex) => shapes[itemIndex % shapes.length]);
-  const missingIndex = difficulty === '하' ? 4 : difficulty === '중' ? 5 : 7;
+  // 예전에는 수준마다 무늬가 하나로 굳어 있었습니다 — 모양도, 묶음
+  // 길이도, 빈칸 자리도 index와 상관이 없었습니다. 그래서 한 차시에
+  // 그림도 답도 똑같은 문제가 일곱 번 나왔습니다(보기 차례만 섞였습니다).
+  const 씨앗 = seedWithinVariant(index);
+
+  // 묶음이 길수록 찾기 어렵습니다. 수준마다 다룰 만한 길이로 둡니다.
+  const 묶음길이 = difficulty === '하'
+    ? 2 + (씨앗 % 2)
+    : difficulty === '중'
+      ? 3
+      : 3 + (씨앗 % 2);
+
+  const 시작 = 씨앗 % 무늬모양들.length;
+  const shapes = Array.from(
+    { length: 묶음길이 },
+    (_, 자리) => 무늬모양들[(시작 + 자리) % 무늬모양들.length],
+  );
+  const items = Array.from({ length: 9 }, (_, itemIndex) => shapes[itemIndex % 묶음길이]);
+
+  // 빈칸은 묶음이 적어도 두 번 되풀이된 뒤에 둡니다. 그래야 아이가
+  // 묶음을 보고 찾을 수 있습니다. 첫 묶음 안에 빈칸을 두면 되풀이되는
+  // 것이 무엇인지 알 길이 없어, 규칙을 찾는 문항이 아니라 찍는 문항이
+  // 됩니다.
+  const 가장앞 = 묶음길이 * 2;
+  const 남은칸 = 9 - 가장앞;
+  const missingIndex = 가장앞 + (남은칸 > 0 ? 씨앗 % 남은칸 : 0);
   const answer = items[missingIndex];
 
   return makeQuestion(
@@ -8605,7 +8732,7 @@ const richPatternQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     index,
     `무늬에서 ?에 들어갈 모양을 고르세요. 반복되는 한 묶음을 먼저 찾으세요.`,
     answer,
-    shapes.filter((shape) => shape !== answer).slice(0, 3),
+    무늬모양들.filter((shape) => shape !== answer).slice(0, 3),
     `반복되는 한 묶음은 ${shapes.join(', ')}입니다. ?는 그 순서에서 ${answer}가 오는 자리입니다.`,
     'pattern',
     '자료 해석 · 반복 단위로 빈칸 찾기',
@@ -9818,7 +9945,7 @@ const blockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (variant === 0) {
       return makeQuestion(
         lesson, difficulty, index,
-        '동전이나 시계처럼 어느 쪽에서 보아도 둥근 모양은?',
+        `${pickBySeed(SHAPE_THINGS.원, seedWithinVariant(index))}처럼 어느 쪽에서 보아도 둥근 모양은?`,
         '원', ['삼각형', '사각형', '곧은 선'],
         '어느 쪽에서 보아도 둥근 모양을 원이라고 합니다.',
         'shape', '생활 물건에서 원 찾기',
@@ -9827,7 +9954,7 @@ const blockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        '창문이나 책처럼 곧은 선 4개로 둘러싸인 모양은?',
+        `${pickBySeed(SHAPE_THINGS.사각형, seedWithinVariant(index))}처럼 곧은 선 4개로 둘러싸인 모양은?`,
         '사각형', ['원', '삼각형', '굽은 선'],
         '곧은 선 4개로 둘러싸인 모양을 사각형이라고 합니다.',
         'shape', '생활 물건에서 사각형 찾기',
@@ -9836,7 +9963,7 @@ const blockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (variant === 2) {
       return makeQuestion(
         lesson, difficulty, index,
-        '교통 표지판처럼 곧은 선 3개로 둘러싸인 모양은?',
+        `${pickBySeed(SHAPE_THINGS.삼각형, seedWithinVariant(index))}처럼 곧은 선 3개로 둘러싸인 모양은?`,
         '삼각형', ['원', '사각형', '둥근 모양'],
         '곧은 선 3개로 둘러싸인 모양을 삼각형이라고 합니다.',
         'shape', '생활 물건에서 삼각형 찾기',
@@ -11811,13 +11938,37 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     }
 
     if (unit === '길이 재기') {
+      // 길이를 견주는 차례는 어느 물건으로 물어도 같습니다. 그래서
+      // 예전에는 문제글 하나가 서른 자리 가운데 열 자리를 차지했습니다.
+      // 아이는 두 번째부터 읽지 않고 누릅니다. 차례를 묻는 자리는
+      // 그대로 두되, 어떤 물건을 견주는지를 문제글에 담아 돌립니다.
+      if (seed % 3 === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          '연필과 크레파스 중 어느 것이 더 긴지 알아보는 과정입니다. □에 들어갈 말은? ① 둘을 나란히 놓습니다. ② □ ③ 어느 것이 더 긴지 말합니다.',
+          '한쪽 끝을 맞춥니다',
+          ['가운데를 맞춥니다', '겹쳐 놓습니다', '멀리 떨어뜨립니다'],
+          '한쪽 끝을 맞추어야 어느 것이 더 긴지 바르게 알 수 있습니다.',
+          'measurement', '길이를 견주는 차례',
+        );
+      }
+      if (seed % 3 === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          '책상의 긴 쪽과 짧은 쪽을 끈으로 견주는 과정입니다. □에 들어갈 말은? ① 긴 쪽의 길이만큼 끈을 자릅니다. ② □ ③ 어느 쪽이 더 긴지 말합니다.',
+          '그 끈을 짧은 쪽에 맞대어 봅니다',
+          ['끈을 반으로 접습니다', '끈의 색을 봅니다', '끈을 더 길게 이어 붙입니다'],
+          '잘라 둔 끈을 다른 쪽에 맞대어 보면 옮길 수 없는 것도 견줄 수 있습니다.',
+          'measurement', '본뜬 길이로 견주는 차례',
+        );
+      }
       return makeQuestion(
         lesson, difficulty, index,
-        '두 물건의 길이를 견주는 과정입니다. □에 들어갈 말은? ① 두 물건을 나란히 놓습니다. ② □ ③ 어느 것이 더 긴지 말합니다.',
-        '한쪽 끝을 맞춥니다',
-        ['가운데를 맞춥니다', '겹쳐 놓습니다', '멀리 떨어뜨립니다'],
-        '한쪽 끝을 맞추어야 어느 것이 더 긴지 바르게 알 수 있습니다.',
-        'measurement', '길이를 견주는 차례',
+        '지우개와 풀의 길이를 뼘으로 재어 견주는 과정입니다. □에 들어갈 말은? ① 한 사람이 뼘으로 잽니다. ② □ ③ 잰 뼘 수를 견줍니다.',
+        '둘 다 같은 사람의 뼘으로 잽니다',
+        ['각자 자기 뼘으로 잽니다', '한 쪽만 재고 다른 쪽은 눈으로 봅니다', '뼘 대신 발로 잽니다'],
+        '뼘의 크기는 사람마다 다르므로, 같은 사람의 뼘으로 재어야 잰 수를 견줄 수 있습니다.',
+        'measurement', '같은 단위로 재어 견주는 차례',
       );
     }
 
@@ -11867,13 +12018,37 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     }
 
     if (unit === '규칙 찾기') {
+      // 규칙을 찾는 차례도 어느 무늬로 물어도 같아, 문제글 하나가
+      // 열 자리를 차지했습니다. 차례는 그대로 두고 무늬를 돌립니다.
+      if (seed % 3 === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          '달력에서 규칙을 찾는 과정입니다. □에 들어갈 말은? ① 같은 줄의 수를 봅니다. ② □ ③ 다음에 올 수를 말합니다.',
+          '몇씩 커지는지 봅니다',
+          ['가장 큰 수를 찾습니다', '수를 모두 더합니다', '빨간 날만 셉니다'],
+          '한 줄에서 몇씩 커지는지 알아야 다음에 올 수를 말할 수 있습니다.',
+          'pattern', '수의 규칙을 찾는 차례',
+        );
+      }
+      if (seed % 3 === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          '포장지 무늬에서 규칙을 찾는 과정입니다. □에 들어갈 말은? ① 되풀이되는 것을 찾습니다. ② □ ③ 다음에 올 것을 말합니다.',
+          '어디까지가 한 묶음인지 정합니다',
+          ['맨 끝만 봅니다', '개수를 모두 셉니다', '색을 칠합니다'],
+          '되풀이되는 한 묶음을 찾아야 다음에 올 것을 알 수 있습니다.',
+          'pattern', '규칙을 찾는 차례',
+        );
+      }
       return makeQuestion(
         lesson, difficulty, index,
-        '생활에서 규칙을 찾는 과정입니다. □에 들어갈 말은? ① 되풀이되는 것을 찾습니다. ② □ ③ 다음에 올 것을 말합니다.',
-        '어디까지가 한 묶음인지 정합니다',
-        ['맨 끝만 봅니다', '개수를 모두 셉니다', '색을 칠합니다'],
-        '되풀이되는 한 묶음을 찾아야 다음에 올 것을 알 수 있습니다.',
-        'pattern', '규칙을 찾는 차례',
+        // 쌓기나무로 묻고 싶지만 쌓은 모양의 규칙은 4차시입니다. 도입에서는
+        // 생활에서 눈으로 보는 되풀이까지만 다룹니다.
+        '신호등의 불빛에서 규칙을 찾는 과정입니다. □에 들어갈 말은? ① 불빛이 바뀌는 차례를 봅니다. ② □ ③ 다음에 올 불빛을 말합니다.',
+        '그 차례가 되풀이되는지 봅니다',
+        ['가장 밝은 불빛을 고릅니다', '불빛의 개수를 셉니다', '색을 칠해 봅니다'],
+        '되풀이되는 차례를 찾아야 다음에 올 불빛을 말할 수 있습니다.',
+        'pattern', '되풀이되는 차례를 찾는 차례',
       );
     }
   }
@@ -12398,13 +12573,35 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     const green = 1 + ((seed + 1) % 3);
 
     // 단원 도입: 아직 기준이라는 말을 배우기 전이므로 정리 상황까지만 다룹니다.
+    // 정리하는 차례는 무엇을 정리하든 같아, 문제글 하나가 서른 자리
+    // 가운데 열 자리를 차지했습니다. 차례는 그대로 두고 정리할 것을 돌립니다.
     if (title.includes('단원 도입')) {
+      if (seed % 3 === 0) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          '어질러진 학용품을 정리하는 과정입니다. □에 들어갈 말은? ① 흩어진 물건을 모읍니다. ② □ ③ 자리에 넣어 둡니다.',
+          '비슷한 것끼리 모아 놓습니다',
+          ['큰 것만 골라 둡니다', '아무 곳에나 넣습니다', '색을 칠해 둡니다'],
+          '비슷한 것끼리 모아 두면 정리도 쉽고 찾기도 쉽습니다.',
+          'classification', '정리하는 차례 생각하기',
+        );
+      }
+      if (seed % 3 === 1) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          '신발장에 신발을 넣는 과정입니다. □에 들어갈 말은? ① 벗어 놓은 신발을 모읍니다. ② □ ③ 제자리에 넣습니다.',
+          '누구의 신발인지 보고 나눕니다',
+          ['가장 큰 신발부터 넣습니다', '보이는 칸에 먼저 넣습니다', '신발 끈을 풉니다'],
+          '누구의 신발인지로 나누면 누가 넣어도 같은 칸에 들어가 다음에 찾기 쉽습니다.',
+          'classification', '정리하는 차례 생각하기',
+        );
+      }
       return makeQuestion(
         lesson, difficulty, index,
-        '어질러진 학용품을 정리하는 과정입니다. □에 들어갈 말은? ① 흩어진 물건을 모읍니다. ② □ ③ 자리에 넣어 둡니다.',
-        '비슷한 것끼리 모아 놓습니다',
-        ['큰 것만 골라 둡니다', '아무 곳에나 넣습니다', '색을 칠해 둡니다'],
-        '비슷한 것끼리 모아 두면 정리도 쉽고 찾기도 쉽습니다.',
+        '책꽂이에 책을 꽂는 과정입니다. □에 들어갈 말은? ① 쌓아 둔 책을 모읍니다. ② □ ③ 칸에 꽂습니다.',
+        '같은 종류의 책끼리 모읍니다',
+        ['두꺼운 책만 꽂습니다', '읽고 싶은 책만 꽂습니다', '책을 눕혀 쌓습니다'],
+        '같은 종류끼리 모아 꽂으면 찾을 책이 어느 칸에 있는지 바로 알 수 있습니다.',
         'classification', '정리하는 차례 생각하기',
       );
     }
@@ -15340,10 +15537,15 @@ const sortShapes: Shape[] = [
     fits: (lesson) => /분류는 어떻게|기준에 따라/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 7 + lesson.lessonNo;
-      const good = ['색깔', '모양', '크기'][seed % 3];
+      // 예전에는 늘 '단추'였습니다. 한 차시의 서른 자리 가운데 여덟
+      // 자리가 글자까지 같은 문제였습니다. 분류할 물건을 돌립니다.
+      // 기준은 물건마다 함께 적어 둔 것에서만 꺼냅니다 — 구슬에게
+      // '구멍의 수'를 물으면 답이 없는 문항이 됩니다.
+      const 것 = pickBySeed(SORTABLE_THINGS, seed);
+      const good = 것.criteria[seed % 것.criteria.length];
       return makeQuestion(
         lesson, difficulty, index,
-        `단추를 분류하려고 합니다. 분류 기준으로 알맞은 것은?`,
+        `${것.thing}을(를) 분류하려고 합니다. 분류 기준으로 알맞은 것은?`,
         good, ['예쁜 것', '내가 좋아하는 것', '멋있는 것'],
         `누가 분류해도 같은 결과가 나오는 것이 분류 기준입니다. ${good}은(는) 분명합니다.`,
         'classification',
@@ -15608,9 +15810,15 @@ const ruleShapes: Shape[] = [
     make: (lesson, difficulty, index) => {
       const seed = index * 7 + lesson.lessonNo;
       const size = 2 + (seed % 2);
+      // 어떤 무늬를 보고 있는지 적지 않으면 문제글이 하나뿐이라,
+      // 한 차시의 서른 자리 가운데 일곱 자리가 같은 문제였습니다.
+      const 보기무늬 = Array.from(
+        { length: 6 },
+        (_, 자리) => 무늬모양들[(seed + (자리 % size)) % 무늬모양들.length],
+      ).join(', ');
       return makeQuestion(
         lesson, difficulty, index,
-        `무늬가 되풀이될 때 가장 먼저 할 일은 무엇일까요?`,
+        `${보기무늬}으로 이어지는 무늬입니다. 규칙을 찾을 때 가장 먼저 할 일은 무엇일까요?`,
         '되풀이되는 한 묶음을 찾는다',
         ['맨 끝을 먼저 본다', '개수를 모두 센다', '색깔을 센다'],
         `되풀이되는 한 묶음(${size}개짜리 같은)을 찾으면 다음에 올 것을 알 수 있습니다.`,

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { QuestionVisual } from '../types';
 import { FIGURE_POINTS } from './QuestionVisualGraphic';
 import { playTapSound } from '../sound';
+import { gwa } from '../data/grade5/util';
 
 // ════════════════════════════════════════════════════════════════════
 // 합동과 대칭 실험실 — 접어 보고, 돌려 보고, 포개어 보는 자리
@@ -37,6 +38,8 @@ type 점 = [number, number];
 
 type 도형항목 = {
   shape: string;
+  /** 가·나·다·라. 여럿을 늘어놓은 그림에서 붙습니다. */
+  name?: string;
   rotate?: number;
   flip?: boolean;
   scale?: number;
@@ -50,7 +53,12 @@ type 실험 =
   | { 갈래: '포개기'; 왼쪽: 도형항목; 오른쪽: 도형항목 }
   | { 갈래: '접기'; 도형: 도형항목; 축각도: number }
   | { 갈래: '돌리기'; 도형: 도형항목 }
-  | { 갈래: '접는선찾기'; 도형: 도형항목 };
+  | { 갈래: '접는선찾기'; 도형: 도형항목 }
+  // 도형 여럿을 늘어놓고 그 가운데 고르라는 문항입니다. 아이가
+  // 하나를 골라 그것만 접거나 돌려 봅니다.
+  | { 갈래: '골라보기'; 도형들: 도형항목[]; 할일: '접는선찾기' | '돌리기' }
+  // '가와 서로 합동인 도형은?' — 고른 것을 가 위에 포개어 봅니다.
+  | { 갈래: '골라포개기'; 기준: 도형항목; 후보들: 도형항목[] };
 
 /** 도형의 밑점입니다. 문항이 꼭짓점을 직접 준 경우 그것을 씁니다. */
 const 밑점 = (item: 도형항목): 점[] =>
@@ -109,16 +117,32 @@ export const 무엇을해볼까 = (visual: QuestionVisual | undefined, prompt = 
   const items = (visual as unknown as { items: 도형항목[] }).items ?? [];
   if (!items.length) return null;
 
-  for (let a = 0; a < items.length; a += 1) {
-    for (let b = a + 1; b < items.length; b += 1) {
-      const 하나 = items[a];
-      const 둘 = items[b];
-      if (하나.shape !== 둘.shape) continue;
-      if ((하나.scale ?? 1) !== (둘.scale ?? 1)) continue;
+  // 도형이 딱 둘이면 서로 포개어 보는 것이 곧 문항입니다.
+  if (items.length === 2) {
+    const [하나, 둘] = items;
+    if (하나.shape === 둘.shape && (하나.scale ?? 1) === (둘.scale ?? 1)) {
       const 돌아갔나 = ((둘.rotate ?? 0) - (하나.rotate ?? 0)) % 360 !== 0;
       const 뒤집혔나 = Boolean(하나.flip) !== Boolean(둘.flip);
       if (돌아갔나 || 뒤집혔나) return { 갈래: '포개기', 왼쪽: 하나, 오른쪽: 둘 };
     }
+  }
+
+  // 도형이 셋 이상이면 '가·나·다·라 가운데 어느 것?'을 묻는 문항입니다.
+  //
+  // 여기서 저절로 포개 보이면 안 됩니다. 처음에는 같은 모양 두 개를
+  // 찾아 자동으로 포갰는데, 하필 첫 짝이 늘 정답이라 아이가 아무것도
+  // 하기 전에 답이 나와 버렸습니다. 고르는 일 자체가 이 문항이므로,
+  // 아이가 하나를 고르면 그것만 해 봅니다.
+  if (items.length > 2) {
+    if (prompt.includes('합동')) {
+      // 첫째 도형(가)이 견주는 자리입니다.
+      return { 갈래: '골라포개기', 기준: items[0], 후보들: items.slice(1) };
+    }
+    if (prompt.includes('점대칭')) return { 갈래: '골라보기', 도형들: items, 할일: '돌리기' };
+    if (prompt.includes('선대칭') || prompt.includes('대칭축')) {
+      return { 갈래: '골라보기', 도형들: items, 할일: '접는선찾기' };
+    }
+    return null;
   }
 
   if (items.length !== 1) return null;
@@ -292,7 +316,9 @@ function 포개어보기({ 왼쪽, 오른쪽 }: { 왼쪽: 도형항목; 오른�
       />
       <p className="symmetry-say">
         {t > 0.99
-          ? '다 포개졌습니다. 한 꼭짓점에 놓인 두 이름을 읽어 보세요.'
+          ? 오른쪽.vertexLabels?.length
+            ? '다 포개졌습니다. 한 꼭짓점에 놓인 두 이름을 읽어 보세요.'
+            : '다 포개 놓았습니다. 두 도형이 완전히 겹쳤는지 보세요.'
           : '손잡이를 오른쪽 끝까지 끌어 보세요.'}
       </p>
     </div>
@@ -644,6 +670,71 @@ function 접는선찾기({ 도형 }: { 도형: 도형항목 }) {
   );
 }
 
+// ── 골라 보기 ──────────────────────────────────────────────────────
+//
+// '가·나·다·라 가운데 선대칭도형은?' 같은 문항입니다. 손잡이 하나로
+// 넷을 한꺼번에 접을 수는 없으니, 아이가 하나를 골라 그것만 해 봅니다.
+// 고르는 일 자체가 이 문항이 시키는 일이기도 합니다 — 하나씩 접어
+// 보고 겹치는지 확인하는 것이 지도서가 말하는 조작 활동입니다.
+
+function 도형고르개({
+  도형들,
+  고른것,
+  고르기,
+}: {
+  도형들: 도형항목[];
+  고른것: number;
+  고르기: (at: number) => void;
+}) {
+  return (
+    <div className="symmetry-pick">
+      {도형들.map((one, at) => (
+        <button
+          key={at}
+          type="button"
+          className={at === 고른것 ? 'chosen' : ''}
+          onClick={() => {
+            playTapSound();
+            고르기(at);
+          }}
+        >
+          {one.name ?? `${at + 1}번`}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function 골라보기({ 도형들, 할일 }: { 도형들: 도형항목[]; 할일: '접는선찾기' | '돌리기' }) {
+  const [고른것, set고른것] = useState(0);
+  const 도형 = 도형들[고른것] ?? 도형들[0];
+  return (
+    <div className="symmetry-lab">
+      <도형고르개 도형들={도형들} 고른것={고른것} 고르기={set고른것} />
+      {/* key를 바꿔 고를 때마다 손잡이가 처음으로 돌아가게 합니다. */}
+      {할일 === '돌리기' ? (
+        <돌려보기 key={고른것} 도형={도형} />
+      ) : (
+        <접는선찾기 key={고른것} 도형={도형} />
+      )}
+    </div>
+  );
+}
+
+function 골라포개기({ 기준, 후보들 }: { 기준: 도형항목; 후보들: 도형항목[] }) {
+  const [고른것, set고른것] = useState(0);
+  const 도형 = 후보들[고른것] ?? 후보들[0];
+  return (
+    <div className="symmetry-lab">
+      <p className="symmetry-say">
+        {기준.name ? `${gwa(기준.name)} 견주어 볼 도형을 고르세요.` : '견주어 볼 도형을 고르세요.'}
+      </p>
+      <도형고르개 도형들={후보들} 고른것={고른것} 고르기={set고른것} />
+      <포개어보기 key={고른것} 왼쪽={기준} 오른쪽={도형} />
+    </div>
+  );
+}
+
 // ── 바깥으로 내보내는 것 ───────────────────────────────────────────
 
 export function SymmetryLab({ visual, prompt = '' }: { visual: QuestionVisual; prompt?: string }) {
@@ -652,6 +743,8 @@ export function SymmetryLab({ visual, prompt = '' }: { visual: QuestionVisual; p
   if (할것.갈래 === '포개기') return <포개어보기 왼쪽={할것.왼쪽} 오른쪽={할것.오른쪽} />;
   if (할것.갈래 === '접기') return <접어보기 도형={할것.도형} 축각도={할것.축각도} />;
   if (할것.갈래 === '돌리기') return <돌려보기 도형={할것.도형} />;
+  if (할것.갈래 === '골라보기') return <골라보기 도형들={할것.도형들} 할일={할것.할일} />;
+  if (할것.갈래 === '골라포개기') return <골라포개기 기준={할것.기준} 후보들={할것.후보들} />;
   return <접는선찾기 도형={할것.도형} />;
 }
 
@@ -662,6 +755,10 @@ export const 실험이름 = (visual: QuestionVisual, prompt = ''): string | null
   if (할것.갈래 === '포개기') return '두 도형을 포개어 보세요';
   if (할것.갈래 === '접기') return '접는 선을 따라 접어 보세요';
   if (할것.갈래 === '돌리기') return '반 바퀴 돌려 보세요';
+  if (할것.갈래 === '골라포개기') return '하나씩 골라 포개어 보세요';
+  if (할것.갈래 === '골라보기') {
+    return 할것.할일 === '돌리기' ? '하나씩 골라 돌려 보세요' : '하나씩 골라 접어 보세요';
+  }
   return '접으면 겹치는 선을 찾아보세요';
 };
 
@@ -689,6 +786,26 @@ export const 실험보는차례 = (visual: QuestionVisual, prompt = ''): string[
       '손잡이를 끌어 반 바퀴(180°) 돌려 보세요.',
       '돌렸을 때 처음 자리에 오는 꼭짓점이 대응점입니다.',
     ];
+  }
+  if (할것.갈래 === '골라포개기') {
+    return [
+      `${gwa(할것.기준.name ?? '첫째 도형')} 견주어 볼 도형을 하나 고르세요.`,
+      '손잡이를 끝까지 끌어 두 도형을 포개어 보세요.',
+      '완전히 겹치면 서로 합동입니다. 하나씩 바꿔 가며 해 보세요.',
+    ];
+  }
+  if (할것.갈래 === '골라보기') {
+    return 할것.할일 === '돌리기'
+      ? [
+          '도형을 하나 고르세요.',
+          '노란 점을 잡고 반 바퀴(180°) 돌려 보세요.',
+          '처음 모양과 똑같이 포개지면 점대칭도형입니다. 하나씩 해 보세요.',
+        ]
+      : [
+          '도형을 하나 고르세요.',
+          '선을 돌려 놓고 "이 선으로 접어 보기"를 눌러 보세요.',
+          '두 쪽이 완전히 겹치는 선이 있으면 선대칭도형입니다. 하나씩 해 보세요.',
+        ];
   }
   return [
     '선을 돌려 놓고 "이 선으로 접어 보기"를 눌러 보세요.',

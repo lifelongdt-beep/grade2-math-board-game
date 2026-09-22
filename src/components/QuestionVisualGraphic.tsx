@@ -1571,7 +1571,7 @@ function BoxNetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'bo
 // 가능성은 눈으로 보이는 상황에서 시작합니다. 칸은 모두 같은 크기로
 // 나눕니다 — 칸의 크기가 조금씩 다르면 '반반이다'인지 아닌지를 아이가
 // 그림에서 읽을 수 없습니다.
-const CHANCE_FILL: Record<string, string> = {
+export const CHANCE_FILL: Record<string, string> = {
   red: '#e8615a',
   blue: '#4a8fe0',
   yellow: '#f2c53d',
