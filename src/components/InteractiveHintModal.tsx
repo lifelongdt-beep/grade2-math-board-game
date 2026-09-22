@@ -3,10 +3,14 @@ import { X } from 'lucide-react';
 import type { QuestionVisual } from '../types';
 import { QuestionVisualGraphic } from './QuestionVisualGraphic';
 import { SymmetryLab, 실험보는차례, 실험이름, 무엇을해볼까 } from './SymmetryLab';
+import { AreaLab, 자르기보는차례, 자르기이름, 무엇을잘라볼까 } from './AreaLab';
 import { playTapSound } from '../sound';
 
 interface InteractiveHintModalProps {
   visual: QuestionVisual;
+  /** 문제 글입니다. 무엇을 묻는지에 따라 내줄 도움이 달라집니다 —
+      점대칭은 돌려 보아야 하고 선대칭은 접어 보아야 합니다. */
+  prompt?: string;
   onClose: () => void;
 }
 
@@ -387,9 +391,9 @@ const readingStepsFor = (visual: QuestionVisual): string[] => {
   }
 };
 
-function PictureReadingSteps({ visual }: { visual: QuestionVisual }) {
-  // 접어 보고 돌려 보는 그림은 보는 차례가 따로 있습니다.
-  const 차례 = 실험보는차례(visual) ?? readingStepsFor(visual);
+function PictureReadingSteps({ visual, prompt }: { visual: QuestionVisual; prompt: string }) {
+  // 접어 보고 돌려 보고 잘라 보는 그림은 보는 차례가 따로 있습니다.
+  const 차례 = 자르기보는차례(visual) ?? 실험보는차례(visual, prompt) ?? readingStepsFor(visual);
   return (
     <ol className="hint-reading-steps">
       {차례.map((step) => (
@@ -422,8 +426,8 @@ function EnlargedVisual({ visual }: { visual: QuestionVisual }) {
   );
 }
 
-const widgetTitleFor = (visual: QuestionVisual) => {
-  const 실험 = 실험이름(visual);
+const widgetTitleFor = (visual: QuestionVisual, prompt: string) => {
+  const 실험 = 자르기이름(visual) ?? 실험이름(visual, prompt);
   if (실험) return 실험;
   if (visual.kind === 'clock') return '시계를 움직여 보세요';
   if (visual.kind === 'place-value') return '수 모형을 모으거나 지워 보세요';
@@ -432,30 +436,37 @@ const widgetTitleFor = (visual: QuestionVisual) => {
   return enlargedCaptionFor(visual);
 };
 
-export function InteractiveHintModal({ visual, onClose }: InteractiveHintModalProps) {
+export function InteractiveHintModal({ visual, prompt = '', onClose }: InteractiveHintModalProps) {
   const isCountable = COUNTABLE_KINDS.has(visual.kind);
   // 합동과 대칭은 접어 보고 돌려 보아야 합니다. 그림을 크게만 보여
   // 주면 아이는 여전히 '어느 꼭짓점이 어느 꼭짓점과 겹치는지'를
   // 머릿속으로 상상해야 하는데, 그 상상이 안 되는 아이를 위해 있는
   // 것이 이 도움말입니다.
-  const 실험할것 = 무엇을해볼까(visual);
-  const 그냥그림 = !실험할것 && visual.kind !== 'clock' && visual.kind !== 'place-value' && visual.kind !== 'number-line';
+  // 5-1 6단원은 넓이 공식을 도형을 바꿔서 끌어냅니다. 잘라 옮기고
+  // 두 개를 붙여 보는 자리가 따로 있습니다. 이쪽을 먼저 봅니다 —
+  // 넓이 문항의 도형은 하나짜리라, 대칭 쪽을 먼저 물으면 그쪽이
+  // 다 가져가 버립니다(실제로 6단원 네 차시가 통째로 그랬습니다).
+  const 자를것 = 무엇을잘라볼까(visual);
+  const 실험할것 = !자를것 && 무엇을해볼까(visual, prompt);
+  const 그냥그림 =
+    !실험할것 && !자를것 && visual.kind !== 'clock' && visual.kind !== 'place-value' && visual.kind !== 'number-line';
   return (
     <div className="hint-modal-overlay" role="dialog" aria-modal="true" aria-label="움직여 보는 힌트">
       <div className="hint-modal-card">
         <header>
-          <h3>🔍 {widgetTitleFor(visual)}</h3>
+          <h3>🔍 {widgetTitleFor(visual, prompt)}</h3>
           <button type="button" className="hint-modal-close" onClick={onClose} aria-label="닫기">
             <X size={22} />
           </button>
         </header>
-        {실험할것 && <SymmetryLab visual={visual} />}
-        {!실험할것 && visual.kind === 'clock' && <InteractiveClock />}
-        {!실험할것 && visual.kind === 'place-value' && <InteractivePlaceValue visual={visual} />}
-        {!실험할것 && visual.kind === 'number-line' && <InteractiveJumps visual={visual} />}
+        {실험할것 && <SymmetryLab visual={visual} prompt={prompt} />}
+        {자를것 && <AreaLab visual={visual} />}
+        {!실험할것 && !자를것 && visual.kind === 'clock' && <InteractiveClock />}
+        {!실험할것 && !자를것 && visual.kind === 'place-value' && <InteractivePlaceValue visual={visual} />}
+        {!실험할것 && !자를것 && visual.kind === 'number-line' && <InteractiveJumps visual={visual} />}
         {그냥그림 && isCountable && <InteractiveCounter visual={visual} />}
         {그냥그림 && !isCountable && <EnlargedVisual visual={visual} />}
-        <PictureReadingSteps visual={visual} />
+        <PictureReadingSteps visual={visual} prompt={prompt} />
         <button type="button" className="hint-modal-done" onClick={onClose}>
           다 봤어요
         </button>

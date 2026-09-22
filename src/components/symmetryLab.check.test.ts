@@ -87,7 +87,7 @@ describe('접어 보는 자리', () => {
         { shape: '사각형', vertexLabels: ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ'] },
         { shape: '사각형', vertexLabels: ['ㅁ', 'ㅂ', 'ㅅ', 'ㅇ'], rotate: 180 },
       ],
-    } as unknown as QuestionVisual);
+    } as unknown as QuestionVisual, '두 사각형은 서로 합동입니다. 점 ㄷ의 대응점은 무엇일까요?');
     expect(포개기?.갈래).toBe('포개기');
 
     // 모양이 서로 다른 도형을 늘어놓은 '무엇을 찾으면?' 문항은
@@ -96,7 +96,7 @@ describe('접어 보는 자리', () => {
       kind: 'figure-set',
       label: '',
       items: [{ shape: '정삼각형' }, { shape: '이등변삼각형' }, { shape: '직각삼각형' }, { shape: '정사각형' }],
-    } as unknown as QuestionVisual);
+    } as unknown as QuestionVisual, '그림에서 정사각형을 찾으면 어느 것일까요?');
     expect(아님).toBeNull();
   });
 
@@ -106,14 +106,68 @@ describe('접어 보는 자리', () => {
       for (const level of ['하', '중', '상'] as Difficulty[]) {
         for (const q of generateQuestions(lesson, level)) {
           if (!q.visual) {
-            expect(무엇을해볼까(q.visual as unknown as QuestionVisual)).toBeNull();
+            expect(무엇을해볼까(q.visual as unknown as QuestionVisual, q.prompt)).toBeNull();
             continue;
           }
-          if (무엇을해볼까(q.visual)) 실험붙은것 += 1;
+          if (무엇을해볼까(q.visual, q.prompt)) 실험붙은것 += 1;
         }
       }
     }
     // 실제로 붙는 곳이 있어야 이 도움말이 일을 하는 것입니다.
     expect(실험붙은것).toBeGreaterThan(100);
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // 점대칭을 접어 보게 하면 안 됩니다
+  // ────────────────────────────────────────────────────────────────
+  // 점대칭도형은 돌려서 알아보는 것입니다. 접어 보게 하면 아이가
+  // 점대칭을 선대칭으로 알아듣습니다. 처음에 그림만 보고 도움을
+  // 고르게 했더니 "그림의 직사각형은 점대칭도형일까요?"에 접는 선
+  // 찾기가 나왔습니다.
+  it('점대칭을 묻는 문항에 접어 보라고 하지 않는다', () => {
+    const 걸린것: string[] = [];
+    for (const lesson of [...lessons51, ...lessons5]) {
+      for (const level of ['하', '중', '상'] as Difficulty[]) {
+        for (const q of generateQuestions(lesson, level)) {
+          if (!q.visual) continue;
+          const 할것 = 무엇을해볼까(q.visual, q.prompt);
+          if (!할것) continue;
+          const 접는것 = 할것.갈래 === '접기' || 할것.갈래 === '접는선찾기';
+          if (접는것 && q.prompt.includes('점대칭') && !q.prompt.includes('선대칭')) {
+            걸린것.push(`${lesson.id}(${level}) ${할것.갈래}: ${q.prompt}`);
+          }
+          if (할것.갈래 === '돌리기' && q.prompt.includes('선대칭') && !q.prompt.includes('점대칭')) {
+            걸린것.push(`${lesson.id}(${level}) 돌리기인데 선대칭을 물음: ${q.prompt}`);
+          }
+        }
+      }
+    }
+    expect([...new Set(걸린것)].slice(0, 5).join('\n')).toBe('');
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // 묻지도 않은 것을 해 보라고 하지 않습니다
+  // ────────────────────────────────────────────────────────────────
+  // "가로가 5 cm, 세로가 3 cm인 직사각형의 둘레는?"을 푸는 아이에게
+  // 접는 선을 찾아보라고 하는 것은 도움이 아니라 딴 길입니다.
+  it('둘레·넓이·이름을 묻는 문항에는 대칭 도움을 내놓지 않는다', () => {
+    const 걸린것: string[] = [];
+    for (const lesson of [...lessons51, ...lessons5]) {
+      for (const level of ['하', '중', '상'] as Difficulty[]) {
+        for (const q of generateQuestions(lesson, level)) {
+          if (!q.visual) continue;
+          if (!무엇을해볼까(q.visual, q.prompt)) continue;
+          if (q.prompt.includes('대칭') || q.prompt.includes('합동')) continue;
+          // 그림에 대칭축이나 대칭의 중심이 이미 찍혀 있으면 그림 자체가
+          // 무엇을 해 보라는 표시입니다. "그림의 직사각형에 세로로 그은
+          // 선을 따라 접으면 두 쪽이 완전히 겹칠까요?"처럼 '대칭'이라는
+          // 말을 쓰지 않고 묻는 문항이 이 꼴입니다.
+          const 항목 = (q.visual as unknown as { items?: Array<{ axes?: unknown[]; center?: boolean }> }).items ?? [];
+          if (항목.length === 1 && (항목[0].axes?.length || 항목[0].center)) continue;
+          걸린것.push(`${lesson.id}(${level}) ${q.prompt}`);
+        }
+      }
+    }
+    expect([...new Set(걸린것)].slice(0, 5).join('\n')).toBe('');
   });
 });
