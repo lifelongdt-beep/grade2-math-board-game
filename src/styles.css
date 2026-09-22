@@ -6301,6 +6301,15 @@ body::before {
   margin-bottom: 7px;
 }
 
+/* 계산판을 펴면 빈 줄(3번)까지 함께 씁니다. 빈 줄을 남겨 두면 문제 칸의
+   높이가 '안에 든 것만큼'이 되어, 캔버스가 제 키를 스스로 정하게 됩니다.
+   그러면 계산판을 열 때마다 칸이 끝없이 자랐습니다. 3번 줄까지 받으면
+   높이가 먼저 정해지므로 캔버스는 그 안을 채우기만 합니다. 성 지키기가
+   같은 까닭으로 아래에서 똑같이 하고 있습니다. */
+.player-lane.student-question:not(.finished-result) > .student-question-body.scratch-open {
+  grid-row: 3 / span 2;
+}
+
 .player-lane.student-question:not(.finished-result) > .student-feedback {
   grid-row: 5;
   margin-bottom: 7px;
@@ -6652,7 +6661,11 @@ body::before {
 .student-question-body.scratch-open {
   align-content: stretch;
   grid-template-rows: minmax(0, 1fr);
-  overflow: hidden;
+  /* 낮은 화면(가로로 눕힌 태블릿 같은 곳)에서는 쓸 자리 180픽셀과 문제
+     글, 도구 줄을 합한 키가 문제 칸보다 큽니다. 잘라내면 문제 글과
+     도구 줄이 통째로 사라져 계산판을 쓸 수 없으므로, 굴려서 보게
+     합니다. */
+  overflow: auto;
   padding: 6px;
 }
 
@@ -6662,8 +6675,16 @@ body::before {
 
 .scratch-pad {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  /* 쓸 자리는 적어도 이만큼은 있어야 합니다. 5.82 x 1.8을 세로로 적고
+     받아올림까지 쓰려면 두세 줄이 들어가야 하는데, 낮은 화면에서 남는
+     자리만 받으면 120픽셀까지 줄어 아무것도 적을 수 없었습니다. */
+  grid-template-rows: auto auto minmax(180px, 1fr);
   gap: 5px;
+  min-height: 0;
+}
+
+.scratch-canvas-area {
+  position: relative;
   min-height: 0;
 }
 
@@ -6742,6 +6763,11 @@ body::before {
 /* 줄공책처럼 옅은 칸을 깔아 둡니다. 세로셈은 자리를 맞추어야 하는데,
    빈 종이 위에서는 자릿수가 어긋나는 일이 잦습니다. */
 .scratch-canvas {
+  /* 감싸는 칸 안에 띄워 놓습니다. 캔버스가 제 자리를 차지하면 그
+     가로세로 비가 자리 잡기에 섞여 들어가, 그려 넣을 때마다 칸이
+     조금씩 자라는 되돌이가 생깁니다(ScratchPad.tsx의 설명을 보세요). */
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   min-height: 0;
