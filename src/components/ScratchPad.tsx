@@ -210,15 +210,29 @@ export function ScratchPad({
         </button>
       </div>
 
-      <canvas
-        ref={canvasRef}
-        className="scratch-canvas"
-        onPointerDown={시작}
-        onPointerMove={이어그리기}
-        onPointerUp={끝}
-        onPointerCancel={끝}
-        onPointerLeave={끝}
-      />
+      {/* 캔버스를 감싸는 칸입니다. 캔버스는 이 칸 안에 띄워 놓습니다
+          (position: absolute) — 칸의 자리를 캔버스가 차지하면 안 되기
+          때문입니다.
+
+          <canvas>는 width·height 속성으로 제 나름의 가로세로 비를
+          가집니다. 그 비가 자리 잡기에 쓰이면, 그려 넣을 때마다 속성을
+          다시 잡는 이 계산판에서는 끝나지 않는 되돌이가 생깁니다 —
+          크기를 재서 속성을 고치면 → 비가 바뀌어 칸이 조금 커지고 →
+          커진 것을 ResizeObserver가 보고 다시 그리고 → 또 커집니다.
+          실제로 계산판을 열면 칸이 1초에 60픽셀씩 끝없이 자랐습니다.
+          띄워 놓으면 캔버스의 비가 자리 잡기에 닿지 않아 되돌이가
+          끊깁니다. */}
+      <div className="scratch-canvas-area">
+        <canvas
+          ref={canvasRef}
+          className="scratch-canvas"
+          onPointerDown={시작}
+          onPointerMove={이어그리기}
+          onPointerUp={끝}
+          onPointerCancel={끝}
+          onPointerLeave={끝}
+        />
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { X } from 'lucide-react';
 import type { QuestionVisual } from '../types';
 import { QuestionVisualGraphic } from './QuestionVisualGraphic';
+import { SymmetryLab, 실험보는차례, 실험이름, 무엇을해볼까 } from './SymmetryLab';
 import { playTapSound } from '../sound';
 
 interface InteractiveHintModalProps {
@@ -387,9 +388,11 @@ const readingStepsFor = (visual: QuestionVisual): string[] => {
 };
 
 function PictureReadingSteps({ visual }: { visual: QuestionVisual }) {
+  // 접어 보고 돌려 보는 그림은 보는 차례가 따로 있습니다.
+  const 차례 = 실험보는차례(visual) ?? readingStepsFor(visual);
   return (
     <ol className="hint-reading-steps">
-      {readingStepsFor(visual).map((step) => (
+      {차례.map((step) => (
         <li key={step}>{step}</li>
       ))}
     </ol>
@@ -420,6 +423,8 @@ function EnlargedVisual({ visual }: { visual: QuestionVisual }) {
 }
 
 const widgetTitleFor = (visual: QuestionVisual) => {
+  const 실험 = 실험이름(visual);
+  if (실험) return 실험;
   if (visual.kind === 'clock') return '시계를 움직여 보세요';
   if (visual.kind === 'place-value') return '수 모형을 모으거나 지워 보세요';
   if (visual.kind === 'number-line') return '한 번씩 뛰어 보세요';
@@ -429,6 +434,12 @@ const widgetTitleFor = (visual: QuestionVisual) => {
 
 export function InteractiveHintModal({ visual, onClose }: InteractiveHintModalProps) {
   const isCountable = COUNTABLE_KINDS.has(visual.kind);
+  // 합동과 대칭은 접어 보고 돌려 보아야 합니다. 그림을 크게만 보여
+  // 주면 아이는 여전히 '어느 꼭짓점이 어느 꼭짓점과 겹치는지'를
+  // 머릿속으로 상상해야 하는데, 그 상상이 안 되는 아이를 위해 있는
+  // 것이 이 도움말입니다.
+  const 실험할것 = 무엇을해볼까(visual);
+  const 그냥그림 = !실험할것 && visual.kind !== 'clock' && visual.kind !== 'place-value' && visual.kind !== 'number-line';
   return (
     <div className="hint-modal-overlay" role="dialog" aria-modal="true" aria-label="움직여 보는 힌트">
       <div className="hint-modal-card">
@@ -438,15 +449,12 @@ export function InteractiveHintModal({ visual, onClose }: InteractiveHintModalPr
             <X size={22} />
           </button>
         </header>
-        {visual.kind === 'clock' && <InteractiveClock />}
-        {visual.kind === 'place-value' && <InteractivePlaceValue visual={visual} />}
-        {visual.kind === 'number-line' && <InteractiveJumps visual={visual} />}
-        {visual.kind !== 'clock' && visual.kind !== 'place-value' && visual.kind !== 'number-line' && isCountable && (
-          <InteractiveCounter visual={visual} />
-        )}
-        {visual.kind !== 'clock' && visual.kind !== 'place-value' && visual.kind !== 'number-line' && !isCountable && (
-          <EnlargedVisual visual={visual} />
-        )}
+        {실험할것 && <SymmetryLab visual={visual} />}
+        {!실험할것 && visual.kind === 'clock' && <InteractiveClock />}
+        {!실험할것 && visual.kind === 'place-value' && <InteractivePlaceValue visual={visual} />}
+        {!실험할것 && visual.kind === 'number-line' && <InteractiveJumps visual={visual} />}
+        {그냥그림 && isCountable && <InteractiveCounter visual={visual} />}
+        {그냥그림 && !isCountable && <EnlargedVisual visual={visual} />}
         <PictureReadingSteps visual={visual} />
         <button type="button" className="hint-modal-done" onClick={onClose}>
           다 봤어요

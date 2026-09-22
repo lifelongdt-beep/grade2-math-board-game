@@ -1258,7 +1258,14 @@ export const 대칭성질 = (선대칭인가: boolean): G5Family[] => {
             '겹치므로 대응변의 길이는 서로 같습니다.',
             `그러므로 대응변의 길이도 ${길이} cm입니다.`,
           ],
-          visual: oneFigure(이름, 도형, 선대칭인가 ? { axes: ['vertical'] } : { center: true }),
+          // 문제는 '사각형 ㄱㄴㄷㄹ에서 변 ㄱㄴ'이라고 이름을 부르는데
+          // 그림에는 이름이 없었습니다. 그러면 아이는 어느 변을 묻는지
+          // 그림에서 찾을 수 없고, '자세히 보기'에서 접거나 돌려 보아도
+          // 무엇이 무엇에 겹쳤는지 읽을 수 없습니다.
+          visual: oneFigure(이름, 도형, {
+            vertexLabels: first,
+            ...(선대칭인가 ? { axes: ['vertical' as const] } : { center: true }),
+          }),
         };
       },
     },
