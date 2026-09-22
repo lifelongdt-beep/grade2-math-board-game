@@ -5,6 +5,7 @@ import { QuestionVisualGraphic } from './QuestionVisualGraphic';
 import { SymmetryLab, 실험보는차례, 실험이름, 무엇을해볼까 } from './SymmetryLab';
 import { AreaLab, 자르기보는차례, 자르기이름, 무엇을잘라볼까 } from './AreaLab';
 import { BoxLab, 접기보는차례, 접기이름, 무엇을접어볼까 } from './BoxLab';
+import { ChanceLab, 가능성보는차례, 가능성이름, 무엇을해볼까_가능성 } from './ChanceLab';
 import { playTapSound } from '../sound';
 
 interface InteractiveHintModalProps {
@@ -394,7 +395,7 @@ const readingStepsFor = (visual: QuestionVisual): string[] => {
 
 function PictureReadingSteps({ visual, prompt }: { visual: QuestionVisual; prompt: string }) {
   // 접어 보고 돌려 보고 잘라 보는 그림은 보는 차례가 따로 있습니다.
-  const 차례 = 접기보는차례(visual, prompt) ?? 자르기보는차례(visual) ?? 실험보는차례(visual, prompt) ?? readingStepsFor(visual);
+  const 차례 = 가능성보는차례(visual, prompt) ?? 접기보는차례(visual, prompt) ?? 자르기보는차례(visual) ?? 실험보는차례(visual, prompt) ?? readingStepsFor(visual);
   return (
     <ol className="hint-reading-steps">
       {차례.map((step) => (
@@ -428,7 +429,7 @@ function EnlargedVisual({ visual }: { visual: QuestionVisual }) {
 }
 
 const widgetTitleFor = (visual: QuestionVisual, prompt: string) => {
-  const 실험 = 접기이름(visual, prompt) ?? 자르기이름(visual) ?? 실험이름(visual, prompt);
+  const 실험 = 가능성이름(visual, prompt) ?? 접기이름(visual, prompt) ?? 자르기이름(visual) ?? 실험이름(visual, prompt);
   if (실험) return 실험;
   if (visual.kind === 'clock') return '시계를 움직여 보세요';
   if (visual.kind === 'place-value') return '수 모형을 모으거나 지워 보세요';
@@ -451,10 +452,13 @@ export function InteractiveHintModal({ visual, prompt = '', onClose }: Interacti
   // 5-2 5단원은 입체도형입니다. 평면도형과 달리 한눈에 전체를 볼 수
   // 없으므로(지도서), 접어 보고 돌려 보는 자리가 따로 있습니다.
   const 접을것 = !자를것 && 무엇을접어볼까(visual, prompt);
-  const 실험할것 = !자를것 && !접을것 && 무엇을해볼까(visual, prompt);
+  // 5-2 6단원. 자료를 고르게 만들어 보고, 회전판을 돌려 보고,
+  // 바둑돌을 꺼내 봅니다.
+  const 가능성할것 = !자를것 && !접을것 && 무엇을해볼까_가능성(visual, prompt);
+  const 실험할것 = !자를것 && !접을것 && !가능성할것 && 무엇을해볼까(visual, prompt);
   // 새로 만든 실험실 가운데 아무것도 걸리지 않은 그림입니다. 2학년
   // 위젯(시계·수 모형·수직선)과 '크게 보여 주기'가 여기서 갈립니다.
-  const 실험실없음 = !실험할것 && !자를것 && !접을것;
+  const 실험실없음 = !실험할것 && !자를것 && !접을것 && !가능성할것;
   const 그냥그림 =
     실험실없음 &&
     visual.kind !== 'clock' &&
@@ -472,6 +476,7 @@ export function InteractiveHintModal({ visual, prompt = '', onClose }: Interacti
         {실험할것 && <SymmetryLab visual={visual} prompt={prompt} />}
         {자를것 && <AreaLab visual={visual} />}
         {접을것 && <BoxLab visual={visual} prompt={prompt} />}
+        {가능성할것 && <ChanceLab visual={visual} prompt={prompt} />}
         {실험실없음 && visual.kind === 'clock' && <InteractiveClock />}
         {실험실없음 && visual.kind === 'place-value' && <InteractivePlaceValue visual={visual} />}
         {실험실없음 && visual.kind === 'number-line' && <InteractiveJumps visual={visual} />}
