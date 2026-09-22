@@ -707,11 +707,16 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
   // 그림 밖으로 잘려 나갑니다 — 실제로 사다리꼴의 '윗변 3 cm'가
   // 통째로 잘려, 윗변의 길이가 그림에 없는 문항이 나가고 있었습니다.
   const 이름붙은변 = visual.items.some((one) => one.edgeLabels?.length || one.heightMark);
+  // 꼭짓점 이름은 도형 바깥으로 밀어내어 적습니다. 위아래 끝에 꼭짓점이
+  // 닿는 도형(정육각형의 ㄱ, 마름모의 위 꼭짓점)은 그 이름이 판 밖으로
+  // 나갑니다. 실제로 육각형 대응점 문항에서 ㄱ이 잘려, 아이가 찾아야 할
+  // 꼭짓점이 그림에 없었습니다. 자리를 조금 비워 둡니다.
+  const 이름붙은꼭짓점 = visual.items.some((one) => one.vertexLabels?.length);
   // 도형이 셋 넷 늘어서면 하나하나가 작아집니다. 꼭짓점 이름과 길이가
   // 붙는 그림은 도형이 한둘뿐이므로, 개수에 따라 반지름을 정합니다.
   const radius = Math.min(
-    cellWidth / 2 - (이름붙은변 ? 46 : 22),
-    이름붙은변 ? 64 : count === 1 ? 72 : count === 2 ? 62 : 40,
+    cellWidth / 2 - (이름붙은변 ? 46 : 이름붙은꼭짓점 ? 34 : 22),
+    이름붙은변 ? 64 : count === 1 ? (이름붙은꼭짓점 ? 62 : 72) : count === 2 ? 62 : 40,
   );
   const height = 이름붙은변 ? 232 : count <= 2 ? 190 : 160;
   const centerY = height / 2 - (이름붙은변 ? 0 : 6);
@@ -781,6 +786,17 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
           const rx = flipped * Math.cos(radians) - y * Math.sin(radians);
           const ry = flipped * Math.sin(radians) + y * Math.cos(radians);
           return [cx + rx * scale, centerY + ry * scale];
+        };
+
+        // 꼭짓점에서 도형 가운데를 등지고(또는 향해) 정해진 거리만큼
+        // 옮깁니다. 거리를 비율로 주면 가운데에 가까운 꼭짓점에서는
+        // 거의 움직이지 않아, 그 자리에 놓는 글자끼리 겹칩니다.
+        const 꼭짓점에서옮기기 = (x: number, y: number, 거리: number): [number, number] => {
+          const dx = x - cx;
+          const dy = y - centerY;
+          const 길이 = Math.hypot(dx, dy);
+          if (길이 < 0.001) return [x, y];
+          return [x + (dx / 길이) * 거리, y + (dy / 길이) * 거리];
         };
 
         const stroke = item.active ? '#0f7175' : '#41607a';
@@ -1067,13 +1083,15 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
             {/* 꼭짓점 이름은 도형 바깥쪽으로 조금 밀어 놓습니다. */}
             {item.vertexLabels?.map((label, at) => {
               const [x, y] = drawn[at] ?? [cx, centerY];
-              const outX = x + (x - cx) * 0.22;
-              const outY = y + (y - centerY) * 0.22;
+              // 판 밖으로 나가지 않게 가둡니다. 가두지 않으면 위쪽 끝에
+              // 닿는 꼭짓점의 이름이 잘려 나갑니다.
+              const [밖x, 밖y] = 꼭짓점에서옮기기(x, y, 16);
+              const [outX, outY] = 가두기(밖x, 밖y + 5);
               return (
                 <text
                   key={`v-${at}`}
                   x={outX}
-                  y={outY + 5}
+                  y={outY}
                   textAnchor="middle"
                   fill="#0f7175"
                   fontSize="15"
@@ -1114,11 +1132,51 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
 
             {item.angleLabels?.map((angle, at) => {
               const [x, y] = drawn[angle.at] ?? [cx, centerY];
+              // 꼭짓점 이름과 각도를 그 꼭짓점에서 멀어지는 비율로만
+              // 떼어 놓으면, 가운데에 가까운 꼭짓점에서 둘이 겹칩니다.
+              // 매우 둔한 각(127°~139°)에서 실제로 "ㄷ"과 "136°"이
+              // 포개졌습니다. 비율이 아니라 정해진 거리만큼 안으로
+              // 들여 놓아, 꼭짓점이 어디 있든 사이가 벌어지게 합니다.
+              // 각의 이등분선 쪽에 적습니다. 그 각이 벌어진 자리가
+              // 바로 거기라, 어느 꼭짓점의 각인지 한눈에 보입니다.
+              //
+              // 예전에는 도형의 가운데 쪽으로 밀어 적었습니다. 납작한
+              // 평행사변형은 꼭짓점이 가운데에서 스무 남짓밖에 떨어져
+              // 있지 않아, 각도가 대칭의 중심 점 위에 올라앉고 어느
+              // 꼭짓점의 각인지도 알 수 없었습니다.
+              const 이웃앞 = drawn[(angle.at + drawn.length - 1) % drawn.length] ?? [cx, centerY];
+              const 이웃뒤 = drawn[(angle.at + 1) % drawn.length] ?? [cx, centerY];
+              const 단위 = (fx: number, fy: number): [number, number] => {
+                const 길이 = Math.hypot(fx, fy);
+                return 길이 < 0.001 ? [0, 0] : [fx / 길이, fy / 길이];
+              };
+              const [u1x, u1y] = 단위(이웃앞[0] - x, 이웃앞[1] - y);
+              const [u2x, u2y] = 단위(이웃뒤[0] - x, 이웃뒤[1] - y);
+              const [bx, by] = 단위(u1x + u2x, u1y + u2y);
+              // 두 변이 거의 일직선이면 이등분선을 잡을 수 없습니다.
+              // 그때만 가운데 쪽으로 물러섭니다.
+              const [안쪽x, 안쪽y] =
+                Math.hypot(bx, by) < 0.001
+                  ? 꼭짓점에서옮기기(x, y, -Math.min(20, Math.hypot(x - cx, y - centerY) * 0.45))
+                  : (() => {
+                      // 얼마나 들어갈지는 도형의 크기에 맞춥니다. 스물넷을
+                      // 그대로 들이면 납작한 평행사변형에서는 꼭짓점을 지나
+                      // 가운데까지 가 버려, 대칭의 중심 점에 닿고 어느
+                      // 꼭짓점의 각인지도 흐려집니다. 붙어 있는 두 변 가운데
+                      // 짧은 쪽을 기준으로 삼으면 어떤 모양에서도 꼭짓점
+                      // 곁에 머뭅니다.
+                      const 짧은변 = Math.min(
+                        Math.hypot(이웃앞[0] - x, 이웃앞[1] - y),
+                        Math.hypot(이웃뒤[0] - x, 이웃뒤[1] - y),
+                      );
+                      const 들일거리 = Math.min(24, Math.max(11, 짧은변 * 0.28));
+                      return [x + bx * 들일거리, y + by * 들일거리] as [number, number];
+                    })();
               return (
                 <text
                   key={`a-${at}`}
-                  x={x + (cx - x) * 0.34}
-                  y={y + (centerY - y) * 0.34 + 4}
+                  x={안쪽x}
+                  y={안쪽y + 4}
                   textAnchor="middle"
                   fill="#a8410a"
                   fontSize="13"
