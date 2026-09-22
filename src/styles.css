@@ -6911,3 +6911,28 @@ body::before {
 .symmetry-try span.symmetry-no {
   color: #b4532a;
 }
+
+/* 여럿 가운데 하나를 골라 해 보는 자리입니다. 가·나·다·라 단추. */
+.symmetry-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.symmetry-pick button {
+  min-width: 52px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  padding: 8px 14px;
+  color: var(--muted);
+  font-weight: 900;
+  font-size: 15px;
+}
+
+.symmetry-pick button.chosen {
+  border-color: var(--teal);
+  background: #f1fcfc;
+  color: var(--teal-dark);
+}
