@@ -13731,17 +13731,24 @@ export const questionBank: Template[] = [
     solution:
       '{a}+{c}={known}명이 이미 세어졌습니다. {total}-{known}={b}명이 둘째입니다.',
   },
-  {
-    id: 'real-data-why-survey',
+  // "조사해 표로 만들었습니다. 이 표를 만든 까닭은?"이라고 물으면서 표가
+  // 없었습니다. 주제와 표의 항목이 맞아야 하는데 템플릿의 낱말은 저마다
+  // 따로 골라지므로, 주제마다 템플릿을 하나씩 둡니다. 첫 항목이 늘 가장
+  // 많아, 무엇을 고를지 정하는 데 표를 쓴다는 것이 그림에서 보입니다.
+  ...([
+    ['milk', '우유 종류를', '우유', ['흰 우유', '딸기 우유', '초코 우유']],
+    ['sport', '체육 시간에 할 운동을', '운동', ['피구', '축구', '줄넘기']],
+    ['book', '학급 문고에 넣을 책을', '책', ['동화책', '과학책', '만화책']],
+    ['trip', '현장학습 장소를', '장소', ['동물원', '박물관', '놀이공원']],
+  ] as const).map(([key, what, category, [first, second, third]]) => ({
+    id: `real-data-why-survey-${key}`,
     when: /자료를 조사하여 표로/,
     real: true,
-    demand: 'reason',
-    tag: 'data',
+    demand: 'reason' as const,
+    tag: 'data' as const,
     strategy: '조건 함께 보기 · 조사한 것을 어디에 쓸지 판단하기',
-    vars: { any: { from: 1, to: 4 } },
-    words: { what: ['우유 종류', '체육 시간에 할 운동', '학급 문고에 넣을 책', '현장학습 장소'] },
-    prompt:
-      '우리 반이 좋아하는 {what:을} 조사해 표로 만들었습니다. 이 표를 만든 까닭으로 알맞은 것은 어느 것일까요?',
+    vars: { a: { from: 6, to: 9 }, b: { from: 2, to: 5 }, c: { from: 1, to: 4 } },
+    prompt: `우리 반이 좋아하는 ${what} 조사해 표로 만들었습니다. 이 표를 만든 까닭으로 알맞은 것은 어느 것일까요?`,
     answer: '가장 많은 사람이 좋아하는 것을 골라 정하려고',
     wrongs: [
       '누가 무엇을 좋아하는지 이름을 알려고',
@@ -13750,7 +13757,18 @@ export const questionBank: Template[] = [
     ],
     solution:
       '표는 항목마다 몇 명인지 한자리에 모아 주므로, 무엇을 고를지 정할 때 씁니다.',
-  },
+    visual: {
+      kind: 'table' as const,
+      columns: [
+        { name: first, value: 'a' },
+        { name: second, value: 'b' },
+        { name: third, value: 'c' },
+      ],
+      categoryLabel: category,
+      valueLabel: '학생 수(명)',
+      label: `좋아하는 ${category}별 학생 수`,
+    },
+  })),
   {
     id: 'real-graph-decide-from-shape',
     when: /자료를 분류하여 그래프로/,

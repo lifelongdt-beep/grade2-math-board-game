@@ -10,8 +10,11 @@ import {
   oneFigure,
   대응이름,
   각으로삼각형,
+  변으로사각형,
+  선대칭반쪽들,
   선대칭사각형,
   선대칭짝,
+  점대칭반쪽들,
   점대칭사각형,
   점대칭짝,
   자음이름,
@@ -379,15 +382,24 @@ const 삼각형대응각 = (which: number): G5Family => ({
 // 직사각형이나 평행사변형을 그려 놓고 변의 길이와 각의 크기를 마음대로
 // 적으면 그림과 어긋납니다 — 직사각형의 네 각은 모두 90°인데 107°라고
 // 적어 두는 일이 생깁니다. 그래서 아무 조건도 없는 사각형을 씁니다.
+// 그 사각형도 한 모양으로 고정해 두고 숫자만 바꾸면 둔각으로 그린 자리에
+// 74°가 적힙니다. 그래서 변의 길이로 모양을 그리고, 각은 그 그림에서
+// 잽니다(변으로사각형).
 const 합동짝 = (seed: number) => {
   const next = rand(seed);
-  const 도형: FigureShapeName = '사각형';
   const { first, second } = 대응이름(4);
-  const 변길이 = [4 + next(6), 3 + next(5), 4 + next(6), 3 + next(5)];
-  // 사각형의 네 각의 합은 360°입니다. 셋을 고르고 나머지를 맞춥니다.
-  const 각 = [60 + next(50), 60 + next(50), 60 + next(50), 0];
-  각[3] = 360 - 각[0] - 각[1] - 각[2];
-  return { 도형, first, second, 변길이, 각, next };
+  for (;;) {
+    const 변길이: [number, number, number, number] = [4 + next(6), 3 + next(5), 4 + next(6), 3 + next(5)];
+    const 그림 = 변으로사각형(변길이);
+    if (!그림) continue;
+    // 한 변이 너무 짧으면 양 끝 꼭짓점의 각도 글자가 서로 겹칩니다.
+    if (Math.min(...변길이) / Math.max(...변길이) < 0.55) continue;
+    // 86°~94°는 눈으로 직각과 구별되지 않습니다. 아이가 직각이라 여기고
+    // 90°로 셈하지 않도록 이런 각이 생기는 모양은 쓰지 않습니다.
+    if (그림.각.some((one) => Math.abs(one - 90) <= 4)) continue;
+    const 도형 = { shape: '사각형' as FigureShapeName, points: 그림.points };
+    return { 도형, first, second, 변길이, 각: 그림.각, next };
+  }
 };
 
 export const 합동성질Easy: G5Family[] = [
@@ -438,8 +450,8 @@ export const 합동성질Easy: G5Family[] = [
           kind: 'figure-set',
           label: '서로 합동인 두 도형',
           items: [
-            { shape: 도형, vertexLabels: first },
-            { shape: 도형, vertexLabels: second, rotate: 180 },
+            { ...도형, vertexLabels: first },
+            { ...도형, vertexLabels: second, rotate: 180 },
           ],
         },
         misconceptionTip: '두 도형이 돌려져 있으면 화면에서 같은 쪽에 있는 꼭짓점끼리 짝지으면 안 됩니다. 돌려서 포개었을 때 겹치는 것을 찾으세요.',
@@ -472,11 +484,11 @@ export const 합동성질Easy: G5Family[] = [
           label: '서로 합동인 두 도형',
           items: [
             {
-              shape: 도형,
+              ...도형,
               vertexLabels: first,
               edgeLabels: [0, 1, 2, 3].map((one) => ({ from: one, to: (one + 1) % 4, text: `${변길이[one]} cm` })),
             },
-            { shape: 도형, vertexLabels: second, rotate: 180 },
+            { ...도형, vertexLabels: second, rotate: 180 },
           ],
         },
       };
@@ -509,11 +521,11 @@ export const 합동성질Easy: G5Family[] = [
           label: '서로 합동인 두 도형',
           items: [
             {
-              shape: 도형,
+              ...도형,
               vertexLabels: first,
               angleLabels: [0, 1, 2, 3].map((one) => ({ at: one, text: `${각[one]}°` })),
             },
-            { shape: 도형, vertexLabels: second, rotate: 180 },
+            { ...도형, vertexLabels: second, rotate: 180 },
           ],
         },
       };
@@ -581,13 +593,13 @@ export const 합동성질Hard: G5Family[] = [
           label: '서로 합동인 두 도형',
           items: [
             {
-              shape: 도형,
+              ...도형,
               vertexLabels: first,
               angleLabels: [0, 1, 2, 3]
                 .filter((one) => one !== 감춘자리)
                 .map((one) => ({ at: one, text: `${각[one]}°` })),
             },
-            { shape: 도형, vertexLabels: second, rotate: 180 },
+            { ...도형, vertexLabels: second, rotate: 180 },
           ],
         },
       };
@@ -615,11 +627,11 @@ export const 합동성질Hard: G5Family[] = [
           label: '서로 합동인 두 도형',
           items: [
             {
-              shape: 도형,
+              ...도형,
               vertexLabels: first,
               edgeLabels: [0, 1, 2, 3].map((one) => ({ from: one, to: (one + 1) % 4, text: `${변길이[one]} cm` })),
             },
-            { shape: 도형, vertexLabels: second, rotate: 180 },
+            { ...도형, vertexLabels: second, rotate: 180 },
           ],
         },
       };
@@ -679,6 +691,9 @@ const 축인지판단 = (which: number): G5Family => ({
     };
     // 정오각형·정육각형은 45° 격자에 축이 놓이지 않아 그림이 어긋납니다.
     if (도형.drawableAxes.length === 0 && 도형.axisCount !== 0) return null;
+    // 직각삼각형의 빗변은 왼쪽 위에서 오른쪽 아래로 놓입니다. 그 방향으로
+    // 그은 선은 빗변 위에 겹쳐 도형을 가르지 않으므로, 접는 선이 되지 못합니다.
+    if (도형.shape === '직각삼각형' && 고른축 === 'diagonal') return null;
     return {
       prompt: `그림의 ${도형.shape}에 ${방향이름[고른축]}을 따라 접으면 두 쪽이 완전히 겹칠까요?`,
       answer: 맞나 ? '겹치므로 대칭축입니다.' : '겹치지 않으므로 대칭축이 아닙니다.',
@@ -767,10 +782,12 @@ const 대칭개수세기 = (선대칭인가: boolean): G5Family => ({
         ? '도형마다 접을 수 있는 직선이 하나라도 있는지 차례로 살펴보세요.'
         : '도형마다 반 바퀴 돌렸을 때 처음과 겹치는지 차례로 살펴보세요.',
       steps: [
+        // 도형 이름만 쓰면 "사다리꼴은 선대칭도형이 아니다"처럼 읽힙니다.
+        // 등변사다리꼴은 선대칭도형이므로, 그림의 어느 도형인지 함께 적습니다.
         넷
           .map(
-            (one) =>
-              `${one.shape}: ${선대칭인가 ? (one.axisCount !== 0 ? '선대칭도형' : '선대칭도형이 아님') : one.pointSymmetric ? '점대칭도형' : '점대칭도형이 아님'}`,
+            (one, index) =>
+              `${['가', '나', '다', '라'][index]}(${one.shape}): ${선대칭인가 ? (one.axisCount !== 0 ? '선대칭도형' : '선대칭도형이 아님') : one.pointSymmetric ? '점대칭도형' : '점대칭도형이 아님'}`,
           )
           .join(', '),
         `그러므로 ${개수}개입니다.`,
@@ -832,6 +849,31 @@ const 대응각구하기 = (선대칭인가: boolean): G5Family => ({
   },
 });
 
+// 반쪽의 둘레를 셀 때 빼는 변입니다.
+//
+// 예전에는 "대칭의 중심을 뺀 변"이라고 적었습니다. 대칭의 중심은 점이라
+// 변에서 뺄 수 없습니다. 빼는 것은 대칭의 중심을 지나는 변(반쪽을 자른
+// 자리)입니다. 선대칭도 축 그 자체가 아니라 축 위에 놓인 변을 뺍니다.
+// 이 변은 완성하면 도형 안쪽으로 들어가 둘레가 되지 않습니다.
+const 뺄변 = (선대칭인가: boolean) =>
+  선대칭인가 ? '대칭축 위에 있는 변' : '대칭의 중심을 지나는 변';
+
+const 반쪽그림 = (선대칭인가: boolean, 모양: number) => ({
+  kind: 'figure-set' as const,
+  label: 선대칭인가 ? '선대칭도형의 반쪽' : '점대칭도형의 반쪽',
+  items: [
+    {
+      shape: '사각형' as const,
+      points: 선대칭인가 ? 선대칭반쪽들[모양] : 점대칭반쪽들[모양],
+      half: true,
+      // 반쪽은 판의 반만 차지해 작아 보입니다. 원점(대칭축·대칭의 중심)을
+      // 기준으로 키우므로 축과 중심의 자리는 그대로입니다.
+      scale: 1.2,
+      ...(선대칭인가 ? { axes: ['vertical' as const] } : { center: true }),
+    },
+  ],
+});
+
 const 완성한둘레 = (선대칭인가: boolean): G5Family => ({
   id: 'completed-perimeter',
   make: (seed) => {
@@ -839,8 +881,9 @@ const 완성한둘레 = (선대칭인가: boolean): G5Family => ({
     const 이름 = 선대칭인가 ? '선대칭도형' : '점대칭도형';
     const 반쪽둘레 = 6 + next(15);
     const answer = 반쪽둘레 * 2;
+    const 모양 = next(선대칭인가 ? 선대칭반쪽들.length : 점대칭반쪽들.length);
     return {
-      prompt: `${이름}의 반쪽만 그려져 있습니다. 그려진 부분에서 ${eul(선대칭인가 ? '대칭축' : '대칭의 중심')} 뺀 변의 길이의 합이 ${반쪽둘레} cm일 때, 도형을 완성하면 둘레는 몇 cm일까요?`,
+      prompt: `${이름}의 반쪽만 그려져 있습니다. 그려진 부분에서 ${뺄변(선대칭인가)}을 뺀 나머지 변의 길이의 합이 ${반쪽둘레} cm일 때, 도형을 완성하면 둘레는 몇 cm일까요?`,
       answer: `${answer} cm`,
       wrongs: [`${반쪽둘레} cm`, `${반쪽둘레 * 3} cm`, `${반쪽둘레 + 2} cm`, `${Math.round(반쪽둘레 / 2)} cm`],
       tag: 'congruence',
@@ -851,6 +894,7 @@ const 완성한둘레 = (선대칭인가: boolean): G5Family => ({
         `완성하면 그려진 부분과 같은 길이의 변이 하나 더 생기므로 ${반쪽둘레} × 2 = ${answer}입니다.`,
         `그러므로 둘레는 ${answer} cm입니다.`,
       ],
+      visual: 반쪽그림(선대칭인가, 모양),
     };
   },
 });
@@ -1040,7 +1084,9 @@ const 대칭찾기 = (선대칭인가: boolean): G5Family[] => {
             선대칭인가
               ? '선대칭도형은 어떤 직선을 따라 접었을 때 두 쪽이 완전히 겹칩니다.'
               : '점대칭도형은 어떤 점을 중심으로 180° 돌렸을 때 처음 도형과 완전히 겹칩니다.',
-            `${나머지.map((one) => one.shape).join(', ')}${particleOf(나머지[나머지.length - 1].shape, '은')} 그렇지 않습니다.`,
+            // 도형 이름으로 말하면 "사다리꼴은 선대칭이 아니다"처럼 읽힙니다.
+            // 등변사다리꼴은 선대칭도형이므로, 그림에 그린 그 도형을 가리킵니다.
+            `그림의 ${이름표.filter((_, index) => index !== 자리).join(', ')}${particleOf(이름표.filter((_, index) => index !== 자리)[2], '은')} 그렇지 않습니다.`,
             `${eun(정답도형.shape)} ${이름}이므로 답은 ${이름표[자리]}입니다.`,
           ],
           visual: figureChoices('여러 도형', shapes, 이름표),
@@ -1068,7 +1114,7 @@ const 대칭찾기 = (선대칭인가: boolean): G5Family[] => {
             : '반 바퀴 돌렸을 때 처음과 같은 모양이 되는지 살펴보세요.',
           steps: [
             선대칭인가
-              ? `${도형.shape}의 대칭축은 ${도형.axisCount === 0 ? '하나도 없습니다' : `${도형.axisCount}개입니다`}.`
+              ? `그림의 ${도형.shape}에는 대칭축이 ${도형.axisCount === 0 ? '하나도 없습니다' : 도형.axisCount === '무수히 많음' ? '무수히 많습니다' : `${도형.axisCount}개 있습니다`}.`
               : `${eul(도형.shape)} 180° 돌리면 ${도형.pointSymmetric ? '처음 도형과 완전히 겹칩니다' : '처음 도형과 겹치지 않습니다'}.`,
             `그러므로 그림의 ${eun(도형.shape)} ${맞나 ? `${이름}입니다` : `${이름}이 아닙니다`}.`,
           ],
@@ -1149,20 +1195,25 @@ export const 선대칭Middle: G5Family[] = [
         ['정삼각형', '직사각형', '사다리꼴', '평행사변형'],
         ['정육각형', '정사각형', '마름모', '이등변삼각형'],
       ][Math.abs(seed) % 3] as FigureShapeName[];
-      const 개수 = 후보.map((one) => factFor(one).axisCount as number);
-      const 가장많은 = 후보[개수.indexOf(Math.max(...개수))];
+      // 늘 같은 차례로 두면 답이 언제나 '가'에 놓입니다. 섞어 둡니다.
+      const 섞은 = [...후보].sort((a, b) => (a + seed).localeCompare(b + seed));
+      const 이름표 = ['가', '나', '다', '라'];
+      const 개수 = 섞은.map((one) => factFor(one).axisCount as number);
+      const 자리 = 개수.indexOf(Math.max(...개수));
+      // 보기를 도형 이름으로 두면 "직사각형"도 정사각형일 때는 대칭축이
+      // 넷이라 답처럼 읽힙니다. 그림의 도형을 가리키게 합니다.
       return {
-        prompt: '다음 도형 중 대칭축이 가장 많은 것은 어느 것일까요?',
-        answer: 가장많은,
-        wrongs: 후보.filter((one) => one !== 가장많은),
+        prompt: '그림의 도형 가운데 대칭축이 가장 많은 것은 어느 것일까요?',
+        answer: 이름표[자리],
+        wrongs: 이름표.filter((one) => one !== 이름표[자리]),
         tag: 'congruence',
         strategy: '대칭축의 개수 비교하기',
         hint: '도형마다 대칭축을 몇 개 그을 수 있는지 하나씩 세어 적어 보세요.',
         steps: [
-          후보.map((one, index) => `${one} ${개수[index]}개`).join(', '),
-          `그중 가장 많은 것은 ${가장많은}입니다.`,
+          섞은.map((one, index) => `${이름표[index]}(${one}) ${개수[index]}개`).join(', '),
+          `그중 가장 많은 것은 ${이름표[자리]}(${섞은[자리]})입니다.`,
         ],
-        visual: figureChoices('여러 도형', 후보),
+        visual: figureChoices('여러 도형', 섞은, 이름표),
       };
     },
   },
@@ -1187,7 +1238,9 @@ export const 점대칭Middle: G5Family[] = [
             ? '점대칭도형이지만 선대칭도형은 아닙니다.'
             : '선대칭도형도 점대칭도형도 아닙니다.';
       return {
-        prompt: `${도형.shape}에 대한 설명으로 알맞은 것은 어느 것일까요?`,
+        // '사다리꼴에 대한 설명'이라고 물으면 평행사변형도 사다리꼴이므로
+        // 하나로 답할 수 없습니다. 그림에 그린 그 도형을 묻습니다.
+        prompt: `그림의 ${도형.shape}에 대한 설명으로 알맞은 것은 어느 것일까요?`,
         answer,
         wrongs: [
           '선대칭도형이면서 점대칭도형입니다.',
@@ -1204,7 +1257,7 @@ export const 점대칭Middle: G5Family[] = [
           `그러므로 ${answer}`,
         ],
         visual: oneFigure('도형', 도형.shape),
-        misconceptionTip: '선대칭과 점대칭은 따로 따져야 합니다. 정삼각형은 선대칭이지만 점대칭이 아니고, 평행사변형은 점대칭이지만 선대칭이 아닙니다.',
+        misconceptionTip: '선대칭과 점대칭은 따로 따져야 합니다. 정삼각형은 선대칭이지만 점대칭이 아니고, 그림과 같은 평행사변형은 점대칭이지만 선대칭이 아닙니다.',
       };
     },
   },
@@ -1600,18 +1653,20 @@ const 둘레에서반쪽 = (선대칭인가: boolean): G5Family => ({
     const 이름 = 선대칭인가 ? '선대칭도형' : '점대칭도형';
     const 반쪽 = 7 + next(18);
     const 둘레 = 반쪽 * 2;
+    const 모양 = next(선대칭인가 ? 선대칭반쪽들.length : 점대칭반쪽들.length);
     return {
-      prompt: `${eul(이름)} 완성했더니 둘레가 ${둘레} cm였습니다. 완성하기 전 그려져 있던 반쪽에서 ${eul(선대칭인가 ? '대칭축' : '대칭의 중심')} 뺀 변의 길이의 합은 몇 cm일까요?`,
+      prompt: `그림은 ${이름}의 반쪽입니다. 이것을 완성했더니 둘레가 ${둘레} cm였습니다. 그려진 반쪽에서 ${뺄변(선대칭인가)}을 뺀 나머지 변의 길이의 합은 몇 cm일까요?`,
       answer: `${반쪽} cm`,
       wrongs: [`${둘레} cm`, `${둘레 * 2} cm`, `${반쪽 + 2} cm`, `${Math.round(반쪽 / 2)} cm`],
       tag: 'congruence',
       strategy: '완성한 둘레에서 반쪽 거꾸로 구하기',
-      hint: '완성한 도형은 반쪽과 그 대응이 붙은 것입니다. 둘은 길이가 같습니다.',
+      hint: '완성한 도형은 그려진 반쪽에 똑같은 반쪽이 하나 더 붙은 것입니다. 대응변끼리 길이가 같습니다.',
       steps: [
         `${이름}에서 대응변의 길이는 서로 같으므로 완성한 둘레는 반쪽의 두 배입니다.`,
         `${둘레}÷2=${반쪽}`,
         `반쪽의 변의 길이의 합은 ${반쪽} cm입니다.`,
       ],
+      visual: 반쪽그림(선대칭인가, 모양),
       misconceptionTip: '완성한 둘레를 그대로 답하지 마세요. 물은 것은 반쪽입니다.',
       selfCheck: '구한 값을 두 배 하면 주어진 둘레가 되나요?',
     };
@@ -1651,7 +1706,7 @@ const 축개수로도형찾기: G5Family = {
       hint: '보기마다 접어서 완전히 겹치는 선을 모두 찾아 세어 보세요. 하나만 보고 고르면 안 됩니다.',
       steps: [
         `${이름[정답자리]}${particleOf(이름[정답자리], '은')} ${답.shape}입니다.`,
-        `${eun(답.shape)} 접어서 완전히 겹치는 선이 ${찾을수}개입니다.`,
+        `그림의 ${eun(답.shape)} 접어서 완전히 겹치는 선이 ${찾을수}개입니다.`,
         `그러므로 답은 ${이름[정답자리]}입니다.`,
       ],
       visual: figureChoices('여러 도형', 자리표.map((which) => 보기[which].shape), 이름),
@@ -1844,7 +1899,7 @@ const 둘다가리기 = (둘다인가: boolean): G5Family => ({
       hint: '보기마다 두 가지를 모두 해 보세요. 접어서 겹치는지, 그리고 180° 돌려 겹치는지입니다.',
       steps: [
         `${이름[정답자리]}${particleOf(이름[정답자리], '은')} ${답.shape}입니다.`,
-        `${eun(답.shape)} 접어서 겹치는 선이 ${답.axisCount === '무수히 많음' ? '무수히 많습니다' : `${답.axisCount}개 있습니다`}.`,
+        `그림의 ${eun(답.shape)} 접어서 겹치는 선이 ${답.axisCount === '무수히 많음' ? '무수히 많습니다' : `${답.axisCount}개 있습니다`}.`,
         둘다인가
           ? `또 180° 돌려도 처음 도형과 겹치므로 답은 ${이름[정답자리]}입니다.`
           : `그러나 180° 돌리면 처음 도형과 겹치지 않으므로 답은 ${이름[정답자리]}입니다.`,

@@ -13,6 +13,19 @@ import { figureChoices, oneFigure } from './figures';
 // 합동·대칭은 아직 배우지 않았으므로 여기서 묻지 않습니다.
 // ════════════════════════════════════════════════════════════════════
 
+// 찾는 도형에 함께 들어가는 도형입니다. "그림에서 이등변삼각형을
+// 찾으면?"의 보기에 정삼각형을 두면 정답이 둘이 됩니다 — 정삼각형도 두
+// 변의 길이가 같으므로 이등변삼각형입니다. 실제로 그렇게 나가고
+// 있었습니다. 사각형도 같습니다(정사각형은 직사각형이자 마름모이고,
+// 이 넷은 모두 평행사변형이며, 평행사변형은 모두 사다리꼴입니다).
+const 함께드는도형: Partial<Record<FigureShapeName, FigureShapeName[]>> = {
+  이등변삼각형: ['정삼각형'],
+  직사각형: ['정사각형'],
+  마름모: ['정사각형'],
+  평행사변형: ['직사각형', '마름모', '정사각형'],
+  사다리꼴: ['평행사변형', '직사각형', '마름모', '정사각형'],
+};
+
 const 도형정의: Array<{ shape: FigureShapeName; 뜻: string; 아닌뜻: string[] }> = [
   {
     shape: '정삼각형',
@@ -51,7 +64,10 @@ const 도형정의: Array<{ shape: FigureShapeName; 뜻: string; 아닌뜻: stri
   },
   {
     shape: '사다리꼴',
-    뜻: '마주 보는 한 쌍의 변이 서로 평행한 사각형',
+    // 4학년 교과서의 정의 그대로입니다. "마주 보는 한 쌍의 변이 평행한"이라고
+    // 적으면 '딱 한 쌍만'으로 읽혀, 평행사변형은 사다리꼴이 아니라는
+    // 오개념이 생깁니다. 평행사변형도 사다리꼴입니다.
+    뜻: '평행한 변이 한 쌍이라도 있는 사각형',
     아닌뜻: ['마주 보는 두 쌍의 변이 모두 평행한 사각형', '네 각이 모두 직각인 사각형', '네 변의 길이가 모두 같은 사각형'],
   },
 ];
@@ -153,7 +169,12 @@ export const unit3Lesson1Easy: G5Family[] = [
     make: (seed) => {
       const next = rand(seed);
       const 하나 = 도형정의[next(도형정의.length)];
-      const 나머지 = 도형정의.filter((one) => one.shape !== 하나.shape).slice(0, 3);
+      const 빼기 = new Set([하나.shape, ...(함께드는도형[하나.shape] ?? [])]);
+      // 앞에서부터만 고르면 늘 같은 셋이 나옵니다. 씨앗으로 섞습니다.
+      const 나머지 = 도형정의
+        .filter((one) => !빼기.has(one.shape))
+        .sort((a, b) => ((a.shape.charCodeAt(0) * 7 + seed) % 13) - ((b.shape.charCodeAt(0) * 7 + seed) % 13))
+        .slice(0, 3);
       const 자리 = next(4);
       const shapes = 나머지.map((one) => one.shape);
       shapes.splice(자리, 0, 하나.shape);

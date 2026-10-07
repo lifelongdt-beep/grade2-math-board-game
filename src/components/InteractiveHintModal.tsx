@@ -226,15 +226,19 @@ function InteractiveCounter({ visual }: { visual: QuestionVisual }) {
             {/* '3×□=12에서 □는?'을 푸는 아이에게 필요한 것은 지금까지
                 센 수만이 아니라 '몇 묶음째인가'입니다. 그것이 곧 □에
                 들어갈 수입니다. 그래서 묶음 수를 큰 줄로 따로 둡니다. */}
+            {/* 넓이의 모눈(칸 그림)은 묶음이 아니라 줄로 셉니다. "11씩 3묶음째"는
+                2학년 곱셈의 말이라, 5학년 넓이 문항에서는 "11칸씩 3줄째"로 셉니다. */}
             <span className="interactive-counter-step">
-              {bundle}씩 <strong>{bundles}</strong>묶음째
+              {grouped?.cells
+                ? <>{bundle}칸씩 <strong>{bundles}</strong>줄째</>
+                : <>{bundle}씩 <strong>{bundles}</strong>묶음째</>}
             </span>
             <span>
               {count >= most
-                ? '다 나왔어요. 몇 묶음이었는지 세어 보세요'
+                ? `다 나왔어요. 몇 ${grouped?.cells ? '줄' : '묶음'}이었는지 세어 보세요`
                 : bundles === 0
-                  ? '탭하면 한 묶음씩 나타나요'
-                  : '탭하면 한 묶음 더 나타나요'}
+                  ? `탭하면 한 ${grouped?.cells ? '줄' : '묶음'}씩 나타나요`
+                  : `탭하면 한 ${grouped?.cells ? '줄' : '묶음'} 더 나타나요`}
             </span>
           </>
         ) : (
@@ -435,6 +439,8 @@ const widgetTitleFor = (visual: QuestionVisual, prompt: string) => {
   if (visual.kind === 'clock') return '시계를 움직여 보세요';
   if (visual.kind === 'place-value') return '수 모형을 모으거나 지워 보세요';
   if (visual.kind === 'number-line') return '한 번씩 뛰어 보세요';
+  // 넓이의 모눈은 한 줄씩 셉니다. 세기 도구도 한 줄씩 채웁니다.
+  if (visual.kind === 'array' && visual.cells) return '한 줄씩 세어 보세요';
   if (COUNTABLE_KINDS.has(visual.kind)) return '하나씩 짚어 세어 보세요';
   return enlargedCaptionFor(visual);
 };

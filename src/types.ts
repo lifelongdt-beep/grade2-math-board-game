@@ -320,6 +320,11 @@ export interface FigureSetVisual {
     axes?: Array<'vertical' | 'horizontal' | 'diagonal' | 'anti-diagonal'>;
     // 대칭의 중심을 찍습니다.
     center?: boolean;
+    // 대칭도형의 반쪽만 그린 그림입니다. 대칭축(세로)이나 대칭의 중심이
+    // 그림의 원점에 놓이도록 points를 적습니다. 자세히 보기에서 이
+    // 원점을 기준으로 나머지 반쪽을 채워 보게 합니다 — 도형의 한가운데를
+    // 축으로 잡는 접기·돌리기를 쓰면 반쪽을 또 반으로 접게 됩니다.
+    half?: boolean;
     // 변에 길이를 적습니다. 꼭짓점 번호 두 개로 변을 가리킵니다.
     //
     // span을 켜면 지도서가 그리는 대로, 그 변의 범위를 점선 호로
@@ -569,6 +574,14 @@ export interface ArrayVisual {
   label: string;
   rows: number;
   columns: number;
+  /**
+   * 점 대신 서로 붙은 정사각형 칸으로 그립니다(5-1 넓이의 1 cm²).
+   *
+   * "1 cm²인 정사각형 ○칸씩 △줄로 이루어진 도형"이라고 물으면서 그림이
+   * 없었습니다. 넓이는 단위넓이가 몇 개인지 세는 것이라, 칸이 붙어 있어야
+   * 도형으로 보입니다. 떨어진 점은 넓이가 아니라 개수로 읽힙니다.
+   */
+  cells?: boolean;
   fadedRows?: number;
   /**
    * 앞에서부터 몇 묶음까지 보일지입니다.
