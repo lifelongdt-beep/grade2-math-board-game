@@ -392,6 +392,8 @@ const 합동짝 = (seed: number) => {
     const 변길이: [number, number, number, number] = [4 + next(6), 3 + next(5), 4 + next(6), 3 + next(5)];
     const 그림 = 변으로사각형(변길이);
     if (!그림) continue;
+    // 한 변이 너무 짧으면 양 끝 꼭짓점의 각도 글자가 서로 겹칩니다.
+    if (Math.min(...변길이) / Math.max(...변길이) < 0.55) continue;
     // 86°~94°는 눈으로 직각과 구별되지 않습니다. 아이가 직각이라 여기고
     // 90°로 셈하지 않도록 이런 각이 생기는 모양은 쓰지 않습니다.
     if (그림.각.some((one) => Math.abs(one - 90) <= 4)) continue;
