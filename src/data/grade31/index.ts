@@ -3,6 +3,7 @@ import { buildGrade5Questions, type G5Family } from '../grade5/build';
 import type { Kind } from './unit1/core';
 import { unit1Calc, unit1Estimate, unit1Lesson1 } from './unit1/lessons';
 import { unit2Lesson } from './unit2/lessons';
+import { unit3Lesson } from './unit3/lessons';
 
 // ════════════════════════════════════════════════════════════════════
 // 3학년 1학기 차시에 어떤 문항 뭉치를 쓸지
@@ -39,6 +40,7 @@ export const grade31FamiliesFor = (lesson: Lesson, difficulty: Difficulty): G5Fa
   if (lesson.semester !== '3-1') return null;
   if (lesson.unitNo === 1) return unit1Families(lesson.lessonNo, difficulty);
   if (lesson.unitNo === 2) return unit2Lesson(lesson.lessonNo, difficulty);
+  if (lesson.unitNo === 3) return unit3Lesson(lesson.lessonNo, difficulty);
   return null;
 };
 
