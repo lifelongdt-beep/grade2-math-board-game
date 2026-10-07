@@ -37,7 +37,7 @@ const 최소공배수 = (a: number, b: number) => {
   return a * b;
 };
 
-export const unit2Lesson1Easy: G5Family[] = [
+const unit2Lesson1EasyRaw: G5Family[] = [
   {
     id: 'kind-of-fraction',
     make: (seed) => {
@@ -104,7 +104,7 @@ export const unit2Lesson1Easy: G5Family[] = [
         strategy: '가분수를 대분수로 고치기',
         hint: `분자 ${eul(String(n))} 분모 ${d}${euroText(d)} 나누어 보세요. 몫이 자연수 부분, 나머지가 분자가 됩니다.`,
         steps: [
-          `${n} ÷ ${d} = ${w} … ${rest}입니다.`,
+          rest === 0 ? `${n} ÷ ${d} = ${w}입니다.` : `${n} ÷ ${d} = ${w} … ${rest}입니다.`,
           `몫 ${iJosa(String(w))} 자연수 부분이 되고, 나머지 ${iJosa(String(rest))} 분자가 됩니다.`,
           `그러므로 ${answer}입니다.`,
         ],
@@ -177,7 +177,7 @@ export const unit2Lesson1Easy: G5Family[] = [
 // 받침이 없거나 ㄹ 받침이면 '로'입니다(일로, 칠로, 팔로).
 const euroText = (value: number) => euroOf(String(value));
 
-export const unit2Lesson1Middle: G5Family[] = [
+const unit2Lesson1MiddleRaw: G5Family[] = [
   {
     id: 'different-denominator-add',
     make: (seed) => {
@@ -234,7 +234,7 @@ export const unit2Lesson1Middle: G5Family[] = [
         hint: '분모가 다르면 칸의 크기가 달라 분자만으로는 견줄 수 없습니다. 통분해서 한 칸의 크기를 맞추세요.',
         steps: [
           `${d1 * d2}${euroText(d1 * d2)} 통분하면 ${gwa(`${a * d2}/${d1 * d2}`)} ${b * d1}/${d1 * d2}입니다.`,
-          `분모가 같으므로 분자를 견주면 ${Math.max(a * d2, b * d1)}${iJosa(String(Math.max(a * d2, b * d1)))} 더 큽니다.`,
+          `분모가 같으므로 분자를 견주면 ${iJosa(String(Math.max(a * d2, b * d1)))} 더 큽니다.`,
           `그러므로 ${iJosa(큰쪽)} 더 큽니다.`,
         ],
         misconceptionTip: '분모가 다른 분수는 분자가 크다고 큰 수가 아닙니다. 1/2이 3/8보다 큽니다.',
@@ -299,7 +299,7 @@ export const unit2Lesson1Middle: G5Family[] = [
         strategy: '전체에서 일부를 덜어 낸 나머지 구하기',
         hint: `전체는 ${d}/${d}, 곧 1입니다. 여기서 ${상황.쓴}만큼을 빼 보세요.`,
         steps: [
-          `전체 1${eul('1')} 분모가 ${d}인 분수로 나타내면 ${d}/${d}입니다.`,
+          `전체 ${eul('1')} 분모가 ${d}인 분수로 나타내면 ${d}/${d}입니다.`,
           `${d}/${d} - ${n}/${d} = ${d - n}/${d}입니다.`,
           `그러므로 ${text(answer)}입니다.`,
         ],
@@ -327,7 +327,7 @@ export const unit2Lesson1Middle: G5Family[] = [
         hint: `${iJosa(`1/${d}`)} ${d}개이면 1입니다. ${d}개씩 몇 묶음인지 먼저 세어 보세요.`,
         steps: [
           `${iJosa(`1/${d}`)} ${count}개이면 ${count}/${d}입니다.`,
-          `${eun(`${count}/${d}`)} 가분수이므로 대분수로 고칩니다. ${count} ÷ ${d} = ${Math.floor(count / d)} … ${count % d}입니다.`,
+          `${eun(`${count}/${d}`)} 가분수이므로 대분수로 고칩니다. ${count} ÷ ${d} = ${Math.floor(count / d)}${count % d === 0 ? '' : ` … ${count % d}`}입니다.`,
           `그러므로 ${answer}입니다.`,
         ],
       };
@@ -335,7 +335,7 @@ export const unit2Lesson1Middle: G5Family[] = [
   },
 ];
 
-export const unit2Lesson1Hard: G5Family[] = [
+const unit2Lesson1HardRaw: G5Family[] = [
   {
     id: 'between-fractions',
     make: (seed) => {
@@ -410,9 +410,9 @@ export const unit2Lesson1Hard: G5Family[] = [
         wrongs: [`${a}/${d}`, '1', `${d}/${남은}`, `${남은 + 1}/${d}`],
         tag: 'fraction',
         strategy: '합이 1이 되는 분수 구하기',
-        hint: `1${eul('1')} 분모가 ${d}인 분수로 바꾸어 적어 보세요. 그러면 빼기만 하면 됩니다.`,
+        hint: `${eul('1')} 분모가 ${d}인 분수로 바꾸어 적어 보세요. 그러면 빼기만 하면 됩니다.`,
         steps: [
-          `1${eul('1')} 분모가 ${d}인 분수로 나타내면 ${d}/${d}입니다.`,
+          `${eul('1')} 분모가 ${d}인 분수로 나타내면 ${d}/${d}입니다.`,
           `${d}/${d} - ${a}/${d} = ${남은}/${d}입니다.`,
           `그러므로 ▢에 알맞은 분수는 ${answer}입니다.`,
         ],
@@ -513,3 +513,28 @@ export const unit2Lesson1Hard: G5Family[] = [
     },
   },
 ];
+
+// 단원 전체의 조심 문구는 "대분수를 따로 곱하면 안 됩니다"입니다. 1차시는
+// 곱셈을 배우기 전 복습이라 그 말이 맞지 않고, 대분수의 덧셈에서는
+// 자연수 부분과 분수 부분을 따로 더하는 것이 바른 방법이라 오히려
+// 헷갈리게 합니다. 따로 적지 않은 문항에는 1차시에 맞는 문구를 둡니다.
+const 일차시조심 = '분모는 한 칸의 크기, 분자는 그 칸의 수입니다. 분모가 같아야 분자끼리 더하거나 뺄 수 있습니다.';
+const 조심채우기 = (families: G5Family[]): G5Family[] =>
+  families.map((family) => ({
+    ...family,
+    make: (seed) => {
+      const spec = family.make(seed);
+      if (!spec) return spec;
+      return {
+        ...spec,
+        misconceptionTip: spec.misconceptionTip ?? 일차시조심,
+        // 단원 공통 핵심은 '분자끼리, 분모끼리 곱한다'로 6차시에서 배울
+        // 방법입니다. 1차시 복습에는 맞지 않습니다.
+        concept: spec.concept ?? '분수는 분모가 한 칸의 크기를, 분자가 칸의 수를 나타냅니다.',
+      };
+    },
+  }));
+
+export const unit2Lesson1Easy = 조심채우기(unit2Lesson1EasyRaw);
+export const unit2Lesson1Middle = 조심채우기(unit2Lesson1MiddleRaw);
+export const unit2Lesson1Hard = 조심채우기(unit2Lesson1HardRaw);

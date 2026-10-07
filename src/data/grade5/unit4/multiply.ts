@@ -420,7 +420,7 @@ export const decimalHard = (kind: DecimalKind): G5Family[] => [
             : `곱하는 수 ${iJosa(right)} 1보다 크므로 곱은 ${left}보다 커집니다.`,
           `실제로 계산해 보면 ${iJosa(answer)} 되어 ${결론}`,
         ],
-        misconceptionTip: '자연수끼리 곱하면 늘 커지지만, 1보다 작은 수를 곱하면 오히려 작아집니다.',
+        misconceptionTip: '곱한다고 늘 커지는 것은 아닙니다. 1보다 큰 수를 곱하면 커지고, 1을 곱하면 그대로이고, 1보다 작은 수를 곱하면 오히려 작아집니다.',
       };
     },
   },

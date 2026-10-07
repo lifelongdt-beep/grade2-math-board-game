@@ -89,7 +89,7 @@ export const 전개도Families = (정육면체인가: boolean): G5Family[] => {
             wrongs: ['겨냥도', '밑면', '평면도형'],
             tag: 'solid',
             strategy: '전개도의 뜻 알기',
-            hint: '보이는 그대로 그린 그림인지, 잘라서 펼친 그림인지 가려 보세요.',
+            hint: '모양을 알 수 있게 겨누어 그린 그림인지, 잘라서 펼친 그림인지 가려 보세요.',
             steps: [`${이름}의 모서리를 잘라서 평면 위에 펼친 그림을 ${이름}의 전개도라고 합니다.`],
             visual: 민그림('펼친 그림', layout),
           };
@@ -98,13 +98,13 @@ export const 전개도Families = (정육면체인가: boolean): G5Family[] => {
           prompt: `${이름}의 전개도는 어떤 그림일까요?`,
           answer: `${이름}의 모서리를 잘라서 평면 위에 펼친 그림`,
           wrongs: [
-            `${eul(이름)} 한 방향에서 보고 보이는 그대로 그린 그림`,
+            `${eul(이름)} 보이지 않는 모서리까지 점선으로 그린 그림`,
             `${이름}의 한 면만 크게 그린 그림`,
             `${eul(이름)} 위에서 내려다본 그림`,
           ],
           tag: 'solid',
           strategy: '전개도의 뜻 알기',
-          hint: '보이는 그대로 그린 그림은 겨냥도입니다.',
+          hint: '보이지 않는 모서리까지 점선으로 그린 그림은 겨냥도입니다. 전개도는 잘라서 펼친 그림입니다.',
           steps: [`${이름}의 모서리를 잘라서 평면 위에 펼친 그림이 전개도입니다.`],
           visual: 민그림('펼친 그림', layout),
         };
@@ -318,8 +318,10 @@ export const 전개도Families = (정육면체인가: boolean): G5Family[] => {
             q: `${이름}의 전개도에서 면은 어떤 모양일까요?`,
             a: 면모양,
             w: 정육면체인가
-              ? ['직사각형이지만 정사각형은 아닌 모양', '마름모', '평행사변형']
-              : ['정삼각형', '마름모', '사다리꼴'],
+              // 정사각형은 마름모·평행사변형이고, 직사각형은 사다리꼴입니다.
+              // 그 이름을 틀린 보기로 두면 맞는 말을 틀렸다고 가르칩니다.
+              ? ['직사각형이지만 정사각형은 아닌 모양', '정삼각형', '원']
+              : ['정삼각형', '원', '직각이 없는 평행사변형'],
             why: `${이름}는 ${면모양} 6개로 둘러싸여 있습니다.`,
           },
         ][Math.abs(seed) % 4];
@@ -413,24 +415,21 @@ export const 전개도Families = (정육면체인가: boolean): G5Family[] => {
         if (size.width === size.depth || size.depth === size.height || size.width === size.height) return null;
         const 후보 = boxNetLayouts(size);
         const layout = 후보[Math.abs(seed) % 후보.length];
-        const 무엇 = ['가로', '세로', '높이'][next(3)];
-        const 길이: Record<string, number> = { 가로: size.width, 세로: size.depth, 높이: size.height };
-        const 다른값 = [size.width, size.depth, size.height].filter((one) => one !== 길이[무엇]);
+        // 처음에는 "세로를 나타내는 모서리의 길이는?"이라고 물어, 답이 물음에
+        // 그대로 적혀 있었습니다. 접었을 때 같은 길이의 모서리가 몇 개씩
+        // 생기는지 떠올려야 하는 물음으로 바꿉니다.
+        const 합 = size.width + size.depth + size.height;
         return {
-          prompt: `그림은 가로가 ${size.width} cm, 세로가 ${size.depth} cm, 높이가 ${size.height} cm인 직육면체의 전개도입니다. 이 전개도를 접었을 때 ${eul(무엇)} 나타내는 모서리의 길이는 몇 cm일까요?`,
-          answer: `${길이[무엇]} cm`,
-          wrongs: [
-            `${다른값[0]} cm`,
-            `${다른값[1]} cm`,
-            `${size.width + size.depth + size.height} cm`,
-            `${길이[무엇] * 2} cm`,
-          ],
+          prompt: `그림은 가로가 ${size.width} cm, 세로가 ${size.depth} cm, 높이가 ${size.height} cm인 직육면체의 전개도입니다. 이 전개도를 접어 만든 직육면체의 모든 모서리의 길이의 합은 몇 cm일까요?`,
+          answer: `${합 * 4} cm`,
+          wrongs: [`${합} cm`, `${합 * 2} cm`, `${합 * 3} cm`, `${합 * 12} cm`],
           tag: 'solid',
-          strategy: '전개도에서 모서리의 길이 찾기',
-          hint: '전개도를 접으면 가로, 세로, 높이가 그대로 살아납니다. 문제에 적힌 세 길이 가운데 어느 것인지 고르세요.',
+          strategy: '전개도로 만든 직육면체의 모서리 길이의 합 구하기',
+          hint: '전개도를 접으면 가로, 세로, 높이가 그대로 살아납니다. 같은 길이의 모서리가 몇 개씩 생기는지 떠올려 보세요.',
           steps: [
             '전개도를 접으면 원래 직육면체가 되므로 길이는 바뀌지 않습니다.',
-            `${eun(무엇)} ${길이[무엇]} cm입니다.`,
+            '직육면체에는 가로, 세로, 높이를 나타내는 모서리가 4개씩 있습니다.',
+            `(${size.width}+${size.depth}+${size.height})×4=${합 * 4}이므로 ${합 * 4} cm입니다.`,
           ],
           visual: 민그림('전개도', layout),
         };

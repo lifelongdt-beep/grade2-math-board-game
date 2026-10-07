@@ -44,7 +44,18 @@ const 곱한과정 = (operands: Operands, 결론까지 = true): string[] => {
   const rawD = left.d * right.d;
   const rawText = rawD === 1 ? String(rawN) : `${rawN}/${rawD}`;
   if (rawText !== text(answer)) {
-    lines.push(`${eul(rawText)} 약분하고 대분수로 고치면 ${text(answer)}입니다.`);
+    // 16/5처럼 약분할 수 없는데 "약분하고"라고 하면, 아이는 나눌 수를
+    // 찾다가 멈춥니다. 실제로 한 일만 말합니다.
+    const 최대공약수 = (a: number, b: number): number => (b === 0 ? a : 최대공약수(b, a % b));
+    const g = 최대공약수(rawN, rawD);
+    const 약분후분모 = rawD / g;
+    const 한일 =
+      g > 1 && 약분후분모 > 1 && rawN / g > 약분후분모
+        ? '약분하고 대분수로 고치면'
+        : g > 1
+          ? '약분하면'
+          : '대분수로 고치면';
+    lines.push(`${eul(rawText)} ${한일} ${text(answer)}입니다.`);
   } else if (결론까지) {
     lines.push(`그러므로 답은 ${text(answer)}입니다.`);
   }
@@ -78,7 +89,11 @@ const 계산문항 = (kind: Kind, index: number): G5Family => ({
       // 방법입니다. 큰 수를 곱해 놓고 나중에 약분하면 계산도 어렵고
       // 약분을 빠뜨리기도 쉽습니다.
       hint: operands.leftParts || operands.rightParts
-        ? '대분수가 있으면 먼저 가분수로 고쳐 적으세요. 고치기 전에 곱하면 자연수 부분이 빠집니다.'
+        // "고치기 전에 곱하면 자연수 부분이 빠진다"고 적었는데, 대분수를
+        // 자연수 부분과 분수 부분으로 나누어 둘 다 곱하는 것도 교과서가
+        // 보이는 바른 방법입니다(2와 2/7 × 3 = 2×3 + 2/7×3). 빠뜨리는
+        // 것이 잘못이지 나누는 것이 잘못은 아닙니다.
+        ? '대분수가 있으면 먼저 가분수로 고쳐 적으세요. 자연수 부분과 분수 부분으로 나누어 곱할 때는 두 부분 모두에 곱해야 합니다.'
         : '곱하기 전에 약분할 수 있는지 먼저 살펴보세요. 미리 약분하면 수가 작아져 계산이 쉬워집니다.',
       steps: 곱한과정(operands),
       visual: modelFor(operands),
@@ -97,7 +112,7 @@ const 방법문항 = (kind: Kind): G5Family => ({
     strategy: `${kindName[kind]}의 계산 방법 알기`,
     hint: '분자에 무엇이 곱해지고 분모는 어떻게 되는지를 나누어 생각해 보세요.',
     steps: [
-      kind.includes('mixed') ? '대분수는 자연수 부분과 분수 부분으로 이루어져 있어, 그대로 곱하면 자연수 부분이 빠집니다.' : '분수는 분모가 한 칸의 크기를, 분자가 칸의 개수를 나타냅니다.',
+      kind.includes('mixed') ? '대분수는 자연수 부분과 분수 부분으로 이루어져 있습니다. 가분수로 고치면 하나의 분수로 곱할 수 있습니다.' : '분수는 분모가 한 칸의 크기를, 분자가 칸의 개수를 나타냅니다.',
       methodText[kind],
     ],
   }),
@@ -475,7 +490,7 @@ export const multiplyHard = (kind: Kind): G5Family[] => [
             : `곱하는 수 ${iJosa(operands.rightText)} 1보다 크므로, 곱은 ${operands.leftText}보다 커집니다.`,
           `실제로 계산해 보면 ${iJosa(text(answer))} 되어 ${결론}`,
         ],
-        misconceptionTip: '자연수끼리 곱하면 늘 커지지만, 1보다 작은 수를 곱하면 오히려 작아집니다.',
+        misconceptionTip: '곱한다고 늘 커지는 것은 아닙니다. 1보다 큰 수를 곱하면 커지고, 1을 곱하면 그대로이고, 1보다 작은 수를 곱하면 오히려 작아집니다.',
       };
     },
   },

@@ -789,7 +789,8 @@ const 대칭개수세기 = (선대칭인가: boolean): G5Family => ({
             (one, index) =>
               `${['가', '나', '다', '라'][index]}(${one.shape}): ${선대칭인가 ? (one.axisCount !== 0 ? '선대칭도형' : '선대칭도형이 아님') : one.pointSymmetric ? '점대칭도형' : '점대칭도형이 아님'}`,
           )
-          .join(', '),
+          .join(', ')
+          .concat('입니다.'),
         `그러므로 ${개수}개입니다.`,
       ],
       visual: figureChoices('여러 도형', 넷.map((one) => one.shape), ['가', '나', '다', '라']),
@@ -1210,7 +1211,7 @@ export const 선대칭Middle: G5Family[] = [
         strategy: '대칭축의 개수 비교하기',
         hint: '도형마다 대칭축을 몇 개 그을 수 있는지 하나씩 세어 적어 보세요.',
         steps: [
-          섞은.map((one, index) => `${이름표[index]}(${one}) ${개수[index]}개`).join(', '),
+          `${섞은.map((one, index) => `${이름표[index]}(${one}) ${개수[index]}개`).join(', ')}입니다.`,
           `그중 가장 많은 것은 ${이름표[자리]}(${섞은[자리]})입니다.`,
         ],
         visual: figureChoices('여러 도형', 섞은, 이름표),

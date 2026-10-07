@@ -60,7 +60,21 @@ export const unit6Lesson1 = (difficulty: '하' | '중' | '상'): G5Family[] => {
         { shape: '정육각형', name: '정육각형', 설명: '변의 길이가 모두 같고 각의 크기도 모두 같은 육각형' },
       ];
       const 답 = pick(고를것, seed);
-      const wrongs = 고를것.filter((one) => one.name !== 답.name).map((one) => one.name);
+      // 사각형의 이름은 서로 포함합니다. 그 뜻을 갖춘 다른 이름은 틀린
+      // 보기가 될 수 없습니다 — "마주 보는 두 쌍의 변이 서로 평행한
+      // 사각형"에는 마름모와 직사각형도 맞습니다.
+      const 함께맞는이름: Record<string, string[]> = {
+        평행사변형: ['마름모', '직사각형'],
+        사다리꼴: ['평행사변형', '마름모', '직사각형'],
+      };
+      const wrongs = [
+        ...고를것
+          .filter((one) => one.name !== 답.name && !(함께맞는이름[답.name] ?? []).includes(one.name))
+          .map((one) => one.name),
+        // 사각형이 아닌 도형은 어느 뜻에도 맞지 않아 보기를 채우기에 알맞습니다.
+        '정삼각형',
+        '정오각형',
+      ];
       return {
         prompt: `${답.설명}${particleOf(답.설명, '을')} 무엇이라고 할까요?`,
         answer: 답.name,
