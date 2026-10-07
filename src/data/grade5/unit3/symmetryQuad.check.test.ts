@@ -224,3 +224,33 @@ describe('합동인 두 삼각형은 적어 둔 각도 그대로 그려진다', 
     expect(어긋남.slice(0, 8)).toEqual([]);
   });
 });
+
+// ── 대칭도형의 반쪽 ──────────────────────────────────────────────────
+// 그림과 자세히 보기는 '끝 점에서 첫 점으로 돌아오는 변'을 반쪽을 자른
+// 변으로 보고 점선으로 그립니다. 점의 차례가 어긋나면 진짜 바깥 변이
+// 점선이 되고, 아이는 둘레에 넣을 변을 거꾸로 배웁니다. 실제로 그랬습니다.
+import { 선대칭반쪽들, 점대칭반쪽들 } from './figures';
+
+describe('대칭도형의 반쪽은 자른 변이 제자리에 있다', () => {
+  it('선대칭 반쪽은 첫 점과 끝 점이 대칭축(x = 0) 위에 있고 나머지는 축 한쪽에 있습니다', () => {
+    for (const 반쪽 of 선대칭반쪽들) {
+      expect(Math.abs(반쪽[0][0])).toBeLessThan(1e-9);
+      expect(Math.abs(반쪽[반쪽.length - 1][0])).toBeLessThan(1e-9);
+      for (const [x] of 반쪽.slice(1, -1)) expect(x).toBeGreaterThan(0);
+    }
+  });
+
+  it('점대칭 반쪽은 첫 점과 끝 점의 한가운데가 대칭의 중심(원점)이고 나머지는 한쪽에 있습니다', () => {
+    for (const 반쪽 of 점대칭반쪽들) {
+      const [a, b] = [반쪽[0], 반쪽[반쪽.length - 1]];
+      expect(Math.abs((a[0] + b[0]) / 2)).toBeLessThan(1e-9);
+      expect(Math.abs((a[1] + b[1]) / 2)).toBeLessThan(1e-9);
+      // 자른 변의 한쪽(외적의 부호가 같은 쪽)에 나머지 점이 모두 있어야
+      // 반 바퀴 돌린 반쪽과 겹치지 않고 도형이 완성됩니다.
+      const 쪽 = (p: [number, number]) => Math.sign((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]));
+      const 쪽들 = new Set(반쪽.slice(1, -1).map(쪽));
+      expect(쪽들.size).toBe(1);
+      expect(쪽들.has(0)).toBe(false);
+    }
+  });
+});

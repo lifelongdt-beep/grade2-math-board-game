@@ -853,7 +853,22 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
 
         return (
           <g key={index}>
-            <polygon points={points} fill={fill} stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" />
+            {item.half ? (
+              // 대칭도형의 반쪽입니다. 끝 점에서 첫 점으로 돌아오는 변이 반쪽을
+              // 자른 자리(대칭축 위의 변, 대칭의 중심을 지나는 변)입니다. 완성하면
+              // 도형 안으로 들어가 둘레가 되지 않으므로 점선으로 그립니다.
+              <g>
+                <polygon points={points} fill={fill} stroke="none" />
+                <polyline points={points} fill="none" stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" />
+                <line
+                  x1={drawn[drawn.length - 1][0]} y1={drawn[drawn.length - 1][1]}
+                  x2={drawn[0][0]} y2={drawn[0][1]}
+                  stroke="#7a8fa0" strokeWidth="2.5" strokeDasharray="6 5"
+                />
+              </g>
+            ) : (
+              <polygon points={points} fill={fill} stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" />
+            )}
 
             {/* 대칭축입니다. 도형 밖으로 조금 넘겨 그어야 축으로 보입니다. */}
             {item.axes?.map((axis) => {
@@ -1132,18 +1147,10 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
 
             {item.angleLabels?.map((angle, at) => {
               const [x, y] = drawn[angle.at] ?? [cx, centerY];
-              // 꼭짓점 이름과 각도를 그 꼭짓점에서 멀어지는 비율로만
-              // 떼어 놓으면, 가운데에 가까운 꼭짓점에서 둘이 겹칩니다.
-              // 매우 둔한 각(127°~139°)에서 실제로 "ㄷ"과 "136°"이
-              // 포개졌습니다. 비율이 아니라 정해진 거리만큼 안으로
-              // 들여 놓아, 꼭짓점이 어디 있든 사이가 벌어지게 합니다.
-              // 각의 이등분선 쪽에 적습니다. 그 각이 벌어진 자리가
-              // 바로 거기라, 어느 꼭짓점의 각인지 한눈에 보입니다.
-              //
-              // 예전에는 도형의 가운데 쪽으로 밀어 적었습니다. 납작한
-              // 평행사변형은 꼭짓점이 가운데에서 스무 남짓밖에 떨어져
-              // 있지 않아, 각도가 대칭의 중심 점 위에 올라앉고 어느
-              // 꼭짓점의 각인지도 알 수 없었습니다.
+              // 숫자만 적어 두면 어느 각의 크기인지 그림에서 알 수 없습니다.
+              // "각 ㄷㄹㄱ이 115°"라고 물으면서 115°만 덩그러니 놓여 있었습니다.
+              // 교과서처럼 그 각에 호를 그리고, 숫자는 호 바깥의 이등분선
+              // 위에 적습니다. 직각이면 호 대신 네모를 그립니다.
               const 이웃앞 = drawn[(angle.at + drawn.length - 1) % drawn.length] ?? [cx, centerY];
               const 이웃뒤 = drawn[(angle.at + 1) % drawn.length] ?? [cx, centerY];
               const 단위 = (fx: number, fy: number): [number, number] => {
@@ -1153,37 +1160,59 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
               const [u1x, u1y] = 단위(이웃앞[0] - x, 이웃앞[1] - y);
               const [u2x, u2y] = 단위(이웃뒤[0] - x, 이웃뒤[1] - y);
               const [bx, by] = 단위(u1x + u2x, u1y + u2y);
-              // 두 변이 거의 일직선이면 이등분선을 잡을 수 없습니다.
-              // 그때만 가운데 쪽으로 물러섭니다.
-              const [안쪽x, 안쪽y] =
-                Math.hypot(bx, by) < 0.001
-                  ? 꼭짓점에서옮기기(x, y, -Math.min(20, Math.hypot(x - cx, y - centerY) * 0.45))
-                  : (() => {
-                      // 얼마나 들어갈지는 도형의 크기에 맞춥니다. 스물넷을
-                      // 그대로 들이면 납작한 평행사변형에서는 꼭짓점을 지나
-                      // 가운데까지 가 버려, 대칭의 중심 점에 닿고 어느
-                      // 꼭짓점의 각인지도 흐려집니다. 붙어 있는 두 변 가운데
-                      // 짧은 쪽을 기준으로 삼으면 어떤 모양에서도 꼭짓점
-                      // 곁에 머뭅니다.
-                      const 짧은변 = Math.min(
-                        Math.hypot(이웃앞[0] - x, 이웃앞[1] - y),
-                        Math.hypot(이웃뒤[0] - x, 이웃뒤[1] - y),
-                      );
-                      const 들일거리 = Math.min(24, Math.max(11, 짧은변 * 0.28));
-                      return [x + bx * 들일거리, y + by * 들일거리] as [number, number];
-                    })();
+              // 붙어 있는 두 변 가운데 짧은 쪽에 맞추어 크기를 정합니다. 정해
+              // 둔 크기를 쓰면 납작한 평행사변형에서는 꼭짓점을 지나 가운데까지
+              // 가 버려 대칭의 중심 점에 닿았습니다.
+              const 짧은변 = Math.min(
+                Math.hypot(이웃앞[0] - x, 이웃앞[1] - y),
+                Math.hypot(이웃뒤[0] - x, 이웃뒤[1] - y),
+              );
+              // 둔각이면 이등분선이 도형의 한가운데를 향합니다. 꼭짓점이 가운데에
+              // 가까우면 글자가 대칭의 중심 점에 올라앉아, 132°가 "①32°"처럼
+              // 읽혔습니다. 글자는 꼭짓점과 가운데 사이의 절반을 넘지 않게 둡니다.
+              const 가운데까지 = Math.hypot(x - cx, y - centerY);
+              // 글자는 가로로 길어서, 이등분선이 옆을 향할수록 더 멀리 둡니다.
+              const 글자거리 = Math.min(Math.min(15, Math.max(9, 짧은변 * 0.2)) + 8 + 10 * Math.abs(bx), 가운데까지 * 0.5);
+              const r = Math.max(6, Math.min(15, Math.max(9, 짧은변 * 0.2), 글자거리 - 9));
+              const 직각 = Math.abs(u1x * u2x + u1y * u2y) < 0.03;
+              const 일직선 = Math.hypot(bx, by) < 0.001;
+              const [안쪽x, 안쪽y] = 일직선
+                ? 꼭짓점에서옮기기(x, y, -Math.min(20, Math.hypot(x - cx, y - centerY) * 0.45))
+                : [x + bx * 글자거리, y + by * 글자거리];
+              const 시작 = [x + u1x * r, y + u1y * r];
+              const 끝 = [x + u2x * r, y + u2y * r];
+              // 화면 좌표는 아래로 갈수록 y가 커지므로, 외적이 양수이면 시계 방향입니다.
+              const 시계 = u1x * u2y - u1y * u2x > 0 ? 1 : 0;
+              const 네모 = r * 0.8;
               return (
-                <text
-                  key={`a-${at}`}
-                  x={안쪽x}
-                  y={안쪽y + 4}
-                  textAnchor="middle"
-                  fill="#a8410a"
-                  fontSize="13"
-                  fontWeight="800"
-                >
-                  {angle.text}
-                </text>
+                <g key={`a-${at}`}>
+                  {!일직선 && (직각 ? (
+                    <path
+                      d={`M ${(x + u1x * 네모).toFixed(1)} ${(y + u1y * 네모).toFixed(1)} L ${(x + (u1x + u2x) * 네모).toFixed(1)} ${(y + (u1y + u2y) * 네모).toFixed(1)} L ${(x + u2x * 네모).toFixed(1)} ${(y + u2y * 네모).toFixed(1)}`}
+                      fill="none"
+                      stroke="#a8410a"
+                      strokeWidth="2"
+                    />
+                  ) : (
+                    <path
+                      d={`M ${x.toFixed(1)} ${y.toFixed(1)} L ${시작[0].toFixed(1)} ${시작[1].toFixed(1)} A ${r.toFixed(1)} ${r.toFixed(1)} 0 0 ${시계} ${끝[0].toFixed(1)} ${끝[1].toFixed(1)} Z`}
+                      fill="rgba(240, 162, 2, 0.28)"
+                      stroke="#a8410a"
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                    />
+                  ))}
+                  <text
+                    x={안쪽x}
+                    y={안쪽y + 4}
+                    textAnchor="middle"
+                    fill="#a8410a"
+                    fontSize="13"
+                    fontWeight="800"
+                  >
+                    {angle.text}
+                  </text>
+                </g>
               );
             })}
 
@@ -2286,7 +2315,37 @@ function PictographGraphic({ visual }: { visual: Extract<QuestionVisual, { kind:
   );
 }
 
+// 1 cm²인 정사각형을 붙여 놓은 모눈입니다(5-1 넓이). 칸이 많아도 셀 수
+// 있게 칸의 크기를 판에 맞추고, 왼쪽 위 한 칸에 '1 cm²'를 적어 단위를
+// 보여 줍니다. 판의 높이는 줄 수에 따라 늘어납니다.
+function UnitCellGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'array' }> }) {
+  const cell = Math.max(10, Math.min(26, 300 / visual.columns, 210 / visual.rows));
+  const w = visual.columns * cell;
+  const h = visual.rows * cell;
+  const startX = 188 - w / 2;
+  const startY = 34;
+  const height = startY + h + 18;
+  return (
+    <svg viewBox={`0 0 376 ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width="368" height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {/* 자세히 보기에서 한 줄씩 셀 때는 센 줄까지만 칠합니다. */}
+      <rect x={startX} y={startY} width={w} height={h} fill="#ffffff" stroke="#41607a" strokeWidth="2.5" />
+      <rect x={startX} y={startY} width={w} height={(visual.shownRows ?? visual.rows) * cell} fill="#dff3fb" />
+      {Array.from({ length: visual.columns - 1 }).map((_, i) => (
+        <line key={`c${i}`} x1={startX + (i + 1) * cell} y1={startY} x2={startX + (i + 1) * cell} y2={startY + h} stroke="#8fb3c8" strokeWidth="1" />
+      ))}
+      {Array.from({ length: visual.rows - 1 }).map((_, i) => (
+        <line key={`r${i}`} x1={startX} y1={startY + (i + 1) * cell} x2={startX + w} y2={startY + (i + 1) * cell} stroke="#8fb3c8" strokeWidth="1" />
+      ))}
+      <rect x={startX} y={startY} width={w} height={h} fill="none" stroke="#41607a" strokeWidth="2.5" />
+      <rect x={startX} y={startY} width={cell} height={cell} fill="#ffd23f" stroke="#41607a" strokeWidth="1.5" />
+      <text x={startX} y={startY - 8} fill="#a8410a" fontSize="14" fontWeight="900">1 cm²</text>
+    </svg>
+  );
+}
+
 function ArrayGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'array' }> }) {
+  if (visual.cells) return <UnitCellGraphic visual={visual} />;
   const plotWidth = 316;
   const plotHeight = 100;
   const baseGap = visual.rows >= 7 || visual.columns >= 7 ? 3 : 10;

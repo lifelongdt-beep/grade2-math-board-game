@@ -519,6 +519,9 @@ export const unit6Lesson3 = (difficulty: '하' | '중' | '상'): G5Family[] => {
         ],
         misconceptionTip: '칸의 개수를 세는 것이지 둘레의 길이를 세는 것이 아닙니다.',
         selfCheck: '세어 본 칸 수와 곱해서 구한 값이 같나요?',
+        // 그림이 없으면 '칸씩 줄로'를 머릿속으로만 그려야 합니다. 넓이를
+        // 단위넓이의 개수로 세는 차시라, 셀 수 있는 칸을 보여 줍니다.
+        visual: { kind: 'array', rows: b, columns: a, cells: true, label: `1 cm²인 정사각형 ${a}칸씩 ${b}줄` },
       };
     },
   };
