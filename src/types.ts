@@ -48,7 +48,8 @@ export type ConceptTag =
   // 그대로 씁니다. 어림셈은 5학년의 '어림하기'(rounding, 올림·버림·
   // 반올림)와 다릅니다 — 3학년은 가까운 몇백으로 어림해 계산 결과를
   // 짐작합니다. 두 학년을 한 이름으로 묶으면 선생님 분석에서 섞입니다.
-  | 'estimate';
+  | 'estimate'
+  | 'division';
 
 // 차시가 '무엇을 물어도 되는가'를 적어 둔 선언입니다.
 //
@@ -632,7 +633,8 @@ export interface LineFigureVisual {
   items: Array<{
     // 가, 나, 다 … 그림 밑에 붙이는 이름입니다.
     name?: string;
-    shape: 'segment' | 'line' | 'ray' | 'angle' | 'curve' | 'polyline';
+    // dots: 선을 긋지 않고 점만 찍습니다('두 점을 이어 그을 수 있는 선분은 몇 개' 같은 문항).
+    shape: 'segment' | 'line' | 'ray' | 'angle' | 'curve' | 'polyline' | 'dots';
     points: Array<[number, number]>;
     // 점의 이름입니다. points 차례대로 붙습니다. 빈 글자면 점만 찍습니다.
     labels?: string[];

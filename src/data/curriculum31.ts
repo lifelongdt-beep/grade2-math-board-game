@@ -24,6 +24,10 @@ import type { ConceptTag, Lesson, LessonScope, Semester, Unit } from '../types';
 //     (지도서 605+403 → 600+400, 812-589 → 800-600). '반올림'이라는
 //     말은 5학년에서 배우므로 쓰지 않습니다. 가운데에 걸리는 수(250
 //     같은)는 어느 쪽으로 어림할지 정해지지 않으므로 내지 않습니다.
+//   · 2단원 "직사각형과 정사각형의 포함 관계는 다루지 않도록 한다."
+//     직사각형을 고르는 문항에 정사각형을 넣지 않습니다.
+//   · 2단원 지도서 2~3차시 '선분, 직선, 반직선은 무엇일까요'는 한
+//     차시로 둡니다.
 //   · 1단원 차시마다 받아올림·받아내림의 횟수가 정해져 있습니다.
 //     2차시 받아올림 없음, 3차시 한 번, 4차시 여러 번,
 //     6차시 받아내림 없음, 7차시 한 번, 8차시 두 번.
@@ -44,6 +48,9 @@ type LessonSeed = {
 const scopeFor = (unitTitle: string, lessonNo: number): LessonScope => {
   // 2학년 전용 그림이 섞이지 않게 막아 둡니다.
   const forbidVisuals = ['ruler', 'unit-measure', 'clock', 'calendar', 'year-calendar', 'cube-stack', 'cube-pattern'];
+  if (unitTitle === '평면도형') {
+    return { maxNumber: 100, representation: 'semi', forbidVisuals };
+  }
   if (unitTitle === '덧셈과 뺄셈') {
     return { maxNumber: 2000, representation: lessonNo <= 1 ? 'semi' : 'symbolic', forbidVisuals };
   }
@@ -69,6 +76,10 @@ const unit = (unitNo: number, title: string, lessons: LessonSeed[]): Unit => {
 };
 
 const 덧뺄성취 = '[4수01-03] 세 자리 수의 덧셈과 뺄셈의 계산 원리를 이해하고 그 계산을 할 수 있다.';
+const 선성취 = '[4수03-01] 직선, 선분, 반직선을 이해하고 구별할 수 있다.';
+const 각성취 = '[4수03-02] 각과 직각을 이해하고, 직각과 비교하는 활동을 통하여 예각과 둔각을 구별할 수 있다.';
+const 삼각형성취 = '[4수03-09] 여러 가지 모양의 삼각형에 대한 분류 활동을 통하여 직각삼각형, 예각삼각형, 둔각삼각형을 이해한다.';
+const 사각형성취 = '[4수03-10] 여러 가지 모양의 사각형에 대한 분류 활동을 통하여 직사각형, 정사각형, 사다리꼴, 평행사변형, 마름모를 이해하고, 그 성질을 탐구하고 설명할 수 있다.';
 const 어림성취 = '[4수01-08] 자연수의 덧셈, 뺄셈, 곱셈, 나눗셈과 관련한 여러 가지 상황에서 어림셈을 할 수 있다.';
 
 export const curriculum31: Unit[] = [
@@ -145,6 +156,65 @@ export const curriculum31: Unit[] = [
       tags: ['estimate'],
       textbookFocus: '두 수를 각각 가까운 몇백으로 어림하여 어림셈을 하기 위한 뺄셈식으로 나타낸다.',
       workbookFocus: '어림셈으로 구한 값을 이용하여 주장이 옳은지 판단한다.',
+    },
+  ]),
+  // ── 2단원 평면도형 (지도서 11차시 중 1~8차시) ────────────────────
+  unit(2, '평면도형', [
+    {
+      title: '단원 도입',
+      objective: '이전에 배운 내용을 확인하고 이 단원에서 배울 내용을 확인한다.',
+      achievement: 선성취,
+      tags: ['shape'],
+      textbookFocus: '놀이판에서 곧은 선과 굽은 선, 여러 가지 평면도형을 찾아본다.',
+      workbookFocus: '삼각형, 사각형, 원의 변과 꼭짓점을 떠올린다.',
+    },
+    {
+      title: '선분, 직선, 반직선은 무엇일까요',
+      objective: '선분, 직선, 반직선을 이해하고 구별할 수 있다.',
+      achievement: 선성취,
+      tags: ['shape'],
+      textbookFocus: '곧은 선과 굽은 선을 분류하고 선분, 직선, 반직선을 약속한다.',
+      workbookFocus: '선분 ㄱㄴ, 직선 ㄱㄴ, 반직선 ㄱㄴ을 구별하고 반직선 ㄱㄴ과 반직선 ㄴㄱ의 다른 점을 말한다.',
+    },
+    {
+      title: '각은 무엇일까요',
+      objective: '각을 이해하고 각의 구성 요소를 알 수 있다.',
+      achievement: 각성취,
+      tags: ['shape'],
+      textbookFocus: '한 점에서 그은 두 반직선으로 이루어진 도형을 각이라고 약속한다.',
+      workbookFocus: '각의 꼭짓점과 변을 알고 각 ㄱㄴㄷ처럼 꼭짓점을 가운데에 두고 읽는다.',
+    },
+    {
+      title: '직각은 무엇일까요',
+      objective: '직각을 이해하고 직각을 찾거나 그릴 수 있다.',
+      achievement: 각성취,
+      tags: ['shape'],
+      textbookFocus: '종이를 반듯하게 두 번 접어 직각을 만들고 삼각자의 직각과 비교한다.',
+      workbookFocus: '삼각자를 이용하여 직각을 찾고 그린다.',
+    },
+    {
+      title: '직각삼각형은 무엇일까요',
+      objective: '직각삼각형을 이해하고 여러 가지 직각삼각형을 만들고 그릴 수 있다.',
+      achievement: 삼각형성취,
+      tags: ['shape'],
+      textbookFocus: '여러 가지 삼각형을 분류하여 한 각이 직각인 삼각형을 직각삼각형이라고 약속한다.',
+      workbookFocus: '여러 가지 삼각형 중에서 직각삼각형을 찾는다.',
+    },
+    {
+      title: '직사각형은 무엇일까요',
+      objective: '직사각형을 이해하고 여러 가지 직사각형을 만들고 그릴 수 있다.',
+      achievement: 사각형성취,
+      tags: ['shape'],
+      textbookFocus: '여러 가지 사각형을 분류하여 네 각이 모두 직각인 사각형을 직사각형이라고 약속한다.',
+      workbookFocus: '여러 가지 사각형 중에서 직사각형을 찾는다.',
+    },
+    {
+      title: '정사각형은 무엇일까요',
+      objective: '정사각형을 이해하고 여러 가지 정사각형을 만들고 그릴 수 있다.',
+      achievement: 사각형성취,
+      tags: ['shape'],
+      textbookFocus: '사각형을 각의 크기와 변의 길이에 따라 분류하여 정사각형을 약속한다.',
+      workbookFocus: '직사각형 모양의 종이를 접고 잘라 정사각형을 만든다.',
     },
   ]),
 ];

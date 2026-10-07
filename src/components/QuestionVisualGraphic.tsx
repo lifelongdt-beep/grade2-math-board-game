@@ -710,20 +710,29 @@ export const FIGURE_POINTS: Record<string, Array<[number, number]>> = {
 function LineFigureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'line-figure' }> }) {
   const count = Math.max(1, visual.items.length);
   const width = 376;
-  const cellWidth = width / count;
+  // 그림 칸은 가로가 세로의 두 배쯤인 자리에 그려집니다(styles.css의
+  // .question-visual-figure). 두 줄로 놓으면 전체가 줄어들어 오히려
+  // 작아지므로 한 줄로 놓고, 칸을 가득 쓰게 반지름을 잡습니다.
+  const cols = count;
+  const rows = 1;
+  const cellWidth = width / cols;
   const named = visual.items.some((one) => one.name);
-  const height = count === 1 ? 190 : named ? 176 : 156;
-  const centerY = named ? (height - 22) / 2 + 4 : height / 2;
-  const radius = Math.min(cellWidth / 2 - 18, count === 1 ? 92 : 58, centerY - 22);
+  const rowHeight = count === 1 ? 190 : 176;
+  const height = rowHeight * rows;
+  const radius = Math.min(cellWidth / 2 - 6, count === 1 ? 92 : 70, (named ? rowHeight - 22 : rowHeight) / 2 - 18);
   const stroke = '#24364a';
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
       <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
       {visual.items.map((item, index) => {
-        const cx = cellWidth * index + cellWidth / 2;
-        const left = cellWidth * index + 10;
-        const right = cellWidth * (index + 1) - 10;
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const cx = cellWidth * col + cellWidth / 2;
+        const top = rowHeight * row;
+        const centerY = top + (named ? (rowHeight - 22) / 2 + 4 : rowHeight / 2);
+        const left = cellWidth * col + 10;
+        const right = cellWidth * (col + 1) - 10;
         const place = ([x, y]: [number, number]): [number, number] => [cx + x * radius, centerY + y * radius];
         const drawn = item.points.map(place);
         // 늘여 그을 때 칸 밖으로 나가지 않게 가둡니다.
@@ -736,11 +745,11 @@ function LineFigureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind:
           const uy = dy / 길이;
           if (ux > 0) t = Math.min(t, (right - through[0]) / ux);
           if (ux < 0) t = Math.min(t, (left - through[0]) / ux);
-          if (uy > 0) t = Math.min(t, (centerY + radius + 14 - through[1]) / uy);
-          if (uy < 0) t = Math.min(t, (14 - through[1]) / uy);
+          if (uy > 0) t = Math.min(t, (top + rowHeight - (named ? 26 : 10) - through[1]) / uy);
+          if (uy < 0) t = Math.min(t, (top + 12 - through[1]) / uy);
           return [through[0] + ux * Math.max(0, t), through[1] + uy * Math.max(0, t)];
         };
-        const 늘일거리 = Math.max(26, radius * 0.5);
+        const 늘일거리 = Math.max(22, radius * 0.45);
         const 선 = (a: [number, number], b: [number, number], key: string) => (
           <line key={key} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={stroke} strokeWidth="3" strokeLinecap="round" />
         );
@@ -834,12 +843,16 @@ function LineFigureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind:
               const text = item.labels?.[at];
               if (text === undefined && item.shape === 'curve') return null;
               if (item.shape === 'polyline' && text === undefined) return null;
-              const [tx, ty] = 이름자리(at);
+              // 이름 없는 각은 점을 찍지 않습니다. 변 위의 점이 무엇인지
+              // 묻지 않는 그림에서 점은 눈을 어지럽힙니다.
+              if (item.shape === 'angle' && !item.labels) return null;
+              // 점만 찍는 그림은 이름을 점 바로 위에 적습니다.
+              const [tx, ty] = item.shape === 'dots' ? [x, y - 11] : 이름자리(at);
               return (
                 <g key={`p-${at}`}>
                   <circle cx={x} cy={y} r="4.5" fill="#0f7175" />
                   {text && (
-                    <text x={Math.min(right, Math.max(left, tx))} y={Math.min(height - 6, Math.max(16, ty))} textAnchor="middle" fill="#0f3d52" fontSize="16" fontWeight="900">
+                    <text x={Math.min(right, Math.max(left, tx))} y={Math.min(top + rowHeight - 6, Math.max(top + 16, ty))} textAnchor="middle" fill="#0f3d52" fontSize="16" fontWeight="900">
                       {text}
                     </text>
                   )}
@@ -847,7 +860,7 @@ function LineFigureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind:
               );
             })}
             {item.name && (
-              <text x={cx} y={height - 12} textAnchor="middle" fill="#24364a" fontSize="17" fontWeight="900">
+              <text x={cx} y={top + rowHeight - 12} textAnchor="middle" fill="#24364a" fontSize="17" fontWeight="900">
                 {item.name}
               </text>
             )}
