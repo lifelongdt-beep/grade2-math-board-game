@@ -115,6 +115,7 @@ const tagLabel: Record<ConceptTag, string> = {
   fractionAdd: '분수의 덧셈과 뺄셈',
   area: '다각형의 둘레와 넓이',
   estimate: '덧셈과 뺄셈의 어림셈',
+  division: '나눗셈',
 };
 
 const tagAdvice: Record<ConceptTag, string> = {
@@ -146,6 +147,7 @@ const tagAdvice: Record<ConceptTag, string> = {
   fractionAdd: '분모가 다르면 더하거나 뺄 수 없습니다. 통분해서 분모를 같게 만든 뒤 분자끼리 계산합니다.',
   area: '둘레는 변의 길이를 모두 더한 것, 넓이는 1 cm²가 몇 개인지입니다.',
   estimate: '두 수를 각각 가까운 몇백으로 어림한 다음 계산합니다.',
+  division: '똑같이 나누면 하나에 얼마인지, 몇씩 묶으면 몇 묶음인지 생각합니다.',
 };
 
 const coreConceptGuide: Record<ConceptTag, string> = {
@@ -175,6 +177,7 @@ const coreConceptGuide: Record<ConceptTag, string> = {
   fractionAdd: '분모가 다른 분수의 덧셈과 뺄셈은 통분하여 분모를 같게 만든 뒤 분자끼리 더하거나 뺍니다.',
   area: '넓이는 1 cm²인 정사각형이 몇 개인지를 나타낸 것이고, 넓이 공식은 그 개수를 빨리 세는 방법입니다.',
   estimate: '어림셈은 정확히 계산하지 않고 가까운 몇백으로 바꾸어 계산 결과를 짐작하는 것입니다.',
+  division: '나눗셈은 똑같이 나누는 것입니다. 곱셈과 나눗셈은 서로 거꾸로인 관계입니다.',
 };
 
 const studentConceptGuide: Record<ConceptTag, string> = {
@@ -207,6 +210,7 @@ const studentConceptGuide: Record<ConceptTag, string> = {
   fractionAdd: '먼저 통분하고 나서 분자끼리 계산하세요.',
   area: '무엇을 구하라고 했는지 — 둘레인지 넓이인지 보세요.',
   estimate: '두 수가 각각 어느 몇백에 더 가까운지 보세요.',
+  division: '전체가 얼마이고 몇으로 나누는지, 또는 몇씩 묶는지 찾으세요.',
 };
 
 // 문항에서 수를 읽어 내지 못했을 때 쓰는 말입니다.
@@ -241,6 +245,7 @@ const studentHintGuide: Record<ConceptTag, string> = {
   fractionAdd: '통분한 두 분수를 먼저 적고, 그다음에 분자끼리 더하거나 빼세요.',
   area: '밑변과 높이가 어디인지 그림에 표시해 보세요. 높이는 밑변과 수직인 선분입니다.',
   estimate: '수의 십의 자리 숫자를 보고 위의 몇백과 아래의 몇백 중 어느 쪽에 더 가까운지 정하세요.',
+  division: '나누는 수의 단 곱셈구구에서 나누어지는 수가 나오는 곳을 찾아보세요.',
 };
 
 const readStrategyGuide: Record<ConceptTag, string> = {
@@ -270,6 +275,7 @@ const readStrategyGuide: Record<ConceptTag, string> = {
   fractionAdd: '두 분수의 분모가 같은지 다른지 먼저 봅니다.',
   area: '구하는 것이 둘레인지 넓이인지, 도형이 무엇인지 먼저 확인합니다.',
   estimate: '정확한 값을 구하라는지, 어림셈으로 얼마쯤인지 구하라는지 먼저 봅니다.',
+  division: '전체의 수, 나누는 수, 구하는 것을 차례로 표시합니다.',
 };
 
 const misconceptionGuide: Record<ConceptTag, string> = {
@@ -299,6 +305,7 @@ const misconceptionGuide: Record<ConceptTag, string> = {
   fractionAdd: '분모끼리 더하면 안 됩니다. 통분해서 분모를 같게 만든 뒤 분자끼리만 계산합니다.',
   area: '넓이를 구할 때 쓰는 높이는 비스듬한 변의 길이가 아니라 밑변과 수직인 길이입니다.',
   estimate: '백의 자리 숫자만 남기고 버리면 안 됩니다. 389는 300보다 400에 더 가깝습니다.',
+  division: '나누어지는 수와 나누는 수의 자리를 바꾸면 다른 식이 됩니다.',
 };
 
 const selfCheckGuide: Record<ConceptTag, string> = {
@@ -328,6 +335,7 @@ const selfCheckGuide: Record<ConceptTag, string> = {
   fractionAdd: '계산 결과를 기약분수로 나타냈나요? 가분수라면 대분수로 고쳤나요?',
   area: '단위를 cm²나 m²로 알맞게 썼는지 확인했나요?',
   estimate: '어림한 값과 실제로 계산한 값이 비슷한지 견주어 보았나요?',
+  division: '몫과 나누는 수를 곱하면 나누어지는 수가 되나요?',
 };
 
 const primaryTag = (lesson: Lesson): ConceptTag => {

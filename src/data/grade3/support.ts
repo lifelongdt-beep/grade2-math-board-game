@@ -19,30 +19,40 @@ export const g3StudentConcept: Partial<Record<ConceptTag, string>> = {
   addition: '같은 자리끼리 더하고, 10이 되면 바로 윗자리로 받아올리세요.',
   subtraction: '같은 자리끼리 빼고, 뺄 수 없으면 바로 윗자리에서 받아내리세요.',
   estimate: '두 수가 각각 어느 몇백에 더 가까운지 보세요.',
+  shape: '도형의 이름은 곧은 선의 수, 직각의 수, 변의 길이로 정해집니다.',
+  division: '전체가 얼마이고, 몇으로 똑같이 나누는지 또는 몇씩 묶는지 먼저 찾으세요.',
 };
 
 export const g3CoreConcept: Partial<Record<ConceptTag, string>> = {
   addition: '세 자리 수의 덧셈은 일의 자리, 십의 자리, 백의 자리끼리 더합니다. 같은 자리의 합이 10이거나 10보다 크면 바로 윗자리로 1을 받아올립니다.',
   subtraction: '세 자리 수의 뺄셈은 일의 자리, 십의 자리, 백의 자리끼리 뺍니다. 같은 자리끼리 뺄 수 없으면 바로 윗자리에서 1을 받아내려 10을 더한 다음 뺍니다.',
   estimate: '어림셈은 정확히 계산하지 않고 두 수를 가까운 몇백으로 바꾸어 계산 결과가 얼마쯤인지 짐작하는 것입니다.',
+  shape: '선분, 직선, 반직선, 각, 직각을 알면 직각삼각형, 직사각형, 정사각형을 뜻으로 구별할 수 있습니다.',
+  division: '나눗셈은 전체를 똑같이 나누는 것입니다. 나눗셈의 몫은 곱셈구구로 구할 수 있습니다. ■÷▲=●이면 ▲×●=■입니다.',
 };
 
 export const g3ReadStrategy: Partial<Record<ConceptTag, string>> = {
   addition: '두 수를 자리에 맞추어 쓰고, 일의 자리부터 차례로 더합니다.',
   subtraction: '빼지는 수와 빼는 수를 자리에 맞추어 쓰고, 일의 자리부터 차례로 뺍니다.',
   estimate: '정확한 값을 구하라는 것인지, 얼마쯤인지 어림하라는 것인지 먼저 봅니다.',
+  shape: '그림에서 끝이 있는지, 직각이 몇 개인지, 변의 길이가 같은지 하나씩 봅니다.',
+  division: '전체의 수, 나누는 수, 구하는 것을 차례로 표시합니다.',
 };
 
 export const g3Misconception: Partial<Record<ConceptTag, string>> = {
   addition: '받아올린 1을 윗자리에 더하는 것을 잊지 마세요. 받아올린 1은 그 자리에서 10이나 100을 나타냅니다.',
   subtraction: '자리마다 큰 수에서 작은 수를 빼면 안 됩니다. 위의 수가 작으면 받아내리고, 받아내린 자리에서는 1을 빼야 합니다.',
   estimate: '백의 자리 숫자만 남기고 나머지를 버리면 안 됩니다. 389는 300보다 400에 더 가깝습니다.',
+  shape: '도형이 기울어져 놓여 있어도 이름은 바뀌지 않습니다. 놓인 모양이 아니라 조건으로 판단하세요.',
+  division: '나누어지는 수와 나누는 수의 자리를 바꾸면 다른 식이 됩니다.',
 };
 
 export const g3SelfCheck: Partial<Record<ConceptTag, string>> = {
   addition: '계산한 값을 어림한 값과 견주어 보았나요? 둘이 크게 다르면 받아올림을 다시 확인하세요.',
   subtraction: '구한 차에 빼는 수를 더하면 빼지는 수가 되나요?',
   estimate: '어림한 값과 실제로 계산한 값이 비슷한지 견주어 보았나요?',
+  shape: '고른 도형이 뜻의 조건을 모두 갖추었는지 하나씩 확인했나요?',
+  division: '몫과 나누는 수를 곱하면 나누어지는 수가 되나요?',
 };
 
 // 선생님 기록에 남는 이름입니다.
@@ -50,4 +60,6 @@ export const g3TagLabel: Partial<Record<ConceptTag, string>> = {
   addition: '세 자리 수의 덧셈',
   subtraction: '세 자리 수의 뺄셈',
   estimate: '덧셈과 뺄셈의 어림셈',
+  shape: '평면도형',
+  division: '나눗셈',
 };
