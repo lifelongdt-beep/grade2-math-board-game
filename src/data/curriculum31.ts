@@ -28,6 +28,8 @@ import type { ConceptTag, Lesson, LessonScope, Semester, Unit } from '../types';
 //     직사각형을 고르는 문항에 정사각형을 넣지 않습니다.
 //   · 2단원 지도서 2~3차시 '선분, 직선, 반직선은 무엇일까요'는 한
 //     차시로 둡니다.
+//   · 3단원 나눗셈은 곱셈구구 안에서 나누어떨어지는 것만 다룹니다(나머지는
+//     3-2). 0을 나누거나 0으로 나누는 것은 다루지 않습니다.
 //   · 1단원 차시마다 받아올림·받아내림의 횟수가 정해져 있습니다.
 //     2차시 받아올림 없음, 3차시 한 번, 4차시 여러 번,
 //     6차시 받아내림 없음, 7차시 한 번, 8차시 두 번.
@@ -48,6 +50,9 @@ type LessonSeed = {
 const scopeFor = (unitTitle: string, lessonNo: number): LessonScope => {
   // 2학년 전용 그림이 섞이지 않게 막아 둡니다.
   const forbidVisuals = ['ruler', 'unit-measure', 'clock', 'calendar', 'year-calendar', 'cube-stack', 'cube-pattern'];
+  if (unitTitle === '나눗셈') {
+    return { maxNumber: 81, representation: lessonNo <= 3 ? 'semi' : 'symbolic', forbidVisuals };
+  }
   if (unitTitle === '평면도형') {
     return { maxNumber: 100, representation: 'semi', forbidVisuals };
   }
@@ -80,6 +85,8 @@ const 선성취 = '[4수03-01] 직선, 선분, 반직선을 이해하고 구별�
 const 각성취 = '[4수03-02] 각과 직각을 이해하고, 직각과 비교하는 활동을 통하여 예각과 둔각을 구별할 수 있다.';
 const 삼각형성취 = '[4수03-09] 여러 가지 모양의 삼각형에 대한 분류 활동을 통하여 직각삼각형, 예각삼각형, 둔각삼각형을 이해한다.';
 const 사각형성취 = '[4수03-10] 여러 가지 모양의 사각형에 대한 분류 활동을 통하여 직사각형, 정사각형, 사다리꼴, 평행사변형, 마름모를 이해하고, 그 성질을 탐구하고 설명할 수 있다.';
+const 나눗셈성취 = '[4수01-05] 나눗셈이 이루어지는 실생활 상황과 연결하여 나눗셈의 의미를 알고, 곱셈과 나눗셈의 관계를 이해한다.';
+const 나눗셈몫성취 = '[4수01-06] 나누는 수가 한 자리 수인 나눗셈의 계산 원리를 이해하고 그 계산을 할 수 있으며, 나눗셈에서 몫과 나머지의 의미를 안다.';
 const 어림성취 = '[4수01-08] 자연수의 덧셈, 뺄셈, 곱셈, 나눗셈과 관련한 여러 가지 상황에서 어림셈을 할 수 있다.';
 
 export const curriculum31: Unit[] = [
@@ -215,6 +222,49 @@ export const curriculum31: Unit[] = [
       tags: ['shape'],
       textbookFocus: '사각형을 각의 크기와 변의 길이에 따라 분류하여 정사각형을 약속한다.',
       workbookFocus: '직사각형 모양의 종이를 접고 잘라 정사각형을 만든다.',
+    },
+  ]),
+  // ── 3단원 나눗셈 (지도서 8차시 중 1~5차시) ──────────────────────
+  unit(3, '나눗셈', [
+    {
+      title: '단원 도입',
+      objective: '이전에 배운 내용을 확인하고 이 단원에서 배울 내용을 확인한다.',
+      achievement: 나눗셈성취,
+      tags: ['division'],
+      textbookFocus: '생활에서 똑같이 나누는 상황을 살펴본다.',
+      workbookFocus: '곱셈구구를 떠올리고 물건을 똑같이 나누어 본다.',
+    },
+    {
+      title: '어떻게 똑같이 나눌까요 ⑴',
+      objective: '똑같이 나누는 활동을 통해 나눗셈을 이해하고 나눗셈식으로 나타낼 수 있다.',
+      achievement: 나눗셈성취,
+      tags: ['division'],
+      textbookFocus: '색종이 8장을 2명이 똑같이 나누어 가지는 상황에서 8÷2=4를 알아본다.',
+      workbookFocus: '나눗셈식을 읽고 나누어지는 수, 나누는 수, 몫을 구별한다.',
+    },
+    {
+      title: '어떻게 똑같이 나눌까요 ⑵',
+      objective: '몇씩 묶어 덜어 내는 활동을 통해 나눗셈을 이해하고 나눗셈식으로 나타낼 수 있다.',
+      achievement: 나눗셈성취,
+      tags: ['division'],
+      textbookFocus: '떡 12개를 한 접시에 3개씩 담는 상황을 뺄셈식과 나눗셈식으로 나타낸다.',
+      workbookFocus: '전체를 몇씩 묶으면 몇 묶음이 되는지 나눗셈으로 구한다.',
+    },
+    {
+      title: '곱셈과 나눗셈은 어떤 관계일까요',
+      objective: '곱셈과 나눗셈의 관계를 이해할 수 있다.',
+      achievement: 나눗셈성취,
+      tags: ['division'],
+      textbookFocus: '한 가지 상황을 곱셈식과 나눗셈식으로 나타낸다.',
+      workbookFocus: '곱셈식 하나를 나눗셈식 두 개로, 나눗셈식을 곱셈식으로 나타낸다.',
+    },
+    {
+      title: '나눗셈의 몫을 곱셈으로 어떻게 구할까요',
+      objective: '나눗셈의 몫을 곱셈식과 곱셈구구로 구할 수 있다.',
+      achievement: 나눗셈몫성취,
+      tags: ['division'],
+      textbookFocus: '학생 10명을 2모둠으로 똑같이 나누는 상황에서 몫을 곱셈식으로 구한다.',
+      workbookFocus: '나누는 수의 단 곱셈구구를 이용하여 나눗셈의 몫을 구한다.',
     },
   ]),
 ];
