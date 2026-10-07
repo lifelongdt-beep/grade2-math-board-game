@@ -68,7 +68,8 @@ export const questionBank: Template[] = [
       high: { calc: 'head * 100 + 60' },
       middle: { calc: 'head * 100 + 50' },
     },
-    prompt: '{low}보다 크고 {high}보다 작은 수 중 십의 자리 숫자가 5인 수는?',
+    // 650~659가 모두 맞으므로 '보기에서' 고르게 합니다.
+    prompt: '{low}보다 크고 {high}보다 작은 수 중 십의 자리 숫자가 5인 수를 보기에서 고르면 어느 것일까요?',
     answer: '{middle}',
     wrongs: ['{low}', '{high}', '{middle + 10}'],
     solution: '{low:와} {high} 사이에서 십의 자리가 5인 수는 {middle}입니다.',
@@ -98,7 +99,8 @@ export const questionBank: Template[] = [
     ],
     answer: '{total}',
     wrongs: ['{span}', '{times}', '{total + span}'],
-    solution: '{span}씩 {times}묶음이므로 약 {total}cm입니다.',
+    // '몇씩 몇 묶음'은 곱셈 단원에서 배웁니다. 길이 재기에서는 더해서 말합니다.
+    solution: '{span:을} {times}번 더하면 약 {total}cm입니다.',
   },
   {
     id: 'guess-first-two-claims',
@@ -175,7 +177,7 @@ export const questionBank: Template[] = [
     ],
     answer: '{guess}',
     wrongs: ['{known}', '{times}', '{guess + known}'],
-    solution: '{known}씩 {times}묶음이므로 약 {guess}cm입니다.',
+    solution: '{known:을} {times}번 더하면 약 {guess}cm입니다.',
   },
   {
     id: 'times-name-triple',
@@ -298,9 +300,10 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '더 긴 것을 고르는 말 알기',
     vars: { k: { from: 2, to: 5 } },
-    prompt: '두 물건을 견주었더니 하나가 더 많이 나왔습니다. 이 물건을 무엇이라고 말할까요?',
+    prompt: '두 물건의 한쪽 끝을 맞추어 견주었더니 한 물건의 다른 쪽 끝이 더 많이 나왔습니다. 이 물건을 무엇이라고 말할까요?',
     answer: '더 깁니다',
-    wrongs: ['더 짧습니다', '더 무겁습니다', '{k}배입니다'],
+    // '몇 배'는 곱셈 단원에서 배웁니다.
+    wrongs: ['더 짧습니다', '더 무겁습니다', '더 넓습니다'],
     solution: '한쪽 끝을 맞추었을 때 더 많이 나온 것이 더 깁니다.',
   },
   {
@@ -646,7 +649,8 @@ export const questionBank: Template[] = [
     },
     prompt: '{n}cm를 바르게 읽은 것은 어느 것일까요?',
     answer: '{n} 센티미터',
-    wrongs: ['{n} 미터', '{n} 번', '센티미터 {n}'],
+    // 미터는 2학기에 배웁니다.
+    wrongs: ['{n} 칸', '{n} 번', '센티미터 {n}'],
     solution: '{n}cm는 {n} 센티미터라고 읽습니다.',
   },
   {
@@ -751,7 +755,7 @@ export const questionBank: Template[] = [
     },
     prompt: '자로 재지 않고 길이를 짐작해 말할 때 어떻게 말할까요?',
     answer: '약 {n}cm',
-    wrongs: ['꼭 {n}cm', '{n}번', '{n}m'],
+    wrongs: ['꼭 {n}cm', '{n}번', '{n}칸'],
     solution: '어림한 길이는 앞에 약을 붙여 말합니다.',
   },
   {
@@ -768,7 +772,7 @@ export const questionBank: Template[] = [
     prompt: '지우개가 {known}cm입니다. 지우개를 {times}번 이어 놓은 만큼인 색연필은 약 몇 cm일까요?',
     answer: '약 {guess}cm',
     wrongs: ['약 {known}cm', '약 {times}cm', '약 {guess + known}cm'],
-    solution: '{known}씩 {times}묶음이므로 약 {guess}cm입니다.',
+    solution: '{known:을} {times}번 더하면 약 {guess}cm입니다.',
   },
   // ── 2-1 분류하기 ────────────────────────────────────────────────
   {
@@ -1039,7 +1043,8 @@ export const questionBank: Template[] = [
     },
     prompt: '{b:을} 몇십과 몇으로 가르면 어떻게 될까요?',
     answer: '{bigPart}과 {bOnes}',
-    wrongs: ['{bOnes}과 {bigPart}', '{b}과 0', '{bTens}과 {bOnes}'],
+    // '2와 40'은 같은 가르기를 거꾸로 적은 것이라 틀린 보기로 둘 수 없습니다.
+    wrongs: ['{bigPart - 10}과 {bOnes + 10}', '{b}과 0', '{bTens}과 {bOnes}'],
     solution: '{b:은} {bigPart}과 {bOnes}으로 가를 수 있습니다.',
   },
   {
@@ -1194,9 +1199,12 @@ export const questionBank: Template[] = [
     demand: 'connect',
     tag: 'subtraction',
     strategy: '조건 함께 보기 · 나누어 주고 남은 수를 구하는 상황',
+    // 5차시는 (두 자리 수)-(한 자리 수) 받아내림입니다. 예전에는 두 자리 수를 뺐습니다.
     vars: {
-      have: { from: 45, to: 89 },
-      give: { from: 12, to: 34 },
+      haveT: { from: 2, to: 8 },
+      haveO: { from: 0, to: 4 },
+      have: { calc: 'haveT * 10 + haveO' },
+      give: { from: 5, to: 9 },
       left: { calc: 'have - give' },
     },
     words: { item: ['사탕', '색종이', '구슬'] },
@@ -1284,6 +1292,7 @@ export const questionBank: Template[] = [
     wrongs: [
       '십의 자리에서 받아내림을 하고 백의 자리에 10을 더해 주어야 해. 정답은 24야.',
       '일의 자리 1에서 7을 빼면 6이 되는 계산은 맞았으나, 십의 자리에서 5에서 2를 빼서 2라고 적어야 하는데 실수했어. 정답은 26이야.',
+      '일의 자리는 바르게 계산했고, 십의 자리 5-2를 3이 아니라 2로 적어야 했어. 정답은 26이야.',
     ],
     solution:
       "일의 자리 1에서 7을 뺄 수 없으므로 십의 자리 5에서 10을 받아내려 '11 - 7 = 4'를 계산하고, 십의 자리는 '4 - 2 = 2'가 되어 24가 올바른 정답입니다.",
@@ -1632,6 +1641,7 @@ export const questionBank: Template[] = [
     wrongs: [
       "전체 합계를 구하는 복잡한 수치 연산에는 '그래프'가 편하고, 시각적 비교에는 '표'가 편해.",
       '둘 다 쓰임새와 강점이 완전히 똑같아서 구별할 필요가 없어.',
+      "전체 합계 인원도, 가장 인기 있는 장소도 '표'로만 알 수 있어.",
     ],
     solution: '표는 전체 합계와 세부 수치를 정확히 보여주는 장점이 있고, 그래프는 항목 간의 수량 차이를 눈으로 단번에 대조하기에 매우 강력한 도구입니다.',
   },
@@ -1647,7 +1657,8 @@ export const questionBank: Template[] = [
     },
     prompt: '표와 그래프에 대한 설명입니다.',
     claims: [
-      { text: '표는 항목별 수를 한눈에 알기 좋습니다.', ok: true },
+      // '한눈에'는 그래프의 좋은 점으로 가르칩니다. 표는 정확한 수입니다.
+      { text: '표는 항목별 수를 정확히 알기 좋습니다.', ok: true },
       { text: '그래프는 가장 많은 것을 한눈에 알기 좋습니다.', ok: true },
       { text: '표에서는 합계를 알 수 없습니다.', ok: false },
       { text: '그래프에서는 항목의 이름을 알 수 없습니다.', ok: false },
@@ -1710,7 +1721,7 @@ export const questionBank: Template[] = [
     prompt: '{start}에서 10씩 뛰어 세면 다음에 오는 수는 얼마일까요?',
     answer: '{next}',
     wrongs: ['{start + 1}', '{start + 100}', '{start - 10}'],
-    solution: '10씩 뛰어 세면 십의 자리 숫자가 1 커지므로 {next}입니다.',
+    solution: '10씩 뛰어 세면 10만큼 더 큰 수가 되므로 {start}+10={next}입니다.',
   },
   {
     id: 'number-jump-back',
@@ -1987,7 +1998,7 @@ export const questionBank: Template[] = [
     prompt: '{start}에서 10씩 뛰어 세면 다음에 오는 수는 얼마일까요?',
     answer: '{next}',
     wrongs: ['{start + 1000}', '{start + 100}', '{start + 1}'],
-    solution: '10씩 뛰어 세면 십의 자리 숫자가 1 커지므로 {next}입니다.',
+    solution: '10씩 뛰어 세면 10만큼 더 큰 수가 되므로 {start}+10={next}입니다.',
   },
   {
     id: 'number-jump-what-step',
@@ -2099,9 +2110,13 @@ export const questionBank: Template[] = [
     demand: 'connect',
     tag: 'subtraction',
     strategy: '조건 함께 보기 · 더 많은 수를 구하는 상황',
+    // 6차시는 (몇십)-(몇십몇)입니다.
     vars: {
-      many: { from: 52, to: 95 },
-      few: { from: 18, to: 44 },
+      manyT: { from: 5, to: 9 },
+      many: { calc: 'manyT * 10' },
+      fewT: { from: 1, to: 4 },
+      fewO: { from: 1, to: 9 },
+      few: { calc: 'fewT * 10 + fewO' },
       gap: { calc: 'many - few' },
     },
     visual: {
@@ -2212,20 +2227,21 @@ export const questionBank: Template[] = [
     units: ['곱셈구구'],
     demand: 'connect',
     tag: 'multiplication',
-    strategy: '조건 함께 보기 · 곱한 뒤 덜어 내는 상황',
+    strategy: '조건 함께 보기 · 남은 묶음 수로 곱하는 상황',
+    // 곱셈과 덧셈·뺄셈을 섞은 혼합 계산은 하지 않습니다(2-2 곱셈구구 지도서).
     vars: {
       per: { dan: true },
       groups: { from: 3, to: 8 },
-      eaten: { from: 2, to: 6 },
+      rest: { calc: 'groups - 1' },
       made: { calc: 'per * groups' },
-      left: { calc: 'per * groups - eaten' },
+      left: { calc: 'per * rest' },
     },
     words: { item: ['빵', '귤', '초콜릿'] },
     visual: { kind: 'array', rows: 'groups', columns: 'per', label: '접시 {groups}개에 놓인 {item}' },
-    prompt: '접시 한 개에 {item:이} {per}개씩 놓여 있습니다. 접시가 {groups}개 있는데 그중 {eaten}개를 먹었다면 남은 {item:은} 몇 개일까요?',
+    prompt: '접시 한 개에 {item:이} {per}개씩 놓여 있습니다. 접시가 {groups}개 있는데 그중 한 접시를 다 먹었다면 남은 {item:은} 몇 개일까요?',
     answer: '{left}개',
-    wrongs: ['{made}개', '{made + eaten}개', '{eaten}개'],
-    solution: '{per}×{groups}={made}개에서 {eaten}개를 빼면 {left}개입니다.',
+    wrongs: ['{made}개', '{made - 1}개', '{per + rest}개'],
+    solution: '남은 접시는 {rest}개이므로 {per}×{rest}={left}개입니다.',
   },
 
   // ── 길이 재기 ──────────────────────────────────────────────────
@@ -2661,7 +2677,8 @@ export const questionBank: Template[] = [
     strategy: '자료 해석 · 10을 가져온 뒤 일의 자리를 구하는 과정 판단하기',
     vars: {
       aTens: { from: 5, to: 8 },
-      aOnes: { from: 1, to: 4 },
+      // 6차시는 (몇십)-(몇십몇)이라 일의 자리가 0인 수에서 뺍니다.
+      aOnes: { from: 0, to: 0 },
       bTens: { from: 1, to: 3 },
       bOnes: { from: 6, to: 9 },
       a: { calc: 'aTens * 10 + aOnes' },
@@ -2710,24 +2727,24 @@ export const questionBank: Template[] = [
     units: ['곱셈구구'],
     demand: 'reason',
     tag: 'multiplication',
-    strategy: '자료 해석 · 곱한 뒤 더하는 과정 판단하기',
+    strategy: '자료 해석 · 곱셈구구로 구하는 과정 판단하기',
+    // 곱한 뒤 낱개를 더하는 혼합 계산은 하지 않습니다(2-2 곱셈구구 지도서).
     vars: {
       per: { dan: true },
       groups: { from: 3, to: 8 },
-      extra: { from: 2, to: 5 },
       made: { calc: 'per * groups' },
-      total: { calc: 'per * groups + extra' },
+      total: { calc: 'per * groups' },
     },
     words: { item: ['사탕', '구슬', '단추'] },
     visual: { kind: 'array', rows: 'groups', columns: 'per', label: '상자에 든 {item}' },
-    prompt: '{item:이} {per}개씩 든 상자가 {groups}개 있고 낱개가 {extra}개 더 있습니다. 모두 몇 개인지 구하는 과정입니다. □에 알맞은 수는 얼마일까요?',
+    prompt: '{item:이} {per}개씩 든 상자가 {groups}개 있습니다. 모두 몇 개인지 곱셈구구로 구하는 과정입니다. □에 알맞은 수는 얼마일까요?',
     steps: [
-      '상자에 든 것은 {per}×{groups}={made}개입니다.',
-      '낱개까지 세면 {made}+{extra}=□',
+      '{per}개씩 {groups}묶음이므로 {per}단 곱셈구구를 씁니다.',
+      '{per}×{groups}=□',
     ],
     answer: '{total}',
-    wrongs: ['{made}', '{per + groups + extra}', '{total + extra}'],
-    solution: '상자에 든 {made}개에 낱개 {extra}개를 더하면 {total}개입니다.',
+    wrongs: ['{per + groups}', '{total + per}', '{total - per}'],
+    solution: '{per}개씩 {groups}묶음은 {per}×{groups}={total}개입니다.',
   },
   {
     id: 'length-sum-step',
@@ -3169,7 +3186,8 @@ export const questionBank: Template[] = [
       { text: '{a}씩 {b}묶음이라는 뜻입니다.', ok: true },
       { text: '{a}×{b}={total}입니다.', ok: true },
       { text: '{a}×{b}는 {a}+{b}와 같은 {plain}입니다.', ok: false },
-      { text: '{a}×{b}는 {a}묶음이 {b}개씩 있다는 뜻이 아닙니다.', ok: false },
+      // '…뜻이 아닙니다'를 틀린 문장으로 두었는데, 그 말은 맞는 말이었습니다.
+      { text: '{a}×{b}는 {a}묶음이 {b}개씩 있다는 뜻입니다.', ok: false },
     ],
   },
   {
@@ -4017,7 +4035,8 @@ export const questionBank: Template[] = [
     vars: { k: { from: 3, to: 6 } },
     prompt: '똑같은 삼각형 조각 2개를 변끼리 붙이면 만들 수 있는 모양은 어느 것일까요?',
     answer: '더 큰 삼각형',
-    wrongs: ['원', '변이 {k}개인 도형', '꼭짓점이 없는 도형'],
+    // '변이 3개인 도형'도 삼각형이라 정답이 둘이 되던 보기를 뺐습니다.
+    wrongs: ['원', '굽은 선이 있는 도형', '꼭짓점이 없는 도형'],
     solution: '같은 삼각형 둘을 긴 변끼리 붙이면 더 큰 삼각형이 됩니다.',
   },
   {
@@ -4102,10 +4121,12 @@ export const questionBank: Template[] = [
       big: { from: 1, to: 1 },
       small: { from: 2, to: 4 },
     },
-    prompt: '큰 삼각형 조각 1개로 채운 자리를 작은 삼각형 조각으로만 채우려고 합니다. 작은 조각은 몇 개가 필요할까요?',
+    // 칠교판의 큰 삼각형은 작은 삼각형 4개 크기입니다. 중간 삼각형이
+    // 작은 삼각형 2개 크기라 그것으로 묻습니다.
+    prompt: '칠교판의 중간 삼각형 조각 1개로 채운 자리를 작은 삼각형 조각으로만 채우려고 합니다. 작은 조각은 몇 개가 필요할까요?',
     answer: '2개',
     wrongs: ['1개', '{small + 2}개', '7개'],
-    solution: '큰 삼각형 하나는 같은 작은 삼각형 두 개로 채울 수 있습니다.',
+    solution: '칠교판의 중간 삼각형 하나는 작은 삼각형 두 개로 빈틈없이 채울 수 있습니다.',
   },
   {
     id: 'tangram-pieces',
@@ -4174,9 +4195,9 @@ export const questionBank: Template[] = [
     strategy: '쌓은 모양을 설명할 때 쓰는 말 알기',
     vars: { k: { from: 2, to: 5 } },
     prompt: '쌓은 모양을 설명할 때 쓰는 말로 알맞은 것은 어느 것일까요?',
-    answer: '앞, 옆, 위',
+    answer: '오른쪽, 앞, 위, 2층',
     wrongs: ['빨강, 파랑', '크다, 작다', '{k}번째'],
-    solution: '어느 쪽에서 본 모양인지와 몇 층인지로 설명합니다.',
+    solution: '쌓기나무의 자리는 "빨간 쌓기나무의 오른쪽", "위", "2층"처럼 위치와 층으로 설명합니다.',
   },
   {
     id: 'stack-shape-layer',
@@ -4462,9 +4483,9 @@ export const questionBank: Template[] = [
     prompt: '쌓기나무 {total}개로 두 사람이 각각 모양을 만들었습니다.',
     claims: [
       { text: '쌓기나무 수가 같아도 모양이 다를 수 있습니다.', ok: true },
-      { text: '어느 쪽에서 보는지에 따라 보이는 모양이 다릅니다.', ok: true },
+      { text: '쌓기나무를 놓는 자리가 다르면 모양이 달라집니다.', ok: true },
       { text: '수가 같으면 모양도 반드시 같습니다.', ok: false },
-      { text: '앞에서 본 모양만 보면 모두 알 수 있습니다.', ok: false },
+      { text: '쌓기나무 수만 말해 주면 친구가 똑같은 모양으로 쌓을 수 있습니다.', ok: false },
     ],
   },
   {
@@ -5103,7 +5124,8 @@ export const questionBank: Template[] = [
     vars: { k: { from: 3, to: 6 } },
     prompt: '똑같은 삼각형 조각 2개를 변끼리 붙이면 만들 수 있는 모양은 어느 것일까요?',
     answer: '더 큰 삼각형',
-    wrongs: ['원', '변이 {k}개인 도형', '꼭짓점이 없는 도형'],
+    // '변이 3개인 도형'도 삼각형이라 정답이 둘이 되던 보기를 뺐습니다.
+    wrongs: ['원', '굽은 선이 있는 도형', '꼭짓점이 없는 도형'],
     solution: '같은 삼각형 둘을 긴 변끼리 붙이면 더 큰 삼각형이 됩니다.',
   },
   {
@@ -5188,10 +5210,12 @@ export const questionBank: Template[] = [
       big: { from: 1, to: 1 },
       small: { from: 2, to: 4 },
     },
-    prompt: '큰 삼각형 조각 1개로 채운 자리를 작은 삼각형 조각으로만 채우려고 합니다. 작은 조각은 몇 개가 필요할까요?',
+    // 칠교판의 큰 삼각형은 작은 삼각형 4개 크기입니다. 중간 삼각형이
+    // 작은 삼각형 2개 크기라 그것으로 묻습니다.
+    prompt: '칠교판의 중간 삼각형 조각 1개로 채운 자리를 작은 삼각형 조각으로만 채우려고 합니다. 작은 조각은 몇 개가 필요할까요?',
     answer: '2개',
     wrongs: ['1개', '{small + 2}개', '7개'],
-    solution: '큰 삼각형 하나는 같은 작은 삼각형 두 개로 채울 수 있습니다.',
+    solution: '칠교판의 중간 삼각형 하나는 작은 삼각형 두 개로 빈틈없이 채울 수 있습니다.',
   },
   {
     id: 'tangram-pieces',
@@ -5260,9 +5284,9 @@ export const questionBank: Template[] = [
     strategy: '쌓은 모양을 설명할 때 쓰는 말 알기',
     vars: { k: { from: 2, to: 5 } },
     prompt: '쌓은 모양을 설명할 때 쓰는 말로 알맞은 것은 어느 것일까요?',
-    answer: '앞, 옆, 위',
+    answer: '오른쪽, 앞, 위, 2층',
     wrongs: ['빨강, 파랑', '크다, 작다', '{k}번째'],
-    solution: '어느 쪽에서 본 모양인지와 몇 층인지로 설명합니다.',
+    solution: '쌓기나무의 자리는 "빨간 쌓기나무의 오른쪽", "위", "2층"처럼 위치와 층으로 설명합니다.',
   },
   {
     id: 'stack-shape-layer',
@@ -5548,9 +5572,9 @@ export const questionBank: Template[] = [
     prompt: '쌓기나무 {total}개로 두 사람이 각각 모양을 만들었습니다.',
     claims: [
       { text: '쌓기나무 수가 같아도 모양이 다를 수 있습니다.', ok: true },
-      { text: '어느 쪽에서 보는지에 따라 보이는 모양이 다릅니다.', ok: true },
+      { text: '쌓기나무를 놓는 자리가 다르면 모양이 달라집니다.', ok: true },
       { text: '수가 같으면 모양도 반드시 같습니다.', ok: false },
-      { text: '앞에서 본 모양만 보면 모두 알 수 있습니다.', ok: false },
+      { text: '쌓기나무 수만 말해 주면 친구가 똑같은 모양으로 쌓을 수 있습니다.', ok: false },
     ],
   },
   {
@@ -6057,14 +6081,17 @@ export const questionBank: Template[] = [
     demand: 'recall',
     tag: 'number',
     strategy: '1000이 되는 수 알기',
+    // 2학년 덧셈은 두 자리 수 범위입니다. 942보다 58만큼 더 큰 수처럼 세 자리
+    // 덧셈이 필요한 수를 내지 않고, 10씩 뛰어 세어 1000이 되는 수만 씁니다.
     vars: {
-      start: { from: 900, to: 999 },
+      tens: { from: 90, to: 99 },
+      start: { calc: 'tens * 10' },
       gap: { calc: '1000 - start' },
     },
     prompt: '{start}보다 {gap}만큼 더 큰 수는 얼마일까요?',
     answer: '1000',
     wrongs: ['{start}', '{start - gap}', '{gap}'],
-    solution: '{start}에서 {gap}만큼 더 세면 1000이 됩니다.',
+    solution: '{start}에서 10씩 뛰어 세어 {gap}만큼 더 가면 1000이 됩니다.',
   },
   {
     id: 'thousand-fill',
@@ -6435,7 +6462,9 @@ export const questionBank: Template[] = [
     tag: 'classification',
     strategy: '단추를 나눌 기준 고르기',
     vars: { kinds: { from: 2, to: 4 } },
-    prompt: '단추를 {kinds}가지로 나누려고 합니다. 분류 기준으로 알맞은 것은 무엇일까요?',
+    // 예전에는 '단추를 4가지로'처럼 갈래 수를 아무렇게나 붙였습니다. 기준에 따라
+    // 갈래 수가 정해지므로 적지 않습니다.
+    prompt: '단추를 누가 나누어도 같게 나뉘도록 분류하려고 합니다. 분류 기준으로 알맞은 것은 무엇일까요?',
     answer: '구멍의 수',
     wrongs: ['예쁜 것', '내가 좋아하는 것', '값이 비싼 것'],
     solution: '단추는 구멍의 수가 눈에 보이고 누가 세어도 같습니다.',
@@ -6447,7 +6476,7 @@ export const questionBank: Template[] = [
     tag: 'classification',
     strategy: '블록을 나눌 기준 고르기',
     vars: { kinds: { from: 2, to: 4 } },
-    prompt: '블록을 {kinds}가지로 나누려고 합니다. 분류 기준으로 알맞은 것은 무엇일까요?',
+    prompt: '블록을 누가 나누어도 같게 나뉘도록 분류하려고 합니다. 분류 기준으로 알맞은 것은 무엇일까요?',
     answer: '모양',
     wrongs: ['멋있는 것', '잘 쌓이는 것', '내가 자주 쓰는 것'],
     solution: '블록은 모양이 뚜렷해서 누가 나누어도 같은 자리에 놓입니다.',
@@ -6459,7 +6488,7 @@ export const questionBank: Template[] = [
     tag: 'classification',
     strategy: '색연필을 나눌 기준 고르기',
     vars: { kinds: { from: 2, to: 4 } },
-    prompt: '색연필을 {kinds}가지로 나누려고 합니다. 분류 기준으로 알맞은 것은 무엇일까요?',
+    prompt: '색연필을 누가 나누어도 같게 나뉘도록 분류하려고 합니다. 분류 기준으로 알맞은 것은 무엇일까요?',
     answer: '색깔',
     wrongs: ['예쁜 것', '자주 쓰는 것', '아끼는 것'],
     solution: '색연필은 색깔이 뚜렷해서 누가 나누어도 같습니다.',
@@ -6479,6 +6508,7 @@ export const questionBank: Template[] = [
     wrongs: [
       '민재: 내가 보기에 가장 예쁘고 마음에 드는 학용품끼리 모을래.',
       '서우: 내가 매일 받아쓰기 공부할 때 자주 쓰는 소중한 학용품끼리 모을래.',
+      '하윤: 내가 좋아하는 색깔의 학용품과 좋아하지 않는 색깔의 학용품으로 모을래.',
     ],
     solution:
       "'예쁘다', '자주 쓴다'와 같은 기준은 사람마다 생각이 다르므로 분류 결과가 달라질 수 있습니다. 하지만 '곧은 선의 유무'는 언제나 객관적이고 확실한 성질이므로 올바른 분류 기준입니다.",
@@ -7569,15 +7599,15 @@ export const questionBank: Template[] = [
     demand: 'reason',
     tag: 'pattern',
     strategy: '자료 해석 · 무늬를 잘못 이은 곳을 하나씩 판단하기',
-    vars: {
-      k: { from: 2, to: 6 },
-    },
+    vars: {},
+    // 3가지 색이면 옳은 말이 되므로 수를 고르지 않고 낱말로 둡니다.
+    words: { k: ['두 가지', '네 가지', '다섯 가지'] },
     prompt: '빨강, 파랑, 노랑이 되풀이되는 무늬를 이어 그렸습니다.',
     claims: [
       { text: '노랑 다음에는 빨강을 그립니다.', ok: true },
       { text: '세 색이 한 마디로 되풀이됩니다.', ok: true },
       { text: '노랑 다음에는 노랑을 그립니다.', ok: false },
-      { text: '{k}색이 한 마디로 되풀이됩니다.', ok: false },
+      { text: '{k} 색이 한 마디로 되풀이됩니다.', ok: false },
     ],
   },
   {
@@ -7700,15 +7730,15 @@ export const questionBank: Template[] = [
     demand: 'reason',
     tag: 'pattern',
     strategy: '자료 해석 · 생활 속 되풀이를 하나씩 판단하기',
-    vars: {
-      k: { from: 2, to: 6 },
-    },
+    vars: {},
+    // 3가지 색이면 옳은 말이 되므로 수를 고르지 않고 낱말로 둡니다.
+    words: { k: ['두 가지', '네 가지', '다섯 가지'] },
     prompt: '신호등이 초록, 노랑, 빨강 순서로 계속 바뀝니다.',
     claims: [
       { text: '빨강 다음에는 초록이 옵니다.', ok: true },
       { text: '세 색이 한 마디로 되풀이됩니다.', ok: true },
       { text: '빨강 다음에는 노랑이 옵니다.', ok: false },
-      { text: '{k}색이 한 마디로 되풀이됩니다.', ok: false },
+      { text: '{k} 색이 한 마디로 되풀이됩니다.', ok: false },
     ],
   },
   {
@@ -7872,10 +7902,12 @@ export const questionBank: Template[] = [
       rounds: { from: 3, to: 5 },
       total: { calc: 'step * rounds' },
     },
-    prompt: '버스가 {step}분마다 올 때 {rounds}대가 지나가는 동안 걸리는 시간을 구하는 과정입니다. □에 알맞은 수는 얼마일까요?',
+    // 'n대가 지나가는 동안'이라고 하면 버스 사이는 n-1번이라 답이 둘로 갈립니다.
+    // 첫 버스가 떠난 뒤 n대가 더 떠나는 것으로 물어 사이가 n번이 되게 합니다.
+    prompt: '버스가 {step}분마다 한 대씩 떠납니다. 첫 버스가 떠난 뒤 {rounds}대가 더 떠날 때까지 걸리는 시간을 구하는 과정입니다. □에 알맞은 수는 얼마일까요?',
     steps: [
       '버스와 버스 사이는 {step}분입니다.',
-      '{rounds}번이면 {step}씩 {rounds}묶음이므로 □분입니다.',
+      '{rounds}대가 더 떠나므로 {step}씩 {rounds}묶음이고 □분입니다.',
     ],
     answer: '{total}',
     wrongs: ['{step}', '{rounds}', '{total + step}'],
@@ -8191,10 +8223,10 @@ export const questionBank: Template[] = [
       rounds: { from: 3, to: 6 },
       total: { calc: 'step * rounds' },
     },
-    prompt: '버스가 {step}분마다 옵니다. {rounds}대가 지나가는 동안 몇 분이 걸릴까요?',
+    prompt: '버스가 {step}분마다 한 대씩 떠납니다. 첫 버스가 떠난 뒤 {rounds}대가 더 떠날 때까지 몇 분이 걸릴까요?',
     answer: '{total}분',
     wrongs: ['{step}분', '{rounds}분', '{total + step}분'],
-    solution: '{step}씩 {rounds}번이므로 {total}분입니다.',
+    solution: '버스가 한 대 더 떠날 때마다 {step}분이 지납니다. {step}씩 {rounds}번이므로 {total}분입니다.',
   },
   {
     id: 'life-pattern-claims',
@@ -8368,7 +8400,9 @@ export const questionBank: Template[] = [
     strategy: '자료 해석 · 네 자리 수의 설명을 하나씩 판단하기',
     vars: {
       t: { from: 2, to: 8 },
-      h: { from: 1, to: 8 },
+      // 백의 자리가 천의 자리와 같으면 '천의 자리 숫자는 {h}입니다'(틀린 문장)가
+      // 옳은 문장이 됩니다. 4457에서 그랬습니다.
+      h: { calc: 't - 1' },
       ten: { from: 1, to: 8 },
       one: { from: 1, to: 9 },
       value: { calc: 't * 1000 + h * 100 + ten * 10 + one' },
@@ -8812,7 +8846,8 @@ export const questionBank: Template[] = [
       girls: { from: 11, to: 24 },
       all: { calc: 'boys + girls' },
     },
-    prompt: '모둠에 남학생 {boys}명과 여학생 {girls}명이 있어 모두 {all}명입니다. 여학생 수를 구하는 뺄셈식은 무엇일까요?',
+    // 예전에는 여학생 수를 문제에 적어 놓고 그 수를 구하라고 했습니다.
+    prompt: '모둠 학생은 모두 {all}명이고 그중 남학생이 {boys}명입니다. 여학생 수를 구하는 뺄셈식은 무엇일까요?',
     answer: '{all}-{boys}={girls}',
     wrongs: ['{all}-{girls}={girls}', '{boys}-{girls}={all}', '{all}+{boys}={girls}'],
     solution: '전체에서 남학생을 빼면 여학생이 되므로 {all}-{boys}={girls}입니다.',
@@ -8845,7 +8880,7 @@ export const questionBank: Template[] = [
       now: { calc: 'had + got' },
     },
     words: { item: ['구슬', '딱지', '색종이'] },
-    prompt: '{item:을} 얼마쯤 가지고 있다가 {got}개를 더 받아 {now}개가 되었습니다. 처음에 가지고 있던 {item:은} 몇 개일까요?',
+    prompt: '{item:을} 몇 개 가지고 있다가 {got}개를 더 받았더니 {now}개가 되었습니다. 처음에 가지고 있던 {item:은} 몇 개일까요?',
     answer: '{had}개',
     wrongs: ['{got}개', '{now}개', '{had + 10}개'],
     solution: '□+{got}={now}이므로 {now}-{got}={had}개입니다.',
@@ -9047,18 +9082,20 @@ export const questionBank: Template[] = [
     demand: 'connect',
     tag: 'multiplication',
     strategy: '조건 함께 보기 · {per}씩 담긴 것에서 남은 수를 구하는 상황',
+    // 곱셈과 덧셈·뺄셈을 섞은 혼합 계산은 하지 않습니다(2-2 곱셈구구 지도서).
+    // 한 묶음이 늘거나 줄어든 상황으로 바꾸어 곱셈 하나로 풉니다.
     vars: {
       per: { dan: true },
       groups: { from: 4, to: 8 },
-      eaten: { from: 2, to: 5 },
+      rest: { calc: 'groups - 1' },
       total: { calc: 'per * groups' },
-      left: { calc: 'per * groups - eaten' },
+      left: { calc: 'per * rest' },
     },
     words: { item: ['사탕', '초콜릿', '젤리'] },
-    prompt: '{item:이} {per}개씩 {groups}봉지 있었는데 {eaten}개를 먹었습니다. 남은 {item:은} 몇 개일까요?',
+    prompt: '{item:이} {per}개씩 든 봉지가 {groups}개 있었는데 그중 한 봉지를 다 먹었습니다. 남은 {item:은} 몇 개일까요?',
     answer: '{left}개',
-    wrongs: ['{total}개', '{total + eaten}개', '{per + groups}개'],
-    solution: '{per}×{groups}={total}이고 {eaten}개를 먹었으므로 {left}개가 남습니다.',
+    wrongs: ['{total}개', '{total - 1}개', '{per + rest}개'],
+    solution: '남은 봉지는 {rest}개이므로 {per}×{rest}={left}개입니다.',
   },
   {
     id: 'times-dan-step',
@@ -9119,7 +9156,7 @@ export const questionBank: Template[] = [
       { text: '{dan}×{k}={product}입니다.', ok: true },
       { text: '{dan}씩 한 묶음 더하면 {next}이 됩니다.', ok: true },
       { text: '{dan}×{k}={plain}입니다.', ok: false },
-      { text: '{dan}씩 한 묶음 더해도 {product}그대로입니다.', ok: false },
+      { text: '{dan}씩 한 묶음 더해도 {product} 그대로입니다.', ok: false },
     ],
   },
   {
@@ -9302,9 +9339,10 @@ export const questionBank: Template[] = [
       k: { from: 2, to: 9 },
       product: { calc: 'dan * k' },
     },
-    prompt: '곱셈표에서 {dan}×{k}와 곱이 같은 칸이 하나 더 있습니다. 어떤 곱셈식일까요?',
+    // '곱이 같은 칸이 하나 더 있다'는 틀린 말입니다. 2×9=18은 3×6, 6×3에도 있습니다.
+    prompt: '곱셈표에서 {dan}×{k}의 곱하는 두 수의 차례를 바꾼 칸에는 어떤 곱셈식이 있을까요?',
     answer: '{k}×{dan}={product}',
-    wrongs: ['{dan}×{dan}={dan * dan}', '{k}×{k}={k * k}', '{dan}+{k}={dan + k}'],
+    wrongs: ['{k}×{dan}={product + k}', '{dan}+{k}={dan + k}', '{k}+{dan}={product}'],
     solution: '곱하는 두 수의 차례를 바꾸어도 곱은 같으므로 {k}×{dan}={product}입니다.',
   },
   {
@@ -9821,8 +9859,10 @@ export const questionBank: Template[] = [
     vars: {
       n: { from: 2, to: 8 },
     },
-    words: { thing: ['교실 문의 높이', '칠판의 긴 쪽', '버스의 길이', '운동장의 짧은 쪽'] },
-    prompt: '{thing:은} 약 {n}( )입니다. ( ) 안에 알맞은 단위는 무엇일까요?',
+    // 예전에는 '교실 문의 높이는 약 8( )'처럼 아무 수나 붙여 틀린 사실이 되었습니다
+    // (교실 문은 약 2m입니다). 수를 빼고, 분명히 긴 것만 둡니다.
+    words: { thing: ['버스의 길이', '운동장의 긴 쪽', '학교 복도의 길이', '수영장의 긴 쪽'] },
+    prompt: '{thing:을} 나타내기에 알맞은 단위는 무엇일까요?',
     answer: 'm',
     wrongs: ['cm', '번', '개'],
     solution: '{thing:은} 사람 키보다 훨씬 길어 cm로 나타내기에는 너무 깁니다. m가 알맞습니다.',
@@ -10071,19 +10111,20 @@ export const questionBank: Template[] = [
     demand: 'reason',
     tag: 'measurement',
     strategy: '자료 해석 · 걸음으로 어림하는 과정 판단하기',
+    // 교과서처럼 '1m가 몇 걸음인지'로 어림합니다. 예전에는 43cm씩 3걸음처럼
+    // 곱셈구구 밖의 곱셈을 시켰습니다.
     vars: {
-      each: { from: 40, to: 60 },
-      steps: { from: 3, to: 7 },
-      total: { calc: 'each * steps' },
+      meters: { from: 3, to: 8 },
+      steps: { calc: 'meters * 2' },
     },
     prompt: '걸음으로 길이를 어림하는 과정입니다. □에 알맞은 수는 얼마일까요?',
     steps: [
-      '한 걸음이 약 {each}cm입니다.',
-      '{steps}걸음이면 약 □cm입니다.',
+      '내 걸음으로 2걸음이 약 1m입니다.',
+      '{steps}걸음이면 약 □m입니다.',
     ],
-    answer: '{total}',
-    wrongs: ['{each}', '{steps}', '{total + each}'],
-    solution: '{each}씩 {steps}묶음이므로 약 {total}cm입니다.',
+    answer: '{meters}',
+    wrongs: ['{steps}', '{meters + 1}', '{meters + 2}'],
+    solution: '2걸음이 약 1m이므로 {steps}걸음은 2걸음씩 {meters}번, 약 {meters}m입니다.',
   },
   {
     id: 'guess-hand-span',
@@ -10215,14 +10256,13 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '조건 함께 보기 · 걸음으로 길이를 어림하는 상황',
     vars: {
-      steps: { from: 3, to: 8 },
-      each: { from: 40, to: 60 },
-      total: { calc: 'steps * each' },
+      meters: { from: 3, to: 8 },
+      steps: { calc: 'meters * 2' },
     },
-    prompt: '한 걸음이 약 {each}cm입니다. {steps}걸음을 걸으면 약 몇 cm일까요?',
-    answer: '약 {total}cm',
-    wrongs: ['약 {each}cm', '약 {steps}cm', '약 {total + each}cm'],
-    solution: '{each}씩 {steps}묶음이므로 약 {total}cm입니다.',
+    prompt: '내 걸음으로 2걸음이 약 1m입니다. 복도 끝까지 {steps}걸음을 걸었다면 복도의 길이는 약 몇 m일까요?',
+    answer: '약 {meters}m',
+    wrongs: ['약 {steps}m', '약 {meters + 2}m', '약 {meters}cm'],
+    solution: '2걸음이 약 1m이므로 {steps}걸음은 약 {meters}m입니다.',
   },
   {
     id: 'guess-unit-word',
@@ -10669,12 +10709,13 @@ export const questionBank: Template[] = [
     when: /1단 곱셈구구와 0의 곱/,
     demand: 'recall',
     tag: 'multiplication',
-    strategy: '1을 곱한 것과 0을 곱한 것의 차 알기',
+    // 곱한 뒤 빼는 혼합 계산은 하지 않습니다. 두 곱을 바로 견줍니다.
+    strategy: '1을 곱한 것과 0을 곱한 것의 크기 알기',
     vars: { k: { from: 3, to: 9 } },
-    prompt: '{k}×1에서 {k}×0을 빼면 얼마일까요?',
-    answer: '{k}',
-    wrongs: ['0', '1', '{k + k}'],
-    solution: '{k}×1={k}이고 {k}×0=0이므로 {k}-0={k}입니다.',
+    prompt: '{k}×1과 {k}×0 중 더 큰 것은 어느 것일까요?',
+    answer: '{k}×1',
+    wrongs: ['{k}×0', '두 값이 같습니다', '알 수 없습니다'],
+    solution: '{k}×1={k}이고 {k}×0=0이므로 {k}×1이 더 큽니다.',
   },
 
   // ════════════════════════════════════════════════════════════════════
@@ -10738,6 +10779,7 @@ export const questionBank: Template[] = [
     wrongs: [
       '준기: 동글동글하게 생긴 계란 모양(타원)은 다 원이야.',
       '서우: 한쪽은 평평하고 한쪽은 굽어 있는 반원 모양이 진짜 원이야.',
+      '지우: 크기가 큰 동그라미만 원이고 작은 동그라미는 원이 아니야.',
     ],
     solution:
       '수학에서의 원은 어느 쪽에서 보아도 찌그러지지 않고 똑같이 둥글며, 곧은 선(변)이나 뾰족한 곳(꼭짓점)이 전혀 없는 평평한 평면도형을 뜻합니다.',
@@ -10765,7 +10807,7 @@ export const questionBank: Template[] = [
     prompt:
       "수 모형판에 '17 + 6'을 올려놓았습니다. 일 모형끼리 모아서 더했더니 일 모형이 총 13개가 되었습니다. 일 모형 10개를 십 모형 1개로 바꾸어 정리하면 최종 수 모형의 배치는 어떻게 되나요?",
     answer: '십 모형 2개와 일 모형 3개',
-    wrongs: ['십 모형 1개와 일 모형 13개', '십 모형 3개와 일 모형 0개'],
+    wrongs: ['십 모형 1개와 일 모형 13개', '십 모형 3개와 일 모형 0개', '십 모형 1개와 일 모형 3개'],
     solution:
       '17의 십 모형 1개에, 일 모형 13개 중 10개를 바꾸어 얻은 십 모형 1개를 더하면 십 모형은 2개가 되고 일 모형은 3개가 남습니다. 따라서 23이 됩니다.',
   },
@@ -10807,7 +10849,7 @@ export const questionBank: Template[] = [
       "식탁 접시 5개 위에 귤이 각각 2개씩 담겨 있습니다. 이 그림 상황에 대해 '5개씩 2묶음과 그림 모양이 완전히 같다'고 주장하는 은성이의 생각은 왜 틀렸을까요?",
     answer:
       "접시 5개에 귤이 2개씩 담긴 모양과, 접시 2개에 귤이 5개씩 담긴 모양('5개씩 2묶음')은 전체 개수(10개)는 같지만 그림 모양이 엄연히 다르기 때문이야.",
-    wrongs: ['두 상황의 전체 귤의 개수가 서로 다르기 때문이야.', '귤이 아니라 사과로 묶어 세어야 하기 때문이야.'],
+    wrongs: ['두 상황의 전체 귤의 개수가 서로 다르기 때문이야.', '귤이 아니라 사과로 묶어 세어야 하기 때문이야.', '접시 위의 귤은 묶어 셀 수 없기 때문이야.'],
     solution:
       '2개씩 5묶음(2 × 5)과 5개씩 2묶음(5 × 2)은 수학적으로 총 합은 같지만, 실생활 묶음 상태의 형태적 배치는 완전히 다릅니다. 이를 이해해야 곱셈의 순서 의미를 명확히 깨닫습니다.',
   },
@@ -10892,6 +10934,7 @@ export const questionBank: Template[] = [
     wrongs: [
       "짧은바늘이 5에 가깝게 가 있으므로 '4시 10분 전'으로 고쳐 읽어야 해.",
       "긴바늘이 10을 가리키므로 '5시 50분 전'이라고 해야 해.",
+      "긴바늘이 10을 가리키므로 '4시 10분'이라고 읽어야 해.",
     ],
     solution:
       "실제 시각은 4시 50분입니다. 이는 5시 정각이 되기 10분 전이므로 '5시 10분 전'과 완전히 같습니다. 짧은바늘이 5에 아주 가까워 보여도 아직 5시가 되지 않았음을 인지하는 것이 핵심입니다.",
@@ -10915,11 +10958,11 @@ export const questionBank: Template[] = [
     tag: 'data',
     strategy: '그래프를 그릴 때 기준선을 맞추는 약속 알기',
     vars: {},
-    prompt: '표를 바탕으로 기호를 동그라미(O)로 그려 그래프로 나타내려고 합니다. 그래프를 그릴 때 지켜야 할 가장 중요한 약속은 무엇인가요?',
-    answer: '반드시 맨 아랫줄의 첫 번째 칸부터 시작하여 중간을 건너뛰지 않고 차례대로 채워 올린다.',
-    wrongs: ['내가 좋아하는 칸 아무 데나 골라서 O를 채워 넣는다.', '위에서 아래로 거꾸로 매달리듯이 채워 나간다.'],
+    prompt: '조사한 수만큼 ○를 그려 그래프로 나타내려고 합니다. ○를 그릴 때 지켜야 할 약속은 무엇일까요?',
+    answer: '아래에서부터 한 칸에 하나씩 빈칸 없이 채워 그린다.',
+    wrongs: ['내가 좋아하는 칸 아무 데나 골라서 ○를 채워 넣는다.', '위에서 아래로 거꾸로 매달리듯이 채워 나간다.', '항목마다 ○를 한 칸씩 띄어 가며 그린다.'],
     solution:
-      '그래프를 그릴 때는 맨 밑에 시작 기준선을 맞춘 후 아래서부터 빈칸 없이 차곡차곡 쌓아 올려야 높낮이를 보고 대상을 단번에 비교할 수 있습니다.',
+      '○를 아래에서부터 빈칸 없이 한 칸에 하나씩 그려야 줄의 높이로 많고 적음을 바르게 견줄 수 있습니다.',
   },
   {
     id: 'audit-v5-add-table-diagonal',
@@ -10929,10 +10972,10 @@ export const questionBank: Template[] = [
     strategy: '자료 해석 · 덧셈표 대각선의 규칙 분석하기',
     vars: {},
     prompt:
-      "덧셈표판에서 숫자들을 눈으로 따라가 보았습니다. 대각선 방향인 '오른쪽 아래 대각선(↘)'을 타고 내려가며 만나는 수들(2, 4, 6, 8...) 속에는 어떤 규칙이 들어있나요?",
-    answer: '오른쪽 아래로 내려갈수록 수가 2씩 커지는 규칙이야.',
-    wrongs: ['오른쪽 아래로 내려갈수록 수가 1씩 늘어나는 규칙이야.', '대각선 수들은 모두 홀수로만 계속해서 구성되는 규칙이야.'],
-    solution: '2부터 시작하여 4, 6, 8 순서대로 나열되는 수들은 대각선을 따라 내려갈수록 정확하게 2씩 늘어나는 성질을 가지고 있습니다.',
+      '덧셈표에서 1+1, 2+2, 3+3, 4+4 칸을 따라 오른쪽 아래(↘)로 내려가면 2, 4, 6, 8이 나옵니다. 어떤 규칙이 있을까요?',
+    answer: '오른쪽 아래로 갈수록 2씩 커집니다',
+    wrongs: ['오른쪽 아래로 갈수록 1씩 커집니다', '모두 홀수입니다', '오른쪽 아래로 갈수록 2씩 작아집니다'],
+    solution: '오른쪽 아래로 한 칸 가면 더하는 두 수가 모두 1씩 커지므로 합은 2씩 커집니다. 2, 4, 6, 8은 2씩 커집니다.',
   },
   {
     id: 'audit-v5-times-table-riddle',
@@ -10942,11 +10985,11 @@ export const questionBank: Template[] = [
     strategy: '자료 해석 · 여러 조건을 모두 판단해 만족하는 수 추론하기',
     vars: {},
     prompt:
-      '보조개샘이 제안하는 세 가지 조건 수수께끼를 모두 풀어 만족하는 단 하나의 정답 숫자를 구하세요. 단서 1: 이 수는 5단 곱셈구구에 존재합니다. 단서 2: 이 수의 일의 자리 숫자는 5입니다. 단서 3: 이 수는 3 × 6(18)보다 크고, 6 × 5(30)보다 작은 수입니다.',
+      '세 가지 조건을 모두 만족하는 수를 구하세요. ① 5단 곱셈구구의 곱입니다. ② 일의 자리 숫자가 5입니다. ③ 18보다 크고 30보다 작습니다.',
     answer: '25',
     wrongs: ['15', '35', '45'],
     solution:
-      "5단 중 일의 자리가 5인 수들은 5, 15, 25, 35, 45… 가 있습니다. 이 중 18(3×6)보다 크고 30(6×5)보다 작은 수 조건을 대입해 교집합을 구하면 '25'가 유일합니다.",
+      '5단 곱셈구구의 곱 중에서 일의 자리 숫자가 5인 수는 5, 15, 25, 35, 45입니다. 이 가운데 18보다 크고 30보다 작은 수는 25 하나뿐입니다.',
   },
 
   // ══════════════════════════════════════════════════════════════════
@@ -11101,9 +11144,9 @@ export const questionBank: Template[] = [
   // 한 문항만 두면 이 차시의 여섯 자리가 글자까지 같았습니다. 같은
   // 것(몇 자리 수까지 있어야 하는가)을 다른 자료로 묻는 형제를 둡니다.
   //
-  // 수는 실제 높이로 적되 세 자리까지만 씁니다 — 남산 262m, 관악산
-  // 632m, 북한산 836m입니다. 한라산(1947m)이나 백두산(2744m)을 쓰면
-  // 몇천몇백몇십몇이 되는데, 그것은 이 단원 4차시에서 배웁니다.
+  // 수는 세 자리까지만 씁니다. 몇천몇백몇십몇은 이 단원 4차시에서 배웁니다.
+  // 예전에는 산의 높이(남산 262m)를 썼는데, m는 이 학기 길이 재기(3단원)에서
+  // 배우므로 앞질러 나옵니다. 아이들이 아는 셈으로 바꿉니다.
   {
     id: 'four-intro-need-namsan',
     when: /단원 도입/,
@@ -11112,10 +11155,10 @@ export const questionBank: Template[] = [
     tag: 'number',
     strategy: '몇 자리 수가 필요한지 알기',
     vars: {},
-    prompt: '남산의 높이는 262m이고 관악산의 높이는 632m입니다. 두 높이를 모두 나타내려면 몇 자리 수까지 있어야 할까요?',
+    prompt: '줄넘기를 지호는 262번, 수아는 632번 했습니다. 두 수를 모두 나타내려면 몇 자리 수까지 있어야 할까요?',
     answer: '세 자리 수',
     wrongs: ['한 자리 수', '두 자리 수', '네 자리 수'],
-    solution: '632는 세 자리 수이므로 세 자리 수까지 있어야 두 높이를 모두 나타낼 수 있습니다.',
+    solution: '632는 세 자리 수이므로 세 자리 수까지 있어야 두 수를 모두 나타낼 수 있습니다.',
   },
   {
     id: 'four-intro-need-bukhan',
@@ -11125,7 +11168,7 @@ export const questionBank: Template[] = [
     tag: 'number',
     strategy: '몇 자리 수가 필요한지 알기',
     vars: {},
-    prompt: '북한산의 높이는 836m입니다. 이 높이를 나타내려면 몇 자리 수가 필요할까요?',
+    prompt: '우리 학교 학생은 836명입니다. 이 수를 나타내려면 몇 자리 수가 필요할까요?',
     answer: '세 자리 수',
     wrongs: ['한 자리 수', '두 자리 수', '네 자리 수'],
     solution: '836은 백의 자리까지 있는 수이므로 세 자리 수가 필요합니다.',
@@ -11722,6 +11765,8 @@ export const questionBank: Template[] = [
   {
     id: 'ruler-past-one-metre',
     when: /자로 길이를 재어/,
+    // 1m는 2-2 길이 재기에서 배웁니다. 1학기에도 같은 제목의 차시가 있습니다.
+    semester: '2-2',
     demand: 'recall',
     tag: 'measurement',
     strategy: '1m를 넘는 눈금 읽기',
@@ -12838,13 +12883,13 @@ export const questionBank: Template[] = [
       label: '가고 싶은 곳 조사표',
     },
     prompt: '표를 보고 잘못 말한 것은 어느 것일까요?',
-    answer: '식물원에 가고 싶은 학생은 박물관보다 2배 적습니다',
+    answer: '식물원에 가고 싶은 학생은 박물관보다 적습니다',
     wrongs: [
       '가장 많은 학생이 가고 싶은 곳은 놀이공원입니다',
       '조사한 학생은 모두 26명입니다',
       '과학관에 가고 싶은 학생은 5명입니다',
     ],
-    solution: '식물원 6명은 박물관 3명의 2배이므로 더 많습니다.',
+    solution: '식물원은 6명, 박물관은 3명이므로 식물원이 더 많습니다.',
   },
   {
     id: 'graph-most-least-pair',
@@ -13233,7 +13278,7 @@ export const questionBank: Template[] = [
     answer: '나 가게',
     wrongs: ['가 가게', '다 가게', '세 곳이 모두 같습니다'],
     solution:
-      '천의 자리가 모두 같으므로 백의 자리를 봅니다. 나 가게가 {low}으로 가장 작아 가장 쌉니다.',
+      '천의 자리가 모두 같으므로 백의 자리를 봅니다. 나 가게가 {low}로 가장 작아 가장 쌉니다.',
   },
   {
     id: 'real-compare-shop-last',
@@ -13300,12 +13345,13 @@ export const questionBank: Template[] = [
       wrongSum: { calc: 'how + 2' },
       wrongOne: { calc: 'how * 2 - 2' },
     },
-    words: { thing: ['자전거', '안경', '신발', '젓가락 한 벌', '양말 한 켤레'] },
+    // 예전에는 '자전거가 9개 있습니다. 하나에 짝이 되는 것이 2개씩'처럼 무엇을
+    // 세는지 알 수 없었습니다.
     prompt:
-      '{thing:이} {how}개 있습니다. 하나에 짝이 되는 것이 2개씩 있다면 모두 몇 개일까요?',
+      '자전거가 {how}대 있습니다. 자전거 한 대에 바퀴가 2개씩 있으면 바퀴는 모두 몇 개일까요?',
     answer: '{total}개',
     wrongs: ['{wrongSum}개', '{wrongOne}개', '{how}개'],
-    solution: '하나에 2개씩 {how}묶음이므로 2×{how}={total}개입니다.',
+    solution: '바퀴가 2개씩 {how}묶음이므로 2×{how}={total}개입니다.',
   },
   {
     id: 'real-mul5-drink-left',
@@ -13314,21 +13360,23 @@ export const questionBank: Template[] = [
     demand: 'reason',
     tag: 'multiplication',
     strategy: '조건 함께 보기 · 곱한 뒤 남은 것을 판단하기',
+    // 곱셈과 덧셈·뺄셈을 섞은 혼합 계산은 하지 않습니다(2-2 곱셈구구 지도서).
+    // 한 묶음이 늘거나 줄어든 상황으로 바꾸어 곱셈 하나로 풉니다.
     vars: {
       rows: { from: 3, to: 8 },
-      drunk: { from: 2, to: 9 },
+      rest: { calc: 'rows - 1' },
       bought: { calc: '5 * rows' },
-      left: { calc: '5 * rows - drunk' },
+      left: { calc: '5 * rest' },
       forgot: { calc: '5 * rows' },
     },
     words: { item: ['요구르트', '방울토마토', '초코볼', '사탕'] },
     // 곱한 뒤 빼야 합니다. 곱만 하고 답하는 아이가 많습니다.
     prompt:
-      '{item:이} 한 줄에 5개씩 들어 있습니다. {rows}줄을 사서 {drunk}개를 먹었습니다. 남은 {item:은} 몇 개일까요?',
+      '{item:이} 한 줄에 5개씩 들어 있습니다. {rows}줄을 사서 그중 한 줄을 다 먹었습니다. 남은 {item:은} 몇 개일까요?',
     answer: '{left}개',
-    wrongs: ['{forgot}개', '{drunk}개', '{left + 5}개'],
+    wrongs: ['{forgot}개', '{forgot - 1}개', '{left + 5}개'],
     solution:
-      '산 것은 5×{rows}={bought}개입니다. {drunk}개를 먹었으므로 {left}개가 남습니다.',
+      '남은 것은 {rest}줄이므로 5×{rest}={left}개입니다.',
   },
   {
     id: 'real-mul36-boxes-and-loose',
@@ -13337,23 +13385,25 @@ export const questionBank: Template[] = [
     demand: 'reason',
     tag: 'multiplication',
     strategy: '조건 함께 보기 · 묶음과 낱개를 함께 세는 방법 판단하기',
+    // 곱셈과 덧셈·뺄셈을 섞은 혼합 계산은 하지 않습니다(2-2 곱셈구구 지도서).
+    // 한 묶음이 늘거나 줄어든 상황으로 바꾸어 곱셈 하나로 풉니다.
     vars: {
       each: { from: 3, to: 6 },
       boxes: { from: 3, to: 7 },
-      loose: { from: 1, to: 5 },
+      more: { calc: 'boxes + 1' },
       inBox: { calc: 'each * boxes' },
-      total: { calc: 'each * boxes + loose' },
+      total: { calc: 'each * more' },
       forgot: { calc: 'each * boxes' },
-      wrongSum: { calc: 'each + boxes + loose' },
+      wrongSum: { calc: 'each + more' },
     },
     words: { item: ['달걀', '요구르트', '초코볼', '방울토마토', '떡'] },
     // 낱개를 잊고 곱만 답하는 아이가 많습니다. 두 단계를 거쳐야 합니다.
     prompt:
-      '{item:이} 한 상자에 {each}개씩 {boxes}상자 있고, 상자에 담기지 않은 것이 {loose}개 더 있습니다. {item:은} 모두 몇 개일까요?',
+      '{item:이} 한 상자에 {each}개씩 {boxes}상자 있습니다. 같은 상자를 하나 더 받았습니다. {item:은} 모두 몇 개일까요?',
     answer: '{total}개',
     wrongs: ['{forgot}개', '{wrongSum}개', '{total + each}개'],
     solution:
-      '상자에 든 것은 {each}×{boxes}={inBox}개입니다. 여기에 낱개 {loose}개를 더하면 {total}개입니다.',
+      '상자는 {more}개이므로 {each}×{more}={total}개입니다.',
   },
   {
     id: 'real-mul48-need-more',
@@ -13361,21 +13411,20 @@ export const questionBank: Template[] = [
     real: true,
     demand: 'reason',
     tag: 'multiplication',
-    strategy: '조건 함께 보기 · 얼마나 더 있어야 하는지 거꾸로 판단하기',
+    strategy: '조건 함께 보기 · 나누어 줄 때 필요한 수를 판단하기',
+    // 곱셈과 덧셈·뺄셈을 섞은 혼합 계산은 하지 않습니다(2-2 곱셈구구 지도서).
     vars: {
       each: { from: 4, to: 8 },
       people: { from: 4, to: 8 },
-      have: { from: 5, to: 9 },
       need: { calc: 'each * people' },
-      more: { calc: 'each * people - have' },
     },
     words: { item: ['색종이', '붙임딱지', '쿠키', '색연필', '풍선'] },
     prompt:
-      '친구 {people}명에게 {item:을} {each}개씩 주려고 합니다. 지금 {have}개가 있습니다. 몇 개가 더 있어야 할까요?',
-    answer: '{more}개',
-    wrongs: ['{need}개', '{have}개', '{more + each}개'],
+      '친구 {people}명에게 {item:을} {each}개씩 주려고 합니다. {item:은} 모두 몇 개가 있어야 할까요?',
+    answer: '{need}개',
+    wrongs: ['{each + people}개', '{need - each}개', '{need + each}개'],
     solution:
-      '필요한 것은 {each}×{people}={need}개입니다. {have}개가 있으므로 {more}개가 더 있어야 합니다.',
+      '{each}개씩 {people}명이므로 {each}×{people}={need}개가 있어야 합니다.',
   },
   {
     id: 'real-mul7-weeks',
@@ -13384,19 +13433,20 @@ export const questionBank: Template[] = [
     demand: 'reason',
     tag: 'multiplication',
     strategy: '조건 함께 보기 · 주와 날수를 곱셈으로 판단하기',
+    // 곱셈과 덧셈·뺄셈을 섞은 혼합 계산은 하지 않습니다(2-2 곱셈구구 지도서).
     vars: {
       weeks: { from: 3, to: 8 },
-      extra: { from: 1, to: 5 },
+      more: { calc: 'weeks + 1' },
       days: { calc: 'weeks * 7' },
-      total: { calc: 'weeks * 7 + extra' },
-      wrongSum: { calc: 'weeks + 7 + extra' },
+      total: { calc: 'more * 7' },
+      wrongSum: { calc: 'more + 7' },
     },
     prompt:
-      '어떤 일을 {weeks}주일 하고 {extra}일을 더 했습니다. 모두 며칠 동안 했을까요?',
+      '어떤 일을 {weeks}주일 하고 1주일을 더 했습니다. 모두 며칠 동안 했을까요?',
     answer: '{total}일',
-    wrongs: ['{days}일', '{wrongSum}일', '{weeks + extra}일'],
+    wrongs: ['{days}일', '{wrongSum}일', '{total + 1}일'],
     solution:
-      '1주일은 7일이므로 {weeks}주일은 7×{weeks}={days}일입니다. {extra}일을 더하면 {total}일입니다.',
+      '모두 {more}주일이고 1주일은 7일이므로 7×{more}={total}일입니다.',
   },
   {
     id: 'real-mul9-team',
@@ -13576,16 +13626,14 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '조건 함께 보기 · 몸의 길이로 어림하는 방법 판단하기',
     vars: {
-      step: { from: 40, to: 60 },
-      steps: { from: 3, to: 6 },
-      total: { calc: 'step * steps' },
+      times: { from: 2, to: 5 },
     },
     prompt:
-      '한 걸음이 약 {step}cm입니다. 교실 앞에서 뒤까지 {steps}걸음을 걸었습니다. 교실의 길이는 약 몇 cm일까요?',
-    answer: '약 {total}cm',
-    wrongs: ['약 {step}cm', '약 {step + steps}cm', '약 {steps}cm'],
+      '내가 양팔을 벌린 길이는 약 1m입니다. 칠판의 긴 쪽이 양팔을 벌린 길이로 {times}번쯤이었습니다. 칠판의 긴 쪽은 약 몇 m일까요?',
+    answer: '약 {times}m',
+    wrongs: ['약 {times}cm', '약 {times + 1}m', '약 {times + 3}m'],
     solution:
-      '한 걸음이 {step}cm이고 {steps}걸음이므로 {step}×{steps}={total}cm쯤입니다.',
+      '양팔을 벌린 길이가 약 1m이고 {times}번쯤이므로 약 {times}m입니다.',
   },
   {
     id: 'real-len-guess-choose-tool',
@@ -13675,7 +13723,8 @@ export const questionBank: Template[] = [
       minute: { calc: '60 - step * 5' },
       next: { calc: 'hour + 1' },
     },
-    words: { what: ['영화가 시작', '기차가 출발', '수업이 끝', '약속 시각'] },
+    // '{what}하는'에 맞는 말만 둡니다('수업이 끝하는'이 나왔습니다).
+    words: { what: ['영화가 시작', '기차가 출발', '수업이 시작', '버스가 도착'] },
     prompt:
       '{what}하는 시각을 어떤 사람은 {hour}시 {minute}분이라 하고, 어떤 사람은 {next}시 {before}분 전이라고 했습니다. 두 사람이 말한 시각은 어떤 관계일까요?',
     answer: '같은 시각을 다르게 말한 것입니다',
@@ -13777,7 +13826,7 @@ export const questionBank: Template[] = [
     prompt:
       '이번 달 {day}일이 {name}요일입니다. {what:은} {later}일에 있습니다. {what:은} 무슨 요일일까요?',
     answer: '{name}요일',
-    wrongs: ['토요일', '일요일', '수요일'],
+    wrongs: ['토요일', '일요일', '알 수 없습니다'],
     solution:
       '{later}-{day}={gap}이고 {gap}은 7씩 {weeks}번입니다. 같은 요일은 7일마다 돌아오므로 {name}요일입니다.',
   },
@@ -13801,13 +13850,13 @@ export const questionBank: Template[] = [
       total: { calc: 'a + b + c' },
       known: { calc: 'a + c' },
     },
-    words: { kind: ['운동', '과일', '색깔', '놀이'] },
+    // 예전에는 항목을 '첫째, 둘째, 셋째'라고 불러 무엇을 세는지 알기 어려웠습니다.
     prompt:
-      '우리 반 학생 {total}명이 좋아하는 {kind:을} 조사했습니다. 첫째는 {a}명, 셋째는 {c}명이고 둘째는 세지 못했습니다. 둘째는 몇 명일까요?',
+      '우리 반 학생 {total}명이 사과, 딸기, 포도 가운데 좋아하는 과일을 하나씩 골랐습니다. 사과는 {a}명, 포도는 {c}명이고 딸기는 세지 못했습니다. 딸기를 고른 학생은 몇 명일까요?',
     answer: '{b}명',
     wrongs: ['{total}명', '{known}명', '{b + 1}명'],
     solution:
-      '{a}+{c}={known}명이 이미 세어졌습니다. {total}-{known}={b}명이 둘째입니다.',
+      '{a}+{c}={known}명이 이미 세어졌습니다. {total}-{known}={b}명이 딸기를 골랐습니다.',
   },
   // "조사해 표로 만들었습니다. 이 표를 만든 까닭은?"이라고 물으면서 표가
   // 없었습니다. 주제와 표의 항목이 맞아야 하는데 템플릿의 낱말은 저마다
@@ -14353,13 +14402,17 @@ export const questionBank: Template[] = [
     tag: 'addition',
     strategy: '조건 함께 보기 · 쓰이지 않는 조건을 가려내어 판단하기',
     vars: {
-      have: { from: 24, to: 58 },
-      got: { from: 4, to: 9 },
+      // 2차시 꼴: 일의 자리에서 받아올림이 있는 (두 자리 수)+(한 자리 수)
+      haveT: { from: 2, to: 5 },
+      haveO: { from: 5, to: 9 },
+      have: { calc: 'haveT * 10 + haveO' },
+      got: { from: 5, to: 9 },
       gave: { from: 2, to: 5 },
       total: { calc: 'have + got' },
       trap: { calc: 'have + got + gave' },
     },
-    words: { item: ['딱지', '구슬', '붙임딱지', '색종이'] },
+    // 장으로 세는 물건만 둡니다. '구슬 49장'이 나왔습니다.
+    words: { item: ['딱지', '붙임딱지', '색종이'] },
     // 친구 수는 답과 상관없습니다.
     prompt:
       '{item:을} {have}장 가지고 있었는데 {got}장을 더 받았습니다. 그때 옆에 친구가 {gave}명 있었습니다. {item:은} 모두 몇 장일까요?',
@@ -14397,7 +14450,9 @@ export const questionBank: Template[] = [
     strategy: '자료 해석 · 더 쉬운 계산 방법을 견주어 고르기',
     vars: {
       a: { from: 27, to: 48 },
-      b: { from: 19, to: 29 },
+      // 일의 자리가 9인 수만 씁니다. 28을 29로 보고 더하는 것은 쉬워지지 않습니다.
+      bT: { from: 1, to: 4 },
+      b: { calc: 'bT * 10 + 9' },
       rounded: { calc: 'b + 1' },
       total: { calc: 'a + b' },
       viaRound: { calc: 'a + b + 1' },
@@ -14437,8 +14492,12 @@ export const questionBank: Template[] = [
     tag: 'subtraction',
     strategy: '자료 해석 · 두 사람의 수를 견주어 판단하기',
     vars: {
-      more: { from: 52, to: 84 },
-      less: { from: 17, to: 39 },
+      // 6차시는 (몇십)-(몇십몇)입니다.
+      moreT: { from: 5, to: 8 },
+      more: { calc: 'moreT * 10' },
+      lessT: { from: 1, to: 3 },
+      lessO: { from: 1, to: 9 },
+      less: { calc: 'lessT * 10 + lessO' },
       gap: { calc: 'more - less' },
       sum: { calc: 'more + less' },
     },
@@ -14458,7 +14517,9 @@ export const questionBank: Template[] = [
     strategy: '자료 해석 · 더 쉬운 빼기 방법을 견주어 고르기',
     vars: {
       a: { from: 43, to: 76 },
-      b: { from: 18, to: 29 },
+      // 일의 자리가 9인 수만 씁니다. 22 대신 23을 빼는 것은 쉬워지지 않습니다.
+      bT: { from: 1, to: 2 },
+      b: { calc: 'bT * 10 + 9' },
       rounded: { calc: 'b + 1' },
       answerValue: { calc: 'a - b' },
     },
@@ -15409,15 +15470,15 @@ export const questionBank: Template[] = [
     },
     // 세는 것은 4차시입니다. 여기서는 기준에 맞게 나누는 일만 합니다.
     prompt:
-      '{thing:을} {standard}로 나누려고 합니다. 어떻게 해야 할까요?',
-    answer: '{standard}이 같은 것끼리 한곳에 모은다',
+      '{thing:을} {standard:으로} 나누려고 합니다. 어떻게 해야 할까요?',
+    answer: '{standard:이} 같은 것끼리 한곳에 모은다',
     wrongs: [
       '마음에 드는 것끼리 모은다',
       '큰 것부터 차례로 늘어놓는다',
       '섞어서 한 통에 담는다',
     ],
     solution:
-      '{standard}로 나누기로 정했으므로 {standard}이 같은 것끼리 모아야 누가 보아도 같게 나뉩니다.',
+      '{standard:으로} 나누기로 정했으므로 {standard:이} 같은 것끼리 모아야 누가 보아도 같게 나뉩니다.',
   },
   {
     id: 'mid-mul-intro-jump',
@@ -15492,12 +15553,13 @@ export const questionBank: Template[] = [
       other: { from: 1, to: 4 },
       all: { calc: 'round + other' },
     },
-    words: { round: ['동전', '병뚜껑', '단추', '접시'], flat: ['색종이', '공책', '지우개'] },
+    // 수와 낱말의 이름이 같으면 낱말이 수 자리까지 채워 '단추 단추개'가 됩니다.
+    words: { roundThing: ['동전', '병뚜껑', '단추', '접시'], flatThing: ['색종이', '공책', '지우개'] },
     prompt:
-      '책상 위에 {round} {round}개와 {flat} {other}개가 있습니다. 바닥에 대고 본떴을 때 원이 되는 것은 몇 개일까요?',
+      '책상 위에 {roundThing} {round}개와 {flatThing} {other}개가 있습니다. 바닥에 대고 본떴을 때 원이 되는 것은 몇 개일까요?',
     answer: '{round}개',
     wrongs: ['{other}개', '{all}개', '0개'],
-    solution: '{round:은} 어느 쪽에서 보아도 둥글어 본뜨면 원이 됩니다.',
+    solution: '{roundThing:은} 어느 쪽에서 보아도 둥글어 본뜨면 원이 됩니다.',
   },
   {
     id: 'mid-stack-layers',
@@ -15602,7 +15664,8 @@ export const questionBank: Template[] = [
       now: { from: 21, to: 44 },
       used: { calc: 'had - now' },
     },
-    words: { item: ['색종이', '스티커', '풍선', '색연필'] },
+    // 장으로 세는 것만 둡니다('색연필 57장'이 나왔습니다).
+    words: { item: ['색종이', '스티커', '붙임딱지'] },
     prompt:
       '{item:을} {had}장 가지고 있었는데 몇 장을 써서 {now}장이 남았습니다. 쓴 {item:은} 몇 장일까요?',
     answer: '{used}장',
@@ -15616,19 +15679,24 @@ export const questionBank: Template[] = [
     demand: 'connect',
     tag: 'addition',
     strategy: '조건 함께 보기 · 문장 상황에서 10을 만들어 더하기',
+    // 예전에는 '43에 먼저 3을 더해 10을 채우고'처럼 몇십이 되지 않는 수를
+    // 더하라고 했습니다(10-b를 썼습니다). 앞 수의 일의 자리로 정합니다.
     vars: {
-      a: { from: 27, to: 48 },
-      b: { from: 6, to: 9 },
-      toTen: { calc: '10 - b' },
+      aT: { from: 2, to: 4 },
+      aO: { from: 5, to: 8 },
+      a: { calc: 'aT * 10 + aO' },
+      toTen: { calc: '10 - aO' },
+      rest: { from: 1, to: 4 },
+      b: { calc: 'toTen + rest' },
       total: { calc: 'a + b' },
     },
     words: { item: ['딱지', '구슬', '색종이', '스티커'] },
     prompt:
-      '{item:을} {a}개 가지고 있는데 {b}개를 더 받았습니다. {a}에 먼저 {toTen}을 더해 10을 채우고 남은 것을 더하면 모두 몇 개일까요?',
+      '{item:을} {a}개 가지고 있는데 {b}개를 더 받았습니다. {a}에 먼저 {toTen:을} 더해 {a + toTen:을} 만들고 남은 {rest:을} 더하면 모두 몇 개일까요?',
     answer: '{total}개',
     wrongs: ['{a + toTen}개', '{a}개', '{total + 10}개'],
     solution:
-      '{a}에 {toTen}을 더하면 {a + toTen}이고, 남은 것을 더하면 {total}개입니다.',
+      '{a}에 {toTen:을} 더하면 {a + toTen}이고, 남은 {rest:을} 더하면 {total}개입니다.',
   },
   {
     id: 'mid-ruler-measure-two',
@@ -15766,7 +15834,7 @@ export const questionBank: Template[] = [
       minute: { calc: '60 - step * 5' },
       next: { calc: 'hour + 1' },
     },
-    words: { what: ['버스가 도착', '영화가 시작', '수업이 끝', '기차가 출발'] },
+    words: { what: ['버스가 도착', '영화가 시작', '수업이 시작', '기차가 출발'] },
     prompt:
       '{what}하는 시각이 {hour}시 {minute}분입니다. 이 시각을 몇 시 몇 분 전으로 읽으면 어떻게 될까요?',
     answer: '{next}시 {before}분 전',
@@ -15845,7 +15913,8 @@ export const questionBank: Template[] = [
     prompt:
       '{what:은} 낮 12시가 지난 {hour}시입니다. 이 시각은 오전과 오후 가운데 언제일까요?',
     answer: '오후 {hour}시',
-    wrongs: ['오전 {hour}시', '낮 {hour}시', '밤 {hour}시'],
+    // '낮 1시'도 맞는 말이라 오답으로 둘 수 없습니다.
+    wrongs: ['오전 {hour}시', '밤 {hour}시', '새벽 {hour}시'],
     solution: '낮 12시가 지나면 오후입니다. 그래서 오후 {hour}시입니다.',
   },
   {
@@ -16268,12 +16337,12 @@ export const questionBank: Template[] = [
       flat: { from: 1, to: 4 },
       all: { calc: 'round + flat' },
     },
-    words: { round: ['동전', '접시', '단추', '병뚜껑'], flat: ['공책', '색종이', '지우개'] },
+    words: { roundThing: ['동전', '접시', '단추', '병뚜껑'], flatThing: ['공책', '색종이', '지우개'] },
     prompt:
-      '상자에 {round} {round}개와 {flat} {flat}개가 들어 있습니다. 굴러가는 것은 몇 개일까요?',
+      '상자에 {roundThing} {round}개와 {flatThing} {flat}개가 들어 있습니다. 굴러가는 것은 몇 개일까요?',
     answer: '{round}개',
     wrongs: ['{flat}개', '{all}개', '0개'],
-    solution: '둥근 {round:은} 굴러가고 {flat:은} 굴러가지 않습니다.',
+    solution: '둥근 {roundThing:은} 굴러가고 {flatThing:은} 굴러가지 않습니다.',
   },
   {
     id: 'mid-triangle-pick-from-set',
@@ -16453,7 +16522,8 @@ export const questionBank: Template[] = [
     tag: 'classification',
     strategy: '조건 함께 보기 · 문장 상황에서 다른 칸에 넣을 것 찾기',
     vars: { any: { from: 1, to: 4 } },
-    words: { odd: ['파란 단추', '작은 공', '네모난 접시', '노란 구슬'] },
+    // 색을 밝혀 둡니다. '네모난 접시'는 빨간색일 수도 있습니다.
+    words: { odd: ['파란 단추', '초록 공', '노란 접시', '노란 구슬'] },
     prompt:
       '빨간 물건만 모으기로 했습니다. 이 칸에 넣으면 안 되는 것은 어느 것일까요?',
     answer: '{odd}',
@@ -16908,7 +16978,9 @@ export const questionBank: Template[] = [
       product: { calc: 'a * b' },
     },
     prompt:
-      '곱셈표에서 {a}×{b}가 있는 칸을 찾았습니다. 이 칸과 곱이 같은 칸은 어디에 있을까요?',
+      // '곱이 같은 칸'은 여럿일 수 있습니다(2×6=12는 3×4에도 있습니다). 접었을 때
+      // 겹치는 칸을 묻습니다.
+      '곱셈표에서 {a}×{b}가 있는 칸을 찾았습니다. 곱셈표를 대각선으로 접었을 때 이 칸과 겹치는 칸은 어디에 있을까요?',
     answer: '{b}단 줄의 {a}번째 칸',
     wrongs: ['{a}단 줄의 {a}번째 칸', '{b}단 줄의 {b}번째 칸', '같은 곱이 있는 칸은 없습니다'],
     solution:
