@@ -121,7 +121,9 @@ const tagAdvice: Record<ConceptTag, string> = {
   addition: '덧셈은 일의 자리와 십의 자리를 나누어 보고, 받아올림이 생기는지 확인하면 안정적입니다.',
   subtraction: '뺄셈은 빼야 할 수와 남는 수를 구별하고, 필요하면 십을 10개로 풀어 받아내림합니다.',
   shape: '도형은 크기나 방향이 달라도 변, 꼭짓점, 둥근 선 같은 특징으로 구별합니다.',
-  solid: '쌓기나무는 보이는 칸만 세지 말고 위, 앞, 옆에서 본 모양과 숨어 있는 나무를 함께 생각합니다.',
+  // 위·앞·옆에서 본 모양은 5~6학년군 내용입니다(2-1 지도서 후속 학습). 2학년은
+  // '~의 오른쪽', '~의 위', '2층'처럼 위치와 층으로 말합니다.
+  solid: '쌓기나무는 층마다 세고 뒤에 가려진 것도 빠뜨리지 않습니다. 자리는 오른쪽, 앞, 위, 몇 층처럼 말합니다.',
   measurement: '길이는 같은 단위끼리 비교하고, 자로 잴 때는 시작점과 끝점의 눈금 차를 봅니다.',
   classification: '분류는 한 가지 기준을 정하고 빠짐과 겹침이 없도록 나누는 활동입니다.',
   multiplication: '곱셈은 같은 수가 여러 묶음 있는 상황입니다. 한 묶음의 수와 묶음 수를 구별합니다.',
@@ -241,7 +243,7 @@ const readStrategyGuide: Record<ConceptTag, string> = {
   addition: '더하는 수를 같은 자리끼리 세로로 맞추고 일의 자리부터 계산합니다.',
   subtraction: '전체에서 빼는 것인지, 두 수의 차이를 구하는 것인지 먼저 구별합니다.',
   shape: '그림의 방향에 끌려가지 말고 변과 꼭짓점의 개수를 손가락으로 짚어 봅니다.',
-  solid: '위, 앞, 옆에서 본 모양 중 문제에서 요구하는 방향을 먼저 확인합니다.',
+  solid: '오른쪽, 앞, 위 같은 말이 어느 쌓기나무를 기준으로 하는지 먼저 확인합니다.',
   measurement: '몇 cm에서 시작해 몇 cm에서 끝나는지 두 눈금을 먼저 표시합니다.',
   classification: '무엇으로 나누라는 문제인지 기준 낱말을 먼저 찾습니다.',
   multiplication: '한 묶음에 몇 개인지와 그런 묶음이 몇 개인지를 따로 표시합니다.',
@@ -789,9 +791,8 @@ const josaPairs: Array<[withFinal: string, withoutFinal: string]> = [
   ['은', '는'],
   ['과', '와'],
   // '10×3=30로 곱이 같습니다'처럼 로/으로도 어긋나 있었습니다.
-  // 받침이 있으면 '으로', 없으면 '로'입니다. 다만 ㄹ 받침은 '로'인데,
-  // 우리말로 읽은 수에서 ㄹ로 끝나는 것은 없습니다(일·팔은 ㄹ이지만
-  // 1과 8은 '일로/팔로'가 아니라 자릿수로 읽혀 여기 오지 않습니다).
+  // 받침이 있으면 '으로', 없으면 '로'입니다. 다만 ㄹ 받침은 '로'입니다.
+  // 1(일)·7(칠)·8(팔)이 그렇습니다. 예전에는 '1으로 가장 작아'가 나왔습니다.
   ['으로', '로'],
 ];
 
@@ -807,7 +808,8 @@ const COUNTERS = [
 ];
 
 const fixJosaAfterNumbers = (text: string): string => {
-  const fixOne = (josaText: string, hasFinal: boolean) => {
+  const fixOne = (josaText: string, hasFinal: boolean, rieul = false) => {
+    if ((josaText === '으로' || josaText === '로') && rieul) return '로';
     const pair = josaPairs.find(([withFinal, withoutFinal]) => josaText === withFinal || josaText === withoutFinal);
     return pair ? (hasFinal ? pair[0] : pair[1]) : josaText;
   };
@@ -816,10 +818,10 @@ const fixJosaAfterNumbers = (text: string): string => {
     .replace(
       new RegExp(`(\\d\\s*)(${COUNTERS.join('|')})(으로|로|을|를|이|가|은|는|과|와)(?=[\\s.,?!)]|$)`, 'g'),
       (match, before: string, counter: string, josaText: string) =>
-        `${before}${counter}${fixOne(josaText, hasBatchim(counter))}`,
+        `${before}${counter}${fixOne(josaText, hasBatchim(counter), counter.endsWith('줄'))}`,
     )
     .replace(/(\d)(으로|로|을|를|이|가|은|는|과|와)(?=[\s.,?!)]|$)/g, (match, digit: string, josaText: string) =>
-      `${digit}${fixOne(josaText, digitHasFinalConsonant[digit])}`,
+      `${digit}${fixOne(josaText, digitHasFinalConsonant[digit], /[178]/.test(digit))}`,
     );
 };
 
@@ -1065,6 +1067,51 @@ const 받아내림없이 = (a: number, b: number) => {
   return Number(자리.map((d, i) => Math.min(d, Math.floor(a / 10 ** i) % 10)).reverse().join(''));
 };
 
+// 2-1 덧셈과 뺄셈 단원은 차시마다 다루는 셈의 꼴이 정해져 있습니다(지도서
+// 단원 전개 계획). 2차시 (두 자리 수)+(한 자리 수) 받아올림, 3차시 일의 자리
+// 받아올림 (두 자리 수)+(두 자리 수), 4차시 십의 자리 받아올림(합이 세 자리),
+// 5차시 (두 자리 수)-(한 자리 수) 받아내림, 6차시 (몇십)-(몇십몇),
+// 7차시 (두 자리 수)-(두 자리 수) 받아내림. 예전에는 5차시에 64-18이,
+// 2차시에 56+38-8이 나와 아직 배우지 않은 셈을 먼저 시켰습니다.
+// 이 단원 밖이나 8차시부터는 3차시·7차시 꼴을 씁니다.
+const 덧셈뺄셈차시 = (lesson: Lesson) =>
+  lesson.semester === '2-1' && lesson.unitTitle === '덧셈과 뺄셈' ? lesson.lessonNo : 0;
+
+const 덧셈두수 = (lesson: Lesson, seed: number): [number, number] => {
+  const no = 덧셈뺄셈차시(lesson);
+  const s = Math.abs(seed);
+  const aO = 3 + (s % 7);
+  const bO = 10 - aO + (Math.floor(s / 7) % aO);
+  if (no === 2) return [10 * (1 + (Math.floor(s / 3) % 8)) + aO, bO];
+  if (no === 4) {
+    const aT = 3 + (Math.floor(s / 3) % 6);
+    const bT = 10 - aT + (Math.floor(s / 5) % aT);
+    return [10 * aT + aO, 10 * bT + bO];
+  }
+  const aT = 1 + (Math.floor(s / 3) % 6);
+  const bT = 1 + (Math.floor(s / 5) % (8 - aT));
+  return [10 * aT + aO, 10 * bT + bO];
+};
+
+// [큰 수, 빼는 수]
+const 뺄셈두수 = (lesson: Lesson, seed: number): [number, number] => {
+  const no = 덧셈뺄셈차시(lesson);
+  const s = Math.abs(seed);
+  if (no === 5) {
+    const bigO = s % 5;
+    return [10 * (2 + (Math.floor(s / 5) % 7)) + bigO, bigO + 1 + (Math.floor(s / 7) % (9 - bigO))];
+  }
+  if (no === 6) {
+    const bigT = 3 + (s % 6);
+    return [10 * bigT, 10 * (1 + (Math.floor(s / 6) % (bigT - 1))) + 1 + (Math.floor(s / 11) % 9)];
+  }
+  const bigT = 4 + (s % 5);
+  const bigO = Math.floor(s / 3) % 6;
+  const smallT = 1 + (Math.floor(s / 5) % (bigT - 1));
+  const smallO = bigO + 1 + (Math.floor(s / 7) % (9 - bigO));
+  return [10 * bigT + bigO, 10 * smallT + smallO];
+};
+
 // 보기를 섞습니다.
 //
 // 예전에는 자리마다 j를 (seed * 13 + i * 7) % (i + 1)로 잡았습니다. 한
@@ -1106,6 +1153,20 @@ const makeChoices = (answer: string | number, wrongs: Array<string | number>, se
     const down = value - gap;
     return `${down > 0 ? down : value + gap}${match[2]}`;
   };
+  // 'ㄴ → ㄱ → ㄷ' 같은 차례 문항은 다른 차례로 채웁니다. 예전에는
+  // 'ㄴ → ㄱ → ㄷ 보기 1'처럼 정답에 꼬리표만 붙은 보기가 나와 정답이
+  // 둘인 문항이 되었습니다.
+  const 차례 = answerText.split(' → ');
+  if (차례.length >= 3 && 차례.every((one) => /^[ㄱ-ㅎ]$/.test(one))) {
+    const 바꾼차례 = (items: string[]): string[][] => (items.length <= 1
+      ? [items]
+      : items.flatMap((one, at) => 바꾼차례([...items.slice(0, at), ...items.slice(at + 1)]).map((rest) => [one, ...rest])));
+    for (const order of 바꾼차례([...차례].sort())) {
+      if (unique.length >= 4) break;
+      const text = order.join(' → ');
+      if (!unique.includes(text)) unique.push(text);
+    }
+  }
   let delta = 1;
   while (unique.length < 4) {
     const candidate = fallbackChoice(delta);
@@ -1139,6 +1200,9 @@ const tuneWrongsForDifficulty = (
   const value = Number(match[1]);
   const suffix = match[2];
   if (/[+\-=×÷]/.test(suffix)) return wrongs;
+  // '2시 5분 전', '1시간 33분', '3m 20cm'처럼 수가 둘인 답은 앞의 수만 흔들면
+  // '17시 5분 전', '4시간 33분' 같은 엉뚱한 보기가 됩니다. 지어 준 오답을 씁니다.
+  if (/\d/.test(suffix)) return wrongs;
   // '몇 분 전'은 교육과정이 5분 전, 10분 전처럼 간단한 경우만 다루고
   // 13분 전 같은 경우는 다루지 말라고 못 박아 두었습니다. 답을 ±1로
   // 흔들면 오답 보기에 13분 전이 생깁니다. 이때는 5씩 흔듭니다.
@@ -1653,29 +1717,31 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       const 셀것 = pickBySeed(COUNTING_THINGS, seed);
       return makeQuestion(
         lesson, difficulty, index,
-        `${셀것}가 아주 많습니다. 수를 세는 방법으로 알맞은 것은?`,
+        `${josa(셀것, '이', '가')} 아주 많습니다. 수를 세는 방법으로 알맞은 것은?`,
         pickBySeed(COUNTING_WAYS, seed).right,
         pickBySeed(COUNTING_WAYS, seed).wrong,
-        `${pickBySeed(COUNTING_WAYS, seed).right.replace(/다$/, '면')} 많은 물건도 빠지지 않고 셀 수 있습니다.`,
+        `${pickBySeed(COUNTING_WAYS, seed).right.replace(/센다$/, '세면')} 많은 물건도 빠지지 않고 셀 수 있습니다.`,
         'number', '큰 수를 세는 방법 생각하기',
       );
     }
     if (variant === 3) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${small}은 10이 몇 개인 수에 가까울까요?`,
+        // 예전에는 '47은 10이 몇 개인 수에 가까울까요'에 4개를 답으로 두었습니다.
+        // 47은 40보다 50에 가깝습니다. 묶음 수를 바로 묻습니다.
+        `${small}을 10개씩 묶으면 10개씩 묶음은 몇 개일까요?`,
         `${Math.floor(small / 10)}개`,
-        [`${small}개`, `${Math.floor(small / 10) + 2}개`, '1개'],
-        `${small}은 10이 ${Math.floor(small / 10)}개인 수와 가깝습니다.`,
+        [`${small}개`, `${Math.floor(small / 10) + 1}개`, `${small % 10}개`],
+        `${small}은 10개씩 묶음 ${Math.floor(small / 10)}개와 낱개 ${small % 10}개입니다.`,
         'placeValue', '10씩 묶어 수 살펴보기',
       );
     }
     return makeQuestion(
       lesson, difficulty, index,
-      `${pickBySeed(COUNTING_THINGS, seed + 3)}를 셀 때 세기 쉬운 방법으로 알맞은 것은?`,
+      `${josa(pickBySeed(COUNTING_THINGS, seed + 3), '을', '를')} 셀 때 세기 쉬운 방법으로 알맞은 것은?`,
       pickBySeed(COUNTING_WAYS, seed + 2).right,
       pickBySeed(COUNTING_WAYS, seed + 2).wrong,
-      `${pickBySeed(COUNTING_WAYS, seed + 2).right.replace(/다$/, '면')} 많은 물건도 빠짐없이 셀 수 있습니다.`,
+      `${pickBySeed(COUNTING_WAYS, seed + 2).right.replace(/센다$/, '세면')} 많은 물건도 빠짐없이 셀 수 있습니다.`,
       'number', '묶어 세는 방법 고르기',
     );
   }
@@ -1912,9 +1978,11 @@ const placeValueUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: n
       const changed = step === 1 ? '일' : step === 10 ? '십' : step === 100 ? '백' : '천';
       return makeQuestion(
         lesson, difficulty, index,
-        `${step}씩 뛰어 세면 어느 자리 숫자가 변할까요?`,
+        // 교과서 말대로 '1씩 커지는 자리'를 묻습니다. '변하는 자리'로 물으면
+        // 491에서 501처럼 다른 자리도 바뀌는 때가 있습니다.
+        `${step}씩 뛰어 세면 어느 자리 숫자가 1씩 커질까요?`,
         `${changed}의 자리`,
-        ['일의 자리', '십의 자리', '백의 자리'].filter((name) => name !== `${changed}의 자리`).slice(0, 3),
+        [...['일의 자리', '십의 자리', '백의 자리'].filter((name) => name !== `${changed}의 자리`), '모든 자리'],
         `${step}씩 뛰어 세면 ${changed}의 자리 숫자가 1씩 커집니다.`,
         'number', '뛰어 셀 때 변하는 자리 알기',
       );
@@ -4345,7 +4413,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${pickBySeed(ESTIMATE_TARGETS, seed)}을(를) 뼘으로 재면 사람마다 잰 수가 다른 까닭은?`,
+        `${josa(pickBySeed(ESTIMATE_TARGETS, seed), '을', '를')} 뼘으로 재면 사람마다 잰 수가 다른 까닭은?`,
         '사람마다 뼘의 길이가 다르기 때문',
         ['물건이 늘어나기 때문', '잘못 세었기 때문', '뼘은 단위가 아니기 때문'],
         `뼘은 사람마다 길이가 달라서 잰 횟수도 달라집니다.`,
@@ -4406,7 +4474,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
       return makeQuestion(
         lesson, difficulty, index,
         '1cm를 바르게 읽은 것은?',
-        '1센티미터', ['1미터', '1번', '일센치'],
+        '1센티미터', ['1칸', '1번', '일센치'],
         'cm는 센티미터라고 읽습니다.',
         'measurement', 'cm 읽고 쓰기',
       );
@@ -5110,7 +5178,7 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     if (variant === 0) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${pickBySeed(MESSY_PLACES, index)}이(가) 어질러져 있습니다. 정리할 때 하면 좋은 일은?`,
+        `${josa(pickBySeed(MESSY_PLACES, index), '이', '가')} 어질러져 있습니다. 정리할 때 하면 좋은 일은?`,
         pickBySeed(TIDYING_WAYS, index).right,
         pickBySeed(TIDYING_WAYS, index).wrong,
         pickBySeed(TIDYING_WAYS, index).why,
@@ -5143,7 +5211,7 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     if (variant === 2) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${pickBySeed(SORTABLE_THINGS, index).thing}을(를) 나누어 놓으면 좋은 점은?`,
+        `${josa(pickBySeed(SORTABLE_THINGS, index).thing, '을', '를')} 나누어 놓으면 좋은 점은?`,
         pickBySeed(SORTING_GOOD, index),
         pickSome(SORTING_BAD_GOOD, index, 3),
         '나누어 놓으면 필요한 것을 빨리 찾을 수 있습니다.',
@@ -5282,7 +5350,7 @@ const sortingUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${pickBySeed(SORTABLE_THINGS, seedWithinVariant(index)).thing}을(를) 분류하여 셀 때 바르게 세는 방법은?`,
+        `${josa(pickBySeed(SORTABLE_THINGS, seedWithinVariant(index)).thing, '을', '를')} 분류하여 셀 때 바르게 세는 방법은?`,
         '센 것에 표시를 하면서 센다',
         ['눈으로만 보고 센다', '큰 것부터 센다', '두 번씩 센다'],
         `센 것에 표시를 해야 빠뜨리거나 두 번 세지 않습니다.`,
@@ -5755,7 +5823,7 @@ const multiplyUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: num
     if (variant === 2) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${pickBySeed(COUNTING_THINGS, n(lesson, index, 5))}가 많습니다. 수를 빠르게 세려면 어떻게 하면 좋을까요?`,
+        `${josa(pickBySeed(COUNTING_THINGS, n(lesson, index, 5)), '이', '가')} 많습니다. 수를 빠르게 세려면 어떻게 하면 좋을까요?`,
         pickBySeed(COUNTING_WAYS, n(lesson, index, 5)).right,
         pickBySeed(COUNTING_WAYS, n(lesson, index, 5)).wrong,
         `${pickBySeed(COUNTING_WAYS, n(lesson, index, 5)).right.replace(/다$/, '면')} 빠르고 정확하게 셀 수 있습니다.`,
@@ -6686,14 +6754,16 @@ const legacyTimeQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
   if ((text.includes('걸린') && variant === 0) || (!text.includes('몇 시 몇 분') && !text.includes('달력') && variant === 1)) {
     const elapsed = difficulty === '하' ? 20 : difficulty === '중' ? 35 : 50;
     const endMinute = minute + elapsed;
-    const answer = `${hour + Math.floor(endMinute / 60)}시 ${endMinute % 60}분`;
+    // 정각은 '1시 0분'이 아니라 '1시'라고 읽습니다.
+    const 시각 = (h: number, m: number) => (m === 0 ? `${h}시` : `${h}시 ${m}분`);
+    const answer = 시각(hour + Math.floor(endMinute / 60), endMinute % 60);
     return makeQuestion(
       lesson,
       difficulty,
       index,
-      `${hour}시 ${minute}분에 시작해서 ${elapsed}분 동안 했습니다. 끝난 시각은?`,
+      `${시각(hour, minute)}에 시작해서 ${elapsed}분 동안 했습니다. 끝난 시각은?`,
       answer,
-      [`${hour}시 ${elapsed}분`, `${hour + 1}시 ${minute}분`, `${hour}시 ${(minute + elapsed + 10) % 60}분`],
+      [`${hour}시 ${elapsed}분`, 시각(hour + 1, minute), 시각(hour, (minute + elapsed + 10) % 60)],
       `${minute}분에 ${elapsed}분을 더합니다. 60분이 넘으면 1시간으로 바꾸어 ${answer}입니다.`,
       'time',
       '몇 분 후의 시각 구하기',
@@ -7033,9 +7103,9 @@ const classifyToTableQuestion = (lesson: Lesson, difficulty: Difficulty, index: 
     return makeQuestion(
       lesson, difficulty, index,
       '자료를 표로 나타내면 편리한 점은?',
-      '항목별 학생 수를 한눈에 알기 쉽다',
+      '항목별 학생 수를 정확히 알기 쉽다',
       ['학생의 이름을 알 수 있다', '자리를 알 수 있다', '조사한 날짜를 알 수 있다'],
-      `표는 항목별 수를 한눈에 알아보기 쉽습니다. 누가 골랐는지는 표만 보고 알 수 없습니다.`,
+      `표는 항목별 수를 정확히 알아보기 쉽습니다. 누가 골랐는지는 표만 보고 알 수 없습니다.`,
       'data',
       '표의 편리한 점 알기',
       surveyTable(survey, { showTotal: true }),
@@ -7405,7 +7475,7 @@ const dataIntroQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
   if (variant === 0) {
     return makeQuestion(
       lesson, difficulty, index,
-      `우리 반 친구들의 ${pickBySeed(SURVEY_TOPICS, index).topic}을(를) 알아보려면 먼저 무엇을 해야 할까요?`,
+      `우리 반 친구들이 ${josa(pickBySeed(SURVEY_TOPICS, index).topic, '을', '를')} 알아보려면 먼저 무엇을 해야 할까요?`,
       '무엇을 조사할지 정한다',
       ['답을 미리 정한다', '가장 좋아하는 것을 고른다', '수를 먼저 센다'],
       '무엇을 알아볼지 정해야 자료를 모을 수 있습니다.',
@@ -7415,7 +7485,7 @@ const dataIntroQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
   if (variant === 1) {
     return makeQuestion(
       lesson, difficulty, index,
-      `친구들의 ${pickBySeed(SURVEY_TOPICS, index + 2).topic}을(를) 이름만 죽 적어 놓으면 어떤 점이 불편할까요?`,
+      `친구들이 ${josa(pickBySeed(SURVEY_TOPICS, index + 2).topic, '을', '를')} 이름만 죽 적어 놓으면 어떤 점이 불편할까요?`,
       '무엇이 가장 많은지 한눈에 알기 어렵다',
       ['이름을 쓸 수 없다', '친구가 줄어든다', '자료가 없어진다'],
       '적어 놓기만 하면 세어 보기 전에는 많고 적음을 알기 어렵습니다.',
@@ -7647,7 +7717,8 @@ const ruleUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
     if (variant === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${무늬모양들[seedWithinVariant(index) % 3]}이 오른쪽으로 조금씩 돌아가며 놓였습니다. 이것은 어떤 규칙일까요?`,
+        // ○처럼 돌려도 똑같아 보이는 모양은 방향이 바뀌는 것이 보이지 않습니다.
+        `${josa(['삼각형', '화살표', '나뭇잎'][seedWithinVariant(index) % 3], '이', '가')} 오른쪽으로 조금씩 돌아가며 놓였습니다. 이것은 어떤 규칙일까요?`,
         '방향이 일정하게 바뀌는 규칙',
         ['개수가 늘어나는 규칙', '색깔이 바뀌는 규칙', '규칙이 없다'],
         '모양은 그대로이고 방향만 일정하게 바뀌는 규칙입니다.',
@@ -8497,7 +8568,7 @@ const richDataQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
     const total = items.reduce((sum, item) => sum + item.count, 0);
     return makeQuestion(
       lesson, difficulty, index,
-      `${주제.topic}을(를) 조사한 표입니다. 가장 많은 것과 가장 적은 것의 차를 구하세요.`,
+      `${josa(주제.topic, '을', '를')} 조사한 표입니다. 가장 많은 것과 가장 적은 것의 차를 구하세요.`,
       answer,
       [most.count, least.count, total],
       `표에서 가장 많은 것은 ${most.label} ${most.count}명, 가장 적은 것은 ${least.label} ${least.count}명입니다. 차는 ${most.count}-${least.count}=${answer}명입니다.`,
@@ -8756,27 +8827,19 @@ const richPatternQuestion = (lesson: Lesson, difficulty: Difficulty, index: numb
 
 const legacyRichShapeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
   if (lesson.tags.includes('solid') || `${lesson.unitTitle} ${lesson.title}`.includes('쌓')) {
-    const front = 3 + (index % 3);
-    const top = 4 + (index % 3);
-    const side = 2 + ((index + 1) % 3);
+    // 예전에는 앞·위·옆에서 본 모양을 물었습니다. 5~6학년군 내용이라
+    // 2학년 말인 '층'으로 묻습니다.
+    const bottom = 3 + (index % 3);
     return makeQuestion(
       lesson,
       difficulty,
       index,
-      `앞에서 본 모양은 ${front}칸, 위에서 본 모양은 ${top}칸입니다. 같은 쌓기나무 모양을 정확히 만들기 위해 더 필요한 자료는?`,
-      '옆에서 본 모양',
-      ['쌓기나무의 색깔', '문제 번호', '원의 지름'],
-      `앞과 위에서 본 모양만으로는 높이와 가려진 위치가 달라질 수 있습니다. 옆에서 본 모양까지 비교해야 정확히 만들 수 있습니다.`,
+      `1층에 쌓기나무 ${bottom}개를 나란히 놓고, 그중 한 개의 위에 1개를 더 놓았습니다. 몇 층으로 쌓은 모양일까요?`,
+      '2층',
+      ['1층', '3층', `${bottom + 1}층`],
+      `1층 위에 한 개를 더 올렸으므로 2층까지 쌓은 모양입니다. 쌓기나무는 모두 ${bottom}+1=${bottom + 1}개입니다.`,
       'solid',
-      '조건 조합 · 세 방향 자료로 입체 모양 판단',
-      cubeViewsVisual(
-        [
-          { label: '앞', count: front },
-          { label: '위', count: top },
-          { label: '옆', count: side },
-        ],
-        '세 방향에서 본 쌓기나무 자료',
-      ),
+      '조건 조합 · 쌓은 층수 알아보기',
     );
   }
 
@@ -10008,9 +10071,9 @@ const blockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       return makeQuestion(
         lesson, difficulty, index,
         '쌓은 모양을 친구에게 설명할 때 쓰면 좋은 말은?',
-        '앞, 옆, 위와 몇 층',
+        '오른쪽, 앞, 위 같은 위치와 몇 층',
         ['예쁘다, 멋있다', '크다, 작다', '많다, 적다'],
-        '쌓은 모양은 방향과 층을 써야 정확히 설명할 수 있습니다.',
+        '쌓은 모양은 위치를 나타내는 말과 층을 써야 정확히 설명할 수 있습니다.',
         'solid', '쌓은 모양을 설명하는 말 알기',
       );
     }
@@ -11960,9 +12023,11 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       if (seed % 3 === 0) {
         return makeQuestion(
           lesson, difficulty, index,
-          '연필과 크레파스 중 어느 것이 더 긴지 알아보는 과정입니다. □에 들어갈 말은? ① 둘을 나란히 놓습니다. ② □ ③ 어느 것이 더 긴지 말합니다.',
-          '한쪽 끝을 맞춥니다',
-          ['가운데를 맞춥니다', '겹쳐 놓습니다', '멀리 떨어뜨립니다'],
+          // '나란히 놓기'와 '한쪽 끝 맞추기'를 두 단계로 나누면 어느 것을 먼저
+          // 해도 되어 차례 문항의 답이 둘이 됩니다. 한 단계로 묶습니다.
+          '연필과 크레파스 중 어느 것이 더 긴지 알아보는 과정입니다. □에 들어갈 말은? ① □ ② 다른 쪽 끝을 봅니다. ③ 더 나온 쪽이 더 깁니다.',
+          '한쪽 끝을 맞추어 나란히 놓습니다',
+          ['가운데를 맞추어 놓습니다', '겹쳐 쌓아 놓습니다', '멀리 떨어뜨려 놓습니다'],
           '한쪽 끝을 맞추어야 어느 것이 더 긴지 바르게 알 수 있습니다.',
           'measurement', '길이를 견주는 차례',
         );
@@ -12756,32 +12821,36 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const groups = 3 + ((seed + 2) % 6);
 
       // 문장 상황이 한 가지뿐이면 풀이 과정 20문항이 모두 같은 문제가 됩니다.
-      // 곱셈으로 푸는 상황에는 묶음 세기 말고도 덜어 내기, 두 묶음 합치기가
-      // 있습니다. 같은 곱셈이라도 상황이 다르면 세워야 할 식이 달라집니다.
+      // 묶음 세기, 덧셈식과 곱셈식 잇기, 배열을 돌려 보기로 상황을 나눕니다.
+      // 곱셈과 덧셈·뺄셈을 섞는 상황은 쓰지 않습니다(지도서).
       const situation = index % 3;
 
       if (situation === 1) {
-        const gone = 1 + (seed % 4);
+        // 예전에는 곱한 뒤 먹은 수를 빼는 상황이었습니다. 지도서는 곱셈과
+        // 덧셈·뺄셈을 섞은 혼합 계산을 하지 않도록 합니다. 동수누가와
+        // 곱셈식을 잇는 상황으로 바꿉니다.
+        const 더한식 = Array.from({ length: groups }, () => each).join('+');
         return makeQuestion(
           lesson, difficulty, index,
-          `한 봉지에 ${each}개씩 ${groups}봉지가 있었는데 ${gone}개를 먹었습니다. 남은 수를 구하는 과정입니다. □에 알맞은 수는? ① 처음 수는 ${each}×${groups}=${each * groups}입니다. ② 먹은 수는 ${gone}입니다. ③ ${each * groups}-${gone}=□`,
-          each * groups - gone,
-          [each * groups, each * groups + gone, Math.max(1, each * groups - gone - 1)],
-          `먼저 곱셈으로 처음 수를 구하고, 먹은 수를 빼면 ${each * groups - gone}개입니다.`,
-          'multiplication', '곱한 뒤 덜어 내는 과정',
+          `한 봉지에 ${each}개씩 ${groups}봉지가 있습니다. 모두 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① ${each}를 ${groups}번 더합니다. ② ${더한식}=${each * groups}입니다. ③ 곱셈식으로 쓰면 ${each}×${groups}=□입니다.`,
+          each * groups,
+          [each + groups, each * groups + each, Math.max(1, each * groups - each)],
+          `${each}를 ${groups}번 더한 것은 ${each}×${groups}와 같으므로 ${each * groups}입니다.`,
+          'multiplication', '덧셈식과 곱셈식을 잇는 과정',
           arrayVisualFor(groups, each, `${each}씩 ${groups}묶음`),
         );
       }
 
       if (situation === 2) {
-        const other = 2 + ((seed + 3) % 5);
+        // 두 곱을 더하는 혼합 계산 대신, 같은 배열을 돌려 보는 상황입니다.
         return makeQuestion(
           lesson, difficulty, index,
-          `빨간 상자에 ${each}개씩 ${groups}상자, 파란 상자에 ${other}개씩 ${groups}상자가 있습니다. 모두 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① 빨간 상자는 ${each}×${groups}=${each * groups}입니다. ② 파란 상자는 ${other}×${groups}=${other * groups}입니다. ③ ${each * groups}+${other * groups}=□`,
-          (each + other) * groups,
-          [each * groups, other * groups, (each + other) * groups + groups],
-          `두 상자의 수를 각각 곱셈으로 구한 뒤 더하면 ${(each + other) * groups}개입니다.`,
-          'multiplication', '두 묶음을 각각 곱해 합치는 과정',
+          `구슬을 한 줄에 ${each}개씩 ${groups}줄로 놓았습니다. 돌려서 보면 한 줄에 ${groups}개씩 ${each}줄입니다. 구슬의 수를 구하는 과정입니다. □에 알맞은 수는? ① ${each}×${groups}=${each * groups}입니다. ② 돌려 보아도 구슬의 수는 같습니다. ③ ${groups}×${each}=□`,
+          each * groups,
+          [each + groups, each * groups + groups, Math.max(1, each * groups - each)],
+          `돌려 보아도 구슬은 그대로이므로 ${groups}×${each}=${each * groups}입니다.`,
+          'multiplication', '곱하는 두 수를 바꾸어 보는 과정',
+          arrayVisualFor(groups, each, `${each}씩 ${groups}줄`),
         );
       }
 
@@ -12803,7 +12872,8 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       const order = [0, 1, 2].map((offset) => shapes[(start + offset) % 3]);
       return makeQuestion(
         lesson, difficulty, index,
-        `무늬의 규칙을 찾는 과정입니다. □에 들어갈 모양은? ① ${order.join(', ')}가 되풀이됩니다. ② ${order[0]}, ${order[1]}, ${order[2]}, ${order[0]}, ${order[1]}, □`,
+        // 모양 □와 빈칸 □가 헷갈리지 않게 빈칸은 ?로 씁니다.
+        `무늬의 규칙을 찾는 과정입니다. ?에 들어갈 모양은? ① ${order.join(', ')}가 되풀이됩니다. ② ${order[0]}, ${order[1]}, ${order[2]}, ${order[0]}, ${order[1]}, ?`,
         order[2], [order[0], order[1], '☆'],
         `${order.join(', ')}가 반복되므로 다음은 ${order[2]}입니다.`,
         'pattern', '반복 묶음을 찾아 다음을 구하는 과정',
@@ -13032,8 +13102,7 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
 
   // ── 덧셈과 뺄셈 ────────────────────────────────────────────────────────
   if (unit === '덧셈과 뺄셈' && no >= 2) {
-    const a = 10 * (2 + (seed % 5)) + (5 + (seed % 4));
-    const b = 10 * (1 + (seed % 3)) + (6 + (seed % 3));
+    const [a, b] = 덧셈두수(lesson, seed);
 
     if (no >= 2 && no <= 4) {
       const wrong = a + b - 10;
@@ -13047,7 +13116,7 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         );
       }
       if (pick === 1) {
-        const c = 10 * (1 + ((seed + 1) % 3)) + (2 + (seed % 5));
+        const c = b % 10 === 9 || a + b + 1 >= (no === 4 ? 200 : 100) ? b - 1 : b + 1;
         return makeQuestion(
           lesson, difficulty, index,
           `${a}+${b}와 ${a}+${c} 중 더 큰 것은?`,
@@ -13057,19 +13126,19 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
           'addition', '조건 함께 보기 · 더하지 않고 합 견주기',
         );
       }
+      // 세 수의 계산은 8차시에 배웁니다. 그전에는 한 번 더하는 상황만 냅니다.
       return makeQuestion(
         lesson, difficulty, index,
-        `구슬을 ${a}개 가지고 있었는데 ${b}개를 더 얻고 ${5 + (seed % 5)}개를 잃었습니다. 지금 몇 개일까요?`,
-        `${a + b - (5 + (seed % 5))}개`,
-        [`${a + b}개`, `${Math.abs(a - b)}개`, `${a + b + (5 + (seed % 5))}개`],
-        `얻으면 더하고 잃으면 뺍니다. ${a}+${b}-${5 + (seed % 5)}=${a + b - (5 + (seed % 5))}개입니다.`,
-        'addition', '조건 함께 보기 · 두 번 바뀌는 상황 계산하기',
+        `구슬을 ${a}개 가지고 있었는데 ${b}개를 더 얻었습니다. 지금 몇 개일까요?`,
+        `${a + b}개`,
+        [`${a + b - 10}개`, `${Math.abs(a - b)}개`, `${a + b + 10}개`],
+        `더 얻었으므로 더합니다. ${a}+${b}=${a + b}개입니다.`,
+        'addition', '조건 함께 보기 · 더 얻은 뒤의 수 구하기',
       );
     }
 
     if (no >= 5) {
-      const big = 10 * (5 + (seed % 4)) + (2 + (seed % 5));
-      const small = 10 * (1 + (seed % 3)) + (6 + (seed % 3));
+      const [big, small] = 뺄셈두수(lesson, seed);
       // 뺄셈을 덧셈으로 확인하는 것은 두 셈의 관계를 배운 뒤의 일입니다.
       if (pick === 0 && /관계를 식으로/.test(lesson.title)) {
         return makeQuestion(
@@ -13079,6 +13148,16 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
           [`답에서 ${small}을 뺀다`, `${big}에 ${small}을 더한다`, '확인할 수 없다'],
           `뺄셈은 덧셈으로 확인합니다. ${big - small}+${small}=${big}이면 맞습니다.`,
           'subtraction', '조건 함께 보기 · 덧셈으로 검산하기',
+        );
+      }
+      if (pick === 1 && no < 8) {
+        return makeQuestion(
+          lesson, difficulty, index,
+          `색종이 ${big}장 중 ${small}장을 썼습니다. 남은 색종이는 몇 장일까요?`,
+          `${big - small}장`,
+          [`${big + small}장`, `${big - small + 10}장`, `${small}장`],
+          `쓴 만큼 빼면 ${big}-${small}=${big - small}장입니다.`,
+          'subtraction', '조건 함께 보기 · 쓰고 남은 수 구하기',
         );
       }
       if (pick === 1) {
@@ -13091,12 +13170,16 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
           'subtraction', '조건 함께 보기 · 두 번 바뀌는 상황 계산하기',
         );
       }
+      // 견줄 빼는 수도 그 차시의 꼴을 지킵니다(5차시는 한 자리 수, 6차시는 몇십몇).
+      const other = [small + 10, small - 10, small + 1, small - 1].find((v) => v > 0 && v < big
+        && (no !== 5 || v < 10) && (no !== 6 || v % 10 !== 0)) ?? small + 1;
+      const [less, more] = other > small ? [small, other] : [other, small];
       return makeQuestion(
         lesson, difficulty, index,
-        `${big}-${small}과 ${big}-${small + 10} 중 더 큰 것은?`,
-        `${big}-${small}`,
-        [`${big}-${small + 10}`, '두 값이 같다', '비교할 수 없다'],
-        `빼는 수가 작을수록 남는 수가 큽니다. ${small}이 ${small + 10}보다 작으므로 ${big}-${small}이 더 큽니다.`,
+        `${big}-${less}과 ${big}-${more} 중 더 큰 것은?`,
+        `${big}-${less}`,
+        [`${big}-${more}`, '두 값이 같다', '비교할 수 없다'],
+        `빼는 수가 작을수록 남는 수가 큽니다. ${less}이 ${more}보다 작으므로 ${big}-${less}이 더 큽니다.`,
         'subtraction', '조건 함께 보기 · 빼지 않고 차 견주기',
       );
     }
@@ -13122,11 +13205,12 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       if (pick === 1) {
         return makeQuestion(
           lesson, difficulty, index,
-          `한 봉지에 사탕이 ${dan}개씩 들어 있습니다. ${k}봉지를 사고 ${dan}개를 더 받으면 모두 몇 개일까요?`,
+          // 곱셈과 덧셈을 섞지 않고 봉지 수로 생각하게 합니다(지도서).
+          `한 봉지에 사탕이 ${dan}개씩 들어 있습니다. ${k}봉지를 산 뒤 한 봉지를 더 샀습니다. 사탕은 모두 몇 개일까요?`,
           `${dan * k + dan}개`,
-          [`${dan * k}개`, `${dan * (k + 2)}개`, `${dan + k}개`],
-          `${dan}×${k}=${dan * k}개에 ${dan}개를 더하면 ${dan * k + dan}개입니다.`,
-          'multiplication', `조건 함께 보기 · ${dan}단을 두 단계 문제에 쓰기`,
+          [`${dan * k}개`, `${dan * (k + 2)}개`, `${dan + k + 1}개`],
+          `봉지가 ${k + 1}개이므로 ${dan}×${k + 1}=${dan * k + dan}개입니다.`,
+          'multiplication', `조건 함께 보기 · ${dan}단에서 한 묶음 더한 곱 구하기`,
         );
       }
       return makeQuestion(
@@ -13357,7 +13441,8 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
   // ── 여러 가지 도형 ─────────────────────────────────────────────────────
   if (unit === '여러 가지 도형' && no >= 2) {
     const triangles = 2 + (seed % 4);
-    const squares = 1 + ((seed + 2) % 4);
+    // 칠교판에는 삼각형 5개와 사각형 2개뿐입니다. 사각형이 4개 쓰였다는 상황이 나왔습니다.
+    const squares = 1 + ((seed + 2) % 2);
 
     if (no >= 2 && no <= 4) {
       if (pick === 0) {
@@ -13603,7 +13688,7 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (pick === 1) {
       return makeQuestion(
         lesson, difficulty, index,
-        `딱지가 모두 ${total}개인데 빨강이 ${red}개, 초록이 ${green}개입니다. 파랑은 몇 개일까요?`,
+        `딱지가 모두 ${total}개인데 빨강이 ${red}개, 초록이 ${green}개이고 남은 것은 모두 파랑입니다. 파랑은 몇 개일까요?`,
         `${blue}개`, [`${red}개`, `${green}개`, `${total - red}개`],
         `전체에서 아는 것을 빼면 ${total}-${red}-${green}=${blue}개입니다.`,
         'data', '조건 함께 보기 · 전체에서 빠진 항목 구하기',
@@ -14056,7 +14141,10 @@ const ideasForLesson = (lesson: Lesson, index: number): Idea[] | null => {
         right: '자로 잴 때는 물건의 한쪽 끝을 눈금 0에 맞춥니다.',
         wrong: '자로 잴 때는 어느 눈금에서 시작해도 길이가 같습니다.',
       },
-      { right: '1m는 100cm와 같습니다.', wrong: `1m는 ${cm}cm와 같습니다.` },
+      // 1m는 2-2 길이 재기에서 배웁니다.
+      lesson.semester === '2-2'
+        ? { right: '1m는 100cm와 같습니다.', wrong: `1m는 ${cm}cm와 같습니다.` }
+        : { right: '1cm는 누가 재어도 길이가 같습니다.', wrong: '1cm는 사람마다 길이가 다릅니다.' },
       {
         right: '자로 잴 때는 눈금을 세어 길이를 읽습니다.',
         wrong: '자로 잴 때는 눈금을 세지 않고 짐작해서 읽습니다.',
@@ -14198,6 +14286,16 @@ const ideasForLesson = (lesson: Lesson, index: number): Idea[] | null => {
     ];
   }
 
+  // 표와 그래프는 2-2에서 배웁니다. 1학기 분류하기에서는 분류한 것을 말합니다.
+  if (tag === 'data' && lesson.unitTitle === '분류하기') {
+    return [
+      { right: '분류할 때는 누가 나누어도 같게 나뉘는 기준을 정합니다.', wrong: '분류할 때는 예쁜 것과 예쁘지 않은 것으로 나누어도 됩니다.' },
+      { right: '분류하여 세면 무엇이 많고 적은지 알 수 있습니다.', wrong: '분류하여 세면 물건의 수가 늘어납니다.' },
+      { right: '기준이 달라지면 나뉘는 묶음도 달라집니다.', wrong: '기준이 달라도 늘 같게 나뉩니다.' },
+      { right: '셀 때는 센 것에 표시를 하며 빠뜨리지 않고 셉니다.', wrong: '셀 때는 눈으로만 보고 짐작합니다.' },
+    ];
+  }
+
   if (tag === 'data') {
     return [
       {
@@ -14260,12 +14358,14 @@ const ideasForLesson = (lesson: Lesson, index: number): Idea[] | null => {
     }
     return [
       {
-        right: '규칙을 찾으려면 되풀이되는 한 묶음을 먼저 찾습니다.',
+        right: '무늬에서 규칙을 찾으려면 되풀이되는 한 묶음을 먼저 찾습니다.',
         wrong: '규칙은 맨 끝에서부터 찾는 것이 좋습니다.',
       },
       {
         right: '되풀이되는 묶음을 알면 다음에 올 것을 알 수 있습니다.',
-        wrong: '되풀이되는 것이 없어도 규칙이라고 합니다.',
+        // 2씩 커지는 수처럼 되풀이 없이 늘어나는 것도 규칙이므로 '되풀이가 없으면
+        // 규칙이 아니다'를 오답으로 두면 안 됩니다.
+        wrong: '아무렇게나 늘어놓은 것도 규칙이라고 합니다.',
       },
       {
         right: '되풀이되는 묶음은 처음부터 차례로 보면 찾을 수 있습니다.',
@@ -14306,8 +14406,17 @@ const wordStepQuestion = (
   if (tag === 'addition' || tag === 'subtraction') {
     const item = ['구슬', '색종이', '딱지', '사탕'][seed % 4];
     const plus = tag === 'addition';
-    const a = 20 + (seed % 30);
-    const b = 12 + ((seed + 5) % 25);
+    let a = 20 + (seed % 30);
+    let b = 12 + ((seed + 5) % 25);
+    // 2-1 덧셈과 뺄셈에서는 차시가 다루는 꼴의 수를 씁니다(덧셈두수 참고).
+    if (덧셈뺄셈차시(lesson) >= 2) {
+      if (plus) {
+        [a, b] = 덧셈두수(lesson, seed);
+      } else {
+        const [big, small] = 뺄셈두수(lesson, seed);
+        [a, b] = [big - small, small];
+      }
+    }
     if (a + b > limit) return null;
 
     // 두 셈의 관계를 배우는 차시입니다. 전체와 부분을 갈라 보는 상황이
@@ -14320,7 +14429,8 @@ const wordStepQuestion = (
       ][situation];
       return makeQuestion(
         lesson, difficulty, index,
-        `${scene.where}에 ${scene.one} ${a}${scene.unit}과 ${scene.other} ${b}${scene.unit}이 있어 모두 ${a + b}${scene.unit}입니다. ${scene.other} 수를 구하는 과정입니다. □에 알맞은 수는? ① 전체는 ${a + b}${scene.unit}입니다. ② 부분 하나는 ${a}${scene.unit}입니다. ③ ${a + b}-${a}=□`,
+        // 구할 수(${b})를 문제에 미리 적지 않습니다.
+        `${scene.where}에 ${josa(scene.one, '과', '와')} ${josa(scene.other, '이', '가')} 모두 ${a + b}${scene.unit} 있고, 그중 ${josa(scene.one, '이', '가')} ${a}${scene.unit}입니다. ${scene.other} 수를 구하는 과정입니다. □에 알맞은 수는? ① 전체는 ${a + b}${scene.unit}입니다. ② 부분 하나는 ${a}${scene.unit}입니다. ③ ${a + b}-${a}=□`,
         `${b}${scene.unit}`,
         [`${a}${scene.unit}`, `${a + b}${scene.unit}`, `${a + b + b}${scene.unit}`],
         `전체에서 부분 하나를 빼면 남은 부분이 나옵니다. ${a + b}-${a}=${b}${scene.unit}입니다.`,
@@ -14395,16 +14505,16 @@ const wordStepQuestion = (
     if (situation === 1) {
       // 먹는 상황이라 먹을 수 있는 것만 씁니다. 예전에는 연필을 접시에
       // 담아 놓고 먹었습니다.
+      // 곱셈과 뺄셈을 섞은 혼합 계산은 하지 않습니다(2-2 곱셈구구 지도서).
+      // 대신 두 사람이 같은 묶음을 가진 상황을 견줍니다.
       const food = ['빵', '귤', '초콜릿', '사탕'][seed % 4];
-      const eaten = 1 + (seed % 4);
-      if (per * groups - eaten < 1) return null;
       return makeQuestion(
         lesson, difficulty, index,
-        `한 접시에 ${subject(food)} ${per}개씩 ${groups}접시가 있었는데 ${eaten}개를 먹었습니다. 남은 ${topic(food)} 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① 처음 수는 ${per}×${groups}=${per * groups}개입니다. ② 먹은 수는 ${eaten}개입니다. ③ ${per * groups}-${eaten}=□`,
-        `${per * groups - eaten}개`,
-        [`${per * groups}개`, `${per * groups + eaten}개`, `${eaten}개`],
-        `곱해서 처음 수를 구한 뒤 먹은 수를 빼면 ${per * groups - eaten}개입니다.`,
-        'multiplication', '곱한 뒤 덜어 내는 풀이 짚기',
+        `한 접시에 ${subject(food)} ${per}개씩 ${groups}접시가 있습니다. 모두 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① 한 묶음은 ${per}개입니다. ② 묶음은 ${groups}개이므로 ${per}의 ${groups}배입니다. ③ ${per}×${groups}=□`,
+        `${per * groups}개`,
+        [`${per + groups}개`, `${per * groups + per}개`, `${per * (groups - 1)}개`],
+        `${per}의 ${groups}배는 ${per}×${groups}=${per * groups}개입니다.`,
+        'multiplication', '몇의 몇 배를 곱셈식으로 잇는 풀이 짚기',
       );
     }
 
@@ -14469,7 +14579,9 @@ const wordStepQuestion = (
       if (count < 1) return null;
       return makeQuestion(
         lesson, difficulty, index,
-        `책이 ${total}권 있습니다. ${per2}권씩 상자에 담으면 몇 상자가 되는지 구하는 과정입니다. □에 알맞은 수는? ① ${total}에서 ${per2}이 몇 개인지 봅니다. ② ${per2}이 ${count}개입니다. ③ 상자는 □개입니다.`,
+        // '몇 상자가 되는지'로 물으면 남는 책을 담을 상자까지 세어 하나 더
+        // 많게 답할 수 있습니다. 꽉 찬 상자를 묻습니다.
+        `책이 ${total}권 있습니다. ${per2}권씩 상자에 담으면 ${per2}권이 꽉 찬 상자는 몇 개인지 구하는 과정입니다. □에 알맞은 수는? ① ${total}에서 ${per2}이 몇 개인지 봅니다. ② ${per2}이 ${count}개입니다. ③ 꽉 찬 상자는 □개입니다.`,
         `${count}상자`, [`${count + 1}상자`, `${Math.max(1, count - 1)}상자`, `${total}상자`],
         `${total}에서 ${per2}이 ${count}개이므로 ${count}상자입니다.`,
         'placeValue', '묶음 수를 세는 풀이 짚기',
@@ -14582,11 +14694,30 @@ const asOrderQuestion = (
   index: number,
 ): Question | null => {
   // '① … ② … ③ …' 를 단계별로 끊습니다.
-  const steps = base.prompt.match(/[①②③④][^①②③④]+/g)?.map((step) => step.trim());
+  // 단계 하나가 통째로 □이면 무엇을 하는 단계인지 알 수 없으므로 정답 말로
+  // 채웁니다. '② □'를 그대로 두면 ㄷ이 어느 자리인지 정할 수 없습니다.
+  const 채운단계 = `${String(base.answer).replace(/\.?$/, '.')}`;
+  const steps = base.prompt
+    .match(/[①②③④][^①②③④]+/g)
+    ?.map((step) => step.trim().replace(/^([①②③④])\s*□$/, `$1 ${채운단계}`));
   if (!steps || steps.length < 3) return null;
 
+  // '초록 3개 / 빨강 4개'나 '1000이 5개이면 5000 / 100이 7개이면 700'처럼 꼴이
+  // 같은 단계는 어느 것을 먼저 해도 됩니다. 그런 단계가 섞이면 바른 차례가
+  // 여럿이므로 차례 문항으로 만들지 않습니다.
+  const 꼴 = (step: string) =>
+    step.replace(/^[①②③④]\s*/, '').replace(/[\d□]+[을를이가은는]?/g, '#').replace(/\.$/, '').split(/\s+/);
+  const 나란한단계 = (one: string[], two: string[]) =>
+    one.length >= 2 && one.length === two.length && one.filter((word, at) => word !== two[at]).length <= 1;
+  const 꼴들 = steps.slice(0, 3).map(꼴);
+  if (꼴들.some((one, at) => 꼴들.slice(at + 1).some((two) => 나란한단계(one, two)))) return null;
+  // '전체는 33입니다 / 부분 하나는 8입니다'처럼 주어진 수를 알려 주기만 하는
+  // 단계가 둘이면 그 둘의 차례도 정해져 있지 않습니다.
+  const 주어진수 = steps.slice(0, 3).filter((step) => /[는은] [\d□]+(입니다)?\.?$/.test(step));
+  if (주어진수.length >= 2) return null;
+
   // 앞부분(상황 설명)은 그대로 두고 단계만 다시 씁니다.
-  const head = base.prompt.slice(0, base.prompt.indexOf('①')).replace(/□에 알맞은 수는\?\s*$/, '').trim();
+  const head = base.prompt.slice(0, base.prompt.indexOf('①')).replace(/□에 [^?]*\?\s*$/, '').trim();
   if (!head) return null;
 
   const labels = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ'];
@@ -14618,7 +14749,7 @@ const asOrderQuestion = (
     lesson, difficulty, index,
     `${head} 풀이 단계가 뒤섞였습니다. ${listed} 바른 차례로 놓으면?`,
     answer, others.slice(0, 3),
-    `${head} 이 순서로 풀어야 답을 구할 수 있습니다.`,
+    `먼저 할 일부터 차례대로 놓으면 ${answer}입니다. 앞 단계에서 구한 것을 다음 단계에서 쓰기 때문입니다.`,
     base.type,
     // 전략 이름에 원래 문항의 이름을 남깁니다. 모든 차시가 '풀이 차례
     // 놓기' 하나로만 적히면 차시끼리 구분이 사라집니다.
@@ -14805,7 +14936,7 @@ const numberShapes: Shape[] = [
       // a+b는 두 수를 더한 값이라 단원 범위를 넘습니다. 자리 하나만 보고
       // 멈춘 경우를 오답 보기로 둡니다.
       [askBig ? a : b, head * (four ? 1000 : 100), Math.abs(a - b)],
-      `가장 높은 자리가 같으므로 다음 자리를 견주면 ${askBig ? b : a}이(가) 더 ${askBig ? '큽니다' : '작습니다'}.`,
+      `가장 높은 자리가 같으므로 다음 자리를 견주면 ${askBig ? b : a}이 더 ${askBig ? '큽니다' : '작습니다'}.`,
       'placeValue', shapeStrategy(difficulty, '자료 해석 · 자리마다 견주어 크기 비교하기', '자리마다 견주어 크기 비교하기'),
     );
   } },
@@ -14977,14 +15108,19 @@ const multiplyShapes: Shape[] = [
     const dans = dansOf(lesson);
     if (dans.length === 0) return null;
     const a = dans[seed % dans.length];
-    const b = 2 + ((seed + 2) % 4);
+    const b = 2 + ((seed + 2) % 3);
     const product = a * b * 2;
+    // 곱셈구구는 9단까지입니다. 5×6과 곱이 같은 식으로 10×3을 답으로 두었습니다.
+    // 두 배가 9를 넘으면 곱하는 두 수의 차례를 바꾼 식으로 묻습니다.
+    // 차례를 바꾼 식이 문제의 식과 같아지면(8×8) 묻지 않습니다.
+    if (a * 2 > 9 && b * 2 === a) return null;
+    const right = a * 2 <= 9 ? `${a * 2}×${b}` : `${b * 2}×${a}`;
     return makeQuestion(
       lesson, difficulty, index,
       `${a}×${b * 2}와 곱이 같은 곱셈식은?`,
-      `${a * 2}×${b}`,
-      [`${a}×${b}`, `${a * 2}×${b * 2}`, `${a + 2}×${b}`],
-      `${a}×${b * 2}=${product}이고 ${a * 2}×${b}=${product}로 곱이 같습니다.`,
+      right,
+      [`${a}×${b}`, `${b * 2}×${b * 2}`, `${a < 9 ? a + 1 : a - 1}×${b}`],
+      `${a}×${b * 2}=${product}이고 ${right}=${product}로 곱이 같습니다.`,
       'multiplication', shapeStrategy(difficulty, '자료 해석 · 곱이 같은 다른 식 찾기', '곱이 같은 다른 식 찾기'),
     );
   } },
@@ -15022,11 +15158,15 @@ const multiplyShapes: Shape[] = [
       lesson, difficulty, index,
       `${dan}단 곱셈구구에 대한 설명으로 옳은 것은?`,
       `곱하는 수가 1 커지면 곱은 ${dan}씩 커집니다`,
-      [
-        `곱하는 수가 1 커지면 곱은 1씩 커집니다`,
-        `곱하는 수가 커져도 곱은 그대로입니다`,
-        `${dan}단에는 ${dan}보다 작은 곱도 있습니다`,
-      ],
+      // 1단에서는 '1씩 커진다'가 정답과 같아지고, '1보다 작은 곱'은 같은
+      // 차시의 1×0=0과 헷갈립니다.
+      dan === 1
+        ? ['곱하는 수가 1 커지면 곱은 2씩 커집니다', '곱하는 수가 커져도 곱은 그대로입니다', '1단의 곱은 모두 1입니다']
+        : [
+          `곱하는 수가 1 커지면 곱은 1씩 커집니다`,
+          `곱하는 수가 커져도 곱은 그대로입니다`,
+          `${dan}단에는 ${dan}보다 작은 곱도 있습니다`,
+        ],
       `${dan}씩 한 묶음이 늘어나므로 곱은 ${dan}씩 커집니다.`,
       'multiplication', shapeStrategy(difficulty, '자료 해석 · 곱셈구구의 성질 판단하기', '곱셈구구의 성질 판단하기'),
     );
@@ -15084,8 +15224,7 @@ const calcShapes: Shape[] = [
     fits: (lesson) => /뺄셈을 해/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 11 + lesson.lessonNo;
-      const all = 40 + (seed % 40);
-      const gone = 11 + ((seed + 3) % 20);
+      const [all, gone] = 뺄셈두수(lesson, seed);
       if (all > lesson.scope.maxNumber) return null;
       return makeQuestion(
         lesson, difficulty, index,
@@ -15102,8 +15241,7 @@ const calcShapes: Shape[] = [
     fits: (lesson) => /덧셈을 해/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 7 + lesson.lessonNo;
-      const a = 24 + (seed % 40);
-      const b = 15 + ((seed + 3) % 30);
+      const [a, b] = 덧셈두수(lesson, seed);
       const item = ['딱지', '구슬', '색연필', '스티커'][seed % 4];
       return makeQuestion(
         lesson, difficulty, index,
@@ -15120,8 +15258,7 @@ const calcShapes: Shape[] = [
     fits: (lesson) => /덧셈을 해 볼까요 ⑵|^덧셈을 해 볼까요$/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 11 + lesson.lessonNo;
-      const a = 20 + (seed % 5) * 10 + 7;
-      const b = 10 + ((seed + 2) % 5) * 10 + 8;
+      const [a, b] = 덧셈두수(lesson, seed);
       const wrong = Math.floor(a / 10) * 10 + Math.floor(b / 10) * 10 + ((a % 10) + (b % 10)) % 10;
       return makeQuestion(
         lesson, difficulty, index,
@@ -15164,12 +15301,11 @@ const calcShapes: Shape[] = [
     fits: (lesson) => /뺄셈을 해/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 17 + lesson.lessonNo;
-      const all = 40 + (seed % 45);
-      const gone = 12 + ((seed + 5) % 25);
+      const [all, gone] = 뺄셈두수(lesson, seed);
       const item = ['사탕', '색종이', '풍선', '연필'][seed % 4];
       return makeQuestion(
         lesson, difficulty, index,
-        `${subject(item)} ${all}개 있었는데 ${gone}개를 썼습니다. 남은 ${item}은 몇 개일까요?`,
+        `${subject(item)} ${all}개 있었는데 ${gone}개를 썼습니다. 남은 ${topic(item)} 몇 개일까요?`,
         `${all - gone}개`, [`${all + gone}개`, `${gone}개`, `${all - gone + 10}개`],
         `쓴 만큼 덜어 내면 ${all}-${gone}=${all - gone}개입니다.`,
         'subtraction',
@@ -15311,12 +15447,16 @@ const calcShapes: Shape[] = [
       const a = 20 + (seed % 30);
       const need = 10 - (a % 10);
       if (need === 10) return null;
-      const b = need + 10 + (seed % 20);
+      // 더하는 수가 몇십(45+20의 20)이면 가를 까닭이 없습니다. 그대로 십의
+      // 자리에 더하면 되는데 '5와 15로 가른다'를 답으로 가르쳤습니다.
+      const 날것 = need + 10 + (seed % 20);
+      const b = 날것 % 10 === 0 ? 날것 + 3 : 날것;
       return makeQuestion(
         lesson, difficulty, index,
         `${a}+${b}를 쉽게 계산하려고 합니다. ${b}를 어떻게 가르면 좋을까요?`,
         `${need}과 ${b - need}`,
-        [`${b - 1}과 1`, `${Math.floor(b / 2)}과 ${b - Math.floor(b / 2)}`, `10과 ${b - 10}`],
+        // 정답을 거꾸로 적은 보기('1과 22'와 '22와 1')는 같은 가르기입니다.
+        [need === 1 ? `2와 ${b - 2}` : `${b - 1}과 1`, `${Math.floor(b / 2)}과 ${b - Math.floor(b / 2)}`, `10과 ${b - 10}`],
         `${a}에 ${need}을 더하면 ${a + need}으로 몇십이 되어 계산이 쉬워집니다.`,
         'addition',
         shapeStrategy(difficulty, '자료 해석 · 몇십을 만들어 쉽게 계산하기', '몇십을 만들어 계산하기'),
@@ -15565,9 +15705,9 @@ const sortShapes: Shape[] = [
       const good = 것.criteria[seed % 것.criteria.length];
       return makeQuestion(
         lesson, difficulty, index,
-        `${것.thing}을(를) 분류하려고 합니다. 분류 기준으로 알맞은 것은?`,
+        `${josa(것.thing, '을', '를')} 분류하려고 합니다. 분류 기준으로 알맞은 것은?`,
         good, ['예쁜 것', '내가 좋아하는 것', '멋있는 것'],
-        `누가 분류해도 같은 결과가 나오는 것이 분류 기준입니다. ${good}은(는) 분명합니다.`,
+        `누가 분류해도 같은 결과가 나오는 것이 분류 기준입니다. ${josa(good, '은', '는')} 분명합니다.`,
         'classification',
         shapeStrategy(difficulty, '자료 해석 · 분명한 분류 기준 고르기', '분류 기준 고르기'),
       );
@@ -15838,7 +15978,7 @@ const ruleShapes: Shape[] = [
       ).join(', ');
       return makeQuestion(
         lesson, difficulty, index,
-        `${보기무늬}으로 이어지는 무늬입니다. 규칙을 찾을 때 가장 먼저 할 일은 무엇일까요?`,
+        `${보기무늬} 차례로 이어지는 무늬입니다. 규칙을 찾을 때 가장 먼저 할 일은 무엇일까요?`,
         '되풀이되는 한 묶음을 찾는다',
         ['맨 끝을 먼저 본다', '개수를 모두 센다', '색깔을 센다'],
         `되풀이되는 한 묶음(${size}개짜리 같은)을 찾으면 다음에 올 것을 알 수 있습니다.`,
@@ -15884,7 +16024,7 @@ const ruleShapes: Shape[] = [
       const [scene, rule] = cases[seed % cases.length];
       return makeQuestion(
         lesson, difficulty, index,
-        `${scene} 여기에서 찾을 수 있는 규칙은 무엇일까요?`,
+        `${scene}. 여기에서 찾을 수 있는 규칙은 무엇일까요?`,
         rule,
         ['규칙이 없습니다', '수가 점점 커집니다', '모양이 커집니다'].filter((x) => x !== rule).slice(0, 3),
         `되풀이되는 것이 무엇인지 찾으면 규칙을 말할 수 있습니다.`,
@@ -16731,7 +16871,8 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
       lesson, '하', index,
       `막대의 길이를 어림하는 차례입니다. □에 알맞은 것은? ① 자로 재니 ${near}cm 눈금에 가장 가깝습니다. ② 눈금과 딱 맞지 않으면 '약'을 붙여 말합니다. ③ 그러면 □입니다.`,
       `약 ${near}cm`,
-      [`${near}cm`, `약 ${near + 1}cm`, `약 ${near}m`],
+      // m는 2학기에 배웁니다. 1학기 차시의 보기에 m를 두지 않습니다.
+      [`${near}cm`, `약 ${near + 1}cm`, `약 ${near - 1}cm`],
       `가장 가까운 눈금이 ${near}cm이므로 약 ${near}cm입니다.`,
       'measurement', guide('길이 어림하기'),
     );
@@ -16772,7 +16913,7 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
     if (total > limit) return null;
     return makeQuestion(
       lesson, '하', index,
-      `${metre}m ${part}cm를 cm로만 나타내는 차례입니다. □에 알맞은 것은? ① 1m는 100cm입니다. ② ${metre}m는 ${metre * 100}cm입니다. ③ ${metre * 100}+${part}=□입니다.`,
+      `${metre}m ${part}cm를 cm로만 나타내는 차례입니다. □에 알맞은 것은? ① ${metre}m ${part}cm를 ${metre}m와 ${part}cm로 나눕니다. ② ${metre}m는 ${metre * 100}cm입니다. ③ ${metre * 100}+${part}=□입니다.`,
       `${total}cm`,
       [`${metre * 10 + part}cm`, `${metre * 100}cm`, `${part}cm`],
       `${metre}m는 ${metre * 100}cm이므로 모두 ${total}cm입니다.`,
@@ -16800,7 +16941,7 @@ const guidedStepQuestion = (lesson: Lesson, index: number): Question | null => {
       lesson, '하', index,
       `막대의 길이를 재는 차례입니다. □에 알맞은 것은? ① 한쪽 끝을 눈금 0에 맞춥니다. ② 1cm가 ${times}번 들어 있습니다. ③ 그래서 막대는 □입니다.`,
       `${times}cm`,
-      [`${times}m`, `${times + 1}cm`, `1cm`],
+      [`${times}번`, `${times + 1}cm`, `1cm`],
       `1cm가 ${times}번이면 ${times}cm입니다.`,
       'measurement', guide('길이 재기'),
     );

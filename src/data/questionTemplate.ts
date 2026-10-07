@@ -39,13 +39,24 @@ const hasFinalSound = (word: string) => {
 // 받침이 있으면 '이/은/을/과', 없으면 '가/는/를/와'입니다.
 // 낱말뿐 아니라 수에도 붙습니다 — '31+33는', '9을'처럼 어긋나면 아이가
 // 문제를 읽다가 걸립니다.
+// 짝 가운데 어느 쪽을 적어도(':과'든 ':와'든) 받침을 보고 고릅니다.
+// 예전에는 '이·은·을·와'만 알아서 ':과', ':의', ':에서'를 적으면 조사가
+// 통째로 빠졌습니다('교실 복도 지우개 길이를 재려고').
+const 받침ㄹ = (word: string) => {
+  const last = word[word.length - 1];
+  if (/\d/.test(last)) return /[178]/.test(last);
+  const code = word.charCodeAt(word.length - 1);
+  return code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 === 8;
+};
 const withParticle = (word: string, kind: string) => {
   const hasFinal = hasFinalSound(word);
-  if (kind === '이') return `${word}${hasFinal ? '이' : '가'}`;
-  if (kind === '은') return `${word}${hasFinal ? '은' : '는'}`;
-  if (kind === '을') return `${word}${hasFinal ? '을' : '를'}`;
-  if (kind === '와') return `${word}${hasFinal ? '과' : '와'}`;
-  return word;
+  if (kind === '이' || kind === '가') return `${word}${hasFinal ? '이' : '가'}`;
+  if (kind === '은' || kind === '는') return `${word}${hasFinal ? '은' : '는'}`;
+  if (kind === '을' || kind === '를') return `${word}${hasFinal ? '을' : '를'}`;
+  if (kind === '와' || kind === '과') return `${word}${hasFinal ? '과' : '와'}`;
+  if (kind === '으로' || kind === '로') return `${word}${hasFinal && !받침ㄹ(word) ? '으로' : '로'}`;
+  // '의', '에서', '도'처럼 받침과 상관없는 조사는 그대로 붙입니다.
+  return `${word}${kind}`;
 };
 
 // ── 그림 ────────────────────────────────────────────────────────────
