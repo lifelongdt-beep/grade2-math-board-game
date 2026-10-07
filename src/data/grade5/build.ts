@@ -8,6 +8,14 @@ import {
   g5SelfCheck,
   g5StudentConcept,
 } from './support';
+import {
+  g3CoreConcept,
+  g3Misconception,
+  g3ReadStrategy,
+  g3SelfCheck,
+  g3StudentConcept,
+  g3TagLabel,
+} from '../grade3/support';
 
 // ════════════════════════════════════════════════════════════════════
 // 5학년 문항을 만드는 곳
@@ -59,6 +67,9 @@ export type G5Spec = {
   // 수이지만 기약분수는 3/4 하나뿐이고, '크기가 같지 않은 분수는?'에서는
   // 보기 셋이 모두 같은 값인 것이 문항의 뜻입니다. 이런 자리에만 켭니다.
   sameValueOk?: boolean;
+  // 보기가 뺄셈식('475-328')인 문항입니다. 이 값이 없으면 '-' 뒤에
+  // 숫자가 오는 보기를 음수로 보고 거릅니다.
+  minusIsOperator?: boolean;
 };
 
 export type G5Family = {
@@ -153,7 +164,9 @@ const usableWrongs = (spec: G5Spec): string[] => {
     if (같은가(wrong, spec.answer)) continue;
     if (kept.some((one) => 같은가(one, wrong))) continue;
     // 초등에서는 음수를 다루지 않습니다.
-    if (/-\d/.test(wrong)) continue;
+    // 초등에서는 음수를 다루지 않습니다. 다만 보기가 '800-600' 같은
+    // 뺄셈식이면 '-'는 빼기 기호이므로 거르지 않습니다(minusIsOperator).
+    if (spec.minusIsOperator ? /(^|[^\d\s)])\s*-\s*\d/.test(wrong) : /-\d/.test(wrong)) continue;
     kept.push(wrong);
     if (kept.length === 3) break;
   }
@@ -170,18 +183,25 @@ const toQuestion = (
   const strategy = `${difficultyDesign[difficulty].label} · ${layer.label} · ${spec.strategy}`;
   const options = shuffle([spec.answer, ...usableWrongs(spec)], slot * 31 + difficultyIndex[difficulty] * 7 + lesson.lessonNo);
 
+  // 3학년 차시는 3학년 말로 적은 도움말을 씁니다. 같은 갈래 이름이라도
+  // 학년마다 할 말이 다릅니다(grade3/support.ts).
+  const 셋째 = lesson.semester.startsWith('3');
+  const 도움 = 셋째
+    ? { student: g3StudentConcept, core: g3CoreConcept, read: g3ReadStrategy, mis: g3Misconception, check: g3SelfCheck, label: g3TagLabel }
+    : { student: g5StudentConcept, core: g5CoreConcept, read: g5ReadStrategy, mis: g5Misconception, check: g5SelfCheck, label: tagLabel };
+
   const support: LearningSupport = {
-    studentConcept: spec.concept ?? g5StudentConcept[spec.tag] ?? '문제에서 무엇을 구하라고 했는지 먼저 찾으세요.',
+    studentConcept: spec.concept ?? 도움.student[spec.tag] ?? '문제에서 무엇을 구하라고 했는지 먼저 찾으세요.',
     studentHint: spec.hint,
-    coreConcept: g5CoreConcept[spec.tag] ?? lesson.objective,
-    readStrategy: `${strategy}: ${g5ReadStrategy[spec.tag] ?? '문제에 주어진 조건을 하나씩 표시합니다.'}`,
+    coreConcept: 도움.core[spec.tag] ?? lesson.objective,
+    readStrategy: `${strategy}: ${도움.read[spec.tag] ?? '문제에 주어진 조건을 하나씩 표시합니다.'}`,
     steps: [
       '문제에서 무엇을 구하라고 했는지 먼저 찾습니다.',
       ...spec.steps,
     ],
-    misconceptionTip: spec.misconceptionTip ?? g5Misconception[spec.tag] ?? '답을 고른 까닭을 한 줄로 말해 보세요.',
+    misconceptionTip: spec.misconceptionTip ?? 도움.mis[spec.tag] ?? '답을 고른 까닭을 한 줄로 말해 보세요.',
     textbookConnection: `차시 목표 "${lesson.objective}"와 연결됩니다. 교과서 핵심은 ${lesson.textbookFocus} 익힘책 핵심은 ${lesson.workbookFocus}`,
-    selfCheck: spec.selfCheck ?? g5SelfCheck[spec.tag] ?? '답을 문제에 다시 넣어 말이 되는지 확인했나요?',
+    selfCheck: spec.selfCheck ?? 도움.check[spec.tag] ?? '답을 문제에 다시 넣어 말이 되는지 확인했나요?',
   };
 
   return {
@@ -194,7 +214,7 @@ const toQuestion = (
     answerIndex: options.indexOf(spec.answer),
     answer: spec.answer,
     explanation: lessonNote(support),
-    misconception: tagLabel[spec.tag] ?? '개념 확인',
+    misconception: 도움.label[spec.tag] ?? '개념 확인',
     type: spec.tag,
     strategy,
     support,

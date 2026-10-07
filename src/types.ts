@@ -5,7 +5,7 @@ export type SessionDuration = 30 | 60 | 120;
 // 어느 학기인지입니다. 2학년 1·2학기로 시작했고, 5학년 2학기가 뒤에
 // 붙었습니다. 5학년은 차시도 문항도 따로 만들기 때문에(grade5 폴더),
 // 여기서 하는 일은 '어느 학기의 차시인가'를 한 곳에 적어 두는 것뿐입니다.
-export type Semester = '2-1' | '2-2' | '5-1' | '5-2';
+export type Semester = '2-1' | '2-2' | '3-1' | '5-1' | '5-2';
 
 export type ConceptTag =
   | 'number'
@@ -42,7 +42,13 @@ export type ConceptTag =
   | 'correspondence'
   | 'fractionCompare'
   | 'fractionAdd'
-  | 'area';
+  | 'area'
+  // ── 3학년에서 쓰는 갈래입니다 ──────────────────────────────────
+  // 세 자리 수의 덧셈·뺄셈 계산은 2학년 갈래(addition, subtraction)를
+  // 그대로 씁니다. 어림셈은 5학년의 '어림하기'(rounding, 올림·버림·
+  // 반올림)와 다릅니다 — 3학년은 가까운 몇백으로 어림해 계산 결과를
+  // 짐작합니다. 두 학년을 한 이름으로 묶으면 선생님 분석에서 섞입니다.
+  | 'estimate';
 
 // 차시가 '무엇을 물어도 되는가'를 적어 둔 선언입니다.
 //
@@ -610,6 +616,32 @@ export interface ArrayVisual {
   hideCaption?: boolean;
 }
 
+// ── 3-1 2단원 평면도형 ──────────────────────────────────────────────
+// 선분·직선·반직선·각은 닫힌 도형이 아니라서 figure-set으로 그릴 수
+// 없습니다. 지도서가 그리는 그대로 점에 이름(ㄱ, ㄴ …)을 달고,
+//   segment 두 점 사이만 긋습니다(양 끝에 점).
+//   line    두 점을 지나 양쪽으로 길게 늘여 긋습니다.
+//   ray     첫 점에서 시작해 둘째 점을 지나 한쪽으로만 길게 늘입니다.
+//   angle   가운데 점(points[1])이 꼭짓점이고, 거기서 두 반직선을 긋습니다.
+//   curve   굽은 선입니다. 점들을 부드럽게 잇습니다.
+//   polyline 꺾인 선입니다(곧은 선 여러 개). 각이 아닌 것을 보일 때 씁니다.
+// 좌표는 -1~1 사이로 적고, 위쪽이 -1입니다.
+export interface LineFigureVisual {
+  kind: 'line-figure';
+  label: string;
+  items: Array<{
+    // 가, 나, 다 … 그림 밑에 붙이는 이름입니다.
+    name?: string;
+    shape: 'segment' | 'line' | 'ray' | 'angle' | 'curve' | 'polyline';
+    points: Array<[number, number]>;
+    // 점의 이름입니다. points 차례대로 붙습니다. 빈 글자면 점만 찍습니다.
+    labels?: string[];
+    // 각의 꼭짓점에 직각 표시를 그립니다. 직각인지 묻는 문항에서는
+    // 켜지 않습니다 — 표시가 곧 답이 됩니다.
+    rightMark?: boolean;
+  }>;
+}
+
 export interface PatternVisual {
   kind: 'pattern';
   label: string;
@@ -642,6 +674,7 @@ export type QuestionVisual =
   | YearCalendarVisual
   | PictographVisual
   | ArrayVisual
+  | LineFigureVisual
   | PatternVisual;
 
 export interface Player {
