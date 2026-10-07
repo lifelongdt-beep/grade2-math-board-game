@@ -490,6 +490,11 @@ export interface BarModelVisual {
 export interface RulerVisual {
   kind: 'ruler';
   label: string;
+  /**
+   * 'mm'이면 start·end·highlight를 mm로 적고, 1 mm마다 작은 눈금,
+   * 5 mm마다 중간 눈금, 10 mm마다 긴 눈금과 cm 숫자를 그립니다(3-1 5단원).
+   */
+  unit?: 'mm';
   start: number;
   end: number;
   highlightStart: number;
@@ -504,6 +509,11 @@ export interface ClockVisual {
   label: string;
   hour: number;
   minute: number;
+  /**
+   * 초입니다(3-1 5단원). 있으면 초바늘과 작은 눈금 60칸을 함께 그립니다.
+   * 초바늘 없이 초를 읽으라고 하면 읽을 것이 없습니다.
+   */
+  second?: number;
   endHour?: number;
   endMinute?: number;
   /** 바늘이 실제 정답 시각이 아니라 시계 모양을 보여 주는 예시일 때 true */

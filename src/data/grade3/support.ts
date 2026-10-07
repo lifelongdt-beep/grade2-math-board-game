@@ -21,6 +21,7 @@ export const g3StudentConcept: Partial<Record<ConceptTag, string>> = {
   estimate: '두 수가 각각 어느 몇백에 더 가까운지 보세요.',
   shape: '도형의 이름은 곧은 선의 수, 직각의 수, 변의 길이로 정해집니다.',
   division: '전체가 얼마이고, 몇으로 똑같이 나누는지 또는 몇씩 묶는지 먼저 찾으세요.',
+  multiplication: '일의 자리부터 곱하고, 십의 자리 숫자를 곱한 값은 몇십이라는 것을 기억하세요.',
 };
 
 export const g3CoreConcept: Partial<Record<ConceptTag, string>> = {
@@ -29,6 +30,7 @@ export const g3CoreConcept: Partial<Record<ConceptTag, string>> = {
   estimate: '어림셈은 정확히 계산하지 않고 두 수를 가까운 몇백으로 바꾸어 계산 결과가 얼마쯤인지 짐작하는 것입니다.',
   shape: '선분, 직선, 반직선, 각, 직각을 알면 직각삼각형, 직사각형, 정사각형을 뜻으로 구별할 수 있습니다.',
   division: '나눗셈은 전체를 똑같이 나누는 것입니다. 나눗셈의 몫은 곱셈구구로 구할 수 있습니다. ■÷▲=●이면 ▲×●=■입니다.',
+  multiplication: '(두 자리 수)×(한 자리 수)는 곱해지는 수를 몇십과 몇으로 갈라 각각 곱한 다음 더한 것과 같습니다. 일의 자리에서 올림한 수는 십의 자리를 곱한 값에 더합니다.',
 };
 
 export const g3ReadStrategy: Partial<Record<ConceptTag, string>> = {
@@ -37,6 +39,7 @@ export const g3ReadStrategy: Partial<Record<ConceptTag, string>> = {
   estimate: '정확한 값을 구하라는 것인지, 얼마쯤인지 어림하라는 것인지 먼저 봅니다.',
   shape: '그림에서 끝이 있는지, 직각이 몇 개인지, 변의 길이가 같은지 하나씩 봅니다.',
   division: '전체의 수, 나누는 수, 구하는 것을 차례로 표시합니다.',
+  multiplication: '한 묶음에 몇씩, 몇 묶음인지 먼저 찾아 곱셈식을 세웁니다.',
 };
 
 export const g3Misconception: Partial<Record<ConceptTag, string>> = {
@@ -45,6 +48,7 @@ export const g3Misconception: Partial<Record<ConceptTag, string>> = {
   estimate: '백의 자리 숫자만 남기고 나머지를 버리면 안 됩니다. 389는 300보다 400에 더 가깝습니다.',
   shape: '도형이 기울어져 놓여 있어도 이름은 바뀌지 않습니다. 놓인 모양이 아니라 조건으로 판단하세요.',
   division: '나누어지는 수와 나누는 수의 자리를 바꾸면 다른 식이 됩니다.',
+  multiplication: '올림한 수를 빠뜨리거나, 십의 자리 숫자에 먼저 더한 다음 곱하면 안 됩니다.',
 };
 
 export const g3SelfCheck: Partial<Record<ConceptTag, string>> = {
@@ -53,6 +57,7 @@ export const g3SelfCheck: Partial<Record<ConceptTag, string>> = {
   estimate: '어림한 값과 실제로 계산한 값이 비슷한지 견주어 보았나요?',
   shape: '고른 도형이 뜻의 조건을 모두 갖추었는지 하나씩 확인했나요?',
   division: '몫과 나누는 수를 곱하면 나누어지는 수가 되나요?',
+  multiplication: '곱해지는 수를 가까운 몇십으로 어림하여 곱한 값과 비슷한가요?',
 };
 
 // 선생님 기록에 남는 이름입니다.
@@ -62,4 +67,5 @@ export const g3TagLabel: Partial<Record<ConceptTag, string>> = {
   estimate: '덧셈과 뺄셈의 어림셈',
   shape: '평면도형',
   division: '나눗셈',
+  multiplication: '곱셈',
 };

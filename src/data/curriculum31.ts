@@ -30,6 +30,9 @@ import type { ConceptTag, Lesson, LessonScope, Semester, Unit } from '../types';
 //     차시로 둡니다.
 //   · 3단원 나눗셈은 곱셈구구 안에서 나누어떨어지는 것만 다룹니다(나머지는
 //     3-2). 0을 나누거나 0으로 나누는 것은 다루지 않습니다.
+//   · 4단원 곱셈은 (두 자리 수)×(한 자리 수)이고, 차시마다 올림이 일어나는
+//     자리가 정해져 있습니다(2 없음, 3 십의 자리, 4 일의 자리, 5 두 번).
+//     어림셈은 두 자리 수를 가까운 몇십으로 어림합니다(19×7 → 20×7).
 //   · 1단원 차시마다 받아올림·받아내림의 횟수가 정해져 있습니다.
 //     2차시 받아올림 없음, 3차시 한 번, 4차시 여러 번,
 //     6차시 받아내림 없음, 7차시 한 번, 8차시 두 번.
@@ -50,6 +53,9 @@ type LessonSeed = {
 const scopeFor = (unitTitle: string, lessonNo: number): LessonScope => {
   // 2학년 전용 그림이 섞이지 않게 막아 둡니다.
   const forbidVisuals = ['ruler', 'unit-measure', 'clock', 'calendar', 'year-calendar', 'cube-stack', 'cube-pattern'];
+  if (unitTitle === '곱셈') {
+    return { maxNumber: 900, representation: lessonNo <= 2 ? 'semi' : 'symbolic', forbidVisuals };
+  }
   if (unitTitle === '나눗셈') {
     return { maxNumber: 81, representation: lessonNo <= 3 ? 'semi' : 'symbolic', forbidVisuals };
   }
@@ -87,6 +93,7 @@ const 삼각형성취 = '[4수03-09] 여러 가지 모양의 삼각형에 대한
 const 사각형성취 = '[4수03-10] 여러 가지 모양의 사각형에 대한 분류 활동을 통하여 직사각형, 정사각형, 사다리꼴, 평행사변형, 마름모를 이해하고, 그 성질을 탐구하고 설명할 수 있다.';
 const 나눗셈성취 = '[4수01-05] 나눗셈이 이루어지는 실생활 상황과 연결하여 나눗셈의 의미를 알고, 곱셈과 나눗셈의 관계를 이해한다.';
 const 나눗셈몫성취 = '[4수01-06] 나누는 수가 한 자리 수인 나눗셈의 계산 원리를 이해하고 그 계산을 할 수 있으며, 나눗셈에서 몫과 나머지의 의미를 안다.';
+const 곱셈성취 = '[4수01-04] 곱하는 수가 한 자리 수 또는 두 자리 수인 곱셈의 계산 원리를 이해하고 그 계산을 할 수 있다.';
 const 어림성취 = '[4수01-08] 자연수의 덧셈, 뺄셈, 곱셈, 나눗셈과 관련한 여러 가지 상황에서 어림셈을 할 수 있다.';
 
 export const curriculum31: Unit[] = [
@@ -265,6 +272,57 @@ export const curriculum31: Unit[] = [
       tags: ['division'],
       textbookFocus: '학생 10명을 2모둠으로 똑같이 나누는 상황에서 몫을 곱셈식으로 구한다.',
       workbookFocus: '나누는 수의 단 곱셈구구를 이용하여 나눗셈의 몫을 구한다.',
+    },
+  ]),
+  // ── 4단원 곱셈 (지도서 9차시 중 1~6차시) ────────────────────────
+  unit(4, '곱셈', [
+    {
+      title: '단원 도입',
+      objective: '이전에 배운 내용을 확인하고 이 단원에서 배울 내용을 확인한다.',
+      achievement: 곱셈성취,
+      tags: ['multiplication'],
+      textbookFocus: '생활에서 같은 수를 여러 번 더하는 곱셈 상황을 살펴본다.',
+      workbookFocus: '곱셈구구와 (몇십)×(몇)을 떠올린다.',
+    },
+    {
+      title: '올림이 없는 (두 자리 수)×(한 자리 수)를 어떻게 계산할까요',
+      objective: '올림이 없는 (두 자리 수)×(한 자리 수)의 계산 원리를 이해하고 계산할 수 있다.',
+      achievement: 곱셈성취,
+      tags: ['multiplication'],
+      textbookFocus: '수 모형으로 21×3을 계산하며 20×3과 1×3을 더하는 원리를 알아본다.',
+      workbookFocus: '일의 자리와 십의 자리를 각각 곱하여 세로로 계산한다.',
+    },
+    {
+      title: '십의 자리에서 올림이 있는 (두 자리 수)×(한 자리 수)를 어떻게 계산할까요',
+      objective: '십의 자리에서 올림이 있는 (두 자리 수)×(한 자리 수)의 계산 원리를 이해하고 계산할 수 있다.',
+      achievement: 곱셈성취,
+      tags: ['multiplication'],
+      textbookFocus: '수 모형으로 32×4를 계산하며 십의 자리를 곱한 값이 백을 넘는 경우를 알아본다.',
+      workbookFocus: '70×2를 7×2=14로 쓰지 않고 140으로 계산한다.',
+    },
+    {
+      title: '일의 자리에서 올림이 있는 (두 자리 수)×(한 자리 수)를 어떻게 계산할까요',
+      objective: '일의 자리에서 올림이 있는 (두 자리 수)×(한 자리 수)의 계산 원리를 이해하고 계산할 수 있다.',
+      achievement: 곱셈성취,
+      tags: ['multiplication'],
+      textbookFocus: '수 모형으로 18×2를 계산하며 일 모형 10개를 십 모형 1개로 바꾸는 원리를 알아본다.',
+      workbookFocus: '일의 자리에서 올림한 수를 십의 자리를 곱한 값에 더한다.',
+    },
+    {
+      title: '올림이 두 번 있는 (두 자리 수)×(한 자리 수)를 어떻게 계산할까요',
+      objective: '올림이 두 번 있는 (두 자리 수)×(한 자리 수)의 계산 원리를 이해하고 계산할 수 있다.',
+      achievement: 곱셈성취,
+      tags: ['multiplication'],
+      textbookFocus: '수 모형으로 36×4를 계산하며 올림이 두 번 있는 곱셈을 알아본다.',
+      workbookFocus: '세로 계산에서 24는 6×4, 120은 30×4의 값임을 알고 계산한다.',
+    },
+    {
+      title: '곱셈의 어림셈을 어떻게 할까요',
+      objective: '(두 자리 수)×(한 자리 수)의 계산 결과를 어림하고 그 결과가 타당한지 확인할 수 있다.',
+      achievement: 어림성취,
+      tags: ['multiplication'],
+      textbookFocus: '48×9를 50×9로 어림하여 계산 결과가 타당한지 확인한다.',
+      workbookFocus: '곱해지는 수를 가까운 몇십으로 어림하여 어림셈을 한다.',
     },
   ]),
 ];
