@@ -98,12 +98,44 @@ export const lesson567Easy = (mode: Rounding): G5Family[] => {
     },
   });
 
+  // 지도서 단원 평가가 짚은 오답입니다. "3908을 올림하여 백의 자리까지
+  // 나타내면 3900" — 바로 아래 자리(십의 자리)가 0인 것만 보고 올리지
+  // 않은 것입니다. 올림은 바로 아래 한 자리가 아니라 아래 수 전체를 봅니다.
+  // 수를 마구 골라서는 이 꼴이 드물게만 나오므로 따로 둡니다.
+  const 바로아래가0: G5Family = {
+    id: 'estimate-zero-below',
+    make: (seed) => {
+      const next = rand(seed + 17);
+      const exp = 2 + next(2); // 백의 자리나 천의 자리까지
+      const 위 = 1 + next(9) + 10 * next(10); // 구하려는 자리와 그 위
+      const 맨아래 = 1 + next(10 ** (exp - 1) - 1); // 0이 아닌 아래 수
+      const value = String(위 * 10 ** exp + 맨아래); // 바로 아래 자리는 0
+      const answer = estimate(value, exp, 'ceil');
+      const 함정 = estimate(value, exp, 'floor');
+      return {
+        prompt: `${eul(value)} 올림하여 ${placeName(exp)}까지 나타내면 얼마일까요?`,
+        answer,
+        wrongs: [함정, estimate(value, exp + 1, 'ceil'), estimate(value, exp - 1, 'ceil'), value],
+        tag: 'rounding',
+        strategy: '올림하여 나타내기',
+        hint: `${placeName(exp)} 바로 아래 자리만 보지 말고, 그 아래에 있는 수를 모두 보세요.`,
+        steps: [
+          `${placeName(exp)} 바로 아래 자리의 숫자는 0이지만, 그 아래에 ${iJosa(String(맨아래))} 있습니다.`,
+          '올림은 구하려는 자리 아래의 수를 모두 봅니다. 0이 아닌 수가 하나라도 있으면 올립니다.',
+          `그러므로 ${eul(value)} 올림하여 ${placeName(exp)}까지 나타내면 ${answer}입니다.`,
+        ],
+        misconceptionTip: '바로 아래 자리가 0이라고 그대로 두면 안 됩니다. 올림은 아래 수를 모두 보고, 0이 아닌 수가 하나라도 있으면 올립니다.',
+      };
+    },
+  };
+
   return [
     어림문항(false, 0),
     어림문항(false, 1),
     어림문항(false, 2),
     어림문항(true, 0),
     어림문항(true, 1),
+    ...(mode === 'ceil' ? [바로아래가0] : []),
     {
       id: 'meaning',
       make: (seed) => ({

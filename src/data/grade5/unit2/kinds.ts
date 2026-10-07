@@ -1,5 +1,5 @@
 import type { FractionModelVisual } from '../../../types';
-import { add, frac, mixed, mixedText, mul, text, whole, type Frac } from '../fraction';
+import { add, frac, gcd, mixed, mixedText, mul, text, whole, type Frac } from '../fraction';
 import { rand } from '../util';
 
 // ════════════════════════════════════════════════════════════════════
@@ -156,9 +156,15 @@ export const wrongAnswersFor = (operands: Operands): string[] => {
     wrong.push(mixed(leftParts.whole * k, leftParts.n, leftParts.d));
     // 분수 부분만 곱함
     wrong.push(add(whole(leftParts.whole), frac(leftParts.n * k, leftParts.d)));
-    // 가분수로 바꾸지 않고 자연수 부분과 분수 부분에 따로 곱함
+    // 분수 부분의 분자와 분모에 모두 곱함. 자연수 부분과 분수 부분에
+    // 나누어 곱하는 것 자체는 지도서가 보이는 바른 방법(분배법칙)입니다.
+    // 틀린 것은 분모에까지 곱한 것입니다.
     wrong.push(add(whole(leftParts.whole * k), frac(leftParts.n * k, leftParts.d * k)));
     wrong.push(add(left, whole(k)));
+    // 지도서 오류 유형: 대분수를 가분수로 바꾸지 않고 약분함.
+    // 3과 5/8 × 4에서 8과 4를 약분해 3과 5/2로 쓰면 5와 1/2이 됩니다.
+    const g = gcd(leftParts.d, k);
+    if (g > 1) wrong.push(add(whole(leftParts.whole), frac(leftParts.n * (k / g), leftParts.d / g)));
   } else if (operands.kind === 'whole-mixed' && rightParts) {
     const k = left.n;
     wrong.push(whole(k * rightParts.whole));
@@ -173,6 +179,12 @@ export const wrongAnswersFor = (operands: Operands): string[] => {
     // 분모는 한쪽만 씀
     wrong.push(frac(left.n * right.n, right.d));
     wrong.push(add(left, right));
+    // 지도서 오류 유형: 분자끼리(또는 분모끼리) 약분함.
+    // 2/3 × 4/5에서 분자 2와 4를 약분하면 1/3 × 2/5 = 2/15가 됩니다.
+    const 분자끼리 = gcd(left.n, right.n);
+    if (분자끼리 > 1) wrong.push(frac((left.n / 분자끼리) * (right.n / 분자끼리), left.d * right.d));
+    const 분모끼리 = gcd(left.d, right.d);
+    if (분모끼리 > 1) wrong.push(frac(left.n * right.n, (left.d / 분모끼리) * (right.d / 분모끼리)));
   } else if (operands.kind === 'mixed-mixed' && leftParts && rightParts) {
     // 지도서 오류 유형: 가분수로 바꾸지 않고 자연수끼리, 분수끼리 곱함
     wrong.push(add(whole(leftParts.whole * rightParts.whole), frac(leftParts.n * rightParts.n, leftParts.d * rightParts.d)));
