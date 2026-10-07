@@ -1,6 +1,6 @@
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, Question, QuestionVisual } from '../../types';
 import { parse as parseFraction } from './fraction';
-import { rand } from './util';
+import { rand, resolveParticles } from './util';
 import {
   g5CoreConcept,
   g5Misconception,
@@ -179,6 +179,23 @@ const toQuestion = (
   slot: number,
   spec: G5Spec,
 ): Question => {
+  // 3학년 문항은 조사를 '을(를)'처럼 괄호 꼴로 적어 두기도 합니다. 여기서
+  // 앞말에 맞추어 하나로 고릅니다. 5학년 문항은 이미 고른 채로 오므로
+  // 손대지 않습니다.
+  if (lesson.semester.startsWith('3')) {
+    const 고름 = resolveParticles;
+    spec = {
+      ...spec,
+      prompt: 고름(spec.prompt),
+      answer: 고름(spec.answer),
+      wrongs: spec.wrongs.map(고름),
+      hint: 고름(spec.hint),
+      steps: spec.steps.map(고름),
+      ...(spec.concept ? { concept: 고름(spec.concept) } : {}),
+      ...(spec.misconceptionTip ? { misconceptionTip: 고름(spec.misconceptionTip) } : {}),
+      ...(spec.selfCheck ? { selfCheck: 고름(spec.selfCheck) } : {}),
+    };
+  }
   const layer = assessmentLayers[difficulty][slot % assessmentLayers[difficulty].length];
   const strategy = `${difficultyDesign[difficulty].label} · ${layer.label} · ${spec.strategy}`;
   const options = shuffle([spec.answer, ...usableWrongs(spec)], slot * 31 + difficultyIndex[difficulty] * 7 + lesson.lessonNo);

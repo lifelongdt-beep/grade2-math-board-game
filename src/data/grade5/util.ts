@@ -214,3 +214,21 @@ export const 답으로맺기 = (까닭: string, 답: string): string[] => {
   if (까닭.includes(알맹이)) return [까닭];
   return [까닭, `그러므로 ${답.endsWith('.') ? 답 : `${답}입니다.`}`];
 };
+
+/**
+ * 글 속의 '을(를)', '은(는)', '이(가)', '과(와)', '(으)로', '(이)라고'를
+ * 바로 앞말의 소리에 맞추어 하나로 고릅니다.
+ *
+ * 수와 조사를 이어 쓸 때마다 eul, eun을 부르면 글이 길어지고, 한 곳만
+ * 빠뜨려도 '12개를'이 '12개을'로 나갑니다. 3학년 문항은 괄호 꼴로 적어
+ * 두고 문항을 만들 때 한 번에 고릅니다.
+ */
+export const resolveParticles = (text: string): string =>
+  text.replace(/([^\s(]+?)(을\(를\)|은\(는\)|이\(가\)|과\(와\)|\(으\)로|\(이\)라고)/g, (_, word: string, marker: string) => {
+    if (marker === '을(를)') return `${word}${particleOf(word, '을')}`;
+    if (marker === '은(는)') return `${word}${particleOf(word, '은')}`;
+    if (marker === '이(가)') return `${word}${particleOf(word, '이')}`;
+    if (marker === '과(와)') return `${word}${particleOf(word, '과')}`;
+    if (marker === '(으)로') return euro(word);
+    return `${word}${particleOf(word, '이') === '이' ? '이라고' : '라고'}`;
+  });

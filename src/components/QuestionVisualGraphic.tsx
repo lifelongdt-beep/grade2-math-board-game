@@ -1973,8 +1973,11 @@ function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'rul
 
   // 눈금 수는 자의 길이에 따라 달라집니다. 간격을 정해 두지 않으면
   // 긴 자에서 숫자가 서로 겹쳐 읽을 수 없습니다.
-  const labelStep = RULER_LABEL_STEPS.find((step) => step * pixelsPerUnit >= 26) ?? 500;
-  const tickStep = pixelsPerUnit >= 4 ? 1 : Math.max(1, Math.round(labelStep / 5));
+  // mm 자는 10 mm마다 cm 숫자를 적습니다. 실제 자와 같은 모양이어야
+  // 아이가 교실의 자를 읽듯이 읽을 수 있습니다.
+  const mm = visual.unit === 'mm';
+  const labelStep = mm ? 10 : RULER_LABEL_STEPS.find((step) => step * pixelsPerUnit >= 26) ?? 500;
+  const tickStep = mm || pixelsPerUnit >= 4 ? 1 : Math.max(1, Math.round(labelStep / 5));
 
   const ticks: number[] = [];
   for (let value = visual.start; value <= visual.end; value += tickStep) {
@@ -2035,13 +2038,13 @@ function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'rul
               x1={toX(value)}
               y1="48"
               x2={toX(value)}
-              y2={labelled ? 78 : 66}
+              y2={labelled ? 78 : mm && value % 5 === 0 ? 70 : mm ? 60 : 66}
               stroke="#7b6233"
-              strokeWidth={labelled ? 3 : 2}
+              strokeWidth={labelled ? 3 : mm ? 1 : 2}
             />
             {labelled && (
               <text x={toX(value)} y="113" textAnchor="middle" fill="#24364a" fontSize="13" fontWeight="800">
-                {value}
+                {mm ? value / 10 : value}
               </text>
             )}
           </g>
@@ -2064,6 +2067,7 @@ const handPoint = (center: number, length: number, angle: number) => ({
 function ClockFace({
   hour,
   minute,
+  second,
   x,
   label,
   example = false,
@@ -2071,13 +2075,15 @@ function ClockFace({
 }: {
   hour: number;
   minute: number;
+  second?: number;
   x: number;
   label: string;
   example?: boolean;
   blank?: boolean;
 }) {
   const hourAngle = (((hour % 12) + minute / 60) / 12) * Math.PI * 2;
-  const minuteAngle = (minute / 60) * Math.PI * 2;
+  // 초가 있으면 분침도 그만큼 조금 더 나아갑니다. 실제 시계가 그렇습니다.
+  const minuteAngle = ((minute + (second ?? 0) / 60) / 60) * Math.PI * 2;
   const hourHand = handPoint(x, 36, hourAngle);
   const minuteHand = handPoint(x, 54, minuteAngle);
   // 예시 시계는 바늘이 정답이 아니므로 점선으로 흐리게 그려 문제 글을 읽게 합니다.
@@ -2097,6 +2103,15 @@ function ClockFace({
           </text>
         );
       })}
+      {/* 초를 읽는 시계에는 작은 눈금 60칸을 그립니다. 초바늘이 가리키는
+          눈금을 세어야 초를 읽을 수 있습니다. */}
+      {second !== undefined &&
+        Array.from({ length: 60 }).map((_, index) => {
+          const angle = (index / 60) * Math.PI * 2;
+          const outer = handPoint(x, CLOCK_RADIUS - 2, angle);
+          const inner = handPoint(x, CLOCK_RADIUS - (index % 5 === 0 ? 9 : 5), angle);
+          return <line key={`tick-${index}`} x1={outer.x} y1={outer.y} x2={inner.x} y2={inner.y} stroke="#8aa0b8" strokeWidth={index % 5 === 0 ? 2 : 1} />;
+        })}
       {/* 바늘 자리가 곧 답인 문제에서는 바늘을 그리지 않습니다. 판만
           있어도 5씩 세어 볼 수 있어 도움이 되고, 답은 가려집니다. */}
       {!blank && (
@@ -2121,6 +2136,10 @@ function ClockFace({
             strokeLinecap="round"
             {...handStyle}
           />
+          {second !== undefined && (() => {
+            const secondHand = handPoint(x, 60, (second / 60) * Math.PI * 2);
+            return <line x1={x} y1={CLOCK_CENTER_Y} x2={secondHand.x} y2={secondHand.y} stroke="#d64545" strokeWidth="2" strokeLinecap="round" />;
+          })()}
         </>
       )}
       <circle cx={x} cy={CLOCK_CENTER_Y} r="5" fill="#182433" opacity={blank ? 0.35 : example ? 0.55 : 1} />
@@ -2149,6 +2168,7 @@ function ClockGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'clo
       <ClockFace
         hour={visual.hour}
         minute={visual.minute}
+        second={visual.second}
         x={hasEnd ? 80 : frameWidth / 2}
         // '시작'은 끝 시계가 나란히 있을 때만 뜻이 있는 말입니다. 시계가
         // 하나뿐인데 '시작'이라고 적으면, 무엇이 시작한다는 것인지 알 수
