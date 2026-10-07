@@ -241,6 +241,11 @@ export interface NumberLineVisual {
   // 눈금은 보이되 숫자는 감출 자리입니다. 정답 자리에 숫자를 그대로 쓰면
   // 세어 보지 않고 답을 읽어 버립니다. 눈금만 두면 한 칸을 세어야 합니다.
   hiddenLabels?: number[];
+  // 숫자를 쓰고 눈금을 길게 그을 간격입니다. 0.1씩 눈금을 긋고
+  // 0, 1, 2에만 숫자를 쓰는 소수 수직선에서 씁니다.
+  majorEvery?: number;
+  // 0부터 이 값까지 굵은 선으로 칠합니다('양'으로 나타내기).
+  fillTo?: number;
 }
 
 // 수의 범위를 나타내는 그림입니다(5-2 1단원).
@@ -654,6 +659,30 @@ export interface LineFigureVisual {
   }>;
 }
 
+// ── 3-1 6단원 분수와 소수 ──────────────────────────────────────────
+// 전체 하나를 여러 조각으로 나눈 그림입니다. 지도서는 3학년 1학기에
+// 연속량(띠·원·사각형) 모델만 쓰고, 조각은 '모양과 크기가 같아야'
+// 똑같이 나눈 것이라고 가르칩니다(넓이 모델은 넓이를 배운 뒤).
+//   bar    띠를 세로 금으로 나눕니다. cuts에 금 자리(0~1)를 적으면
+//          그 자리에서 자르고, 없으면 parts만큼 똑같이 나눕니다.
+//   circle 원을 부채꼴로 나눕니다. cuts는 한 바퀴를 1로 본 자리입니다.
+//   grid   직사각형을 rows×columns 칸으로 똑같이 나눕니다.
+//   diag   정사각형을 두 대각선으로 똑같이 넷으로 나눕니다.
+// shaded는 칠할 조각의 차례(0부터)입니다.
+export interface PartitionVisual {
+  kind: 'partition';
+  label: string;
+  figures: Array<{
+    name?: string;
+    shape: 'bar' | 'circle' | 'grid' | 'diag';
+    parts?: number;
+    cuts?: number[];
+    rows?: number;
+    columns?: number;
+    shaded: number[];
+  }>;
+}
+
 export interface PatternVisual {
   kind: 'pattern';
   label: string;
@@ -687,6 +716,7 @@ export type QuestionVisual =
   | PictographVisual
   | ArrayVisual
   | LineFigureVisual
+  | PartitionVisual
   | PatternVisual;
 
 export interface Player {

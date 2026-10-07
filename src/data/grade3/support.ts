@@ -22,6 +22,10 @@ export const g3StudentConcept: Partial<Record<ConceptTag, string>> = {
   shape: '도형의 이름은 곧은 선의 수, 직각의 수, 변의 길이로 정해집니다.',
   division: '전체가 얼마이고, 몇으로 똑같이 나누는지 또는 몇씩 묶는지 먼저 찾으세요.',
   multiplication: '일의 자리부터 곱하고, 십의 자리 숫자를 곱한 값은 몇십이라는 것을 기억하세요.',
+  measurement: '길이의 단위 사이의 관계(1 cm=10 mm, 1 km=1000 m)를 먼저 떠올리세요.',
+  time: '초는 초끼리, 분은 분끼리 계산하고, 60초가 1분이라는 것을 기억하세요.',
+  fraction: '먼저 전체가 무엇이고 똑같이 몇으로 나누었는지 보세요. 그것이 분모입니다.',
+  decimal: '1을 똑같이 10으로 나눈 한 칸이 0.1입니다. 0.1이 몇 개인지 세어 보세요.',
 };
 
 export const g3CoreConcept: Partial<Record<ConceptTag, string>> = {
@@ -31,6 +35,10 @@ export const g3CoreConcept: Partial<Record<ConceptTag, string>> = {
   shape: '선분, 직선, 반직선, 각, 직각을 알면 직각삼각형, 직사각형, 정사각형을 뜻으로 구별할 수 있습니다.',
   division: '나눗셈은 전체를 똑같이 나누는 것입니다. 나눗셈의 몫은 곱셈구구로 구할 수 있습니다. ■÷▲=●이면 ▲×●=■입니다.',
   multiplication: '(두 자리 수)×(한 자리 수)는 곱해지는 수를 몇십과 몇으로 갈라 각각 곱한 다음 더한 것과 같습니다. 일의 자리에서 올림한 수는 십의 자리를 곱한 값에 더합니다.',
+  measurement: '1 cm를 10칸으로 나눈 한 칸이 1 mm이고, 1000 m가 1 km입니다. 단위가 다른 길이는 같은 단위로 바꾸어 견줍니다.',
+  time: '1분=60초입니다. 시간의 덧셈과 뺄셈은 같은 단위끼리 계산하고, 60초가 되면 1분으로 받아올리고, 부족하면 1분을 60초로 받아내립니다.',
+  fraction: '전체를 똑같이 ■로 나눈 것 중의 ▲를 ▲/■라 쓰고 ■분의 ▲라고 읽습니다. 아래의 ■가 분모, 위의 ▲가 분자입니다. 분자가 1인 분수를 단위분수라고 합니다.',
+  decimal: '1/10, 2/10, …, 9/10을 0.1, 0.2, …, 0.9라 쓰고 영 점 일, 영 점 이, …, 영 점 구라고 읽습니다. 이런 수를 소수라 하고 ‘.’을 소수점이라고 합니다.',
 };
 
 export const g3ReadStrategy: Partial<Record<ConceptTag, string>> = {
@@ -40,6 +48,10 @@ export const g3ReadStrategy: Partial<Record<ConceptTag, string>> = {
   shape: '그림에서 끝이 있는지, 직각이 몇 개인지, 변의 길이가 같은지 하나씩 봅니다.',
   division: '전체의 수, 나누는 수, 구하는 것을 차례로 표시합니다.',
   multiplication: '한 묶음에 몇씩, 몇 묶음인지 먼저 찾아 곱셈식을 세웁니다.',
+  measurement: '길이가 어떤 단위로 주어졌는지, 어떤 단위로 답하라고 했는지 먼저 봅니다.',
+  time: '묻는 것이 시각(어느 때)인지 시간(동안)인지 먼저 구별합니다.',
+  fraction: '전체가 몇 조각으로 똑같이 나누어졌는지, 그중 몇 조각을 묻는지 차례로 셉니다.',
+  decimal: '소수점 왼쪽 부분과 오른쪽 부분을 나누어 봅니다.',
 };
 
 export const g3Misconception: Partial<Record<ConceptTag, string>> = {
@@ -49,6 +61,10 @@ export const g3Misconception: Partial<Record<ConceptTag, string>> = {
   shape: '도형이 기울어져 놓여 있어도 이름은 바뀌지 않습니다. 놓인 모양이 아니라 조건으로 판단하세요.',
   division: '나누어지는 수와 나누는 수의 자리를 바꾸면 다른 식이 됩니다.',
   multiplication: '올림한 수를 빠뜨리거나, 십의 자리 숫자에 먼저 더한 다음 곱하면 안 됩니다.',
+  measurement: '1 cm를 100 mm로, 1 km를 100 m로 생각하면 안 됩니다.',
+  time: '1분은 100초가 아니라 60초입니다. 받아올림과 받아내림을 60으로 하세요.',
+  fraction: '조각의 모양과 크기가 같아야 똑같이 나눈 것입니다. 색칠한 조각 수만 세면 안 되고, 전체 조각 수를 분모로 씁니다.',
+  decimal: '0.1이 10개이면 0.10이 아니라 1입니다. 소수점 오른쪽 숫자는 자릿값을 붙이지 않고 숫자만 읽습니다.',
 };
 
 export const g3SelfCheck: Partial<Record<ConceptTag, string>> = {
@@ -58,6 +74,10 @@ export const g3SelfCheck: Partial<Record<ConceptTag, string>> = {
   shape: '고른 도형이 뜻의 조건을 모두 갖추었는지 하나씩 확인했나요?',
   division: '몫과 나누는 수를 곱하면 나누어지는 수가 되나요?',
   multiplication: '곱해지는 수를 가까운 몇십으로 어림하여 곱한 값과 비슷한가요?',
+  measurement: '구한 길이를 처음 단위로 다시 바꾸어 보면 맞나요?',
+  time: '초 자리의 수가 60보다 작은지 확인했나요?',
+  fraction: '분모가 전체 조각 수, 분자가 고른 조각 수인지 그림과 다시 맞추어 보았나요?',
+  decimal: '소수점 왼쪽 부분을 먼저 견주고, 같을 때만 오른쪽을 견주었나요?',
 };
 
 // 선생님 기록에 남는 이름입니다.
@@ -68,4 +88,8 @@ export const g3TagLabel: Partial<Record<ConceptTag, string>> = {
   shape: '평면도형',
   division: '나눗셈',
   multiplication: '곱셈',
+  measurement: '길이',
+  time: '시간',
+  fraction: '분수',
+  decimal: '소수',
 };
