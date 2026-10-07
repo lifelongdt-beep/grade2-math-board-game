@@ -201,6 +201,69 @@ export const 각으로삼각형 = (각들: [number, number, number]): Array<[num
   ]);
 };
 
+/**
+ * 네 변의 길이로 그린 볼록한 사각형과, 그 그림에서 잰 네 내각입니다.
+ *
+ * 대응변·대응각 문항은 한 사각형에 변의 길이나 각의 크기를 적습니다.
+ * 한 가지 모양을 그려 두고 숫자만 마음대로 바꾸면 그림과 어긋납니다 —
+ * 둔각으로 그린 꼭짓점에 74°라고 적거나, 8 cm라는 변이 6 cm라는 변보다
+ * 짧게 그려졌습니다. 그래서 변의 길이로 모양을 정하고, 각은 그 모양에서
+ * 재어 정수로 반올림합니다(네 각의 합이 360°가 되게 하나만 맞춥니다).
+ * 반올림으로 생기는 차이는 1°보다 작아 눈으로 구별되지 않습니다.
+ *
+ * 꼭짓점 차례는 왼위, 오른위, 오른아래, 왼아래이고, 변 i는 i번에서
+ * i+1번으로 갑니다.
+ */
+export const 변으로사각형 = (
+  변길이: [number, number, number, number],
+): { points: Array<[number, number]>; 각: [number, number, number, number] } | null => {
+  const [L0, L1, L2, L3] = 변길이;
+  // 0번과 2번을 잇는 대각선의 길이를 정하면 모양이 하나로 정해집니다.
+  // 두 삼각형이 만들어지는 범위에서, 가장 작은 각과 가장 큰 각이 가장
+  // 덜 치우치는 길이를 고릅니다 — 너무 납작하면 각을 표시할 자리가 없습니다.
+  const 아래끝 = Math.max(Math.abs(L0 - L1), Math.abs(L2 - L3));
+  const 위끝 = Math.min(L0 + L1, L2 + L3);
+  if (위끝 - 아래끝 < 0.5) return null;
+  const 각재기 = (점들: Array<[number, number]>) =>
+    점들.map((점, i) => {
+      const 앞 = 점들[(i + 3) % 4];
+      const 뒤 = 점들[(i + 1) % 4];
+      const a = [앞[0] - 점[0], 앞[1] - 점[1]];
+      const b = [뒤[0] - 점[0], 뒤[1] - 점[1]];
+      const 코사인 = (a[0] * b[0] + a[1] * b[1]) / (Math.hypot(a[0], a[1]) * Math.hypot(b[0], b[1]));
+      return (Math.acos(Math.max(-1, Math.min(1, 코사인))) * 180) / Math.PI;
+    });
+  let 고른: { 점들: Array<[number, number]>; 각들: number[]; 점수: number } | null = null;
+  for (let k = 1; k < 60; k += 1) {
+    const d = 아래끝 + ((위끝 - 아래끝) * k) / 60;
+    const 첫각 = Math.acos((L0 * L0 + d * d - L1 * L1) / (2 * L0 * d));
+    const 둘각 = Math.acos((L3 * L3 + d * d - L2 * L2) / (2 * L3 * d));
+    const 점들: Array<[number, number]> = [
+      [0, 0],
+      [L0 * Math.cos(첫각), -L0 * Math.sin(첫각)],
+      [d, 0],
+      [L3 * Math.cos(둘각), L3 * Math.sin(둘각)],
+    ];
+    const 각들 = 각재기(점들);
+    const 점수 = Math.min(...각들, 180 - Math.max(...각들));
+    if (!고른 || 점수 > 고른.점수) 고른 = { 점들, 각들, 점수 };
+  }
+  // 각이 50°보다 작거나 130°보다 크면 그림이 납작해집니다.
+  if (!고른 || 고른.점수 < 50) return null;
+  // 0번에서 1번으로 가는 변이 거의 가로로 놓이도록 돌립니다.
+  const [x1, y1] = 고른.점들[1];
+  const 돌림 = -Math.atan2(y1, x1) - (8 * Math.PI) / 180;
+  const 돌린 = 고른.점들.map(([x, y]): [number, number] => [
+    x * Math.cos(돌림) - y * Math.sin(돌림),
+    x * Math.sin(돌림) + y * Math.cos(돌림),
+  ]);
+  const 각 = 고른.각들.map((one) => Math.round(one)) as [number, number, number, number];
+  const 어긋남 = 360 - 각.reduce((sum, one) => sum + one, 0);
+  const 큰자리 = 각.indexOf(Math.max(...각));
+  각[큰자리] += 어긋남;
+  return { points: 맞춰넣기(돌린), 각 };
+};
+
 // ── 대칭도형의 반쪽 ──────────────────────────────────────────────────
 // "반쪽만 그려져 있습니다"라고 묻는 문항에 그림이 없었습니다.
 //

@@ -1174,7 +1174,11 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
               // 글자는 가로로 길어서, 이등분선이 옆을 향할수록 더 멀리 둡니다.
               const 글자거리 = Math.min(Math.min(15, Math.max(9, 짧은변 * 0.2)) + 8 + 10 * Math.abs(bx), 가운데까지 * 0.5);
               const r = Math.max(6, Math.min(15, Math.max(9, 짧은변 * 0.2), 글자거리 - 9));
-              const 직각 = Math.abs(u1x * u2x + u1y * u2y) < 0.03;
+              // 직각 표시(네모)는 '정확히 90°'라는 뜻입니다. 89°나 91°라고 적은
+              // 각에 네모를 그리면 그림이 숫자를 거스릅니다. 숫자를 적었으면
+              // 그 숫자로, 적지 않았으면 그려진 모양으로 정합니다.
+              const 적은각 = /^(\d+)°$/.exec(angle.text);
+              const 직각 = 적은각 ? 적은각[1] === '90' : Math.abs(u1x * u2x + u1y * u2y) < 0.03;
               const 일직선 = Math.hypot(bx, by) < 0.001;
               const [안쪽x, 안쪽y] = 일직선
                 ? 꼭짓점에서옮기기(x, y, -Math.min(20, Math.hypot(x - cx, y - centerY) * 0.45))

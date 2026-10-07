@@ -382,6 +382,7 @@ export const unit6Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
           {
             shape: '직사각형',
             active: true,
+            points: 직사각형점(a, b),
             edgeLabels: [
               { from: 0, to: 1, text: `${a} cm` },
               { from: 1, to: 2, text: `${b} cm` },
@@ -426,6 +427,7 @@ export const unit6Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
           {
             shape: 마름모인가 ? '마름모' : '평행사변형',
             active: true,
+            points: 평행사변형점(a, b),
             edgeLabels: 마름모인가
               ? [{ from: 0, to: 1, text: `${a} cm` }]
               : [
@@ -680,6 +682,7 @@ export const unit6Lesson4 = (difficulty: '하' | '중' | '상'): G5Family[] => {
           {
             shape: '직사각형',
             active: true,
+            points: 직사각형점(a, b),
             edgeLabels: [
               { from: 0, to: 1, text: `${a} cm` },
               { from: 1, to: 2, text: `${b} cm` },
@@ -1143,6 +1146,22 @@ const 자리맞추기 = (points: Array<[number, number]>): Array<[number, number
   const 가운데y = (Math.max(...ys) + Math.min(...ys)) / 2;
   return points.map(([x, y]) => [(x - 가운데x) * 배, (y - 가운데y) * 배] as [number, number]);
 };
+
+// 변에 길이를 적는 직사각형과 평행사변형은 그 길이의 비율대로 그립니다.
+// 한 가지 모양으로 그려 두고 숫자만 바꾸면 "가로 2 cm, 세로 7 cm"인
+// 직사각형이 옆으로 긴 모양으로 그려집니다. 아이는 그림을 보고 가로와
+// 세로를 찾으므로, 그림이 숫자와 어긋나면 안 됩니다.
+// 꼭짓점 차례는 왼위, 오른위, 오른아래, 왼아래이고 0→1이 가로(윗변)입니다.
+const 직사각형점 = (가로: number, 세로: number) =>
+  자리맞추기([[0, 0], [가로, 0], [가로, 세로], [0, 세로]]);
+
+// 평행사변형은 1→2 변이 60°로 기울어집니다. 마름모도 같은 꼴입니다.
+const 평행사변형점 = (윗변: number, 빗변: number) => {
+  const 밀림 = 빗변 * Math.cos(Math.PI / 3);
+  const 높이 = 빗변 * Math.sin(Math.PI / 3);
+  return 자리맞추기([[밀림, 0], [밀림 + 윗변, 0], [윗변, 높이], [0, 높이]]);
+};
+
 
 const 넓이그림 = (kind: AreaKind, dims: Dims, 밖으로: boolean): QuestionVisual => {
   const { 밑변: b, 높이: h, 오프셋: o } = dims;
