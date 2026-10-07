@@ -699,6 +699,165 @@ export const FIGURE_POINTS: Record<string, Array<[number, number]>> = {
   }),
 };
 
+// 선분·직선·반직선·각을 그리는 그림입니다(3-1 2단원).
+//
+// 지도서가 그리는 대로 긋습니다. 선분은 두 점 사이에서 끝나고, 직선은
+// 두 점을 지나 양쪽으로 길게 뻗고, 반직선은 시작점에서 출발해 다른 점을
+// 지나 한쪽으로만 뻗습니다. 셋을 가르는 것은 '어디서 끝나는가'뿐이라,
+// 끝을 정확하게 그리는 것이 이 그림의 할 일입니다. 화살표는 쓰지
+// 않습니다 — 교과서도 쓰지 않고, 화살표를 보고 고르는 버릇이 들면
+// 교과서 그림 앞에서 헷갈립니다.
+function LineFigureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'line-figure' }> }) {
+  const count = Math.max(1, visual.items.length);
+  const width = 376;
+  const cellWidth = width / count;
+  const named = visual.items.some((one) => one.name);
+  const height = count === 1 ? 190 : named ? 176 : 156;
+  const centerY = named ? (height - 22) / 2 + 4 : height / 2;
+  const radius = Math.min(cellWidth / 2 - 18, count === 1 ? 92 : 58, centerY - 22);
+  const stroke = '#24364a';
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.items.map((item, index) => {
+        const cx = cellWidth * index + cellWidth / 2;
+        const left = cellWidth * index + 10;
+        const right = cellWidth * (index + 1) - 10;
+        const place = ([x, y]: [number, number]): [number, number] => [cx + x * radius, centerY + y * radius];
+        const drawn = item.points.map(place);
+        // 늘여 그을 때 칸 밖으로 나가지 않게 가둡니다.
+        const 늘이기 = (from: [number, number], through: [number, number], 거리: number): [number, number] => {
+          const dx = through[0] - from[0];
+          const dy = through[1] - from[1];
+          const 길이 = Math.hypot(dx, dy) || 1;
+          let t = 거리;
+          const ux = dx / 길이;
+          const uy = dy / 길이;
+          if (ux > 0) t = Math.min(t, (right - through[0]) / ux);
+          if (ux < 0) t = Math.min(t, (left - through[0]) / ux);
+          if (uy > 0) t = Math.min(t, (centerY + radius + 14 - through[1]) / uy);
+          if (uy < 0) t = Math.min(t, (14 - through[1]) / uy);
+          return [through[0] + ux * Math.max(0, t), through[1] + uy * Math.max(0, t)];
+        };
+        const 늘일거리 = Math.max(26, radius * 0.5);
+        const 선 = (a: [number, number], b: [number, number], key: string) => (
+          <line key={key} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+        );
+
+        const parts: JSX.Element[] = [];
+        if (item.shape === 'segment' && drawn.length >= 2) {
+          parts.push(선(drawn[0], drawn[1], 'seg'));
+        } else if (item.shape === 'line' && drawn.length >= 2) {
+          parts.push(선(늘이기(drawn[1], drawn[0], 늘일거리), 늘이기(drawn[0], drawn[1], 늘일거리), 'line'));
+        } else if (item.shape === 'ray' && drawn.length >= 2) {
+          parts.push(선(drawn[0], 늘이기(drawn[0], drawn[1], 늘일거리), 'ray'));
+        } else if (item.shape === 'angle' && drawn.length >= 3) {
+          const vertex = drawn[1];
+          parts.push(선(vertex, 늘이기(vertex, drawn[0], 늘일거리 * 0.6), 'arm1'));
+          parts.push(선(vertex, 늘이기(vertex, drawn[2], 늘일거리 * 0.6), 'arm2'));
+          if (item.rightMark) {
+            const unit = (p: [number, number]) => {
+              const dx = p[0] - vertex[0];
+              const dy = p[1] - vertex[1];
+              const l = Math.hypot(dx, dy) || 1;
+              return [dx / l, dy / l] as const;
+            };
+            const [ax, ay] = unit(drawn[0]);
+            const [bx, by] = unit(drawn[2]);
+            const k = 12;
+            parts.push(
+              <polyline
+                key="right"
+                points={`${vertex[0] + ax * k},${vertex[1] + ay * k} ${vertex[0] + (ax + bx) * k},${vertex[1] + (ay + by) * k} ${vertex[0] + bx * k},${vertex[1] + by * k}`}
+                fill="none"
+                stroke="#0f7175"
+                strokeWidth="2"
+              />,
+            );
+          }
+        } else if (item.shape === 'polyline' && drawn.length >= 2) {
+          parts.push(
+            <polyline key="poly" points={drawn.map(([x, y]) => `${x},${y}`).join(' ')} fill="none" stroke={stroke} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />,
+          );
+        } else if (item.shape === 'curve' && drawn.length >= 2) {
+          // 점들을 지나는 부드러운 곡선입니다(가운데 점을 조절점으로 씁니다).
+          let d = `M ${drawn[0][0]} ${drawn[0][1]}`;
+          for (let at = 1; at < drawn.length - 1; at += 1) {
+            const [x, y] = drawn[at];
+            const [nx, ny] = drawn[at + 1];
+            d += ` Q ${x} ${y} ${(x + nx) / 2} ${(y + ny) / 2}`;
+          }
+          const last = drawn[drawn.length - 1];
+          d += ` T ${last[0]} ${last[1]}`;
+          parts.push(<path key="curve" d={d} fill="none" stroke={stroke} strokeWidth="3" strokeLinecap="round" />);
+        }
+
+        // 점의 이름은 선을 피해 적습니다. 선의 방향에 수직인 쪽(위)으로,
+        // 각에서는 꼭짓점이 두 변의 바깥쪽으로 나가게 적습니다.
+        const 이름자리 = (at: number): [number, number] => {
+          const [x, y] = drawn[at];
+          if (item.shape === 'angle' && drawn.length >= 3) {
+            const vertex = drawn[1];
+            if (at === 1) {
+              const mx = (drawn[0][0] + drawn[2][0]) / 2 - vertex[0];
+              const my = (drawn[0][1] + drawn[2][1]) / 2 - vertex[1];
+              const l = Math.hypot(mx, my) || 1;
+              return [x - (mx / l) * 16, y - (my / l) * 16 + 5];
+            }
+            const dx = x - vertex[0];
+            const dy = y - vertex[1];
+            const l = Math.hypot(dx, dy) || 1;
+            // 변을 따라 조금 더 나간 곳에서 변의 옆으로 비켜 적습니다.
+            const other = drawn[at === 0 ? 2 : 0];
+            const side = (other[0] - vertex[0]) * dy - (other[1] - vertex[1]) * dx > 0 ? 1 : -1;
+            return [x + (-dy / l) * 15 * side, y + (dx / l) * 15 * side + 5];
+          }
+          const a = drawn[0];
+          const b = drawn[Math.min(1, drawn.length - 1)];
+          const dx = b[0] - a[0];
+          const dy = b[1] - a[1];
+          const l = Math.hypot(dx, dy) || 1;
+          let nx = -dy / l;
+          let ny = dx / l;
+          if (ny > 0) {
+            nx = -nx;
+            ny = -ny;
+          }
+          return [x + nx * 15, y + ny * 15 + 5];
+        };
+
+        return (
+          <g key={index}>
+            {parts}
+            {drawn.map(([x, y], at) => {
+              const text = item.labels?.[at];
+              if (text === undefined && item.shape === 'curve') return null;
+              if (item.shape === 'polyline' && text === undefined) return null;
+              const [tx, ty] = 이름자리(at);
+              return (
+                <g key={`p-${at}`}>
+                  <circle cx={x} cy={y} r="4.5" fill="#0f7175" />
+                  {text && (
+                    <text x={Math.min(right, Math.max(left, tx))} y={Math.min(height - 6, Math.max(16, ty))} textAnchor="middle" fill="#0f3d52" fontSize="16" fontWeight="900">
+                      {text}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+            {item.name && (
+              <text x={cx} y={height - 12} textAnchor="middle" fill="#24364a" fontSize="17" fontWeight="900">
+                {item.name}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 // 합동과 대칭을 보이는 그림입니다(5-2 3단원).
 function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'figure-set' }> }) {
   const count = Math.max(1, visual.items.length);
@@ -2537,6 +2696,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'range-line' && <RangeLineGraphic visual={visual} />}
       {visual.kind === 'fraction-model' && <FractionModelGraphic visual={visual} />}
       {visual.kind === 'figure-set' && <FigureSetGraphic visual={visual} />}
+      {visual.kind === 'line-figure' && <LineFigureGraphic visual={visual} />}
       {visual.kind === 'box-drawing' && <BoxDrawingGraphic visual={visual} />}
       {visual.kind === 'box-net' && <BoxNetGraphic visual={visual} />}
       {visual.kind === 'spinner' && <SpinnerGraphic visual={visual} />}
