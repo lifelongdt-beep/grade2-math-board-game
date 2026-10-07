@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { lessons51 } from '../curriculum51';
+import { lessons5 } from '../curriculum5';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { generateQuestions } from '../questionFactory';
 import type { Difficulty, Question } from '../../types';
 
@@ -30,13 +33,15 @@ const 아이가보는글 = (question: Question): Array<readonly [string, string]
   ['확인', question.support.selfCheck],
 ];
 
-const 모든글 = (): Array<{ where: string; text: string }> => {
-  const out: Array<{ where: string; text: string }> = [];
-  for (const lesson of lessons51) {
+const 모든글 = (): Array<{ where: string; text: string; prompt: string }> => {
+  const out: Array<{ where: string; text: string; prompt: string }> = [];
+  // 5-2도 함께 봅니다. 5-2에는 소스를 훑는 시험만 있어 '전체 11을'처럼
+  // 화면에서만 드러나는 잘못이 빠져나갔습니다.
+  for (const lesson of [...lessons51, ...lessons5]) {
     for (const level of levels) {
       for (const question of generateQuestions(lesson, level)) {
         for (const [어디, 글] of 아이가보는글(question)) {
-          out.push({ where: `${lesson.id} ${level} ${어디}`, text: 글 });
+          out.push({ where: `${lesson.id} ${level} ${어디}`, text: 글, prompt: 아이가보는글(question).map(([, one]) => one).join(' ') });
         }
       }
     }
@@ -72,8 +77,12 @@ describe('5-1 말글 검수', () => {
     const 수두번 = /(?<!\d)(\d{2,})\1(?=[과와은는이가을를로])/;
     const 분수두번 = /(\d+\/\d+)\1/;
     const broken: string[] = [];
-    for (const { where, text } of 글들) {
-      if (수두번.test(text) || 분수두번.test(text)) {
+    for (const { where, text, prompt } of 글들) {
+      const 겹친수 = text.match(수두번)?.[0];
+      // 8072를 올림한 8080처럼 진짜 수는 한 문항 안에서 여러 번 나옵니다
+      // (도움말과 풀이에 모두). 조사를 붙이다 겹친 수는 그 자리에만 생깁니다.
+      const 진짜수 = 겹친수 !== undefined && prompt.split(겹친수).length - 1 >= 2;
+      if ((겹친수 !== undefined && !진짜수) || 분수두번.test(text)) {
         broken.push(`${where}: ${text.slice(0, 80)}`);
       }
     }
@@ -157,5 +166,42 @@ describe('5-1 말글 검수', () => {
       broken.push(`${where}: "${text.slice(-40)}"`);
     }
     expect([...new Set(broken)].sort().slice(0, 20)).toEqual([]);
+  });
+});
+
+describe('조사를 붙이는 함수에 앞말을 다시 적지 않는다', () => {
+  it("'1${eul('1')}'처럼 낱말을 적고 같은 낱말에 조사를 붙이지 않습니다", () => {
+    // eul('1')은 이미 '1을'을 돌려줍니다. 앞에 1을 또 적으면 화면에는
+    // '전체 11을'이 나갑니다. 한 자리 수는 화면 글만 보아서는 진짜 11과
+    // 가려낼 수 없어, 소스에서 이 꼴을 찾습니다.
+    const 꼴 = /([0-9A-Za-z가-힣]+)\$\{(?:eul|eun|i|iJosa|gwa)\('\1'\)\}/;
+    const 나쁨: string[] = [];
+    const 훑기 = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        const path = join(dir, name);
+        if (statSync(path).isDirectory()) 훑기(path);
+        else if (/\.tsx?$/.test(name) && !name.includes('.test.')) {
+          readFileSync(path, 'utf8').split('\n').forEach((line, at) => {
+            if (꼴.test(line)) 나쁨.push(`${path}:${at + 1}`);
+          });
+        }
+      }
+    };
+    훑기('src');
+    expect(나쁨).toEqual([]);
+  });
+});
+
+describe('대분수의 곱셈에 대해 틀린 말을 하지 않는다', () => {
+  it('"대분수를 나누어 따로 곱하면 안 된다"고 하지 않습니다', () => {
+    // (대분수)×(자연수)는 자연수 부분과 분수 부분에 각각 곱해 더하는 것이
+    // 교과서가 보이는 바른 방법입니다(2와 2/7 × 3 = 2×3 + 2/7×3).
+    // "나누어 곱하면 안 된다", "자연수 부분이 빠진다"는 그 방법을
+    // 틀렸다고 가르칩니다.
+    const 틀린말 = /나누어 따로 곱하면 안|곱하면 자연수 부분이 빠집니다/;
+    const 나쁨 = 모든글()
+      .filter(({ text }) => 틀린말.test(text))
+      .map(({ where, text }) => `${where}: ${text.slice(0, 60)}`);
+    expect([...new Set(나쁨)].slice(0, 5)).toEqual([]);
   });
 });
