@@ -268,7 +268,7 @@ export const curriculum51: Unit[] = [
       achievement: '[6수01-06] 크기가 같은 분수를 안다.',
       tags: ['fractionCompare'],
       textbookFocus: '같은 크기를 서로 다른 분수로 나타낼 수 있음을 그림으로 확인한다.',
-      workbookFocus: '수직선과 띠 그림에서 같은 자리를 가리키는 분수를 찾는다.',
+      workbookFocus: '눈금 그림과 띠 그림에서 같은 자리를 가리키는 분수를 찾는다.',
     },
     {
       title: '크기가 같은 분수를 어떻게 만들까요',

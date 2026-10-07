@@ -29,7 +29,7 @@ export type Frac = { n: number; d: number };
  */
 export const mixedText = (front: number, n: number, d: number) => `${gwa(String(front))} ${n}/${d}`;
 
-const gcd = (a: number, b: number): number => (b === 0 ? Math.abs(a) : gcd(b, a % b));
+export const gcd = (a: number, b: number): number => (b === 0 ? Math.abs(a) : gcd(b, a % b));
 
 /** 약분한 분수를 만듭니다. 분모는 늘 양수입니다. */
 export const frac = (n: number, d: number): Frac => {
