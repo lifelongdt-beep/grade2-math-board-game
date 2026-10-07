@@ -1027,7 +1027,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'sub-mixed-split',
-    when: /여러 가지 방법으로 뺄셈/,
+    when: /^뺄셈을 해 볼까요$/,
     demand: 'recall',
     tag: 'subtraction',
     strategy: '빼는 수를 몇십과 몇으로 가르기',
@@ -1044,7 +1044,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'sub-mixed-step-two',
-    when: /여러 가지 방법으로 뺄셈/,
+    when: /^뺄셈을 해 볼까요$/,
     demand: 'reason',
     tag: 'subtraction',
     strategy: '자료 해석 · 몇십을 먼저 빼는 과정 판단하기',
@@ -1272,7 +1272,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'audit-v5-borrow-subtraction-error',
-    when: /여러 가지 방법으로 뺄셈을 해 볼까요/,
+    when: /^뺄셈을 해 볼까요$/,
     demand: 'reason',
     tag: 'subtraction',
     strategy: '자료 해석 · 세로셈 받아내림 오류를 판단하기',
@@ -1290,7 +1290,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'sub-mixed-way-claims',
-    when: /여러 가지 방법으로 뺄셈/,
+    when: /^뺄셈을 해 볼까요$/,
     demand: 'reason',
     tag: 'subtraction',
     strategy: '자료 해석 · 여러 가지로 뺀 방법을 하나씩 판단하기',
@@ -1376,8 +1376,13 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '조건 함께 보기 · 이어 붙인 길이의 합 구하기',
     vars: {
-      a: { from: 12, to: 48 },
-      b: { from: 11, to: 39 },
+      // 받아올림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
+      aT: { from: 1, to: 4 },
+      aO: { from: 2, to: 6 },
+      bT: { from: 1, to: 4 },
+      bO: { from: 1, to: 3 },
+      a: { calc: 'aT * 10 + aO' },
+      b: { calc: 'bT * 10 + bO' },
       total: { calc: 'a + b' },
     },
     prompt: '리본 {a}cm와 {b}cm를 겹치지 않게 이었습니다. 이은 리본은 몇 cm일까요?',
@@ -2067,7 +2072,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'add-make-ten',
-    when: /여러 가지 방법으로 덧셈/,
+    when: /^덧셈을 해 볼까요$/,
     demand: 'reason',
     tag: 'addition',
     strategy: '자료 해석 · 수를 바꾸어 계산한 식 판단하기',
@@ -2111,7 +2116,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'sub-keep-difference',
-    when: /여러 가지 방법으로 뺄셈/,
+    when: /^뺄셈을 해 볼까요$/,
     demand: 'reason',
     tag: 'subtraction',
     strategy: '자료 해석 · 두 수를 함께 바꾼 식 판단하기',
@@ -2231,8 +2236,13 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '조건 함께 보기 · 두 길이의 차 구하기',
     vars: {
-      long: { from: 45, to: 95 },
-      short: { from: 12, to: 38 },
+      // 받아내림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
+      longT: { from: 4, to: 9 },
+      longO: { from: 5, to: 9 },
+      shortT: { from: 1, to: 3 },
+      shortO: { from: 1, to: 5 },
+      long: { calc: 'longT * 10 + longO' },
+      short: { calc: 'shortT * 10 + shortO' },
       gap: { calc: 'long - short' },
     },
     visual: {
@@ -7112,8 +7122,10 @@ export const questionBank: Template[] = [
     demand: 'connect',
     tag: 'time',
     strategy: '조건 함께 보기 · 시간과 분으로 걸린 시간을 말하는 상황',
+    // 지도서는 지나친 단위 환산을 다루지 말라고 합니다. 예전에는 6시간
+    // 넘는 영화(392분)도 나왔습니다. 교과서 예(2시간 40분)만큼으로 둡니다.
     vars: {
-      hour: { from: 1, to: 6 },
+      hour: { from: 1, to: 2 },
       extra: { from: 10, to: 45 },
       total: { calc: 'hour * 60 + extra' },
     },
@@ -7129,7 +7141,7 @@ export const questionBank: Template[] = [
     tag: 'time',
     strategy: '자료 해석 · 시간을 분으로 고치는 과정 판단하기',
     vars: {
-      hours: { from: 2, to: 4 },
+      hours: { from: 2, to: 3 },
       extra: { from: 10, to: 40 },
       total: { calc: 'hours * 60 + extra' },
     },
@@ -8602,7 +8614,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'add-many-calc',
-    when: /여러 가지 방법으로 덧셈/,
+    when: /^덧셈을 해 볼까요$/,
     demand: 'recall',
     tag: 'addition',
     strategy: '몇십을 만들어 더하기',
@@ -8621,7 +8633,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'add-many-word',
-    when: /여러 가지 방법으로 덧셈/,
+    when: /^덧셈을 해 볼까요$/,
     demand: 'connect',
     tag: 'addition',
     strategy: '조건 함께 보기 · 두 사람의 수를 합치는 상황',
@@ -8720,7 +8732,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'sub-many-calc',
-    when: /여러 가지 방법으로 뺄셈/,
+    when: /^뺄셈을 해 볼까요$/,
     demand: 'recall',
     tag: 'subtraction',
     strategy: '몇십을 빼서 계산하기',
@@ -9341,8 +9353,13 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: 'cm끼리 더해 길이 구하기',
     vars: {
-      a: { from: 12, to: 45 },
-      b: { from: 11, to: 34 },
+      // 받아올림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
+      aT: { from: 1, to: 4 },
+      aO: { from: 1, to: 5 },
+      bT: { from: 1, to: 3 },
+      bO: { from: 1, to: 4 },
+      a: { calc: 'aT * 10 + aO' },
+      b: { calc: 'bT * 10 + bO' },
       total: { calc: 'a + b' },
     },
     prompt: '{a}cm+{b}cm는 몇 cm일까요?',
@@ -9357,9 +9374,14 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '자료 해석 · 길이를 더한 것을 하나씩 판단하기',
     vars: {
+      // 받아올림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
       am: { from: 1, to: 3 },
-      acm: { from: 20, to: 60 },
-      bcm: { from: 10, to: 30 },
+      aT: { from: 2, to: 6 },
+      aO: { from: 0, to: 5 },
+      bT: { from: 1, to: 3 },
+      bO: { from: 1, to: 4 },
+      acm: { calc: 'aT * 10 + aO' },
+      bcm: { calc: 'bT * 10 + bO' },
       sumcm: { calc: 'acm + bcm' },
       total: { calc: 'am * 100 + acm + bcm' },
     },
@@ -9378,8 +9400,13 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: 'cm끼리 빼서 길이 구하기',
     vars: {
-      a: { from: 45, to: 95 },
-      b: { from: 12, to: 34 },
+      // 받아내림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
+      aT: { from: 4, to: 9 },
+      aO: { from: 4, to: 9 },
+      bT: { from: 1, to: 3 },
+      bO: { from: 0, to: 4 },
+      a: { calc: 'aT * 10 + aO' },
+      b: { calc: 'bT * 10 + bO' },
       diff: { calc: 'a - b' },
     },
     prompt: '{a}cm-{b}cm는 몇 cm일까요?',
@@ -9394,9 +9421,14 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '자료 해석 · 길이를 뺀 것을 하나씩 판단하기',
     vars: {
+      // 받아내림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
       am: { from: 2, to: 4 },
-      acm: { from: 40, to: 80 },
-      bcm: { from: 10, to: 30 },
+      aT: { from: 4, to: 8 },
+      aO: { from: 5, to: 9 },
+      bT: { from: 1, to: 3 },
+      bO: { from: 0, to: 5 },
+      acm: { calc: 'aT * 10 + aO' },
+      bcm: { calc: 'bT * 10 + bO' },
       leftcm: { calc: 'acm - bcm' },
       total: { calc: 'am * 100 + acm - bcm' },
     },
@@ -9924,9 +9956,14 @@ export const questionBank: Template[] = [
     strategy: '조건 함께 보기 · 두 사람이 이어 붙인 길이를 구하는 상황',
     vars: {
       am: { from: 1, to: 3 },
-      acm: { from: 10, to: 40 },
+      // 받아올림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
+      aT: { from: 1, to: 4 },
+      aO: { from: 0, to: 6 },
       bm: { from: 1, to: 3 },
-      bcm: { from: 10, to: 40 },
+      bT: { from: 1, to: 4 },
+      bO: { from: 1, to: 3 },
+      acm: { calc: 'aT * 10 + aO' },
+      bcm: { calc: 'bT * 10 + bO' },
       sm: { calc: 'am + bm' },
       scm: { calc: 'acm + bcm' },
     },
@@ -9962,9 +9999,14 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '조건 함께 보기 · 잘라 내고 남은 길이를 구하는 상황',
     vars: {
+      // 받아내림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
       m: { from: 2, to: 5 },
-      acm: { from: 50, to: 90 },
-      bcm: { from: 10, to: 40 },
+      aT: { from: 5, to: 8 },
+      aO: { from: 4, to: 9 },
+      bT: { from: 1, to: 4 },
+      bO: { from: 0, to: 4 },
+      acm: { calc: 'aT * 10 + aO' },
+      bcm: { calc: 'bT * 10 + bO' },
       left: { calc: 'acm - bcm' },
     },
     words: { item: ['색 테이프', '리본', '털실'] },
@@ -10003,9 +10045,14 @@ export const questionBank: Template[] = [
     strategy: '자료 해석 · m끼리 cm끼리 더하는 과정 판단하기',
     vars: {
       am: { from: 1, to: 4 },
-      acm: { from: 10, to: 40 },
+      // 받아올림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
+      aT: { from: 1, to: 4 },
+      aO: { from: 0, to: 6 },
       bm: { from: 1, to: 3 },
-      bcm: { from: 10, to: 40 },
+      bT: { from: 1, to: 4 },
+      bO: { from: 1, to: 3 },
+      acm: { calc: 'aT * 10 + aO' },
+      bcm: { calc: 'bT * 10 + bO' },
       sm: { calc: 'am + bm' },
       scm: { calc: 'acm + bcm' },
     },
@@ -10201,9 +10248,14 @@ export const questionBank: Template[] = [
     strategy: 'm끼리 cm끼리 더하기',
     vars: {
       am: { from: 1, to: 4 },
-      acm: { from: 10, to: 40 },
+      // 받아올림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
+      aT: { from: 1, to: 4 },
+      aO: { from: 0, to: 6 },
       bm: { from: 1, to: 3 },
-      bcm: { from: 10, to: 40 },
+      bT: { from: 1, to: 4 },
+      bO: { from: 1, to: 3 },
+      acm: { calc: 'aT * 10 + aO' },
+      bcm: { calc: 'bT * 10 + bO' },
       sm: { calc: 'am + bm' },
       scm: { calc: 'acm + bcm' },
     },
@@ -10219,10 +10271,15 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: 'm끼리 cm끼리 빼기',
     vars: {
+      // 받아내림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
       am: { from: 3, to: 8 },
-      acm: { from: 50, to: 90 },
+      aT: { from: 5, to: 8 },
+      aO: { from: 5, to: 9 },
       bm: { from: 1, to: 2 },
-      bcm: { from: 10, to: 40 },
+      bT: { from: 1, to: 4 },
+      bO: { from: 1, to: 5 },
+      acm: { calc: 'aT * 10 + aO' },
+      bcm: { calc: 'bT * 10 + bO' },
       dm: { calc: 'am - bm' },
       dcm: { calc: 'acm - bcm' },
     },
@@ -10810,14 +10867,17 @@ export const questionBank: Template[] = [
     when: /길이의 합을 구해 볼까요/,
     demand: 'connect',
     tag: 'measurement',
-    strategy: 'cm의 합이 100을 넘어 m로 받아올림하기',
+    // 예전에는 60cm+50cm처럼 cm에서 100을 넘겨 m로 올리는 문항이었습니다.
+    // 지도서는 길이의 합과 차에서 받아올림이 필요한 상황을 가급적 내지
+    // 말라고 합니다. 교과서 예를 씁니다.
+    strategy: '색 테이프로 길이의 합 구하기',
     vars: {},
     prompt:
-      "노란색 리본 '1 m 60 cm'와 초록색 리본 '2 m 50 cm'를 빈틈없이 이어 붙였습니다. 이 두 리본의 전체 합쳐진 길이는 몇 m 몇 cm인가요?",
-    answer: '4 m 10 cm',
-    wrongs: ['3 m 10 cm', '3 m 110 cm', '4 m 110 cm'],
+      '색 테이프 1m 70cm와 1m 20cm를 겹치지 않게 이어 붙였습니다. 이은 색 테이프의 길이는 몇 m 몇 cm일까요?',
+    answer: '2m 90cm',
+    wrongs: ['2m 70cm', '1m 90cm', '3m 90cm'],
     solution:
-      "센티미터끼리 먼저 더하면 '60 cm + 50 cm = 110 cm'입니다. 여기서 100 cm는 1 m로 받아올림하여 미터에 주므로, 1 m + 2 m + 1 m = 4 m가 되고 센티미터에는 10 cm가 남습니다.",
+      'm는 m끼리 더하면 1+1=2m, cm는 cm끼리 더하면 70+20=90cm이므로 2m 90cm입니다.',
   },
   {
     id: 'audit-v5-minutes-before-hour',
@@ -11705,10 +11765,15 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '조건 함께 보기 · 두 길이를 이어 붙이는 상황',
     vars: {
+      // 받아올림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
       aM: { from: 1, to: 3 },
-      aC: { from: 10, to: 40 },
+      aT: { from: 1, to: 4 },
+      aO: { from: 1, to: 5 },
       bM: { from: 2, to: 4 },
-      bC: { from: 10, to: 40 },
+      bT: { from: 1, to: 4 },
+      bO: { from: 1, to: 4 },
+      aC: { calc: 'aT * 10 + aO' },
+      bC: { calc: 'bT * 10 + bO' },
       sumM: { calc: 'aM + bM' },
       sumC: { calc: 'aC + bC' },
     },
@@ -11722,24 +11787,27 @@ export const questionBank: Template[] = [
     when: /길이의 합/,
     demand: 'reason',
     tag: 'measurement',
-    strategy: '100cm가 넘을 때 m로 올리는 방법 판단하기',
+    // 받아올림이 필요한 60cm+50cm 대신 교과서의 3m 40cm+5m 50cm를 씁니다.
+    strategy: 'm와 cm를 섞어 더한 것과 바르게 더한 것 판단하기',
     vars: {},
-    prompt: '노란 리본 1m 60cm와 초록 리본 2m 50cm를 빈틈없이 이어 붙였습니다. 이은 리본의 길이는 얼마일까요?',
-    answer: '4m 10cm',
-    wrongs: ['3m 10cm', '3m 110cm', '4m 110cm'],
-    solution: '60+50=110cm인데 100cm는 1m이므로, 3m에 1m를 더해 4m 10cm입니다.',
+    prompt: '3m 40cm+5m 50cm를 바르게 계산한 것은 어느 것일까요?',
+    answer: '8m 90cm',
+    wrongs: ['8m 40cm', '3m 90cm', '9m 40cm'],
+    solution: 'm는 m끼리 3+5=8m, cm는 cm끼리 40+50=90cm를 더해 8m 90cm입니다. m의 수와 cm의 수를 서로 더하면 안 됩니다.',
   },
   {
     id: 'len-diff-borrow',
     when: /길이의 차/,
     demand: 'connect',
     tag: 'measurement',
+    // 예전에는 20cm에서 50cm를 빼야 하는 받아내림 문항이었습니다. 지도서는
+    // 길이의 차에서 받아내림이 필요한 상황을 가급적 내지 말라고 합니다.
     strategy: '조건 함께 보기 · 잘라 내고 남은 길이를 구하는 상황',
     vars: {},
-    prompt: '3m 20cm인 나무 막대에서 1m 50cm만큼 잘라 냈습니다. 남은 막대의 길이는 얼마일까요?',
-    answer: '1m 70cm',
-    wrongs: ['2m 30cm', '1m 30cm', '2m 70cm'],
-    solution: '20cm에서 50cm를 뺄 수 없으므로 1m를 100cm로 바꾸어 120cm에서 50cm를 뺍니다.',
+    prompt: '6m 80cm인 나무 막대에서 4m 50cm만큼 잘라 냈습니다. 남은 막대의 길이는 얼마일까요?',
+    answer: '2m 30cm',
+    wrongs: ['2m 80cm', '4m 30cm', '11m 30cm'],
+    solution: 'm는 m끼리 6-4=2m, cm는 cm끼리 80-50=30cm를 빼서 2m 30cm입니다.',
   },
   
   // ══════════════════════════════════════════════════════════════════
@@ -12421,7 +12489,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'add-compensate',
-    when: /여러 가지 방법으로 덧셈/,
+    when: /^덧셈을 해 볼까요$/,
     demand: 'reason',
     tag: 'addition',
     strategy: '올려 더한 뒤 되돌리는 다른 방법 판단하기',
@@ -12449,7 +12517,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'sub-compensate-tens',
-    when: /여러 가지 방법으로 뺄셈/,
+    when: /^뺄셈을 해 볼까요$/,
     demand: 'reason',
     tag: 'subtraction',
     strategy: '많이 뺀 만큼 되돌리는 다른 방법 판단하기',
@@ -13452,10 +13520,15 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '조건 함께 보기 · 이어 붙인 길이를 판단하기',
     vars: {
+      // 받아올림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
       am: { from: 1, to: 3 },
-      acm: { from: 20, to: 60 },
+      aT: { from: 2, to: 6 },
+      aO: { from: 0, to: 5 },
       bm: { from: 1, to: 2 },
-      bcm: { from: 10, to: 30 },
+      bT: { from: 1, to: 3 },
+      bO: { from: 1, to: 4 },
+      acm: { calc: 'aT * 10 + aO' },
+      bcm: { calc: 'bT * 10 + bO' },
       sumM: { calc: 'am + bm' },
       sumCm: { calc: 'acm + bcm' },
     },
@@ -13475,10 +13548,15 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '조건 함께 보기 · 쓰고 남은 길이를 판단하기',
     vars: {
+      // 받아내림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
       m: { from: 3, to: 6 },
-      cm: { from: 50, to: 80 },
+      cT: { from: 5, to: 8 },
+      cO: { from: 5, to: 9 },
       useM: { from: 1, to: 2 },
-      useCm: { from: 10, to: 40 },
+      uT: { from: 1, to: 4 },
+      uO: { from: 0, to: 5 },
+      cm: { calc: 'cT * 10 + cO' },
+      useCm: { calc: 'uT * 10 + uO' },
       leftM: { calc: 'm - useM' },
       leftCm: { calc: 'cm - useCm' },
     },
@@ -14312,7 +14390,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'real-add-choose-way',
-    when: /여러 가지 방법으로 덧셈을/,
+    when: /^덧셈을 해 볼까요$/,
     real: true,
     demand: 'reason',
     tag: 'addition',
@@ -14373,7 +14451,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'real-sub-choose-way',
-    when: /여러 가지 방법으로 뺄셈을/,
+    when: /^뺄셈을 해 볼까요$/,
     real: true,
     demand: 'reason',
     tag: 'subtraction',
@@ -15158,7 +15236,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'mid-add-other-way',
-    when: /여러 가지 방법으로 덧셈을/,
+    when: /^덧셈을 해 볼까요$/,
     mid: true,
     demand: 'connect',
     tag: 'addition',
@@ -15533,7 +15611,7 @@ export const questionBank: Template[] = [
   },
   {
     id: 'mid-add-round-up',
-    when: /여러 가지 방법으로 덧셈을/,
+    when: /^덧셈을 해 볼까요$/,
     mid: true,
     demand: 'connect',
     tag: 'addition',
@@ -15944,14 +16022,19 @@ export const questionBank: Template[] = [
     strategy: '조건 함께 보기 · 문장 상황에서 m끼리 cm끼리 모으기',
     vars: {
       am: { from: 1, to: 4 },
-      acm: { from: 10, to: 40 },
+      // 받아올림이 없게 십의 자리와 일의 자리를 따로 고릅니다(2-2 지도서 유의 사항).
+      aT: { from: 1, to: 4 },
+      aO: { from: 0, to: 6 },
       bm: { from: 1, to: 3 },
-      bcm: { from: 10, to: 40 },
+      bT: { from: 1, to: 4 },
+      bO: { from: 1, to: 3 },
+      acm: { calc: 'aT * 10 + aO' },
+      bcm: { calc: 'bT * 10 + bO' },
       sm: { calc: 'am + bm' },
       scm: { calc: 'acm + bcm' },
     },
     prompt:
-      '아빠 키는 {am}m {acm}cm이고 아이 키는 {bm}m {bcm}cm입니다. 두 사람의 키를 더하면 몇 m 몇 cm일까요?',
+      '파란 색 테이프는 {am}m {acm}cm이고 노란 색 테이프는 {bm}m {bcm}cm입니다. 두 색 테이프를 겹치지 않게 이으면 몇 m 몇 cm일까요?',
     answer: '{sm}m {scm}cm',
     wrongs: ['{sm}m {acm}cm', '{am}m {scm}cm', '{sm + 1}m {scm}cm'],
     solution: 'm는 m끼리, cm는 cm끼리 더합니다. {sm}m {scm}cm입니다.',

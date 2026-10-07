@@ -1051,6 +1051,20 @@ const enforceSecondGradeLanguage = (question: Question): Question => {
   };
 };
 
+// 2-2 길이 재기 지도서: "길이의 합과 차 문제 또는 문제 상황을 구성할 때
+// 받아올림이나 받아내림이 필요한 상황은 가급적 제시하지 않도록 한다."
+// 측정 단원이라 계산 절차보다 같은 단위끼리 더하고 빼는 데 마음을 쓰게
+// 하려는 것입니다. 교과서 예(1m 70cm+1m 20cm, 9m 48cm-1m 3cm)도 모두
+// 자리마다 넘침이 없습니다. 둘째 수의 자리 숫자를 줄여 맞춥니다.
+const 받아올림없이 = (a: number, b: number) => {
+  const 자리 = String(b).split('').reverse().map(Number);
+  return Number(자리.map((d, i) => Math.min(d, 9 - (Math.floor(a / 10 ** i) % 10))).reverse().join(''));
+};
+const 받아내림없이 = (a: number, b: number) => {
+  const 자리 = String(b).split('').reverse().map(Number);
+  return Number(자리.map((d, i) => Math.min(d, Math.floor(a / 10 ** i) % 10)).reverse().join(''));
+};
+
 // 보기를 섞습니다.
 //
 // 예전에는 자리마다 j를 (seed * 13 + i * 7) % (i + 1)로 잡았습니다. 한
@@ -2540,10 +2554,10 @@ const legacyNumberQuestion = (lesson: Lesson, difficulty: Difficulty, index: num
 // 차시마다 다루는 계산 유형이 다릅니다.
 //  덧셈⑴ 일의 자리 받아올림 (두 자리)+(한 자리)
 //  덧셈⑵ 일의 자리 받아올림 (두 자리)+(두 자리)
-//  여러 가지 방법으로 덧셈 십의 자리 받아올림
+//  덧셈을 해 볼까요 십의 자리 받아올림
 //  뺄셈⑴ 받아내림 (두 자리)-(한 자리)
 //  뺄셈⑵ 받아내림 (몇십)-(몇십몇)
-//  여러 가지 방법으로 뺄셈 받아내림 (두 자리)-(두 자리)
+//  뺄셈을 해 볼까요 받아내림 (두 자리)-(두 자리)
 const calcUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
   if (lesson.unitTitle !== '덧셈과 뺄셈') return null;
 
@@ -2704,8 +2718,8 @@ const calcUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
     );
   }
 
-  // 여러 가지 방법으로 덧셈 : 십의 자리 받아올림
-  if (title.includes('여러 가지 방법으로 덧셈')) {
+  // 덧셈을 해 볼까요 : 십의 자리 받아올림
+  if (title === '덧셈을 해 볼까요') {
     const a = 10 * (5 + (seed % 4)) + (seed % 5);
     const b = 10 * (4 + ((seed + 1) % 4)) + ((seed + 2) % 5);
     if (variant === 0) return carryAsk(a, b, 'addition', '십의 자리 받아올림이 있는 덧셈하기');
@@ -2835,8 +2849,8 @@ const calcUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number)
     );
   }
 
-  // 여러 가지 방법으로 뺄셈 : (두 자리) - (두 자리)
-  if (title.includes('여러 가지 방법으로 뺄셈')) {
+  // 뺄셈을 해 볼까요 : (두 자리) - (두 자리)
+  if (title === '뺄셈을 해 볼까요') {
     const a = 10 * (4 + (seed % 6)) + (seed % 4);
     const b = 10 * (1 + (seed % 3)) + ((a % 10) + 1 + (index % 4));
     if (variant === 0) return carryAsk(a, b, 'subtraction', '두 자리 수끼리 받아내림 뺄셈하기');
@@ -4666,16 +4680,15 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     const a = 1 + (seed % 4);
     const acm = 10 + (seed % 40);
     const b = 1 + ((seed + 1) % 3);
-    const bcm = 10 + ((seed + 5) % 40);
+    const bcm = 받아올림없이(acm, 10 + ((seed + 5) % 40));
     const sumCm = acm + bcm;
-    const carry = sumCm >= 100 ? 1 : 0;
     if (variant === 0) {
       return makeQuestion(
         lesson, difficulty, index,
         `${a}m ${acm}cm와 ${b}m ${bcm}cm를 이으면 길이는 얼마일까요?`,
-        `${a + b + carry}m ${sumCm - carry * 100}cm`,
-        [`${a + b}m ${sumCm}cm`, `${a + b}m`, `${a + b + 1}m ${sumCm}cm`],
-        `m는 m끼리, cm는 cm끼리 더합니다. cm가 100이 넘으면 1m로 바꾸어 올립니다.`,
+        `${a + b}m ${sumCm}cm`,
+        [`${a + b}m ${acm}cm`, `${a + b}m`, `${a + b + 1}m ${sumCm}cm`],
+        `m는 m끼리, cm는 cm끼리 더합니다. ${a}+${b}=${a + b}m, ${acm}+${bcm}=${sumCm}cm입니다.`,
         'measurement', 'm와 cm를 각각 더하기',
       );
     }
@@ -4699,23 +4712,22 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
       );
     }
     if (variant === 3) {
+      // m와 cm를 섞어 더하는 실수(2m 30cm+40cm를 6m 30cm로)를 짚습니다.
       return makeQuestion(
         lesson, difficulty, index,
-        '길이를 더했더니 cm가 100보다 컸습니다. 어떻게 해야 할까요?',
-        '100cm를 1m로 바꾸어 m에 더한다',
-        ['그대로 둔다', 'cm를 지운다', 'm에서 1을 뺀다'],
-        `100cm가 1m이므로 넘는 만큼 m로 바꾸어 올려 줍니다.`,
-        'measurement', 'cm가 넘칠 때 m로 바꾸기',
+        `${a}m ${acm}cm에 ${bcm}cm를 더할 때 ${bcm}은 어느 수와 더해야 할까요?`,
+        `${acm}`,
+        [`${a}`, `${a}, ${acm} 둘 다`, '더하지 않는다'],
+        `cm는 cm끼리 더합니다. ${bcm}cm는 ${acm}cm와 더해 ${a}m ${sumCm}cm가 됩니다.`,
+        'measurement', '같은 단위끼리 더하기',
       );
     }
-    const joinedCm = acm + bcm;
-    const joinedCarry = joinedCm >= 100 ? 1 : 0;
     return makeQuestion(
       lesson, difficulty, index,
       `끈 ${a}m ${acm}cm에 ${bcm}cm를 더 이었습니다. 전체 길이는?`,
-      `${a + joinedCarry}m ${joinedCm - joinedCarry * 100}cm`,
-      [`${a}m ${acm}cm`, `${a}m ${joinedCm}cm`, `${a + 1}m ${joinedCm}cm`],
-      `cm끼리 더하면 ${acm}+${bcm}=${joinedCm}cm입니다. 100cm가 넘으면 1m로 바꾸어 올립니다.`,
+      `${a}m ${sumCm}cm`,
+      [`${a}m ${acm}cm`, `${a + 1}m ${acm}cm`, `${a + 1}m ${sumCm}cm`],
+      `cm끼리 더하면 ${acm}+${bcm}=${sumCm}cm이므로 ${a}m ${sumCm}cm입니다.`,
       'measurement', '길이를 이어 붙인 전체 구하기',
     );
   }
@@ -4724,7 +4736,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     const a = 3 + (seed % 4);
     const acm = 40 + (seed % 50);
     const b = 1 + ((seed + 1) % 2);
-    const bcm = 10 + ((seed + 5) % 30);
+    const bcm = 받아내림없이(acm, 10 + ((seed + 5) % 30));
     if (variant === 0) {
       return makeQuestion(
         lesson, difficulty, index,
@@ -4968,7 +4980,7 @@ const legacyMeasurementQuestion = (lesson: Lesson, difficulty: Difficulty, index
 
   if (text.includes('길이의 합') && variant === 0) {
     const a = 35 + (seed % 40);
-    const b = 12 + (seed % 25);
+    const b = 받아올림없이(a, 12 + (seed % 25));
     const answer = a + b;
     return makeQuestion(
       lesson,
@@ -4985,7 +4997,7 @@ const legacyMeasurementQuestion = (lesson: Lesson, difficulty: Difficulty, index
 
   if ((text.includes('길이의 차') && variant <= 1) || variant === 1) {
     const a = 30 + (seed % 45);
-    const b = 12 + (seed % 24);
+    const b = (difficulty === '상' ? 받아올림없이 : 받아내림없이)(a, 12 + (seed % 24));
     const answer = difficulty === '상' ? a + b : a - Math.min(b, a - 1);
     const prompt = difficulty === '상'
       ? `파란 끈은 ${a}cm, 노란 끈은 ${b}cm입니다. 두 끈을 이으면 모두 몇 cm일까요?`
@@ -6778,12 +6790,14 @@ const legacyTimeQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
       lesson,
       difficulty,
       index,
-      `달력에서 ${day}일부터 ${day + add}일까지는 몇 주일일까요?`,
-      `${weeks}주일`,
-      [`${add}주일`, `${weeks + 1}주일`, `${weeks + 2}주일`],
-      `1주일은 7일이므로 ${add}일은 ${weeks}주일입니다.`,
+      // '1일부터 8일까지는 몇 주일'은 1일과 8일을 모두 세면 8일이 되어
+      // 답이 흔들립니다. 지도서처럼 '며칠의 1주일 후'로 묻습니다.
+      `달력에서 ${day}일의 ${weeks}주일 뒤는 며칠일까요?`,
+      `${day + add}일`,
+      [`${day + weeks}일`, `${day + add - 1}일`, `${day + add + 7}일`],
+      `1주일은 7일이므로 ${weeks}주일은 ${add}일입니다. 달력에서 ${day}일 아래로 ${weeks}칸 내려가면 ${day}+${add}=${day + add}일입니다.`,
       'time',
-      '달력에서 주일 수 세기',
+      '달력에서 주일 뒤 날짜 찾기',
     );
   }
 
@@ -11658,8 +11672,8 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       );
     }
 
-    // 여러 가지 방법으로 덧셈 : 수를 갈라 큰 자리부터 더하는 방법
-    if (title.includes('여러 가지 방법으로 덧셈')) {
+    // 덧셈을 해 볼까요 : 수를 갈라 큰 자리부터 더하는 방법
+    if (title === '덧셈을 해 볼까요') {
       const a = 10 * (2 + (seed % 3)) + (3 + (seed % 5));
       const bTens = 10 * (1 + (seed % 3));
       const bOnes = 2 + (index % 5);
@@ -11699,8 +11713,8 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       );
     }
 
-    // 여러 가지 방법으로 뺄셈 : 수를 갈라 큰 자리부터 빼는 방법
-    if (title.includes('여러 가지 방법으로 뺄셈')) {
+    // 뺄셈을 해 볼까요 : 수를 갈라 큰 자리부터 빼는 방법
+    if (title === '뺄셈을 해 볼까요') {
       const a = 10 * (5 + (seed % 4)) + (2 + (seed % 5));
       const bTens = 10 * (1 + (seed % 3));
       const bOnes = 1 + (index % 5);
@@ -11794,7 +11808,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     const am = 1 + (seed % 4);
     const acm = 20 + (seed % 40);
     const bm = 1 + ((seed + 1) % 3);
-    const bcm = 10 + ((seed + 5) % 30);
+    const bcm = 받아올림없이(acm, 10 + ((seed + 5) % 30));
 
     if (title.includes('더 큰 단위')) {
       const m = 2 + (seed % 4);
@@ -11860,6 +11874,7 @@ const stepBlankQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
     if (title.includes('길이의 차')) {
       const bigM = am + 2;
       const bigCm = acm + 20;
+      const bcm = 받아내림없이(bigCm, 10 + ((seed + 5) % 30));
       if (pick === 0) {
         return makeQuestion(
           lesson, difficulty, index,
@@ -13556,8 +13571,8 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         );
       }
       // 키는 1m 몇십 cm 정도가 자연스럽습니다.
-      const taller = 5 + (seed % 6);
-      const heightCm = 20 + (seed % 5) * 5;
+      const taller = 3 + (seed % 6);
+      const heightCm = 20 + (seed % 5) * 10;
       return makeQuestion(
         lesson, difficulty, index,
         `민수의 키는 1m ${heightCm}cm이고 지호는 민수보다 ${taller}cm 더 큽니다. 지호의 키는?`,
@@ -14419,7 +14434,11 @@ const wordStepQuestion = (
       return null;
     }
     const a = 6 + (seed % 12);
-    const b = 3 + ((seed + 4) % 9);
+    const 날것 = 3 + ((seed + 4) % 9);
+    // 2학기 길이의 합·차 차시에서는 받아올림이 없게 합니다(받아올림없이 참고).
+    const b = lesson.semester === '2-2' && lesson.unitTitle === '길이 재기'
+      ? 받아올림없이(a, 날것) || 10
+      : 날것;
     if (a + b > limit) return null;
     return makeQuestion(
       lesson, difficulty, index,
@@ -15080,7 +15099,7 @@ const calcShapes: Shape[] = [
 
   // 문장 상황을 식으로 세우기 (합치기 / 더 많이)
   {
-    fits: (lesson) => /덧셈을 해|여러 가지 방법으로 덧셈/.test(lesson.title),
+    fits: (lesson) => /덧셈을 해/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 7 + lesson.lessonNo;
       const a = 24 + (seed % 40);
@@ -15098,7 +15117,7 @@ const calcShapes: Shape[] = [
 
   // 틀린 풀이 찾기 — 받아올림을 빠뜨린 오개념
   {
-    fits: (lesson) => /덧셈을 해 볼까요 ⑵|여러 가지 방법으로 덧셈/.test(lesson.title),
+    fits: (lesson) => /덧셈을 해 볼까요 ⑵|^덧셈을 해 볼까요$/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 11 + lesson.lessonNo;
       const a = 20 + (seed % 5) * 10 + 7;
@@ -15117,7 +15136,7 @@ const calcShapes: Shape[] = [
 
   // 계산하지 않고 견주기
   {
-    fits: (lesson) => /여러 가지 방법으로 덧셈|여러 가지 방법으로 뺄셈/.test(lesson.title),
+    fits: (lesson) => /^덧셈을 해 볼까요$|^뺄셈을 해 볼까요$/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 13 + lesson.lessonNo;
       // 두 자리 수 범위를 넘지 않게 합니다. 뺄셈 쪽은 40을 더해 쓰므로
@@ -15250,7 +15269,7 @@ const calcShapes: Shape[] = [
 
   // 뺄셈 — 두 수의 차 견주기
   {
-    fits: (lesson) => /뺄셈을 해|여러 가지 방법으로 뺄셈/.test(lesson.title),
+    fits: (lesson) => /뺄셈을 해/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 41 + lesson.lessonNo;
       const big = 50 + (seed % 40);
@@ -15268,7 +15287,7 @@ const calcShapes: Shape[] = [
 
   // 뺄셈 — 검산으로 확인하기
   {
-    fits: (lesson) => /뺄셈을 해|여러 가지 방법으로 뺄셈|□의 값/.test(lesson.title),
+    fits: (lesson) => /뺄셈을 해|□의 값/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 43 + lesson.lessonNo;
       const whole = 45 + (seed % 40);
@@ -15286,7 +15305,7 @@ const calcShapes: Shape[] = [
 
   // 십 몇을 만들어 계산하기
   {
-    fits: (lesson) => /여러 가지 방법으로 덧셈|세 수의 계산/.test(lesson.title),
+    fits: (lesson) => /^덧셈을 해 볼까요$|세 수의 계산/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 47 + lesson.lessonNo;
       const a = 20 + (seed % 30);
@@ -15494,8 +15513,8 @@ const lengthShapes: Shape[] = [
       const a = 3 + (seed % 3);
       const b = 1 + (seed % 2);
       const acm = 40 + (seed % 4) * 10;
-      const bcm = 10 + ((seed + 1) % 3) * 5;
       const plus = lesson.title.includes('합');
+      const bcm = (plus ? 받아올림없이 : 받아내림없이)(acm, 10 + ((seed + 1) % 3) * 5);
       const total = plus ? (a + b) * 100 + acm + bcm : (a - b) * 100 + acm - bcm;
       const m = Math.floor(total / 100);
       const cm = total % 100;
@@ -15518,8 +15537,9 @@ const lengthShapes: Shape[] = [
     fits: (lesson) => /길이의 차/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 23 + lesson.lessonNo;
-      const a = 6 + (seed % 10);
-      const b = a + 2 + (seed % 5);
+      // 색연필 일의 자리가 크레파스보다 크거나 같게 해 받아내림이 없습니다.
+      const a = 5 + (seed % 4);
+      const b = 10 + a + (seed % (10 - a));
       return makeQuestion(
         lesson, difficulty, index,
         `크레파스는 ${a}cm, 색연필은 ${b}cm입니다. 색연필은 크레파스보다 몇 cm 더 길까요?`,
