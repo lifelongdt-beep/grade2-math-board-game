@@ -93,3 +93,42 @@ export const g3TagLabel: Partial<Record<ConceptTag, string>> = {
   fraction: '분수',
   decimal: '소수',
 };
+
+// ── 3학년 2학기에서 말이 달라지는 갈래 ─────────────────────────────
+// 같은 '곱셈'이라도 3-1은 (두 자리 수)×(한 자리 수), 3-2는 (세 자리 수)×
+// (한 자리 수)와 (두 자리 수)×(두 자리 수)입니다. 어림셈도 3-1은 가까운
+// 몇백(덧셈과 뺄셈), 3-2는 세 자리 수는 몇백, 두 자리 수는 몇십입니다.
+// 3-2 차시에서는 아래 글이 위의 글을 덮어씁니다.
+export const g32Overrides: {
+  student: Partial<Record<ConceptTag, string>>;
+  core: Partial<Record<ConceptTag, string>>;
+  read: Partial<Record<ConceptTag, string>>;
+  mis: Partial<Record<ConceptTag, string>>;
+  check: Partial<Record<ConceptTag, string>>;
+  label: Partial<Record<ConceptTag, string>>;
+} = {
+  student: {
+    multiplication: '곱하는 수를 자리마다 나누어 곱하고, 몇십을 곱한 값은 자리를 맞추어 쓰세요.',
+    estimate: '세 자리 수는 가까운 몇백, 두 자리 수는 가까운 몇십으로 어림하세요.',
+  },
+  core: {
+    multiplication: '곱셈은 곱해지는 수나 곱하는 수를 자리마다 나누어 각각 곱한 다음 더합니다(부분 곱). 몇십을 곱한 값은 (몇)을 곱한 값의 10배입니다.',
+    estimate: '곱셈의 어림셈은 세 자리 수를 가까운 몇백, 두 자리 수를 가까운 몇십으로 바꾸어 계산 결과가 얼마쯤인지 짐작하는 것입니다.',
+  },
+  read: {
+    multiplication: '곱해지는 수와 곱하는 수가 각각 몇 자리 수인지 보고, 한 묶음에 몇씩 몇 묶음인지 찾습니다.',
+    estimate: '정확한 값을 구하라는 것인지, 약 얼마인지 어림하라는 것인지 먼저 봅니다.',
+  },
+  mis: {
+    multiplication: '올림한 수를 빠뜨리거나, 몇십을 곱한 값을 자리에 맞추지 않고 쓰면 안 됩니다.',
+    estimate: '무조건 버리거나 무조건 올리면 안 됩니다. 더 가까운 쪽으로 어림합니다.',
+  },
+  check: {
+    multiplication: '두 수를 어림하여 곱한 값과 계산한 값이 비슷한가요?',
+    estimate: '어림한 값과 실제로 계산한 값이 비슷한지 견주어 보았나요?',
+  },
+  label: {
+    multiplication: '곱셈(세 자리 수, 두 자리 수)',
+    estimate: '곱셈의 어림셈',
+  },
+};

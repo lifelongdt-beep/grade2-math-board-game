@@ -5,7 +5,7 @@ export type SessionDuration = 30 | 60 | 120;
 // 어느 학기인지입니다. 2학년 1·2학기로 시작했고, 5학년 2학기가 뒤에
 // 붙었습니다. 5학년은 차시도 문항도 따로 만들기 때문에(grade5 폴더),
 // 여기서 하는 일은 '어느 학기의 차시인가'를 한 곳에 적어 두는 것뿐입니다.
-export type Semester = '2-1' | '2-2' | '3-1' | '5-1' | '5-2';
+export type Semester = '2-1' | '2-2' | '3-1' | '3-2' | '5-1' | '5-2';
 
 export type ConceptTag =
   | 'number'
@@ -683,6 +683,19 @@ export interface PartitionVisual {
   }>;
 }
 
+// ── 3-2 1단원 곱셈의 모눈 ───────────────────────────────────────────
+// 지도서는 (한 자리 수)×(두 자리 수), (두 자리 수)×(두 자리 수)를 모눈
+// 종이로 보입니다. 27×12는 '27칸씩 10줄(파랑)과 27칸씩 2줄(빨강)'입니다.
+// columns칸씩 rowParts[0]줄, rowParts[1]줄 …을 색을 달리해 칠하고
+// partLabels를 옆에 씁니다.
+export interface MulGridVisual {
+  kind: 'mul-grid';
+  label: string;
+  columns: number;
+  rowParts: number[];
+  partLabels: string[];
+}
+
 export interface PatternVisual {
   kind: 'pattern';
   label: string;
@@ -717,6 +730,7 @@ export type QuestionVisual =
   | ArrayVisual
   | LineFigureVisual
   | PartitionVisual
+  | MulGridVisual
   | PatternVisual;
 
 export interface Player {

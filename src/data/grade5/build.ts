@@ -15,6 +15,7 @@ import {
   g3SelfCheck,
   g3StudentConcept,
   g3TagLabel,
+  g32Overrides,
 } from '../grade3/support';
 
 // ════════════════════════════════════════════════════════════════════
@@ -204,7 +205,16 @@ const toQuestion = (
   // 학년마다 할 말이 다릅니다(grade3/support.ts).
   const 셋째 = lesson.semester.startsWith('3');
   const 도움 = 셋째
-    ? { student: g3StudentConcept, core: g3CoreConcept, read: g3ReadStrategy, mis: g3Misconception, check: g3SelfCheck, label: g3TagLabel }
+    ? lesson.semester === '3-2'
+      ? {
+          student: { ...g3StudentConcept, ...g32Overrides.student },
+          core: { ...g3CoreConcept, ...g32Overrides.core },
+          read: { ...g3ReadStrategy, ...g32Overrides.read },
+          mis: { ...g3Misconception, ...g32Overrides.mis },
+          check: { ...g3SelfCheck, ...g32Overrides.check },
+          label: { ...g3TagLabel, ...g32Overrides.label },
+        }
+      : { student: g3StudentConcept, core: g3CoreConcept, read: g3ReadStrategy, mis: g3Misconception, check: g3SelfCheck, label: g3TagLabel }
     : { student: g5StudentConcept, core: g5CoreConcept, read: g5ReadStrategy, mis: g5Misconception, check: g5SelfCheck, label: tagLabel };
 
   const support: LearningSupport = {
