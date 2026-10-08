@@ -8,6 +8,7 @@ import { unit4Lesson } from './unit4/lessons';
 import { unit5Lesson } from './unit5/lessons';
 import { unit6Lesson } from './unit6/lessons';
 import { unit1Lesson32 } from '../grade32/unit1/lessons';
+import { unit2Lesson32 } from '../grade32/unit2/lessons';
 
 // ════════════════════════════════════════════════════════════════════
 // 3학년 1학기 차시에 어떤 문항 뭉치를 쓸지
@@ -44,6 +45,7 @@ export const grade31FamiliesFor = (lesson: Lesson, difficulty: Difficulty): G5Fa
   // 3학년 2학기도 같은 틀로 만듭니다. 단원이 붙는 대로 여기 늘립니다.
   if (lesson.semester === '3-2') {
     if (lesson.unitNo === 1) return unit1Lesson32(lesson.lessonNo, difficulty);
+    if (lesson.unitNo === 2) return unit2Lesson32(lesson.lessonNo, difficulty);
     return null;
   }
   if (lesson.semester !== '3-1') return null;
