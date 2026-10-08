@@ -909,6 +909,64 @@ function MulGridGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'm
   );
 }
 
+// 원과 그 위의 점·선분입니다(3-2 3단원).
+function CirclesGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'circles' }> }) {
+  const width = 376;
+  const xs: number[] = [];
+  const ys: number[] = [];
+  visual.circles.forEach((c) => { xs.push(c.cx - c.r, c.cx + c.r); ys.push(c.cy - c.r, c.cy + c.r); });
+  (visual.points ?? []).forEach((p) => { xs.push(p.x); ys.push(p.y); });
+  if (visual.rect) { xs.push(visual.rect.x, visual.rect.x + visual.rect.w); ys.push(visual.rect.y, visual.rect.y + visual.rect.h); }
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const pad = 26;
+  // 옆으로 긴 그림(원 여러 개를 한 줄로)은 높이를 줄여, 같은 칸에서 더 크게 보이게 합니다.
+  const height = Math.max(110, Math.min(220, ((maxY - minY) / Math.max(1e-6, maxX - minX)) * (width - pad * 2) + pad * 2));
+  const scale = Math.min((width - pad * 2) / Math.max(1e-6, maxX - minX), (height - pad * 2) / Math.max(1e-6, maxY - minY));
+  const ox = (width - (maxX - minX) * scale) / 2 - minX * scale;
+  const oy = (height - (maxY - minY) * scale) / 2 - minY * scale;
+  const X = (x: number) => ox + x * scale;
+  const Y = (y: number) => oy + y * scale;
+  // 점 이름은 원의 바깥쪽(가장 가까운 원의 중심에서 먼 쪽)으로 비켜 씁니다.
+  const labelAt = (p: { x: number; y: number }): [number, number] => {
+    const near = visual.circles.reduce((best, c) => (Math.hypot(c.cx - p.x, c.cy - p.y) < Math.hypot(best.cx - p.x, best.cy - p.y) ? c : best), visual.circles[0]);
+    let dx = p.x - near.cx;
+    let dy = p.y - near.cy;
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) { dx = -0.7; dy = 0.7; } else { dx /= len; dy /= len; }
+    return [X(p.x) + dx * 15, Y(p.y) + dy * 15 + 6];
+  };
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.rect && (
+        <rect x={X(visual.rect.x)} y={Y(visual.rect.y)} width={visual.rect.w * scale} height={visual.rect.h * scale} fill="none" stroke="#506579" strokeWidth="2.5" />
+      )}
+      {visual.circles.map((c, k) => (
+        <circle key={k} cx={X(c.cx)} cy={Y(c.cy)} r={c.r * scale} fill="none" stroke="#0f7175" strokeWidth="3" />
+      ))}
+      {(visual.segments ?? []).map((s, k) => (
+        <line key={k} x1={X(s.from[0])} y1={Y(s.from[1])} x2={X(s.to[0])} y2={Y(s.to[1])} stroke="#d0482f" strokeWidth="3" strokeLinecap="round" />
+      ))}
+      {(visual.points ?? []).map((p, k) => {
+        const [lx, ly] = labelAt(p);
+        return (
+          <g key={k}>
+            <circle cx={X(p.x)} cy={Y(p.y)} r="4.5" fill="#24364a" />
+            {p.name && (
+              <text x={lx} y={ly} textAnchor="middle" fill="#24364a" fontSize="16" fontWeight="900">
+                {p.name}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function LineFigureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'line-figure' }> }) {
   const count = Math.max(1, visual.items.length);
   const width = 376;
@@ -2934,6 +2992,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'line-figure' && <LineFigureGraphic visual={visual} />}
       {visual.kind === 'partition' && <PartitionGraphic visual={visual} />}
       {visual.kind === 'mul-grid' && <MulGridGraphic visual={visual} />}
+      {visual.kind === 'circles' && <CirclesGraphic visual={visual} />}
       {visual.kind === 'box-drawing' && <BoxDrawingGraphic visual={visual} />}
       {visual.kind === 'box-net' && <BoxNetGraphic visual={visual} />}
       {visual.kind === 'spinner' && <SpinnerGraphic visual={visual} />}

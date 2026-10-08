@@ -696,6 +696,20 @@ export interface MulGridVisual {
   partLabels: string[];
 }
 
+// ── 3-2 3단원 원 ─────────────────────────────────────────────────────
+// 원, 점(원의 중심 ㅇ, 원 위의 점 ㄱ, ㄴ …), 선분, 둘레 직사각형을 함께
+// 그립니다. 좌표는 아무 단위로 적고, 그림이 칸에 맞게 늘이고 줄입니다.
+// 위쪽이 y가 작은 쪽입니다(화면 좌표). 원끼리 맞닿거나 겹친 모양도
+// 좌표 그대로 그리므로, 문항 글의 길이와 그림이 어긋나지 않습니다.
+export interface CircleVisual {
+  kind: 'circles';
+  label: string;
+  circles: Array<{ cx: number; cy: number; r: number }>;
+  points?: Array<{ x: number; y: number; name?: string }>;
+  segments?: Array<{ from: [number, number]; to: [number, number]; name?: string }>;
+  rect?: { x: number; y: number; w: number; h: number };
+}
+
 export interface PatternVisual {
   kind: 'pattern';
   label: string;
@@ -731,6 +745,7 @@ export type QuestionVisual =
   | LineFigureVisual
   | PartitionVisual
   | MulGridVisual
+  | CircleVisual
   | PatternVisual;
 
 export interface Player {
