@@ -942,6 +942,7 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'mul-grid' ||
     visual.kind === 'circles' ||
     visual.kind === 'grouped' ||
+    visual.kind === 'picture-graph' ||
     // box-drawing과 box-net도 5학년 그림입니다. 2학년 문항에는 나오지
     // 않지만 여기를 지나가므로 이름표만 다듬습니다.
     visual.kind === 'box-drawing' ||

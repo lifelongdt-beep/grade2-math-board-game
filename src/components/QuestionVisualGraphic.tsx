@@ -1006,6 +1006,58 @@ function GroupedGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'g
   );
 }
 
+// 그림그래프입니다(3-2 6단원). 큰 그림은 크게, 먼저 그립니다.
+function PictureGraphGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'picture-graph' }> }) {
+  const width = 376;
+  const rowH = 34;
+  const top = 34;
+  const labelW = 70;
+  const height = top + visual.rows.length * rowH + 30;
+  const bigR = 11;
+  const smallR = 6;
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="12" fill="#f6fcff" stroke="#d7edf2" />
+      <text x={width / 2} y="22" textAnchor="middle" fill="#0f7175" fontSize="14" fontWeight="900">{visual.label}</text>
+      <line x1="12" y1={top} x2={width - 12} y2={top} stroke="#8aa0b8" strokeWidth="1.5" />
+      <line x1={12 + labelW} y1={top} x2={12 + labelW} y2={top + visual.rows.length * rowH} stroke="#8aa0b8" strokeWidth="1.5" />
+      {visual.rows.map((row, k) => {
+        const y = top + k * rowH;
+        const cy = y + rowH / 2;
+        const 큰 = Math.floor(row.value / visual.big);
+        const 작은 = Math.round((row.value % visual.big) / visual.small);
+        let x = 12 + labelW + 8;
+        const icons: JSX.Element[] = [];
+        if (visual.hideRow === k) {
+          icons.push(<text key="q" x={x + 10} y={cy + 6} fill="#d0482f" fontSize="18" fontWeight="900">?</text>);
+        } else {
+          for (let i = 0; i < 큰; i += 1) {
+            icons.push(<circle key={`b${i}`} cx={x + bigR} cy={cy} r={bigR} fill="#18a7a7" stroke="#0f7175" strokeWidth="2" />);
+            x += bigR * 2 + 4;
+          }
+          for (let i = 0; i < 작은; i += 1) {
+            icons.push(<circle key={`s${i}`} cx={x + smallR} cy={cy} r={smallR} fill="#18a7a7" stroke="#0f7175" strokeWidth="1.5" />);
+            x += smallR * 2 + 4;
+          }
+        }
+        return (
+          <g key={k}>
+            <text x={12 + labelW / 2} y={cy + 5} textAnchor="middle" fill="#24364a" fontSize="14" fontWeight="900">{row.label}</text>
+            {icons}
+            <line x1="12" y1={y + rowH} x2={width - 12} y2={y + rowH} stroke="#d7e3ec" strokeWidth="1" />
+          </g>
+        );
+      })}
+      <g>
+        <circle cx={width - 150} cy={height - 15} r={bigR - 3} fill="#18a7a7" stroke="#0f7175" strokeWidth="2" />
+        <text x={width - 136} y={height - 10} fill="#24364a" fontSize="13" fontWeight="800">{visual.big}{visual.unitWord}</text>
+        <circle cx={width - 70} cy={height - 15} r={smallR - 1} fill="#18a7a7" stroke="#0f7175" strokeWidth="1.5" />
+        <text x={width - 60} y={height - 10} fill="#24364a" fontSize="13" fontWeight="800">{visual.small}{visual.unitWord}</text>
+      </g>
+    </svg>
+  );
+}
+
 function LineFigureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'line-figure' }> }) {
   const count = Math.max(1, visual.items.length);
   const width = 376;
@@ -3033,6 +3085,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'mul-grid' && <MulGridGraphic visual={visual} />}
       {visual.kind === 'circles' && <CirclesGraphic visual={visual} />}
       {visual.kind === 'grouped' && <GroupedGraphic visual={visual} />}
+      {visual.kind === 'picture-graph' && <PictureGraphGraphic visual={visual} />}
       {visual.kind === 'box-drawing' && <BoxDrawingGraphic visual={visual} />}
       {visual.kind === 'box-net' && <BoxNetGraphic visual={visual} />}
       {visual.kind === 'spinner' && <SpinnerGraphic visual={visual} />}
