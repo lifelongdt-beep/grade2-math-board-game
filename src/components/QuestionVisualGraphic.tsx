@@ -867,6 +867,48 @@ function PartitionGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
   );
 }
 
+// 곱셈의 모눈입니다(3-2 1단원). 칸이 너무 작아지면 칸 선은 긋지 않고
+// 덩어리만 칠합니다 — 줄 수가 많아도 '몇 줄과 몇 줄'로 나뉜 것이 보이게
+// 하려는 것입니다.
+function MulGridGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'mul-grid' }> }) {
+  const width = 376;
+  const height = 210;
+  const rows = visual.rowParts.reduce((sum, one) => sum + one, 0);
+  const cell = Math.min(230 / Math.max(1, visual.columns), 180 / Math.max(1, rows), 18);
+  const gridWidth = cell * visual.columns;
+  const gridHeight = cell * rows;
+  const left = 16 + (240 - gridWidth) / 2;
+  const top = (height - gridHeight) / 2;
+  const fills = ['#cfe3ff', '#ffd3cc', '#d8f3dc'];
+  const strokes = ['#2f6fd0', '#d0482f', '#2f9e5a'];
+  const lines = cell >= 5;
+  let run = 0;
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.rowParts.map((part, index) => {
+        const y = top + run * cell;
+        run += part;
+        const h = part * cell;
+        return (
+          <g key={index}>
+            <rect x={left} y={y} width={gridWidth} height={h} fill={fills[index % 3]} stroke={strokes[index % 3]} strokeWidth="2.5" />
+            {lines && Array.from({ length: visual.columns - 1 }, (_, c) => (
+              <line key={`c${c}`} x1={left + (c + 1) * cell} y1={y} x2={left + (c + 1) * cell} y2={y + h} stroke={strokes[index % 3]} strokeOpacity="0.35" strokeWidth="1" />
+            ))}
+            {lines && Array.from({ length: part - 1 }, (_, r) => (
+              <line key={`r${r}`} x1={left} y1={y + (r + 1) * cell} x2={left + gridWidth} y2={y + (r + 1) * cell} stroke={strokes[index % 3]} strokeOpacity="0.35" strokeWidth="1" />
+            ))}
+            <text x={left + gridWidth + 12} y={y + h / 2 + 6} fill={strokes[index % 3]} fontSize="17" fontWeight="900">
+              {visual.partLabels[index]}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function LineFigureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'line-figure' }> }) {
   const count = Math.max(1, visual.items.length);
   const width = 376;
@@ -2891,6 +2933,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'figure-set' && <FigureSetGraphic visual={visual} />}
       {visual.kind === 'line-figure' && <LineFigureGraphic visual={visual} />}
       {visual.kind === 'partition' && <PartitionGraphic visual={visual} />}
+      {visual.kind === 'mul-grid' && <MulGridGraphic visual={visual} />}
       {visual.kind === 'box-drawing' && <BoxDrawingGraphic visual={visual} />}
       {visual.kind === 'box-net' && <BoxNetGraphic visual={visual} />}
       {visual.kind === 'spinner' && <SpinnerGraphic visual={visual} />}
