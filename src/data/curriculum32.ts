@@ -26,6 +26,9 @@ import type { ConceptTag, Lesson, LessonScope, Semester, Unit } from '../types';
 //   · 4단원 이산량 분수는 묶음의 수로 나타냅니다. 9/12처럼 값이 같은
 //     분수는 '틀린 답은 아니지만 묶음을 생각하지 않은 답'이므로 틀린
 //     보기로 두지 않습니다. '크기가 같은 분수', '약분'은 5학년 말입니다.
+//   · 5단원 "지나친 단위 환산은 다루지 않는다." L↔mL, kg↔g, t↔kg만
+//     바꿉니다. 덧셈·뺄셈은 교과서처럼 받아올림·받아내림이 없는 것만
+//     냅니다(3 L 500 mL+1 L 300 mL).
 // ════════════════════════════════════════════════════════════════════
 
 type LessonSeed = {
@@ -78,6 +81,9 @@ const 컴퍼스성취 = '[4수03-04] 컴퍼스를 이용하여 여러 가지 크
 const 분수성취 = '[4수01-09] 양의 등분할을 통하여 분수의 필요성을 인식하고, 분수를 이해하고 읽고 쓸 수 있다.';
 const 분수종류성취 = '[4수01-10] 단위분수, 진분수, 가분수, 대분수를 알고, 그 관계를 이해한다.';
 const 분수비교성취 = '[4수01-11] 분모가 같은 분수끼리, 단위분수끼리 크기를 비교하고 그 방법을 설명할 수 있다.';
+const 들이성취 = '[4수03-17] 실생활 문제 상황을 통하여 들이와 무게의 단위의 필요성을 인식하고, 1 L, 1 mL, 1 kg, 1 g, 1 t의 단위를 알며, 이를 이용하여 들이와 무게를 측정하고 어림할 수 있다.';
+const 들이관계성취 = '[4수03-18] 1 L와 1 mL, 1 kg과 1 g, 1 t과 1 kg의 관계를 이해하고, 들이와 무게를 단명수와 복명수로 표현할 수 있다.';
+const 들이계산성취 = '[4수03-19] 들이와 무게의 덧셈과 뺄셈을 할 수 있다.';
 const 어림성취 = '[4수01-08] 자연수의 덧셈, 뺄셈, 곱셈, 나눗셈과 관련한 여러 가지 상황에서 어림셈을 할 수 있다.';
 
 export const curriculum32: Unit[] = [
@@ -331,6 +337,81 @@ export const curriculum32: Unit[] = [
       tags: ['fraction'],
       textbookFocus: '1과 6/7과 2와 3/7은 자연수부터 비교한다.',
       workbookFocus: '10/6과 1과 5/6은 한 가지 꼴로 바꾸어 비교한다.',
+    },
+  ]),
+  // ── 5단원 들이와 무게 (지도서 12차시 중 1~9차시) ─────────────────
+  unit(5, '들이와 무게', [
+    {
+      title: '단원 도입',
+      objective: '이전에 배운 내용을 확인하고 이 단원에서 배울 내용을 확인한다.',
+      achievement: 들이성취,
+      tags: ['measurement'],
+      textbookFocus: '전통 시장에서 mL와 g이 쓰인 상황을 살펴본다.',
+      workbookFocus: '‘더 많다, 더 무겁다’ 같은 비교하는 말을 떠올린다.',
+    },
+    {
+      title: '들이를 어떻게 비교할까요',
+      objective: '여러 가지 방법으로 들이를 비교할 수 있다.',
+      achievement: 들이성취,
+      tags: ['measurement'],
+      textbookFocus: '옮겨 담거나 같은 컵으로 몇 번 붓는지 세어 들이를 비교한다.',
+      workbookFocus: '임의 단위로 재면 불편한 점을 알고 표준 단위가 필요함을 안다.',
+    },
+    {
+      title: '들이의 단위는 무엇일까요',
+      objective: 'L와 mL를 알고 1 L=1000 mL의 관계를 이해할 수 있다.',
+      achievement: 들이관계성취,
+      tags: ['measurement'],
+      textbookFocus: '1 L 200 mL는 1200 mL이다.',
+      workbookFocus: '1800 mL를 1 L 800 mL로 나타낸다.',
+    },
+    {
+      title: '들이를 어떻게 어림하고 잴까요',
+      objective: '들이를 어림하고 잴 수 있다.',
+      achievement: 들이성취,
+      tags: ['measurement'],
+      textbookFocus: '식용유의 들이를 약 2 L로 어림한다.',
+      workbookFocus: '들이에 알맞은 단위(L, mL)를 고른다.',
+    },
+    {
+      title: '들이의 덧셈과 뺄셈을 어떻게 할까요',
+      objective: '들이의 덧셈과 뺄셈을 할 수 있다.',
+      achievement: 들이계산성취,
+      tags: ['measurement'],
+      textbookFocus: '3 L 500 mL+1 L 300 mL=4 L 800 mL',
+      workbookFocus: 'L는 L끼리, mL는 mL끼리 계산한다.',
+    },
+    {
+      title: '무게를 어떻게 비교할까요',
+      objective: '여러 가지 방법으로 무게를 비교할 수 있다.',
+      achievement: 들이성취,
+      tags: ['measurement'],
+      textbookFocus: '양팔저울과 바둑돌로 무게를 비교한다.',
+      workbookFocus: '큰 물건이 늘 무거운 것은 아님을 안다.',
+    },
+    {
+      title: '무게의 단위는 무엇일까요',
+      objective: 'kg, g, t을 알고 단위 사이의 관계를 이해할 수 있다.',
+      achievement: 들이관계성취,
+      tags: ['measurement'],
+      textbookFocus: '1 kg 500 g=1500 g, 1 t=1000 kg',
+      workbookFocus: '무게에 알맞은 단위(t, kg, g)를 안다.',
+    },
+    {
+      title: '무게를 어떻게 어림하고 잴까요',
+      objective: '무게를 어림하고 잴 수 있다.',
+      achievement: 들이성취,
+      tags: ['measurement'],
+      textbookFocus: '고구마 1개의 무게를 약 250 g으로 어림한다.',
+      workbookFocus: '어림한 값과 잰 값을 비교한다.',
+    },
+    {
+      title: '무게의 덧셈과 뺄셈을 어떻게 할까요',
+      objective: '무게의 덧셈과 뺄셈을 할 수 있다.',
+      achievement: 들이계산성취,
+      tags: ['measurement'],
+      textbookFocus: '3 kg 300 g+4 kg 100 g=7 kg 400 g',
+      workbookFocus: 'kg은 kg끼리, g은 g끼리 계산한다.',
     },
   ]),
 ];
