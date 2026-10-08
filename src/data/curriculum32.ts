@@ -20,6 +20,9 @@ import type { ConceptTag, Lesson, LessonScope, Semester, Unit } from '../types';
 //     5~6학년). '검산' 대신 '확인'이라고 씁니다. 나눗셈의 어림셈은
 //     나누어지는 수를 나누는 수로 쉽게 나누어지는 수로 바꿉니다
 //     (298÷3 → 300÷3, 477÷6 → 480÷6).
+//   · 3단원 지도서 2~3차시 '원의 중심, 반지름, 지름은 무엇일까요'는 한
+//     차시로 둡니다. 지름 고르기에는 원의 중심을 지나지 않는 선분을
+//     꼭 넣습니다(지도서가 짚은 오개념).
 // ════════════════════════════════════════════════════════════════════
 
 type LessonSeed = {
@@ -34,6 +37,10 @@ type LessonSeed = {
 const scopeFor = (unitTitle: string, lessonNo: number): LessonScope => {
   // 2학년 전용 그림이 섞이지 않게 막아 둡니다.
   const forbidVisuals = ['ruler', 'unit-measure', 'clock', 'calendar', 'year-calendar', 'cube-stack', 'cube-pattern'];
+  if (unitTitle === '원') {
+    // 컴퍼스를 벌린 길이를 자 그림으로 보이므로 ruler는 막지 않습니다.
+    return { maxNumber: 100, representation: 'semi', forbidVisuals: forbidVisuals.filter((kind) => kind !== 'ruler') };
+  }
   if (unitTitle === '나눗셈') {
     return { maxNumber: 1000, representation: lessonNo <= 3 ? 'semi' : 'symbolic', forbidVisuals };
   }
@@ -63,6 +70,8 @@ const unit = (unitNo: number, title: string, lessons: LessonSeed[]): Unit => {
 
 const 곱셈성취 = '[4수01-04] 곱하는 수가 한 자리 수 또는 두 자리 수인 곱셈의 계산 원리를 이해하고 그 계산을 할 수 있다.';
 const 나눗셈성취 = '[4수01-06] 나누는 수가 한 자리 수인 나눗셈의 계산 원리를 이해하고 그 계산을 할 수 있으며, 나눗셈에서 몫과 나머지의 의미를 안다.';
+const 원성취 = '[4수03-03] 원의 중심, 반지름, 지름을 이해하고, 그 성질을 탐구하고 설명할 수 있다.';
+const 컴퍼스성취 = '[4수03-04] 컴퍼스를 이용하여 여러 가지 크기의 원을 그려서 다양한 모양을 꾸밀 수 있다.';
 const 어림성취 = '[4수01-08] 자연수의 덧셈, 뺄셈, 곱셈, 나눗셈과 관련한 여러 가지 상황에서 어림셈을 할 수 있다.';
 
 export const curriculum32: Unit[] = [
@@ -222,6 +231,41 @@ export const curriculum32: Unit[] = [
       tags: ['estimate', 'division'],
       textbookFocus: '298÷3을 300÷3으로 어림하여 약 100을 구한다.',
       workbookFocus: '477÷6의 몫이 83이 맞는지 480÷6=80으로 판단한다.',
+    },
+  ]),
+  // ── 3단원 원 (지도서 9차시 중 1~5차시, 2~3차시는 한 차시) ─────────
+  unit(3, '원', [
+    {
+      title: '단원 도입',
+      objective: '이전에 배운 내용을 확인하고 이 단원에서 배울 내용을 확인한다.',
+      achievement: 원성취,
+      tags: ['shape'],
+      textbookFocus: '운동장에 원을 그리는 방법을 생각해 본다.',
+      workbookFocus: '원 모양의 특징(곧은 선과 뾰족한 곳이 없음)을 떠올린다.',
+    },
+    {
+      title: '원의 중심, 반지름, 지름은 무엇일까요',
+      objective: '원의 중심, 반지름, 지름을 알 수 있다.',
+      achievement: 원성취,
+      tags: ['shape'],
+      textbookFocus: '누름 못과 띠 종이로 원을 그리며 원의 중심과 반지름을 안다.',
+      workbookFocus: '한 원에서 원의 중심은 한 개이고, 반지름과 지름은 셀 수 없이 많이 그을 수 있다.',
+    },
+    {
+      title: '원에는 어떤 성질이 있을까요',
+      objective: '원의 지름과 반지름의 성질과 관계를 알 수 있다.',
+      achievement: 원성취,
+      tags: ['shape'],
+      textbookFocus: '지름은 원을 똑같이 둘로 나누고, 원 위의 두 점을 이은 선분 중 가장 길다.',
+      workbookFocus: '한 원에서 지름은 반지름의 2배이다.',
+    },
+    {
+      title: '컴퍼스를 이용하여 원을 어떻게 그릴까요',
+      objective: '컴퍼스를 이용하여 여러 가지 크기의 원을 그릴 수 있다.',
+      achievement: 컴퍼스성취,
+      tags: ['shape'],
+      textbookFocus: '원의 중심을 정하고, 컴퍼스를 반지름만큼 벌린 다음, 침을 꽂고 돌려 원을 그린다.',
+      workbookFocus: '컴퍼스만 이용하여 주어진 원과 크기가 같은 원을 그린다.',
     },
   ]),
 ];
