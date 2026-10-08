@@ -723,6 +723,22 @@ export interface GroupedVisual {
   boxed?: boolean;
 }
 
+// ── 3-2 6단원 그림그래프 ─────────────────────────────────────────────
+// 지도서: 그림은 두 가지(10과 1, 또는 100과 10)로 하고, 큰 단위의 그림을
+// 더 크게, 먼저 그리며, 그림이 나타내는 수(범례)를 함께 씁니다.
+// 줄마다 수를 적지 않습니다 — 그림을 세어 읽게 하려는 그래프입니다.
+// hideRow 줄은 그림 대신 '?'를 둡니다(그림그래프 완성하기).
+export interface PictureGraphVisual {
+  kind: 'picture-graph';
+  label: string;
+  big: number;
+  small: number;
+  unitWord: string;
+  rowTitle: string;
+  rows: Array<{ label: string; value: number }>;
+  hideRow?: number;
+}
+
 export interface PatternVisual {
   kind: 'pattern';
   label: string;
@@ -760,6 +776,7 @@ export type QuestionVisual =
   | MulGridVisual
   | CircleVisual
   | GroupedVisual
+  | PictureGraphVisual
   | PatternVisual;
 
 export interface Player {
