@@ -136,7 +136,7 @@ export const trim = (value: number, decimals: number) => value.toFixed(decimals)
 const unitFinal: Array<[string, boolean]> = [
   ['kg', true], ['mg', true], ['mm', false], ['cm', false], ['km', false],
   ['mL', false], ['kL', false], ['g', true], ['m', false], ['L', false],
-  ['t', false], ['%', false], ['℃', false], ['원', true], ['점', true],
+  ['t', true], ['%', false], ['℃', false], ['원', true], ['점', true],
 ];
 
 const hasFinal = (word: string): boolean => {
