@@ -710,6 +710,19 @@ export interface CircleVisual {
   rect?: { x: number; y: number; w: number; h: number };
 }
 
+// ── 3-2 4단원 분수(이산량) ─────────────────────────────────────────
+// 물건 여러 개를 같은 수씩 묶은 그림입니다. groups묶음, 한 묶음에
+// perGroup개씩이고, 앞에서부터 shadedGroups묶음을 칠합니다. 묶음 테두리를
+// 그리지 않으면(boxed: false) 아이가 직접 묶어 보게 합니다.
+export interface GroupedVisual {
+  kind: 'grouped';
+  label: string;
+  groups: number;
+  perGroup: number;
+  shadedGroups: number;
+  boxed?: boolean;
+}
+
 export interface PatternVisual {
   kind: 'pattern';
   label: string;
@@ -746,6 +759,7 @@ export type QuestionVisual =
   | PartitionVisual
   | MulGridVisual
   | CircleVisual
+  | GroupedVisual
   | PatternVisual;
 
 export interface Player {

@@ -967,6 +967,45 @@ function CirclesGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'c
   );
 }
 
+// 같은 수씩 묶은 물건입니다(3-2 4단원 분수의 이산량).
+function GroupedGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'grouped' }> }) {
+  const width = 376;
+  const perRow = visual.groups <= 4 ? visual.groups : Math.ceil(visual.groups / 2);
+  const rows = Math.ceil(visual.groups / perRow);
+  const cols = Math.ceil(Math.sqrt(visual.perGroup));
+  const inRows = Math.ceil(visual.perGroup / cols);
+  const boxW = (width - 24) / perRow - 10;
+  const dot = Math.min(16, (boxW - 12) / cols - 4);
+  const boxH = inRows * (dot + 5) + 14;
+  const height = rows * (boxH + 12) + 18;
+  const boxed = visual.boxed !== false;
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {Array.from({ length: visual.groups }, (_, g) => {
+        const row = Math.floor(g / perRow);
+        const col = g % perRow;
+        const bx = 17 + col * (boxW + 10);
+        const by = 13 + row * (boxH + 12);
+        const shaded = g < visual.shadedGroups;
+        return (
+          <g key={g}>
+            {boxed && <rect x={bx} y={by} width={boxW} height={boxH} rx="10" fill={shaded ? '#d6f2f0' : 'none'} stroke="#0f7175" strokeWidth="2" strokeDasharray={shaded ? undefined : '5 4'} />}
+            {Array.from({ length: visual.perGroup }, (_, k) => {
+              const r = Math.floor(k / cols);
+              const c = k % cols;
+              const used = Math.min(cols, visual.perGroup - r * cols);
+              const cx = bx + boxW / 2 + (c - (used - 1) / 2) * (dot + 4);
+              const cy = by + 7 + dot / 2 + r * (dot + 5);
+              return <circle key={k} cx={cx} cy={cy} r={dot / 2} fill={shaded ? '#18a7a7' : '#ffffff'} stroke="#0f7175" strokeWidth="2" />;
+            })}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function LineFigureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'line-figure' }> }) {
   const count = Math.max(1, visual.items.length);
   const width = 376;
@@ -2993,6 +3032,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'partition' && <PartitionGraphic visual={visual} />}
       {visual.kind === 'mul-grid' && <MulGridGraphic visual={visual} />}
       {visual.kind === 'circles' && <CirclesGraphic visual={visual} />}
+      {visual.kind === 'grouped' && <GroupedGraphic visual={visual} />}
       {visual.kind === 'box-drawing' && <BoxDrawingGraphic visual={visual} />}
       {visual.kind === 'box-net' && <BoxNetGraphic visual={visual} />}
       {visual.kind === 'spinner' && <SpinnerGraphic visual={visual} />}
