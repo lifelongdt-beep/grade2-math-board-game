@@ -5,7 +5,7 @@ export type SessionDuration = 30 | 60 | 120;
 // 어느 학기인지입니다. 2학년 1·2학기로 시작했고, 5학년 2학기가 뒤에
 // 붙었습니다. 5학년은 차시도 문항도 따로 만들기 때문에(grade5 폴더),
 // 여기서 하는 일은 '어느 학기의 차시인가'를 한 곳에 적어 두는 것뿐입니다.
-export type Semester = '2-1' | '2-2' | '5-1' | '5-2';
+export type Semester = '2-1' | '2-2' | '3-1' | '3-2' | '5-1' | '5-2';
 
 export type ConceptTag =
   | 'number'
@@ -42,7 +42,14 @@ export type ConceptTag =
   | 'correspondence'
   | 'fractionCompare'
   | 'fractionAdd'
-  | 'area';
+  | 'area'
+  // ── 3학년에서 쓰는 갈래입니다 ──────────────────────────────────
+  // 세 자리 수의 덧셈·뺄셈 계산은 2학년 갈래(addition, subtraction)를
+  // 그대로 씁니다. 어림셈은 5학년의 '어림하기'(rounding, 올림·버림·
+  // 반올림)와 다릅니다 — 3학년은 가까운 몇백으로 어림해 계산 결과를
+  // 짐작합니다. 두 학년을 한 이름으로 묶으면 선생님 분석에서 섞입니다.
+  | 'estimate'
+  | 'division';
 
 // 차시가 '무엇을 물어도 되는가'를 적어 둔 선언입니다.
 //
@@ -234,6 +241,11 @@ export interface NumberLineVisual {
   // 눈금은 보이되 숫자는 감출 자리입니다. 정답 자리에 숫자를 그대로 쓰면
   // 세어 보지 않고 답을 읽어 버립니다. 눈금만 두면 한 칸을 세어야 합니다.
   hiddenLabels?: number[];
+  // 숫자를 쓰고 눈금을 길게 그을 간격입니다. 0.1씩 눈금을 긋고
+  // 0, 1, 2에만 숫자를 쓰는 소수 수직선에서 씁니다.
+  majorEvery?: number;
+  // 0부터 이 값까지 굵은 선으로 칠합니다('양'으로 나타내기).
+  fillTo?: number;
 }
 
 // 수의 범위를 나타내는 그림입니다(5-2 1단원).
@@ -483,6 +495,11 @@ export interface BarModelVisual {
 export interface RulerVisual {
   kind: 'ruler';
   label: string;
+  /**
+   * 'mm'이면 start·end·highlight를 mm로 적고, 1 mm마다 작은 눈금,
+   * 5 mm마다 중간 눈금, 10 mm마다 긴 눈금과 cm 숫자를 그립니다(3-1 5단원).
+   */
+  unit?: 'mm';
   start: number;
   end: number;
   highlightStart: number;
@@ -497,6 +514,11 @@ export interface ClockVisual {
   label: string;
   hour: number;
   minute: number;
+  /**
+   * 초입니다(3-1 5단원). 있으면 초바늘과 작은 눈금 60칸을 함께 그립니다.
+   * 초바늘 없이 초를 읽으라고 하면 읽을 것이 없습니다.
+   */
+  second?: number;
   endHour?: number;
   endMinute?: number;
   /** 바늘이 실제 정답 시각이 아니라 시계 모양을 보여 주는 예시일 때 true */
@@ -610,6 +632,113 @@ export interface ArrayVisual {
   hideCaption?: boolean;
 }
 
+// ── 3-1 2단원 평면도형 ──────────────────────────────────────────────
+// 선분·직선·반직선·각은 닫힌 도형이 아니라서 figure-set으로 그릴 수
+// 없습니다. 지도서가 그리는 그대로 점에 이름(ㄱ, ㄴ …)을 달고,
+//   segment 두 점 사이만 긋습니다(양 끝에 점).
+//   line    두 점을 지나 양쪽으로 길게 늘여 긋습니다.
+//   ray     첫 점에서 시작해 둘째 점을 지나 한쪽으로만 길게 늘입니다.
+//   angle   가운데 점(points[1])이 꼭짓점이고, 거기서 두 반직선을 긋습니다.
+//   curve   굽은 선입니다. 점들을 부드럽게 잇습니다.
+//   polyline 꺾인 선입니다(곧은 선 여러 개). 각이 아닌 것을 보일 때 씁니다.
+// 좌표는 -1~1 사이로 적고, 위쪽이 -1입니다.
+export interface LineFigureVisual {
+  kind: 'line-figure';
+  label: string;
+  items: Array<{
+    // 가, 나, 다 … 그림 밑에 붙이는 이름입니다.
+    name?: string;
+    // dots: 선을 긋지 않고 점만 찍습니다('두 점을 이어 그을 수 있는 선분은 몇 개' 같은 문항).
+    shape: 'segment' | 'line' | 'ray' | 'angle' | 'curve' | 'polyline' | 'dots';
+    points: Array<[number, number]>;
+    // 점의 이름입니다. points 차례대로 붙습니다. 빈 글자면 점만 찍습니다.
+    labels?: string[];
+    // 각의 꼭짓점에 직각 표시를 그립니다. 직각인지 묻는 문항에서는
+    // 켜지 않습니다 — 표시가 곧 답이 됩니다.
+    rightMark?: boolean;
+  }>;
+}
+
+// ── 3-1 6단원 분수와 소수 ──────────────────────────────────────────
+// 전체 하나를 여러 조각으로 나눈 그림입니다. 지도서는 3학년 1학기에
+// 연속량(띠·원·사각형) 모델만 쓰고, 조각은 '모양과 크기가 같아야'
+// 똑같이 나눈 것이라고 가르칩니다(넓이 모델은 넓이를 배운 뒤).
+//   bar    띠를 세로 금으로 나눕니다. cuts에 금 자리(0~1)를 적으면
+//          그 자리에서 자르고, 없으면 parts만큼 똑같이 나눕니다.
+//   circle 원을 부채꼴로 나눕니다. cuts는 한 바퀴를 1로 본 자리입니다.
+//   grid   직사각형을 rows×columns 칸으로 똑같이 나눕니다.
+//   diag   정사각형을 두 대각선으로 똑같이 넷으로 나눕니다.
+// shaded는 칠할 조각의 차례(0부터)입니다.
+export interface PartitionVisual {
+  kind: 'partition';
+  label: string;
+  figures: Array<{
+    name?: string;
+    shape: 'bar' | 'circle' | 'grid' | 'diag';
+    parts?: number;
+    cuts?: number[];
+    rows?: number;
+    columns?: number;
+    shaded: number[];
+  }>;
+}
+
+// ── 3-2 1단원 곱셈의 모눈 ───────────────────────────────────────────
+// 지도서는 (한 자리 수)×(두 자리 수), (두 자리 수)×(두 자리 수)를 모눈
+// 종이로 보입니다. 27×12는 '27칸씩 10줄(파랑)과 27칸씩 2줄(빨강)'입니다.
+// columns칸씩 rowParts[0]줄, rowParts[1]줄 …을 색을 달리해 칠하고
+// partLabels를 옆에 씁니다.
+export interface MulGridVisual {
+  kind: 'mul-grid';
+  label: string;
+  columns: number;
+  rowParts: number[];
+  partLabels: string[];
+}
+
+// ── 3-2 3단원 원 ─────────────────────────────────────────────────────
+// 원, 점(원의 중심 ㅇ, 원 위의 점 ㄱ, ㄴ …), 선분, 둘레 직사각형을 함께
+// 그립니다. 좌표는 아무 단위로 적고, 그림이 칸에 맞게 늘이고 줄입니다.
+// 위쪽이 y가 작은 쪽입니다(화면 좌표). 원끼리 맞닿거나 겹친 모양도
+// 좌표 그대로 그리므로, 문항 글의 길이와 그림이 어긋나지 않습니다.
+export interface CircleVisual {
+  kind: 'circles';
+  label: string;
+  circles: Array<{ cx: number; cy: number; r: number }>;
+  points?: Array<{ x: number; y: number; name?: string }>;
+  segments?: Array<{ from: [number, number]; to: [number, number]; name?: string }>;
+  rect?: { x: number; y: number; w: number; h: number };
+}
+
+// ── 3-2 4단원 분수(이산량) ─────────────────────────────────────────
+// 물건 여러 개를 같은 수씩 묶은 그림입니다. groups묶음, 한 묶음에
+// perGroup개씩이고, 앞에서부터 shadedGroups묶음을 칠합니다. 묶음 테두리를
+// 그리지 않으면(boxed: false) 아이가 직접 묶어 보게 합니다.
+export interface GroupedVisual {
+  kind: 'grouped';
+  label: string;
+  groups: number;
+  perGroup: number;
+  shadedGroups: number;
+  boxed?: boolean;
+}
+
+// ── 3-2 6단원 그림그래프 ─────────────────────────────────────────────
+// 지도서: 그림은 두 가지(10과 1, 또는 100과 10)로 하고, 큰 단위의 그림을
+// 더 크게, 먼저 그리며, 그림이 나타내는 수(범례)를 함께 씁니다.
+// 줄마다 수를 적지 않습니다 — 그림을 세어 읽게 하려는 그래프입니다.
+// hideRow 줄은 그림 대신 '?'를 둡니다(그림그래프 완성하기).
+export interface PictureGraphVisual {
+  kind: 'picture-graph';
+  label: string;
+  big: number;
+  small: number;
+  unitWord: string;
+  rowTitle: string;
+  rows: Array<{ label: string; value: number }>;
+  hideRow?: number;
+}
+
 export interface PatternVisual {
   kind: 'pattern';
   label: string;
@@ -642,6 +771,12 @@ export type QuestionVisual =
   | YearCalendarVisual
   | PictographVisual
   | ArrayVisual
+  | LineFigureVisual
+  | PartitionVisual
+  | MulGridVisual
+  | CircleVisual
+  | GroupedVisual
+  | PictureGraphVisual
   | PatternVisual;
 
 export interface Player {
