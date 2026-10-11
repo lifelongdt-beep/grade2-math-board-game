@@ -166,7 +166,8 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '자료 해석 · 아는 길이로 어림하는 과정 판단하기',
     vars: {
-      known: { from: 5, to: 9 },
+      // 지우개가 9cm면 너무 깁니다. 흔한 지우개 길이 안에서 고릅니다.
+      known: { from: 4, to: 7 },
       times: { from: 2, to: 4 },
       guess: { calc: 'known * times' },
     },
@@ -1041,6 +1042,7 @@ export const questionBank: Template[] = [
       b: { calc: 'bTens * 10 + bOnes' },
       bigPart: { calc: 'bTens * 10' },
     },
+    visual: { kind: 'place-value', value: 'b', label: '{b}의 자리값표' },
     prompt: '{b:을} 몇십과 몇으로 가르면 어떻게 될까요?',
     answer: '{bigPart}과 {bOnes}',
     // '2와 40'은 같은 가르기를 거꾸로 적은 것이라 틀린 보기로 둘 수 없습니다.
@@ -1167,7 +1169,7 @@ export const questionBank: Template[] = [
       more: { from: 15, to: 36 },
       sum: { calc: 'have + more' },
     },
-    words: { item: ['붙임딱지', '구슬', '카드'] },
+    words: { item: ['붙임딱지', '색종이', '카드'] },
     prompt: '{item:을} {have}장 모았는데 {more}장을 더 받았습니다. {item:은} 모두 몇 장일까요?',
     answer: '{sum}장',
     wrongs: ['{have}장', '{more}장', '{sum + 10}장'],
@@ -1272,7 +1274,7 @@ export const questionBank: Template[] = [
       used: { from: 18, to: 39 },
       left: { calc: 'have - used' },
     },
-    words: { item: ['색종이', '풍선', '스티커'] },
+    words: { item: ['색종이', '딱지', '스티커'] },
     prompt: '{item:이} {have}장 있었는데 {used}장을 썼습니다. 남은 {item:은} 몇 장일까요?',
     answer: '{left}장',
     wrongs: ['{have}장', '{used}장', '{left + 10}장'],
@@ -2984,6 +2986,7 @@ export const questionBank: Template[] = [
       groups: { from: 3, to: 8 },
       total: { calc: 'per * groups' },
     },
+    visual: { kind: 'array', rows: 'groups', columns: 'per', label: '한 줄에 {per}씩 늘어놓은 {total}' },
     prompt: '{total:을} {per}씩 묶으면 몇 묶음이 될까요?',
     answer: '{groups}묶음',
     wrongs: ['{per}묶음', '{groups + 1}묶음', '{total}묶음'],
@@ -3511,6 +3514,14 @@ export const questionBank: Template[] = [
       guess: { from: 6, to: 14 },
       gap: { from: 1, to: 3 },
       real: { calc: 'guess + gap' },
+    },
+    visual: {
+      kind: 'bar-model',
+      bars: [
+        { label: '어림', value: 'guess', text: '약 {guess}cm' },
+        { label: '잰 길이', value: 'real', text: '{real}cm' },
+      ],
+      label: '어림한 길이와 잰 길이',
     },
     prompt: '크레파스의 길이를 약 {guess}cm로 어림했는데 자로 재어 보니 {real}cm였습니다. 어림한 길이와 잰 길이의 차는 몇 cm일까요?',
     answer: '{gap}cm',
@@ -7423,6 +7434,14 @@ export const questionBank: Template[] = [
       guess: { calc: 'guessM * 100' },
       real: { calc: 'guessM * 100 + gap' },
     },
+    visual: {
+      kind: 'bar-model',
+      bars: [
+        { label: '어림', value: 'guess', text: '약 {guess}cm' },
+        { label: '잰 길이', value: 'real', text: '{real}cm' },
+      ],
+      label: '어림한 길이와 잰 길이',
+    },
     prompt: '칠판의 길이를 약 {guess}cm로 어림했는데 재어 보니 {real}cm였습니다. 어림한 길이와 잰 길이의 차는 몇 cm일까요?',
     answer: '{gap}cm',
     wrongs: ['{guess}cm', '{real}cm', '{gap + 10}cm'],
@@ -10914,6 +10933,15 @@ export const questionBank: Template[] = [
     // 말라고 합니다. 교과서 예를 씁니다.
     strategy: '색 테이프로 길이의 합 구하기',
     vars: {},
+    // 두 테이프를 나란히 그려 m는 m끼리, cm는 cm끼리 보게 합니다.
+    visual: {
+      kind: 'bar-model',
+      bars: [
+        { label: '첫째 테이프', value: '170', text: '1m 70cm' },
+        { label: '둘째 테이프', value: '120', text: '1m 20cm' },
+      ],
+      label: '이어 붙일 두 색 테이프',
+    },
     prompt:
       '색 테이프 1m 70cm와 1m 20cm를 겹치지 않게 이어 붙였습니다. 이은 색 테이프의 길이는 몇 m 몇 cm일까요?',
     answer: '2m 90cm',
@@ -11025,6 +11053,15 @@ export const questionBank: Template[] = [
       base: { from: 4, to: 8 },
       result: { calc: 'base * times' },
     },
+    // 초록 리본이 몇 번 들어가야 노란 리본이 되는지 길이로 견주어 봅니다.
+    visual: {
+      kind: 'bar-model',
+      bars: [
+        { label: '노란 리본', value: 'result', text: '{result}cm' },
+        { label: '초록 리본', value: 'base', text: '?cm' },
+      ],
+      label: '두 리본의 길이',
+    },
     prompt: '노란 리본은 {result}cm이고, 이것은 초록 리본의 {times}배입니다. 초록 리본은 몇 cm일까요?',
     answer: '{base}cm',
     wrongs: ['{result}cm', '{times}cm', '{result + times}cm'],
@@ -11056,10 +11093,13 @@ export const questionBank: Template[] = [
     tag: 'measurement',
     strategy: '끝 눈금만 읽으면 안 되는 까닭 판단하기',
     vars: {},
-    prompt: '물건을 눈금 0이 아닌 곳에 대고 재었습니다. 끝에 닿은 눈금을 그대로 길이라고 하면 안 되는 까닭은 무엇일까요?',
+    // 눈금 3에서 시작해 9에서 끝난 물건입니다. 끝 눈금 9와 실제 길이 6이
+    // 다르다는 것을 그림에서 바로 셀 수 있습니다.
+    visual: { kind: 'ruler', start: '3', end: '9', label: '눈금 3에 대고 잰 물건' },
+    prompt: '물건의 한쪽 끝을 눈금 3에 대고 재었더니 다른 쪽 끝이 눈금 9에 닿았습니다. 이 물건의 길이를 9cm라고 하면 안 되는 까닭은 무엇일까요?',
     answer: '시작한 눈금만큼 더 세어지기 때문입니다',
     wrongs: ['자가 짧기 때문입니다', '물건이 기울어졌기 때문입니다', '눈금이 작기 때문입니다'],
-    solution: '길이는 시작한 눈금부터 끝난 눈금까지 1cm가 몇 번 들어 있는지입니다.',
+    solution: '길이는 시작한 눈금부터 끝난 눈금까지 1cm가 몇 번 들어 있는지입니다. 3에서 9까지는 1cm가 6번이므로 6cm입니다.',
   },
 
   // 시각과 시간 · 2시 55분에서 짧은바늘은 3에 거의 닿아 있습니다.
@@ -12177,6 +12217,12 @@ export const questionBank: Template[] = [
     tag: 'pattern',
     strategy: '쌓기나무가 늘어나는 규칙 찾기',
     vars: {},
+    visual: {
+      kind: 'cube-pattern',
+      steps: ['3', '4', '5', '6'],
+      unknownIndex: 3,
+      label: '차례로 쌓은 모양',
+    },
     prompt: '쌓기나무를 첫째 3개, 둘째 4개, 셋째 5개로 쌓았습니다. 넷째에는 몇 개가 필요할까요?',
     answer: '6개',
     wrongs: ['5개', '7개', '9개'],
@@ -12607,6 +12653,15 @@ export const questionBank: Template[] = [
     tag: 'subtraction',
     strategy: '처음 수를 거꾸로 찾는 식 판단하기',
     vars: { used: { from: 5, to: 9 }, left: { from: 12, to: 18 }, first: { calc: 'used + left' } },
+    visual: {
+      kind: 'bar-model',
+      bars: [
+        { label: '처음', value: 'first', text: '□자루' },
+        { label: '쓴 것', value: 'used', text: '{used}자루' },
+        { label: '남은 것', value: 'left', text: '{left}자루' },
+      ],
+      label: '처음 연필, 쓴 것, 남은 것',
+    },
     prompt: '연필을 {used}자루 쓰고 나니 {left}자루 남았습니다. 처음에 있던 연필 수를 □라고 할 때 알맞은 식과 답은 어느 것일까요?',
     answer: '□-{used}={left}, □={first}',
     wrongs: [
@@ -13645,7 +13700,7 @@ export const questionBank: Template[] = [
     vars: { any: { from: 1, to: 4 } },
     words: { place: ['교실의 긴 쪽', '복도의 길이', '운동장의 짧은 쪽', '강당의 긴 쪽'] },
     prompt:
-      '{place:의} 길이를 자 없이 어림하려고 합니다. 가장 알맞은 방법은 어느 것일까요?',
+      '{place:을} 자 없이 어림하려고 합니다. 가장 알맞은 방법은 어느 것일까요?',
     answer: '내 걸음으로 몇 걸음인지 세어 본다',
     wrongs: [
       '눈으로 보고 그냥 말한다',
@@ -13691,6 +13746,7 @@ export const questionBank: Template[] = [
     strategy: '조건 함께 보기 · 작은 눈금까지 읽어 판단하기',
     vars: {
       hour: { from: 1, to: 9 },
+      nextHour: { calc: 'hour + 1' },
       big: { from: 3, to: 8 },
       small: { from: 1, to: 4 },
       minute: { calc: 'big * 5 + small' },
@@ -13702,7 +13758,7 @@ export const questionBank: Template[] = [
     // 작은 눈금 2칸 더 갔습니다'만 적어 놓고 답은 '1시 27분'이었습니다.
     // 아이가 문제에서 '1시'를 알아낼 길이 없었습니다.
     prompt:
-      '{what}할 때 짧은바늘은 {hour}을 조금 지났고 긴바늘이 숫자 {big}을 지나 작은 눈금 {small}칸 더 갔습니다. 시작한 시각은 몇 시 몇 분일까요?',
+      '{what}할 때 짧은바늘은 {hour:과} {nextHour} 사이에 있고 긴바늘이 숫자 {big}을 지나 작은 눈금 {small}칸 더 갔습니다. 시작한 시각은 몇 시 몇 분일까요?',
     answer: '{hour}시 {minute}분',
     wrongs: ['{hour}시 {onlyBig}분', '{hour}시 {wrongAdd}분', '{hour}시 {small}분'],
     solution:
@@ -14477,7 +14533,7 @@ export const questionBank: Template[] = [
       used: { from: 4, to: 9 },
       left: { calc: 'have - used' },
     },
-    words: { item: ['색종이', '스티커', '풍선', '색연필'] },
+    words: { item: ['색종이', '스티커', '딱지', '붙임딱지'] },
     prompt:
       '{item:이} {have}장 있었습니다. 만들기를 하며 {used}장을 썼습니다. 남은 {item:은} 몇 장일까요?',
     answer: '{left}장',
@@ -14565,7 +14621,16 @@ export const questionBank: Template[] = [
       other: { from: 12, to: 35 },
       whole: { calc: 'part + other' },
     },
-    words: { item: ['사탕', '구슬', '색연필', '붙임딱지'] },
+    words: { item: ['사탕', '구슬', '단추', '공깃돌'] },
+    visual: {
+      kind: 'bar-model',
+      bars: [
+        { label: '전체', value: 'whole', text: '{whole}개' },
+        { label: '한 상자', value: 'part', text: '{part}개' },
+        { label: '다른 상자', value: 'whole - part', text: '?개' },
+      ],
+      label: '두 상자에 나누어 담은 {item}',
+    },
     prompt:
       '{item} {whole}개를 두 상자에 나누어 담았더니 한 상자에 {part}개가 들어갔습니다. 다른 상자에 든 수를 구하려면 어떤 식을 세워야 할까요?',
     answer: '{whole}-{part}',
@@ -14656,7 +14721,7 @@ export const questionBank: Template[] = [
       other: { from: 3, to: 5 },
       gap: { calc: 'cm - other' },
     },
-    words: { thing: ['색연필', '지우개', '풀', '크레파스'] },
+    words: { thing: ['색연필', '연필', '풀', '크레파스'] },
     prompt:
       '{thing:의} 길이가 {cm}cm입니다. 옆에 있는 지우개는 {other}cm입니다. {thing:은} 지우개보다 몇 cm 더 길까요?',
     answer: '{gap}cm',
@@ -14718,6 +14783,14 @@ export const questionBank: Template[] = [
       gap: { calc: 'real - guess' },
     },
     words: { thing: ['색연필', '가위', '풀', '자'] },
+    visual: {
+      kind: 'bar-model',
+      bars: [
+        { label: '어림', value: 'guess', text: '약 {guess}cm' },
+        { label: '잰 길이', value: 'real', text: '{real}cm' },
+      ],
+      label: '어림한 길이와 잰 길이',
+    },
     prompt:
       '{thing:의} 길이를 약 {guess}cm로 어림했는데 자로 재어 보니 {real}cm였습니다. 어림한 길이는 잰 길이보다 몇 cm 짧았을까요?',
     answer: '{gap}cm',
@@ -14946,7 +15019,7 @@ export const questionBank: Template[] = [
       groups: { from: 3, to: 6 },
       total: { calc: 'each * groups' },
     },
-    words: { item: ['색종이', '붙임딱지', '연필', '쿠키'] },
+    words: { item: ['색종이', '붙임딱지', '딱지', '카드'] },
     prompt:
       '{item:을} 친구 {groups}명에게 {each}장씩 나누어 주려고 합니다. 필요한 {item} 수를 구하는 곱셈식은 어느 것일까요?',
     answer: '{each}×{groups}',
@@ -14977,7 +15050,7 @@ export const questionBank: Template[] = [
       loose: { from: 1, to: 9 },
       total: { calc: 'bags * 10 + loose' },
     },
-    words: { item: ['사탕', '구슬', '색종이', '단추', '클립'] },
+    words: { item: ['사탕', '구슬', '공깃돌', '단추', '클립'] },
     prompt:
       '{item:을} 10개씩 {bags}봉지와 낱개 {loose}개로 나누어 담았습니다. {item:은} 모두 몇 개일까요?',
     answer: '{total}개',
@@ -15174,7 +15247,7 @@ export const questionBank: Template[] = [
       loose: { from: 1, to: 9 },
       total: { calc: 'bags * 10 + loose' },
     },
-    words: { item: ['사탕', '구슬', '색종이', '단추', '클립'] },
+    words: { item: ['사탕', '구슬', '공깃돌', '단추', '클립'] },
     prompt:
       '{item:을} 10개씩 {bags}봉지와 낱개 {loose}개로 나누어 담았습니다. {item:은} 모두 몇 개일까요?',
     answer: '{total}개',
@@ -15308,7 +15381,7 @@ export const questionBank: Template[] = [
       total: { calc: 'a + b' },
       tens: { calc: 'a + 10' },
     },
-    words: { item: ['색종이', '딱지', '구슬', '스티커'] },
+    words: { item: ['색종이', '딱지', '카드', '스티커'] },
     prompt:
       '{item:을} 어제 {a}장, 오늘 {b}장 모았습니다. {b:을} 10과 낱개로 갈라서 더하면 모두 몇 장일까요?',
     answer: '{total}장',
@@ -15331,7 +15404,7 @@ export const questionBank: Template[] = [
       wrong1: { calc: 'start + more + used' },
       afterMore: { calc: 'start + more' },
     },
-    words: { item: ['색종이', '딱지', '구슬', '스티커'] },
+    words: { item: ['색종이', '딱지', '카드', '스티커'] },
     prompt:
       '{item:을} {start}장 가지고 있었습니다. {more}장을 더 받고 {used}장을 썼습니다. 남은 {item:은} 몇 장일까요?',
     answer: '{left}장',
@@ -15350,7 +15423,16 @@ export const questionBank: Template[] = [
       part: { from: 12, to: 30 },
       other: { calc: 'whole - part' },
     },
-    words: { item: ['사탕', '구슬', '색연필', '붙임딱지'] },
+    words: { item: ['사탕', '구슬', '단추', '공깃돌'] },
+    visual: {
+      kind: 'bar-model',
+      bars: [
+        { label: '전체', value: 'whole', text: '{whole}개' },
+        { label: '한 상자', value: 'part', text: '{part}개' },
+        { label: '다른 상자', value: 'whole - part', text: '?개' },
+      ],
+      label: '두 상자에 나누어 담은 {item}',
+    },
     prompt:
       '{item} {whole}개를 두 상자에 나누어 담았습니다. 한 상자에 {part}개가 들어갔다면 다른 상자에는 몇 개가 들어갔을까요?',
     answer: '{other}개',
@@ -15809,12 +15891,13 @@ export const questionBank: Template[] = [
     strategy: '조건 함께 보기 · 문장 상황에서 5분씩 세어 읽기',
     vars: {
       hour: { from: 1, to: 9 },
+      nextHour: { calc: 'hour + 1' },
       point: { from: 2, to: 9 },
       minute: { calc: 'point * 5' },
     },
     words: { what: ['수업이 시작', '체육 시간이 시작', '급식이 시작', '청소가 시작'] },
     prompt:
-      '{what}할 때 짧은바늘은 {hour}을 조금 지났고 긴바늘은 숫자 {point}을 가리킵니다. 몇 시 몇 분일까요?',
+      '{what}할 때 짧은바늘은 {hour:과} {nextHour} 사이에 있고 긴바늘은 숫자 {point}을 가리킵니다. 몇 시 몇 분일까요?',
     answer: '{hour}시 {minute}분',
     wrongs: ['{hour}시 {point}분', '{point}시 {hour}분', '{hour}시 {minute + 5}분'],
     solution:
@@ -16123,6 +16206,7 @@ export const questionBank: Template[] = [
       onlyBig: { calc: 'big * 5' },
     },
     words: { what: ['알림장을 쓰기 시작', '책을 읽기 시작', '줄넘기를 시작', '그림을 그리기 시작'] },
+    visual: { kind: 'clock', hour: 'hour', minute: 'minute', label: '시계' },
     prompt:
       '{what}할 때 긴바늘이 숫자 {big}에서 작은 눈금 {small}칸을 더 갔고 짧은바늘은 {hour}을 지났습니다. 몇 시 몇 분일까요?',
     answer: '{hour}시 {minute}분',
@@ -16413,7 +16497,7 @@ export const questionBank: Template[] = [
       part: { from: 16, to: 34 },
       other: { calc: 'whole - part' },
     },
-    words: { item: ['구슬', '딱지', '색연필', '스티커'] },
+    words: { item: ['구슬', '사탕', '단추', '클립'] },
     prompt:
       '{item} {whole}개 가운데 {part}개를 상자에 넣었습니다. 상자에 넣지 않은 {item:은} 몇 개일까요?',
     answer: '{other}개',
@@ -16432,7 +16516,16 @@ export const questionBank: Template[] = [
       left: { from: 21, to: 45 },
       had: { calc: 'used + left' },
     },
-    words: { item: ['색종이', '구슬', '스티커', '딱지'] },
+    words: { item: ['구슬', '사탕', '단추', '공깃돌'] },
+    visual: {
+      kind: 'bar-model',
+      bars: [
+        { label: '처음', value: 'had', text: '?개' },
+        { label: '쓴 것', value: 'used', text: '{used}개' },
+        { label: '남은 것', value: 'left', text: '{left}개' },
+      ],
+      label: '처음, 쓴 것, 남은 것',
+    },
     prompt:
       '{item:을} {used}개 쓰고 나니 {left}개가 남았습니다. 처음에 있던 {item:은} 몇 개일까요?',
     answer: '{had}개',

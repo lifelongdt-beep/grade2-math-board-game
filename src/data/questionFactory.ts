@@ -4676,7 +4676,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     if (variant === 0) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${pickBySeed(ESTIMATE_TARGETS, seed)}의 길이를 몸으로 어림할 때 쓸 수 있는 것은?`,
+        `${josa(pickBySeed(ESTIMATE_TARGETS, seed), '을', '를')} 몸으로 어림할 때 쓸 수 있는 것은?`,
         '뼘, 걸음, 양팔 길이',
         ['눈의 크기', '목소리', '머리카락 색깔'],
         '뼘이나 걸음처럼 몸의 부분은 늘 가지고 다닐 수 있어 어림에 쓰기 좋습니다.',
@@ -4695,7 +4695,7 @@ const lengthUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: numbe
     if (variant === 2) {
       return makeQuestion(
         lesson, difficulty, index,
-        `${pickBySeed(ESTIMATE_TARGETS, seed)}의 길이를 어림해 말할 때 쓰는 말은?`,
+        `${josa(pickBySeed(ESTIMATE_TARGETS, seed), '을', '를')} 어림해 말할 때 쓰는 말은?`,
         '약', ['정확히', '반드시', '모두'],
         '어림한 길이는 정확한 값이 아니므로 약 몇 cm라고 말합니다.',
         'measurement', '어림한 값을 말하는 방법 알기',
@@ -6355,6 +6355,7 @@ const clockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         `${five}분`, [`${pointer}분`, `${Math.max(5, five - 5)}분`, `${five < 55 ? five + 5 : 15}분`],
         `긴바늘이 숫자 한 칸을 지날 때마다 5분입니다. ${pointer}×5=${five}분입니다.`,
         'time', '긴바늘이 가리키는 숫자로 분 읽기',
+        clockVisualFor(hour, five, '시계'),
       );
     }
     if (variant === 1) {
@@ -6416,6 +6417,7 @@ const clockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
         `${minute}분`, [`${base}분`, `${base / 5 + extra}분`, `${minute + 5}분`],
         `숫자 ${base / 5}는 ${base}분이고 작은 눈금 ${extra}칸은 ${extra}분이므로 ${minute}분입니다.`,
         'time', '작은 눈금까지 세어 분 읽기',
+        clockVisualFor(hour, minute, '시계'),
       );
     }
     if (variant === 2) {
@@ -13503,7 +13505,7 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
       return makeQuestion(
         lesson, difficulty, index,
         '변이 3개인 도형과 변이 4개인 도형의 꼭짓점 수를 더하면 몇 개일까요?',
-        7, [3, 4, 8],
+        '7개', ['3개', '4개', '8개'],
         `변이 3개인 도형은 꼭짓점이 3개, 변이 4개인 도형은 꼭짓점이 4개이므로 3+4=7개입니다.`,
         'shape', '조건 함께 보기 · 두 도형의 꼭짓점 모으기',
         planeShapesVisual('변이 3개인 도형과 변이 4개인 도형', [
@@ -13661,7 +13663,9 @@ const challengeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
           lesson, difficulty, index,
           `${am}m ${acm}cm인 끈과 ${bcm}cm인 끈을 이으면 몇 m 몇 cm일까요?`,
           `${Math.floor(totalCm / 100)}m ${totalCm % 100}cm`,
-          [`${am}m ${acm + bcm}cm`, `${am + 1}m ${acm}cm`, `${totalCm}cm`],
+          // 240cm나 1m 140cm는 답과 같은 길이라 오답이 될 수 없습니다.
+          // m를 빠뜨린 값과 m를 하나 더 세거나 덜 센 값을 둡니다.
+          [`${am}m ${acm + (bcm % 100)}cm`, `${Math.floor(totalCm / 100) + 1}m ${totalCm % 100}cm`, `${Math.floor(totalCm / 100) - 1}m ${totalCm % 100}cm`],
           `${bcm}cm는 ${Math.floor(bcm / 100)}m ${bcm % 100}cm입니다. 모두 더하면 ${Math.floor(totalCm / 100)}m ${totalCm % 100}cm입니다.`,
           'measurement', '조건 함께 보기 · 단위가 다른 두 길이 더하기',
         );
@@ -14472,13 +14476,13 @@ const wordStepQuestion = (
       const gone = 5 + (seed % 10);
       if (a + b - gone < 1) return null;
       const scene = [
-        { where: '운동장에 학생이', came: '더 오고', left: '집에 갔습니다', what: '운동장에 있는 학생 수', unit: '명' },
-        { where: '버스에 사람이', came: '더 타고', left: '내렸습니다', what: '버스에 있는 사람 수', unit: '명' },
-        { where: '접시에 빵이', came: '더 놓이고', left: '먹었습니다', what: '접시에 남은 빵 수', unit: '개' },
+        { where: '운동장에 학생이', came: '더 오고', left: '집에 갔습니다', goneP: '이', what: '운동장에 있는 학생 수', unit: '명' },
+        { where: '버스에 사람이', came: '더 타고', left: '내렸습니다', goneP: '이', what: '버스에 있는 사람 수', unit: '명' },
+        { where: '접시에 빵이', came: '더 놓이고', left: '먹었습니다', goneP: '를', what: '접시에 남은 빵 수', unit: '개' },
       ][situation];
       return makeQuestion(
         lesson, difficulty, index,
-        `${scene.where} ${a}${scene.unit} 있었습니다. ${b}${scene.unit}이 ${scene.came} ${gone}${scene.unit}이 ${scene.left}. 지금 ${scene.what}를 구하는 과정입니다. □에 알맞은 수는? ① 늘어난 만큼 더합니다. ② ${a}+${b}=${a + b}${scene.unit}입니다. ③ ${a + b}-${gone}=□`,
+        `${scene.where} ${a}${scene.unit} 있었습니다. ${b}${scene.unit}이 ${scene.came} ${gone}${scene.unit}${scene.goneP} ${scene.left}. 지금 ${scene.what}를 구하는 과정입니다. □에 알맞은 수는? ① 늘어난 만큼 더합니다. ② ${a}+${b}=${a + b}${scene.unit}입니다. ③ ${a + b}-${gone}=□`,
         `${a + b - gone}${scene.unit}`,
         [`${a + b}${scene.unit}`, `${a + b + gone}${scene.unit}`, `${Math.max(1, a - gone)}${scene.unit}`],
         `늘어난 만큼 더하고 줄어든 만큼 빼면 ${a + b - gone}${scene.unit}입니다.`,
