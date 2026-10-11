@@ -357,34 +357,48 @@ const NUMBER_LINE_TRACK_WIDTH = 312;
 function NumberLineGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'number-line' }> }) {
   const range = Math.max(1, visual.end - visual.start);
   const toX = (value: number) => 32 + ((value - visual.start) / range) * NUMBER_LINE_TRACK_WIDTH;
-  const ticks = [];
-  for (let value = visual.start; value <= visual.end; value += visual.step) {
-    ticks.push(value);
+  // 0.1씩 더해 가면 0.30000000000000004처럼 어긋나므로 몇 번째 눈금인지로 셉니다.
+  const ticks: number[] = [];
+  const tickCount = Math.round((visual.end - visual.start) / visual.step);
+  for (let index = 0; index <= tickCount; index += 1) {
+    ticks.push(Number((visual.start + visual.step * index).toFixed(6)));
   }
+  const isMajor = (value: number) => {
+    if (!visual.majorEvery) return true;
+    const ratio = (value - visual.start) / visual.majorEvery;
+    return Math.abs(ratio - Math.round(ratio)) < 1e-6;
+  };
 
   // 눈금마다 숫자를 쓰면 4000처럼 자리가 긴 수에서 서로 겹칩니다.
   // 가장 긴 숫자가 들어갈 만큼 자리가 날 때만 숫자를 씁니다.
   const longestLabel = ticks.reduce((longest, value) => Math.max(longest, String(value).length), 1);
   const neededWidth = longestLabel * 10 + 6;
   const tickGap = NUMBER_LINE_TRACK_WIDTH / Math.max(1, ticks.length - 1);
-  const labelEvery = Math.max(1, Math.ceil(neededWidth / Math.max(tickGap, 1)));
+  const labelEvery = visual.majorEvery ? 1 : Math.max(1, Math.ceil(neededWidth / Math.max(tickGap, 1)));
 
   return (
     <svg viewBox="0 0 376 142" role="img" aria-label={visual.label}>
       <rect x="4" y="6" width="368" height="130" rx="14" fill="#f6fcff" stroke="#d7edf2" />
       <line x1="32" y1="76" x2="344" y2="76" stroke="#506579" strokeWidth="4" strokeLinecap="round" />
+      {visual.fillTo !== undefined && (
+        <line x1={toX(visual.start)} y1="76" x2={toX(visual.fillTo)} y2="76" stroke="#18a7a7" strokeWidth="10" strokeLinecap="round" />
+      )}
       {ticks.map((value, index) => {
         // 첫 눈금과 마지막 눈금은 어디서 시작하고 끝나는지 알려 주므로 보여 줍니다.
         // 다만 마지막 눈금이 앞 라벨과 붙으면 글자가 겹치므로 그때는 생략합니다.
         const isLast = index === ticks.length - 1;
         const lastFits = (ticks.length - 1) % labelEvery === 0
           || (ticks.length - 1) % labelEvery >= Math.ceil(labelEvery / 2);
-        const labelled = index % labelEvery === 0 || (isLast && lastFits);
+        const labelled = visual.majorEvery ? isMajor(value) : index % labelEvery === 0 || (isLast && lastFits);
         // 감추기로 한 자리는 눈금만 그리고 숫자는 쓰지 않습니다.
         const hidden = visual.hiddenLabels?.includes(value) ?? false;
         return (
           <g key={value}>
-            <line x1={toX(value)} y1="64" x2={toX(value)} y2={labelled ? 88 : 84} stroke="#8aa0b8" strokeWidth="3" />
+            {visual.majorEvery ? (
+              <line x1={toX(value)} y1={labelled ? 58 : 68} x2={toX(value)} y2={labelled ? 94 : 84} stroke={labelled ? '#506579' : '#8aa0b8'} strokeWidth={labelled ? 3.5 : 2.5} />
+            ) : (
+              <line x1={toX(value)} y1="64" x2={toX(value)} y2={labelled ? 88 : 84} stroke="#8aa0b8" strokeWidth="3" />
+            )}
             {labelled && !hidden && (
               <text x={toX(value)} y="112" textAnchor="middle" fill="#24364a" fontSize="16" fontWeight="800">
                 {value}
@@ -404,7 +418,8 @@ function NumberLineGraphic({ visual }: { visual: Extract<QuestionVisual, { kind:
           }))
       ).map((mark, index) => (
         <g key={`${mark.value}-${index}`}>
-          <circle cx={toX(mark.value)} cy="76" r={mark.active ? 11 : 8} fill={mark.active ? '#18a7a7' : '#fff4bd'} stroke="#0f7175" strokeWidth="3" />
+          {/* 0.1 눈금처럼 촘촘한 수직선에서는 큰 점이 옆 눈금을 덮어 칸을 셀 수 없으므로 작게 찍습니다. */}
+          <circle cx={toX(mark.value)} cy="76" r={visual.majorEvery ? (mark.active ? 6 : 5) : mark.active ? 11 : 8} fill={mark.active ? '#18a7a7' : '#fff4bd'} stroke="#0f7175" strokeWidth={visual.majorEvery ? 2.5 : 3} />
           {mark.label && (
             <text x={toX(mark.value)} y="46" textAnchor="middle" fill="#0f7175" fontSize="15" fontWeight="900">
               {mark.label}
@@ -698,6 +713,514 @@ export const FIGURE_POINTS: Record<string, Array<[number, number]>> = {
     return [Math.cos(angle), Math.sin(angle)] as [number, number];
   }),
 };
+
+// 선분·직선·반직선·각을 그리는 그림입니다(3-1 2단원).
+//
+// 지도서가 그리는 대로 긋습니다. 선분은 두 점 사이에서 끝나고, 직선은
+// 두 점을 지나 양쪽으로 길게 뻗고, 반직선은 시작점에서 출발해 다른 점을
+// 지나 한쪽으로만 뻗습니다. 셋을 가르는 것은 '어디서 끝나는가'뿐이라,
+// 끝을 정확하게 그리는 것이 이 그림의 할 일입니다. 화살표는 쓰지
+// 않습니다 — 교과서도 쓰지 않고, 화살표를 보고 고르는 버릇이 들면
+// 교과서 그림 앞에서 헷갈립니다.
+// 전체 하나를 조각으로 나눈 그림입니다(3-1 6단원).
+// 이름(가, 나 …)이 없는 띠 여러 개는 위아래로 쌓습니다 — 2.4처럼
+// 1이 두 개와 0.4를 보일 때 띠가 가로로 좁아지지 않게 하려는 것입니다.
+function PartitionGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'partition' }> }) {
+  const FILL = '#18a7a7';
+  const EMPTY = '#ffffff';
+  const LINE = '#0f7175';
+  const width = 376;
+  const figures = visual.figures;
+  const stacked = figures.length > 1 && figures.every((one) => one.shape === 'bar' && !one.name);
+
+  // 띠·원의 조각 경계(0~1)입니다.
+  const boundsOf = (one: (typeof figures)[number]): number[] => {
+    if (one.cuts && one.cuts.length) return [0, ...one.cuts, 1];
+    const parts = Math.max(1, one.parts ?? 1);
+    return Array.from({ length: parts + 1 }, (_, index) => index / parts);
+  };
+
+  if (stacked) {
+    const barHeight = 34;
+    const gap = 12;
+    const height = 24 + figures.length * barHeight + (figures.length - 1) * gap;
+    const left = 32;
+    const barWidth = 312;
+    return (
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+        <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+        {figures.map((one, row) => {
+          const bounds = boundsOf(one);
+          const top = 12 + row * (barHeight + gap);
+          return (
+            <g key={row}>
+              {bounds.slice(0, -1).map((from, index) => (
+                <rect
+                  key={index}
+                  x={left + from * barWidth}
+                  y={top}
+                  width={(bounds[index + 1] - from) * barWidth}
+                  height={barHeight}
+                  fill={one.shaded.includes(index) ? FILL : EMPTY}
+                  stroke="#8aa0b8"
+                  strokeWidth="1.5"
+                />
+              ))}
+              <rect x={left} y={top} width={barWidth} height={barHeight} fill="none" stroke={LINE} strokeWidth="3" />
+            </g>
+          );
+        })}
+      </svg>
+    );
+  }
+
+  const count = Math.max(1, figures.length);
+  const cellWidth = width / count;
+  const named = figures.some((one) => one.name);
+  const height = 190;
+  const areaHeight = named ? height - 34 : height - 16;
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {figures.map((one, index) => {
+        const cx = cellWidth * index + cellWidth / 2;
+        const cy = 8 + areaHeight / 2;
+        const room = Math.min(cellWidth - 18, areaHeight - 12);
+        const parts: JSX.Element[] = [];
+        if (one.shape === 'bar') {
+          const barWidth = Math.min(cellWidth - 18, count === 1 ? 300 : cellWidth - 18);
+          // 여럿을 나란히 놓으면 띠가 좁아지므로 높이를 키워 조각의 너비 차이가 보이게 합니다.
+          const barHeight = count === 1 ? 64 : Math.min(84, room * 0.85);
+          const left = cx - barWidth / 2;
+          const top = cy - barHeight / 2;
+          const bounds = boundsOf(one);
+          bounds.slice(0, -1).forEach((from, at) => {
+            parts.push(
+              <rect key={`b${at}`} x={left + from * barWidth} y={top} width={(bounds[at + 1] - from) * barWidth} height={barHeight}
+                fill={one.shaded.includes(at) ? FILL : EMPTY} stroke="#24364a" strokeWidth="2" />,
+            );
+          });
+          parts.push(<rect key="frame" x={left} y={top} width={barWidth} height={barHeight} fill="none" stroke={LINE} strokeWidth="3" />);
+        } else if (one.shape === 'circle') {
+          const r = Math.min(room / 2, count === 1 ? 74 : 60);
+          const bounds = boundsOf(one);
+          const at = (t: number): [number, number] => [cx + r * Math.sin(t * 2 * Math.PI), cy - r * Math.cos(t * 2 * Math.PI)];
+          if (bounds.length === 2) {
+            parts.push(<circle key="whole" cx={cx} cy={cy} r={r} fill={one.shaded.includes(0) ? FILL : EMPTY} stroke="#24364a" strokeWidth="2" />);
+          } else {
+            bounds.slice(0, -1).forEach((from, k) => {
+              const to = bounds[k + 1];
+              const [x1, y1] = at(from);
+              const [x2, y2] = at(to);
+              const large = to - from > 0.5 ? 1 : 0;
+              parts.push(
+                <path key={`s${k}`} d={`M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`}
+                  fill={one.shaded.includes(k) ? FILL : EMPTY} stroke="#24364a" strokeWidth="2" strokeLinejoin="round" />,
+              );
+            });
+          }
+          parts.push(<circle key="frame" cx={cx} cy={cy} r={r} fill="none" stroke={LINE} strokeWidth="3" />);
+        } else if (one.shape === 'grid') {
+          const rows = Math.max(1, one.rows ?? 1);
+          const columns = Math.max(1, one.columns ?? 1);
+          const cell = Math.min((cellWidth - 18) / columns, (room) / rows, count === 1 ? 40 : 34);
+          const left = cx - (cell * columns) / 2;
+          const top = cy - (cell * rows) / 2;
+          for (let row = 0; row < rows; row += 1) {
+            for (let column = 0; column < columns; column += 1) {
+              const k = row * columns + column;
+              parts.push(
+                <rect key={`g${k}`} x={left + column * cell} y={top + row * cell} width={cell} height={cell}
+                  fill={one.shaded.includes(k) ? FILL : EMPTY} stroke="#24364a" strokeWidth="2" />,
+              );
+            }
+          }
+          parts.push(<rect key="frame" x={left} y={top} width={cell * columns} height={cell * rows} fill="none" stroke={LINE} strokeWidth="3" />);
+        } else {
+          // diag: 위, 오른쪽, 아래, 왼쪽 삼각형 차례입니다.
+          const half = Math.min(room / 2, count === 1 ? 72 : 56);
+          const corners: Array<[number, number]> = [
+            [cx - half, cy - half], [cx + half, cy - half], [cx + half, cy + half], [cx - half, cy + half],
+          ];
+          for (let k = 0; k < 4; k += 1) {
+            const a = corners[k];
+            const b = corners[(k + 1) % 4];
+            parts.push(
+              <path key={`d${k}`} d={`M ${cx} ${cy} L ${a[0]} ${a[1]} L ${b[0]} ${b[1]} Z`}
+                fill={one.shaded.includes(k) ? FILL : EMPTY} stroke="#24364a" strokeWidth="2" strokeLinejoin="round" />,
+            );
+          }
+          parts.push(<rect key="frame" x={cx - half} y={cy - half} width={half * 2} height={half * 2} fill="none" stroke={LINE} strokeWidth="3" />);
+        }
+        return (
+          <g key={index}>
+            {parts}
+            {one.name && (
+              <text x={cx} y={height - 16} textAnchor="middle" fill="#24364a" fontSize="17" fontWeight="900">
+                {one.name}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// 곱셈의 모눈입니다(3-2 1단원). 칸이 너무 작아지면 칸 선은 긋지 않고
+// 덩어리만 칠합니다 — 줄 수가 많아도 '몇 줄과 몇 줄'로 나뉜 것이 보이게
+// 하려는 것입니다.
+function MulGridGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'mul-grid' }> }) {
+  const width = 376;
+  const height = 210;
+  const rows = visual.rowParts.reduce((sum, one) => sum + one, 0);
+  const cell = Math.min(230 / Math.max(1, visual.columns), 180 / Math.max(1, rows), 18);
+  const gridWidth = cell * visual.columns;
+  const gridHeight = cell * rows;
+  const left = 16 + (240 - gridWidth) / 2;
+  const top = (height - gridHeight) / 2;
+  const fills = ['#cfe3ff', '#ffd3cc', '#d8f3dc'];
+  const strokes = ['#2f6fd0', '#d0482f', '#2f9e5a'];
+  const lines = cell >= 5;
+  let run = 0;
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.rowParts.map((part, index) => {
+        const y = top + run * cell;
+        run += part;
+        const h = part * cell;
+        return (
+          <g key={index}>
+            <rect x={left} y={y} width={gridWidth} height={h} fill={fills[index % 3]} stroke={strokes[index % 3]} strokeWidth="2.5" />
+            {lines && Array.from({ length: visual.columns - 1 }, (_, c) => (
+              <line key={`c${c}`} x1={left + (c + 1) * cell} y1={y} x2={left + (c + 1) * cell} y2={y + h} stroke={strokes[index % 3]} strokeOpacity="0.35" strokeWidth="1" />
+            ))}
+            {lines && Array.from({ length: part - 1 }, (_, r) => (
+              <line key={`r${r}`} x1={left} y1={y + (r + 1) * cell} x2={left + gridWidth} y2={y + (r + 1) * cell} stroke={strokes[index % 3]} strokeOpacity="0.35" strokeWidth="1" />
+            ))}
+            <text x={left + gridWidth + 12} y={y + h / 2 + 6} fill={strokes[index % 3]} fontSize="17" fontWeight="900">
+              {visual.partLabels[index]}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// 원과 그 위의 점·선분입니다(3-2 3단원).
+function CirclesGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'circles' }> }) {
+  const width = 376;
+  const xs: number[] = [];
+  const ys: number[] = [];
+  visual.circles.forEach((c) => { xs.push(c.cx - c.r, c.cx + c.r); ys.push(c.cy - c.r, c.cy + c.r); });
+  (visual.points ?? []).forEach((p) => { xs.push(p.x); ys.push(p.y); });
+  if (visual.rect) { xs.push(visual.rect.x, visual.rect.x + visual.rect.w); ys.push(visual.rect.y, visual.rect.y + visual.rect.h); }
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const pad = 26;
+  // 옆으로 긴 그림(원 여러 개를 한 줄로)은 높이를 줄여, 같은 칸에서 더 크게 보이게 합니다.
+  const height = Math.max(110, Math.min(220, ((maxY - minY) / Math.max(1e-6, maxX - minX)) * (width - pad * 2) + pad * 2));
+  const scale = Math.min((width - pad * 2) / Math.max(1e-6, maxX - minX), (height - pad * 2) / Math.max(1e-6, maxY - minY));
+  const ox = (width - (maxX - minX) * scale) / 2 - minX * scale;
+  const oy = (height - (maxY - minY) * scale) / 2 - minY * scale;
+  const X = (x: number) => ox + x * scale;
+  const Y = (y: number) => oy + y * scale;
+  // 점 이름은 원의 바깥쪽(가장 가까운 원의 중심에서 먼 쪽)으로 비켜 씁니다.
+  const labelAt = (p: { x: number; y: number }): [number, number] => {
+    const near = visual.circles.reduce((best, c) => (Math.hypot(c.cx - p.x, c.cy - p.y) < Math.hypot(best.cx - p.x, best.cy - p.y) ? c : best), visual.circles[0]);
+    let dx = p.x - near.cx;
+    let dy = p.y - near.cy;
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) { dx = -0.7; dy = 0.7; } else { dx /= len; dy /= len; }
+    return [X(p.x) + dx * 15, Y(p.y) + dy * 15 + 6];
+  };
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.rect && (
+        <rect x={X(visual.rect.x)} y={Y(visual.rect.y)} width={visual.rect.w * scale} height={visual.rect.h * scale} fill="none" stroke="#506579" strokeWidth="2.5" />
+      )}
+      {visual.circles.map((c, k) => (
+        <circle key={k} cx={X(c.cx)} cy={Y(c.cy)} r={c.r * scale} fill="none" stroke="#0f7175" strokeWidth="3" />
+      ))}
+      {(visual.segments ?? []).map((s, k) => (
+        <line key={k} x1={X(s.from[0])} y1={Y(s.from[1])} x2={X(s.to[0])} y2={Y(s.to[1])} stroke="#d0482f" strokeWidth="3" strokeLinecap="round" />
+      ))}
+      {(visual.points ?? []).map((p, k) => {
+        const [lx, ly] = labelAt(p);
+        return (
+          <g key={k}>
+            <circle cx={X(p.x)} cy={Y(p.y)} r="4.5" fill="#24364a" />
+            {p.name && (
+              <text x={lx} y={ly} textAnchor="middle" fill="#24364a" fontSize="16" fontWeight="900">
+                {p.name}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// 같은 수씩 묶은 물건입니다(3-2 4단원 분수의 이산량).
+function GroupedGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'grouped' }> }) {
+  const width = 376;
+  const perRow = visual.groups <= 4 ? visual.groups : Math.ceil(visual.groups / 2);
+  const rows = Math.ceil(visual.groups / perRow);
+  const cols = Math.ceil(Math.sqrt(visual.perGroup));
+  const inRows = Math.ceil(visual.perGroup / cols);
+  const boxW = (width - 24) / perRow - 10;
+  const dot = Math.min(16, (boxW - 12) / cols - 4);
+  const boxH = inRows * (dot + 5) + 14;
+  const height = rows * (boxH + 12) + 18;
+  const boxed = visual.boxed !== false;
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {Array.from({ length: visual.groups }, (_, g) => {
+        const row = Math.floor(g / perRow);
+        const col = g % perRow;
+        const bx = 17 + col * (boxW + 10);
+        const by = 13 + row * (boxH + 12);
+        const shaded = g < visual.shadedGroups;
+        return (
+          <g key={g}>
+            {boxed && <rect x={bx} y={by} width={boxW} height={boxH} rx="10" fill={shaded ? '#d6f2f0' : 'none'} stroke="#0f7175" strokeWidth="2" strokeDasharray={shaded ? undefined : '5 4'} />}
+            {Array.from({ length: visual.perGroup }, (_, k) => {
+              const r = Math.floor(k / cols);
+              const c = k % cols;
+              const used = Math.min(cols, visual.perGroup - r * cols);
+              const cx = bx + boxW / 2 + (c - (used - 1) / 2) * (dot + 4);
+              const cy = by + 7 + dot / 2 + r * (dot + 5);
+              return <circle key={k} cx={cx} cy={cy} r={dot / 2} fill={shaded ? '#18a7a7' : '#ffffff'} stroke="#0f7175" strokeWidth="2" />;
+            })}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// 그림그래프입니다(3-2 6단원). 큰 그림은 크게, 먼저 그립니다.
+function PictureGraphGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'picture-graph' }> }) {
+  const width = 376;
+  const rowH = 34;
+  const top = 34;
+  const labelW = 70;
+  const height = top + visual.rows.length * rowH + 30;
+  const bigR = 11;
+  const smallR = 6;
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="12" fill="#f6fcff" stroke="#d7edf2" />
+      <text x={width / 2} y="22" textAnchor="middle" fill="#0f7175" fontSize="14" fontWeight="900">{visual.label}</text>
+      <line x1="12" y1={top} x2={width - 12} y2={top} stroke="#8aa0b8" strokeWidth="1.5" />
+      <line x1={12 + labelW} y1={top} x2={12 + labelW} y2={top + visual.rows.length * rowH} stroke="#8aa0b8" strokeWidth="1.5" />
+      {visual.rows.map((row, k) => {
+        const y = top + k * rowH;
+        const cy = y + rowH / 2;
+        const 큰 = Math.floor(row.value / visual.big);
+        const 작은 = Math.round((row.value % visual.big) / visual.small);
+        let x = 12 + labelW + 8;
+        const icons: JSX.Element[] = [];
+        if (visual.hideRow === k) {
+          icons.push(<text key="q" x={x + 10} y={cy + 6} fill="#d0482f" fontSize="18" fontWeight="900">?</text>);
+        } else {
+          for (let i = 0; i < 큰; i += 1) {
+            icons.push(<circle key={`b${i}`} cx={x + bigR} cy={cy} r={bigR} fill="#18a7a7" stroke="#0f7175" strokeWidth="2" />);
+            x += bigR * 2 + 4;
+          }
+          for (let i = 0; i < 작은; i += 1) {
+            icons.push(<circle key={`s${i}`} cx={x + smallR} cy={cy} r={smallR} fill="#18a7a7" stroke="#0f7175" strokeWidth="1.5" />);
+            x += smallR * 2 + 4;
+          }
+        }
+        return (
+          <g key={k}>
+            <text x={12 + labelW / 2} y={cy + 5} textAnchor="middle" fill="#24364a" fontSize="14" fontWeight="900">{row.label}</text>
+            {icons}
+            <line x1="12" y1={y + rowH} x2={width - 12} y2={y + rowH} stroke="#d7e3ec" strokeWidth="1" />
+          </g>
+        );
+      })}
+      <g>
+        <circle cx={width - 150} cy={height - 15} r={bigR - 3} fill="#18a7a7" stroke="#0f7175" strokeWidth="2" />
+        <text x={width - 136} y={height - 10} fill="#24364a" fontSize="13" fontWeight="800">{visual.big}{visual.unitWord}</text>
+        <circle cx={width - 70} cy={height - 15} r={smallR - 1} fill="#18a7a7" stroke="#0f7175" strokeWidth="1.5" />
+        <text x={width - 60} y={height - 10} fill="#24364a" fontSize="13" fontWeight="800">{visual.small}{visual.unitWord}</text>
+      </g>
+    </svg>
+  );
+}
+
+function LineFigureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'line-figure' }> }) {
+  const count = Math.max(1, visual.items.length);
+  const width = 376;
+  // 그림 칸은 가로가 세로의 두 배쯤인 자리에 그려집니다(styles.css의
+  // .question-visual-figure). 두 줄로 놓으면 전체가 줄어들어 오히려
+  // 작아지므로 한 줄로 놓고, 칸을 가득 쓰게 반지름을 잡습니다.
+  const cols = count;
+  const rows = 1;
+  const cellWidth = width / cols;
+  const named = visual.items.some((one) => one.name);
+  const rowHeight = count === 1 ? 190 : 176;
+  const height = rowHeight * rows;
+  const radius = Math.min(cellWidth / 2 - 6, count === 1 ? 92 : 70, (named ? rowHeight - 22 : rowHeight) / 2 - 18);
+  const stroke = '#24364a';
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width={width - 8} height={height - 8} rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      {visual.items.map((item, index) => {
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const cx = cellWidth * col + cellWidth / 2;
+        const top = rowHeight * row;
+        const centerY = top + (named ? (rowHeight - 22) / 2 + 4 : rowHeight / 2);
+        const left = cellWidth * col + 10;
+        const right = cellWidth * (col + 1) - 10;
+        const place = ([x, y]: [number, number]): [number, number] => [cx + x * radius, centerY + y * radius];
+        const drawn = item.points.map(place);
+        // 늘여 그을 때 칸 밖으로 나가지 않게 가둡니다.
+        const 늘이기 = (from: [number, number], through: [number, number], 거리: number): [number, number] => {
+          const dx = through[0] - from[0];
+          const dy = through[1] - from[1];
+          const 길이 = Math.hypot(dx, dy) || 1;
+          let t = 거리;
+          const ux = dx / 길이;
+          const uy = dy / 길이;
+          if (ux > 0) t = Math.min(t, (right - through[0]) / ux);
+          if (ux < 0) t = Math.min(t, (left - through[0]) / ux);
+          if (uy > 0) t = Math.min(t, (top + rowHeight - (named ? 26 : 10) - through[1]) / uy);
+          if (uy < 0) t = Math.min(t, (top + 12 - through[1]) / uy);
+          return [through[0] + ux * Math.max(0, t), through[1] + uy * Math.max(0, t)];
+        };
+        const 늘일거리 = Math.max(22, radius * 0.45);
+        const 선 = (a: [number, number], b: [number, number], key: string) => (
+          <line key={key} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+        );
+
+        const parts: JSX.Element[] = [];
+        if (item.shape === 'segment' && drawn.length >= 2) {
+          parts.push(선(drawn[0], drawn[1], 'seg'));
+        } else if (item.shape === 'line' && drawn.length >= 2) {
+          parts.push(선(늘이기(drawn[1], drawn[0], 늘일거리), 늘이기(drawn[0], drawn[1], 늘일거리), 'line'));
+        } else if (item.shape === 'ray' && drawn.length >= 2) {
+          parts.push(선(drawn[0], 늘이기(drawn[0], drawn[1], 늘일거리), 'ray'));
+        } else if (item.shape === 'angle' && drawn.length >= 3) {
+          const vertex = drawn[1];
+          parts.push(선(vertex, 늘이기(vertex, drawn[0], 늘일거리 * 0.6), 'arm1'));
+          parts.push(선(vertex, 늘이기(vertex, drawn[2], 늘일거리 * 0.6), 'arm2'));
+          if (item.rightMark) {
+            const unit = (p: [number, number]) => {
+              const dx = p[0] - vertex[0];
+              const dy = p[1] - vertex[1];
+              const l = Math.hypot(dx, dy) || 1;
+              return [dx / l, dy / l] as const;
+            };
+            const [ax, ay] = unit(drawn[0]);
+            const [bx, by] = unit(drawn[2]);
+            const k = 12;
+            parts.push(
+              <polyline
+                key="right"
+                points={`${vertex[0] + ax * k},${vertex[1] + ay * k} ${vertex[0] + (ax + bx) * k},${vertex[1] + (ay + by) * k} ${vertex[0] + bx * k},${vertex[1] + by * k}`}
+                fill="none"
+                stroke="#0f7175"
+                strokeWidth="2"
+              />,
+            );
+          }
+        } else if (item.shape === 'polyline' && drawn.length >= 2) {
+          parts.push(
+            <polyline key="poly" points={drawn.map(([x, y]) => `${x},${y}`).join(' ')} fill="none" stroke={stroke} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />,
+          );
+        } else if (item.shape === 'curve' && drawn.length >= 2) {
+          // 점들을 지나는 부드러운 곡선입니다(가운데 점을 조절점으로 씁니다).
+          let d = `M ${drawn[0][0]} ${drawn[0][1]}`;
+          for (let at = 1; at < drawn.length - 1; at += 1) {
+            const [x, y] = drawn[at];
+            const [nx, ny] = drawn[at + 1];
+            d += ` Q ${x} ${y} ${(x + nx) / 2} ${(y + ny) / 2}`;
+          }
+          const last = drawn[drawn.length - 1];
+          d += ` T ${last[0]} ${last[1]}`;
+          parts.push(<path key="curve" d={d} fill="none" stroke={stroke} strokeWidth="3" strokeLinecap="round" />);
+        }
+
+        // 점의 이름은 선을 피해 적습니다. 선의 방향에 수직인 쪽(위)으로,
+        // 각에서는 꼭짓점이 두 변의 바깥쪽으로 나가게 적습니다.
+        const 이름자리 = (at: number): [number, number] => {
+          const [x, y] = drawn[at];
+          if (item.shape === 'angle' && drawn.length >= 3) {
+            const vertex = drawn[1];
+            if (at === 1) {
+              const mx = (drawn[0][0] + drawn[2][0]) / 2 - vertex[0];
+              const my = (drawn[0][1] + drawn[2][1]) / 2 - vertex[1];
+              const l = Math.hypot(mx, my) || 1;
+              return [x - (mx / l) * 16, y - (my / l) * 16 + 5];
+            }
+            const dx = x - vertex[0];
+            const dy = y - vertex[1];
+            const l = Math.hypot(dx, dy) || 1;
+            // 변을 따라 조금 더 나간 곳에서 변의 옆으로 비켜 적습니다.
+            const other = drawn[at === 0 ? 2 : 0];
+            const side = (other[0] - vertex[0]) * dy - (other[1] - vertex[1]) * dx > 0 ? 1 : -1;
+            return [x + (-dy / l) * 15 * side, y + (dx / l) * 15 * side + 5];
+          }
+          const a = drawn[0];
+          const b = drawn[Math.min(1, drawn.length - 1)];
+          const dx = b[0] - a[0];
+          const dy = b[1] - a[1];
+          const l = Math.hypot(dx, dy) || 1;
+          let nx = -dy / l;
+          let ny = dx / l;
+          if (ny > 0) {
+            nx = -nx;
+            ny = -ny;
+          }
+          return [x + nx * 15, y + ny * 15 + 5];
+        };
+
+        return (
+          <g key={index}>
+            {parts}
+            {drawn.map(([x, y], at) => {
+              const text = item.labels?.[at];
+              if (text === undefined && item.shape === 'curve') return null;
+              if (item.shape === 'polyline' && text === undefined) return null;
+              // 이름 없는 각은 점을 찍지 않습니다. 변 위의 점이 무엇인지
+              // 묻지 않는 그림에서 점은 눈을 어지럽힙니다.
+              if (item.shape === 'angle' && !item.labels) return null;
+              // 점만 찍는 그림은 이름을 점 바로 위에 적습니다.
+              const [tx, ty] = item.shape === 'dots' ? [x, y - 11] : 이름자리(at);
+              return (
+                <g key={`p-${at}`}>
+                  <circle cx={x} cy={y} r="4.5" fill="#0f7175" />
+                  {text && (
+                    <text x={Math.min(right, Math.max(left, tx))} y={Math.min(top + rowHeight - 6, Math.max(top + 16, ty))} textAnchor="middle" fill="#0f3d52" fontSize="16" fontWeight="900">
+                      {text}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+            {item.name && (
+              <text x={cx} y={top + rowHeight - 12} textAnchor="middle" fill="#24364a" fontSize="17" fontWeight="900">
+                {item.name}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 // 합동과 대칭을 보이는 그림입니다(5-2 3단원).
 function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'figure-set' }> }) {
@@ -1801,8 +2324,11 @@ function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'rul
 
   // 눈금 수는 자의 길이에 따라 달라집니다. 간격을 정해 두지 않으면
   // 긴 자에서 숫자가 서로 겹쳐 읽을 수 없습니다.
-  const labelStep = RULER_LABEL_STEPS.find((step) => step * pixelsPerUnit >= 26) ?? 500;
-  const tickStep = pixelsPerUnit >= 4 ? 1 : Math.max(1, Math.round(labelStep / 5));
+  // mm 자는 10 mm마다 cm 숫자를 적습니다. 실제 자와 같은 모양이어야
+  // 아이가 교실의 자를 읽듯이 읽을 수 있습니다.
+  const mm = visual.unit === 'mm';
+  const labelStep = mm ? 10 : RULER_LABEL_STEPS.find((step) => step * pixelsPerUnit >= 26) ?? 500;
+  const tickStep = mm || pixelsPerUnit >= 4 ? 1 : Math.max(1, Math.round(labelStep / 5));
 
   const ticks: number[] = [];
   for (let value = visual.start; value <= visual.end; value += tickStep) {
@@ -1863,13 +2389,13 @@ function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'rul
               x1={toX(value)}
               y1="48"
               x2={toX(value)}
-              y2={labelled ? 78 : 66}
+              y2={labelled ? 78 : mm && value % 5 === 0 ? 70 : mm ? 60 : 66}
               stroke="#7b6233"
-              strokeWidth={labelled ? 3 : 2}
+              strokeWidth={labelled ? 3 : mm ? 1 : 2}
             />
             {labelled && (
               <text x={toX(value)} y="113" textAnchor="middle" fill="#24364a" fontSize="13" fontWeight="800">
-                {value}
+                {mm ? value / 10 : value}
               </text>
             )}
           </g>
@@ -1892,6 +2418,7 @@ const handPoint = (center: number, length: number, angle: number) => ({
 function ClockFace({
   hour,
   minute,
+  second,
   x,
   label,
   example = false,
@@ -1899,13 +2426,15 @@ function ClockFace({
 }: {
   hour: number;
   minute: number;
+  second?: number;
   x: number;
   label: string;
   example?: boolean;
   blank?: boolean;
 }) {
   const hourAngle = (((hour % 12) + minute / 60) / 12) * Math.PI * 2;
-  const minuteAngle = (minute / 60) * Math.PI * 2;
+  // 초가 있으면 분침도 그만큼 조금 더 나아갑니다. 실제 시계가 그렇습니다.
+  const minuteAngle = ((minute + (second ?? 0) / 60) / 60) * Math.PI * 2;
   const hourHand = handPoint(x, 36, hourAngle);
   const minuteHand = handPoint(x, 54, minuteAngle);
   // 예시 시계는 바늘이 정답이 아니므로 점선으로 흐리게 그려 문제 글을 읽게 합니다.
@@ -1925,6 +2454,15 @@ function ClockFace({
           </text>
         );
       })}
+      {/* 초를 읽는 시계에는 작은 눈금 60칸을 그립니다. 초바늘이 가리키는
+          눈금을 세어야 초를 읽을 수 있습니다. */}
+      {second !== undefined &&
+        Array.from({ length: 60 }).map((_, index) => {
+          const angle = (index / 60) * Math.PI * 2;
+          const outer = handPoint(x, CLOCK_RADIUS - 2, angle);
+          const inner = handPoint(x, CLOCK_RADIUS - (index % 5 === 0 ? 9 : 5), angle);
+          return <line key={`tick-${index}`} x1={outer.x} y1={outer.y} x2={inner.x} y2={inner.y} stroke="#8aa0b8" strokeWidth={index % 5 === 0 ? 2 : 1} />;
+        })}
       {/* 바늘 자리가 곧 답인 문제에서는 바늘을 그리지 않습니다. 판만
           있어도 5씩 세어 볼 수 있어 도움이 되고, 답은 가려집니다. */}
       {!blank && (
@@ -1949,6 +2487,10 @@ function ClockFace({
             strokeLinecap="round"
             {...handStyle}
           />
+          {second !== undefined && (() => {
+            const secondHand = handPoint(x, 60, (second / 60) * Math.PI * 2);
+            return <line x1={x} y1={CLOCK_CENTER_Y} x2={secondHand.x} y2={secondHand.y} stroke="#d64545" strokeWidth="2" strokeLinecap="round" />;
+          })()}
         </>
       )}
       <circle cx={x} cy={CLOCK_CENTER_Y} r="5" fill="#182433" opacity={blank ? 0.35 : example ? 0.55 : 1} />
@@ -1977,6 +2519,7 @@ function ClockGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'clo
       <ClockFace
         hour={visual.hour}
         minute={visual.minute}
+        second={visual.second}
         x={hasEnd ? 80 : frameWidth / 2}
         // '시작'은 끝 시계가 나란히 있을 때만 뜻이 있는 말입니다. 시계가
         // 하나뿐인데 '시작'이라고 적으면, 무엇이 시작한다는 것인지 알 수
@@ -2537,6 +3080,12 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'range-line' && <RangeLineGraphic visual={visual} />}
       {visual.kind === 'fraction-model' && <FractionModelGraphic visual={visual} />}
       {visual.kind === 'figure-set' && <FigureSetGraphic visual={visual} />}
+      {visual.kind === 'line-figure' && <LineFigureGraphic visual={visual} />}
+      {visual.kind === 'partition' && <PartitionGraphic visual={visual} />}
+      {visual.kind === 'mul-grid' && <MulGridGraphic visual={visual} />}
+      {visual.kind === 'circles' && <CirclesGraphic visual={visual} />}
+      {visual.kind === 'grouped' && <GroupedGraphic visual={visual} />}
+      {visual.kind === 'picture-graph' && <PictureGraphGraphic visual={visual} />}
       {visual.kind === 'box-drawing' && <BoxDrawingGraphic visual={visual} />}
       {visual.kind === 'box-net' && <BoxNetGraphic visual={visual} />}
       {visual.kind === 'spinner' && <SpinnerGraphic visual={visual} />}
