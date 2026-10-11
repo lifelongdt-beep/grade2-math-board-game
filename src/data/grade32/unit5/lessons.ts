@@ -69,6 +69,7 @@ const 도입문항: G5Family = {
         hint: '구슬이 더 많이 필요한 쪽이 더 무겁습니다.',
         steps: [`${x}은(는) 구슬 ${a}개, ${y}은(는) 구슬 ${b}개입니다.`, `구슬이 더 많은 ${a > b ? x : y}이(가) 더 무겁습니다.`],
         misconceptionTip: '구슬의 크기와 무게가 모두 같아야 개수로 비교할 수 있습니다.',
+        visual: { kind: 'pictograph', label: `${x}, ${y}의 무게와 같은 구슬의 수`, unit: 1, items: [{ label: x, count: a }, { label: y, count: b }] },
       };
     }
     return {
@@ -81,6 +82,7 @@ const 도입문항: G5Family = {
       hint: '같은 컵으로 더 많이 부을 수 있는 물병이 들이가 더 많습니다.',
       steps: [`가 물병은 ${a}컵, 나 물병은 ${b}컵입니다.`, `컵 수가 더 많은 ${a > b ? '가' : '나'} 물병의 들이가 더 많습니다.`],
       misconceptionTip: '물병의 높이만 보고 비교하면 안 됩니다.',
+      visual: { kind: 'pictograph', label: '두 물병의 물을 부은 컵의 수', unit: 1, items: [{ label: '가 물병', count: a }, { label: '나 물병', count: b }] },
     };
   },
 };
@@ -110,6 +112,7 @@ const 임의단위차이문항 = (kind: 종류): G5Family => ({
       hint: `${단위물건} 수가 더 많은 쪽을 찾고, 몇 ${세는말} 차이인지 빼서 구해 보세요.`,
       steps: [`${Math.max(a, b)}-${Math.min(a, b)}=${차}입니다.`, kind === '들이' ? `그러므로 ${큰}에 ${차}컵만큼 더 많이 들어갑니다.` : `그러므로 ${큰}이(가) 바둑돌 ${차}개만큼 더 무겁습니다.`],
       misconceptionTip: `두 수를 더하면 안 됩니다. 얼마나 더 ${kind === '들이' ? '많은지' : '무거운지'}는 빼서 구합니다.`,
+      visual: { kind: 'pictograph', label: `${대상[0]}, ${대상[1]}의 ${단위물건} 수`, unit: 1, items: [{ label: 대상[0], count: a }, { label: 대상[1], count: b }] },
     };
   },
 });

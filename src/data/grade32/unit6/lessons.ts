@@ -75,7 +75,7 @@ const 도입문항: G5Family = {
     const 합 = 수.reduce((a, b) => a + b, 0);
     if (next(2) === 0) {
       return {
-        prompt: `좋아하는 과일을 조사하여 표로 나타냈습니다. ${과일.map((f, k) => `${f} ${수[k]}명`).join(', ')}. 조사한 학생은 모두 몇 명일까요?`,
+        prompt: '좋아하는 과일을 조사하여 표로 나타냈습니다. 조사한 학생은 모두 몇 명일까요?',
         answer: `${합}명`,
         wrongs: [합 - 수[0], 합 + 1, 수.length, Math.max(...수) * 4].filter((v, k, all) => v !== 합 && all.indexOf(v) === k).map((v) => `${v}명`),
         tag: 'data',
@@ -84,12 +84,13 @@ const 도입문항: G5Family = {
         hint: '항목마다 수를 빠뜨리지 않고 모두 더하세요.',
         steps: [`${수.join('+')}=${합}입니다.`, `그러므로 모두 ${합}명입니다.`],
         misconceptionTip: '항목의 수(4가지)를 답하면 안 됩니다. 사람 수를 모두 더합니다.',
+        visual: { kind: 'table', label: '좋아하는 과일별 학생 수', categoryLabel: '과일', valueLabel: '학생 수(명)', columns: 과일.map((f, k) => ({ name: f, value: 수[k] })), totalLabel: '합계', total: null },
       };
     }
     const 최대 = Math.max(...수);
     if (수.filter((v) => v === 최대).length > 1) return null;
     return {
-      prompt: `좋아하는 과일을 조사했습니다. ${과일.map((f, k) => `${f} ${수[k]}명`).join(', ')}. 가장 많은 학생이 좋아하는 과일은 무엇일까요?`,
+      prompt: '좋아하는 과일을 조사하여 표로 나타냈습니다. 가장 많은 학생이 좋아하는 과일은 무엇일까요?',
       answer: 과일[수.indexOf(최대)],
       wrongs: 과일.filter((_, k) => 수[k] !== 최대),
       tag: 'data',
@@ -98,6 +99,7 @@ const 도입문항: G5Family = {
       hint: '네 수 가운데 가장 큰 수를 찾으세요.',
       steps: [`가장 큰 수는 ${최대}입니다.`, `그러므로 ${과일[수.indexOf(최대)]}입니다.`],
       misconceptionTip: '표에서 위에 있다고 많은 것이 아닙니다. 수를 비교하세요.',
+      visual: { kind: 'table', label: '좋아하는 과일별 학생 수', categoryLabel: '과일', valueLabel: '학생 수(명)', columns: 과일.map((f, k) => ({ name: f, value: 수[k] })) },
     };
   },
 };

@@ -2190,7 +2190,7 @@ function App() {
                             >
                               <Lightbulb size={16} /> {hintTextOpen[player.id] ? '힌트 접기' : '힌트 보기'}
                             </button>
-                            {question.visual && (
+                            {(question.visual || question.walkthrough) && (
                               <button
                                 type="button"
                                 className="hint-interactive-button"
@@ -2275,7 +2275,7 @@ function App() {
                             <p className="quick-reason"><span>왜?</span><span><MathText text={question.support.steps[2]} /></span></p>
                           </div>
                           <div className="wrong-feedback-actions">
-                            {question.visual && (
+                            {(question.visual || question.walkthrough) && (
                               <button
                                 type="button"
                                 className="hint-interactive-button"
@@ -2285,7 +2285,7 @@ function App() {
                                   setHintUsedThisQuestion((prev) => ({ ...prev, [player.id]: true }));
                                 }}
                               >
-                                <Search size={16} /> 만져서 다시 보기
+                                <Search size={16} /> {question.visual ? '만져서 다시 보기' : '한 자리씩 다시 보기'}
                               </button>
                             )}
                             <button type="button" onClick={() => nextForPlayer(player)}>다음 문제</button>
@@ -2293,9 +2293,11 @@ function App() {
                         </div>
                       )}
 
-                      {hintModalOpen[player.id] && question.visual && (
+                      {hintModalOpen[player.id] && (question.visual || question.walkthrough) && (
                         <InteractiveHintModal
                           visual={question.visual}
+                          walkthrough={question.walkthrough}
+                          reveal={state.feedback === 'explain'}
                           prompt={question.prompt}
                           onClose={() => setHintModalOpen((prev) => ({ ...prev, [player.id]: false }))}
                         />
