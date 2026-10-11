@@ -1,4 +1,4 @@
-import type { RatioGraphVisual } from '../types';
+import type { RatioGraphVisual, StackPlanVisual } from '../types';
 
 // ════════════════════════════════════════════════════════════════════
 // 6학년 그림 — 띠그래프와 원그래프
@@ -76,6 +76,41 @@ export function RatioGraphGraphic({ visual }: { visual: RatioGraphVisual }) {
           </g>
         );
       })}
+    </svg>
+  );
+}
+
+// ── 쌓기나무를 위에서 본 모양 ───────────────────────────────────────
+// 아래쪽에 '앞', 오른쪽에 '옆'을 적어 보는 방향을 못박습니다. 등각
+// 그림만 주면 뒤에 숨은 쌓기나무를 셀 수 없고 '앞'이 어느 쪽인지도
+// 흔들립니다.
+export function StackPlanGraphic({ visual }: { visual: StackPlanVisual }) {
+  const rows = visual.heights.length;
+  const cols = Math.max(...visual.heights.map((r) => r.length));
+  const cell = 40;
+  const left = 30;
+  const top = 18;
+  const width = left + cols * cell + 60;
+  const height = top + rows * cell + 40;
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="2" y="2" width={width - 4} height={height - 4} rx="12" {...판} />
+      {visual.heights.map((row, r) =>
+        row.map((h, c) =>
+          h > 0 ? (
+            <g key={`${r}-${c}`}>
+              <rect x={left + c * cell} y={top + r * cell} width={cell} height={cell} fill="#dffafa" stroke="#0f7175" strokeWidth="2" />
+              {visual.numbers && (
+                <text x={left + c * cell + cell / 2} y={top + r * cell + cell / 2 + 7} textAnchor="middle" fill={visual.hidden && visual.hidden[0] === r && visual.hidden[1] === c ? '#bf360c' : 글} fontSize="20" fontWeight="900">
+                  {visual.hidden && visual.hidden[0] === r && visual.hidden[1] === c ? '?' : h}
+                </text>
+              )}
+            </g>
+          ) : null,
+        ),
+      )}
+      <text x={left + (cols * cell) / 2} y={top + rows * cell + 26} textAnchor="middle" fill="#0f7175" fontSize="15" fontWeight="900">앞</text>
+      <text x={left + cols * cell + 30} y={top + (rows * cell) / 2 + 5} textAnchor="middle" fill="#0f7175" fontSize="15" fontWeight="900">옆</text>
     </svg>
   );
 }

@@ -1,6 +1,6 @@
 import { ShareScene } from './ShareScene';
 import { AngleGraphic, BarGraphGraphic, GridMoveGraphic, LineGraphGraphic } from './Grade4Visuals';
-import { RatioGraphGraphic } from './Grade6Visuals';
+import { RatioGraphGraphic, StackPlanGraphic } from './Grade6Visuals';
 import { CompareGraphic, CountersGraphic, SolidsGraphic, TenFrameGraphic, TensOnesGraphic } from './Grade1Visuals';
 import type { PlaneShapeVisualItem, QuestionVisual } from '../types';
 
@@ -3175,6 +3175,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'line-graph' && <LineGraphGraphic visual={visual} />}
       {visual.kind === 'grid-move' && <GridMoveGraphic visual={visual} />}
       {visual.kind === 'ratio-graph' && <RatioGraphGraphic visual={visual} />}
+      {visual.kind === 'stack-plan' && <StackPlanGraphic visual={visual} />}
     </figure>
   );
 }
