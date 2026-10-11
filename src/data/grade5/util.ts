@@ -193,6 +193,9 @@ export const iraneun = (word: string) => `${word}${hasFinal(word) ? '이라는' 
 //   3 삼으로  6 육으로  10 십으로 (다른 받침)
 //   2 이로   4 사로   5 오로   9 구로 (받침 없음)
 const endsWithRieul = (word: string): boolean => {
+  // 분수는 분자가 마지막 소리입니다(11/9 → 구분의 십일 → '로').
+  const fraction = /(\d+)\/\d+$/.exec(word);
+  if (fraction) return endsWithRieul(fraction[1]);
   const last = word[word.length - 1];
   if (/\d/.test(last)) return last === '1' || last === '7' || last === '8';
   const code = word.charCodeAt(word.length - 1);

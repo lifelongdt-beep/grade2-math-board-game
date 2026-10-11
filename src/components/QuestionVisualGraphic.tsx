@@ -1,4 +1,7 @@
 import { ShareScene } from './ShareScene';
+import { AngleGraphic, BarGraphGraphic, GridMoveGraphic, LineGraphGraphic } from './Grade4Visuals';
+import { RatioGraphGraphic, StackPlanGraphic } from './Grade6Visuals';
+import { CompareGraphic, CountersGraphic, SolidsGraphic, TenFrameGraphic, TensOnesGraphic } from './Grade1Visuals';
 import type { PlaneShapeVisualItem, QuestionVisual } from '../types';
 
 interface QuestionVisualGraphicProps {
@@ -12,10 +15,20 @@ const shapeColor = (active?: boolean) => ({
   strokeWidth: active ? 5 : 4,
 });
 
+// 모양이 많으면(1학년 '모양 만들기'에 여섯 개) 칸이 좁아져 도형끼리
+// 겹쳤습니다. 칸에 맞게 줄여 그립니다. 네 개까지는 그대로입니다.
 const renderPlaneShape = (item: PlaneShapeVisualItem, index: number, total: number) => {
   const cellWidth = 320 / total;
   const cx = 28 + cellWidth * index + cellWidth / 2;
   const cy = 62;
+  const fit = Math.min(1, (cellWidth + 4) / 84);
+  const shape = renderPlaneShapeAt(item, index, cx, cy);
+  return fit < 1 ? (
+    <g key={`fit-${index}`} transform={`translate(${cx} ${cy}) scale(${fit.toFixed(3)}) translate(${-cx} ${-cy})`}>{shape}</g>
+  ) : shape;
+};
+
+const renderPlaneShapeAt = (item: PlaneShapeVisualItem, index: number, cx: number, cy: number) => {
   const size = item.kind === 'rectangle' ? 42 : 36;
   const style = shapeColor(item.active);
   const transform = item.rotate ? `rotate(${item.rotate} ${cx} ${cy})` : undefined;
@@ -3152,6 +3165,17 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'array' && <ArrayGraphic visual={visual} />}
       {visual.kind === 'pattern' && <PatternGraphic visual={visual} />}
       {visual.kind === 'grid-table' && <GridTableGraphic visual={visual} />}
+      {visual.kind === 'counters' && <CountersGraphic visual={visual} />}
+      {visual.kind === 'ten-frame' && <TenFrameGraphic visual={visual} />}
+      {visual.kind === 'tens-ones' && <TensOnesGraphic visual={visual} />}
+      {visual.kind === 'solids' && <SolidsGraphic visual={visual} />}
+      {visual.kind === 'compare' && <CompareGraphic visual={visual} />}
+      {visual.kind === 'angle' && <AngleGraphic visual={visual} />}
+      {visual.kind === 'bar-graph' && <BarGraphGraphic visual={visual} />}
+      {visual.kind === 'line-graph' && <LineGraphGraphic visual={visual} />}
+      {visual.kind === 'grid-move' && <GridMoveGraphic visual={visual} />}
+      {visual.kind === 'ratio-graph' && <RatioGraphGraphic visual={visual} />}
+      {visual.kind === 'stack-plan' && <StackPlanGraphic visual={visual} />}
     </figure>
   );
 }
