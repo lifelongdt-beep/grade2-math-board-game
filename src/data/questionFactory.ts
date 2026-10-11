@@ -35,6 +35,7 @@ import { generateGrade5Questions } from './grade5';
 import { generateGrade51Questions } from './grade51';
 import { generateGrade31Questions } from './grade31';
 import { generateGrade11Questions } from './grade11';
+import { generateGrade12Questions } from './grade12';
 import { buildFromTemplate, templateFits } from './questionTemplate';
 import type { DrawnVisual } from './questionTemplate';
 
@@ -17286,6 +17287,8 @@ export const generateQuestions = (
   // 1학년 차시도 같은 까닭으로 자기 길로 갑니다.
   const grade11 = generateGrade11Questions(lesson, difficulty);
   if (grade11) return grade11;
+  const grade12 = generateGrade12Questions(lesson, difficulty);
+  if (grade12) return grade12;
   if (lesson.semester.startsWith('1')) return [];
 
   if (lesson.title === '구구단, 몬스터를 막아라!') {

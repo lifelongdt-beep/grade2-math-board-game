@@ -13,10 +13,20 @@ const shapeColor = (active?: boolean) => ({
   strokeWidth: active ? 5 : 4,
 });
 
+// 모양이 많으면(1학년 '모양 만들기'에 여섯 개) 칸이 좁아져 도형끼리
+// 겹쳤습니다. 칸에 맞게 줄여 그립니다. 네 개까지는 그대로입니다.
 const renderPlaneShape = (item: PlaneShapeVisualItem, index: number, total: number) => {
   const cellWidth = 320 / total;
   const cx = 28 + cellWidth * index + cellWidth / 2;
   const cy = 62;
+  const fit = Math.min(1, (cellWidth + 4) / 84);
+  const shape = renderPlaneShapeAt(item, index, cx, cy);
+  return fit < 1 ? (
+    <g key={`fit-${index}`} transform={`translate(${cx} ${cy}) scale(${fit.toFixed(3)}) translate(${-cx} ${-cy})`}>{shape}</g>
+  ) : shape;
+};
+
+const renderPlaneShapeAt = (item: PlaneShapeVisualItem, index: number, cx: number, cy: number) => {
   const size = item.kind === 'rectangle' ? 42 : 36;
   const style = shapeColor(item.active);
   const transform = item.rotate ? `rotate(${item.rotate} ${cx} ${cy})` : undefined;
