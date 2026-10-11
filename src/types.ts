@@ -5,7 +5,7 @@ export type SessionDuration = 30 | 60 | 120;
 // 어느 학기인지입니다. 2학년 1·2학기로 시작했고, 5학년 2학기가 뒤에
 // 붙었습니다. 5학년은 차시도 문항도 따로 만들기 때문에(grade5 폴더),
 // 여기서 하는 일은 '어느 학기의 차시인가'를 한 곳에 적어 두는 것뿐입니다.
-export type Semester = '2-1' | '2-2' | '3-1' | '3-2' | '5-1' | '5-2';
+export type Semester = '1-1' | '1-2' | '2-1' | '2-2' | '3-1' | '3-2' | '4-1' | '4-2' | '5-1' | '5-2' | '6-1' | '6-2';
 
 export type ConceptTag =
   | 'number'
@@ -49,7 +49,17 @@ export type ConceptTag =
   // 반올림)와 다릅니다 — 3학년은 가까운 몇백으로 어림해 계산 결과를
   // 짐작합니다. 두 학년을 한 이름으로 묶으면 선생님 분석에서 섞입니다.
   | 'estimate'
-  | 'division';
+  | 'division'
+  // ── 4학년에서 쓰는 갈래입니다 ──────────────────────────────────
+  | 'angle'
+  | 'transform'
+  // ── 6학년에서 쓰는 갈래입니다 ──────────────────────────────────
+  // 분수·소수의 나눗셈은 5학년의 곱셈 갈래와 따로 둡니다(선생님 분석에서
+  // 섞이지 않게). 비와 비율·비례식은 ratio, 직육면체의 겉넓이와 부피는 volume.
+  | 'fractionDiv'
+  | 'decimalDiv'
+  | 'ratio'
+  | 'volume';
 
 // 차시가 '무엇을 물어도 되는가'를 적어 둔 선언입니다.
 //
@@ -328,7 +338,7 @@ export interface FractionModelVisual {
 export type FigureShapeName =
   | '정삼각형' | '이등변삼각형' | '직각삼각형' | '둔각삼각형'
   | '정사각형' | '직사각형' | '마름모' | '평행사변형'
-  | '사다리꼴' | '사각형'
+  | '사다리꼴' | '사각형' | '삼각형' | '오각형' | '육각형'
   | '정오각형' | '정육각형' | '원';
 
 export interface FigureSetVisual {
@@ -787,6 +797,185 @@ export interface PatternVisual {
   missingIndex?: number;
 }
 
+// ── 1학년 그림 ───────────────────────────────────────────────────────
+// 1학년 아이는 글을 겨우 읽습니다. 지도서도 "구체물을 직접 세어 보고
+// 수로 나타내는 활동"을 앞세웁니다. 그래서 1학년 문항은 셀 물건을
+// 그대로 그려 줍니다.
+
+/** 셀 물건입니다. 한 무리에 같은 물건을 같은 색으로 그립니다. */
+export type CounterIcon = 'apple' | 'star' | 'flower' | 'fish' | 'ball' | 'dot' | 'car' | 'bird';
+
+export interface CountersVisual {
+  kind: 'counters';
+  label: string;
+  groups: Array<{
+    count: number;
+    icon: CounterIcon;
+    /** 무리 밑에 적을 이름입니다(예: 빨간 구슬). */
+    name?: string;
+    /** 뒤에서부터 몇 개에 ×를 그립니다. 덜어 낸 것(뺄셈)입니다. */
+    crossed?: number;
+    /** 이 무리를 '?'로 가립니다. 모으기·가르기에서 모르는 쪽입니다. */
+    hidden?: boolean;
+  }>;
+  /** 한 줄에 몇 개씩 놓을지입니다(기본 5). 둘씩 짝짓기(짝수·홀수)에서는 2입니다. */
+  perRow?: number;
+  /** 무리 사이에 놓을 표시입니다. 모으기는 '+', 가르기는 없음. */
+  joiner?: '+' | '-' | '→';
+  /**
+   * 한 줄로 늘어놓고 몇째를 표시합니다. marks는 왼쪽에서 0부터 셉니다.
+   * sides가 있으면 양 끝에 '왼쪽', '오른쪽'을 적습니다.
+   */
+  line?: { marks: number[]; sides?: boolean };
+}
+
+/** 십 배열판입니다. 칸을 왼쪽 위부터 채웁니다. */
+export interface TenFrameVisual {
+  kind: 'ten-frame';
+  label: string;
+  /** 판의 수(1 또는 2). 2이면 20까지입니다. */
+  frames: number;
+  /** 채울 바둑돌 무리입니다. 색이 다르면 모으기를 보여 줍니다. */
+  fills: Array<{ count: number; color: 'teal' | 'orange' }>;
+  /** 뒤에서부터 몇 개에 ×를 그립니다. */
+  crossed?: number;
+}
+
+/** 10개씩 묶음과 낱개입니다. 50까지의 수에서 씁니다. */
+export interface TensOnesVisual {
+  kind: 'tens-ones';
+  label: string;
+  tens: number;
+  ones: number;
+  /** 묶음 수와 낱개 수를 숫자로 적습니다. 세어 보게 하려면 끕니다. */
+  showDigits?: boolean;
+}
+
+/** 1-1 2단원의 상자·둥근기둥·공 모양입니다. 이름은 쓰지 않습니다. */
+export type SolidShape = 'box' | 'cylinder' | 'sphere';
+
+export interface SolidsVisual {
+  kind: 'solids';
+  label: string;
+  items: Array<{
+    shape: SolidShape;
+    /** 가, 나, 다 … 밑에 붙일 이름입니다. */
+    name?: string;
+    /** 눈에 띄게 테를 두릅니다. */
+    active?: boolean;
+    /** 물건 이름(예: 휴지 상자). 모양 밑에 작게 적습니다. */
+    thing?: string;
+    /** 일부만 보이게 가립니다. 상자 속에서 보이는 부분 맞히기입니다. */
+    peek?: boolean;
+  }>;
+}
+
+/**
+ * 1-1 4단원 비교하기입니다. 지도서: 임의 단위나 표준 단위를 쓰지
+ * 않고 직관적 비교와 직접 비교만 합니다. 그래서 눈금이나 수를 그리지
+ * 않습니다.
+ */
+export interface CompareVisual {
+  kind: 'compare';
+  label: string;
+  mode: 'length' | 'weight' | 'area' | 'capacity' | 'water';
+  /**
+   * size는 그림의 크기입니다. length는 막대 길이, area는 판의 넓이,
+   * capacity는 그릇 크기, water는 같은 그릇에 담긴 물의 높이,
+   * weight는 무게(시소가 기우는 쪽을 정합니다).
+   */
+  items: Array<{ name: string; size: number; color?: string }>;
+}
+
+// ── 4학년 그림 ───────────────────────────────────────────────────────
+
+/**
+ * 각을 그립니다(4-1 2단원 각도). 꼭짓점에서 오른쪽으로 뻗은 변과
+ * deg만큼 벌어진 변을 긋고 호를 그립니다. text를 적으면 호 옆에 씁니다
+ * ('?'나 '60°'). 재어 보게 하려는 그림에는 각도를 적지 않습니다.
+ */
+export interface AngleVisual {
+  kind: 'angle';
+  label: string;
+  items: Array<{ deg: number; name?: string; text?: string; rotate?: number }>;
+}
+
+/** 막대그래프입니다(4-1 5단원). 세로 눈금 한 칸이 step입니다. */
+export interface BarGraphVisual {
+  kind: 'bar-graph';
+  label: string;
+  title: string;
+  /** 눈금 이름(세로)입니다. 예: '학생 수(명)' */
+  valueLabel: string;
+  step: number;
+  /** 눈금의 가장 큰 값입니다. */
+  max: number;
+  bars: Array<{ name: string; value: number; hidden?: boolean }>;
+  /** 막대를 가로로 그립니다. */
+  horizontal?: boolean;
+}
+
+/** 꺾은선그래프입니다(4-2 5단원). from이 있으면 그 아래를 물결선으로 줄입니다. */
+export interface LineGraphVisual {
+  kind: 'line-graph';
+  label: string;
+  title: string;
+  valueLabel: string;
+  step: number;
+  max: number;
+  from?: number;
+  points: Array<{ name: string; value: number; hidden?: boolean }>;
+}
+
+/**
+ * 모눈 위의 도형과 점입니다(4-1 4단원 평면도형의 이동). 도형은 채운
+ * 칸(cells)으로 나타냅니다. 칸으로 그리면 밀기·뒤집기·돌리기의 결과를
+ * 계산으로 정확히 만들 수 있습니다. 판(panel)을 여러 개 늘어놓아
+ * 가·나·다·라 보기로 씁니다.
+ */
+/**
+ * 띠그래프·원그래프입니다(6-1 5단원). 각 항목의 백분율을 띠 길이·부채꼴
+ * 크기 그대로 그립니다. hidden인 항목은 백분율 자리에 '?'를 적습니다.
+ */
+export interface RatioGraphVisual {
+  kind: 'ratio-graph';
+  label: string;
+  shape: 'band' | 'pie';
+  title: string;
+  items: Array<{ name: string; percent: number; hidden?: boolean }>;
+}
+
+/**
+ * 쌓기나무를 위에서 본 모양입니다(6-2 3단원). heights[행][열]은 그 자리에
+ * 쌓인 개수이고, 아래쪽이 '앞', 오른쪽이 '옆'입니다. numbers를 켜면 칸에
+ * 개수를 적습니다(위에서 본 모양에 수를 쓰는 방법). hideRow·hideCell은
+ * 모르는 칸을 '?'로 둡니다.
+ */
+export interface StackPlanVisual {
+  kind: 'stack-plan';
+  label: string;
+  heights: number[][];
+  numbers?: boolean;
+  hidden?: [number, number];
+}
+
+export interface GridMoveVisual {
+  kind: 'grid-move';
+  label: string;
+  size: number;
+  /** 첫 칸을 다른 색으로 칠하지 않습니다(방향 표시가 필요 없는 모양 배열). */
+  plain?: boolean;
+  panels: Array<{
+    name?: string;
+    cells?: Array<[number, number]>;
+    /** 점 하나와 그 점을 옮긴 자리(있으면)입니다. */
+    point?: [number, number];
+    target?: [number, number];
+    /** 판 위에 쓸 짧은 말(예: 처음 도형) */
+    caption?: string;
+  }>;
+}
+
 export type QuestionVisual =
   | PlaneShapesVisual
   | CubeStackVisual
@@ -819,7 +1008,18 @@ export type QuestionVisual =
   | GroupedVisual
   | PictureGraphVisual
   | ShareVisual
-  | PatternVisual;
+  | PatternVisual
+  | CountersVisual
+  | TenFrameVisual
+  | TensOnesVisual
+  | SolidsVisual
+  | CompareVisual
+  | AngleVisual
+  | BarGraphVisual
+  | LineGraphVisual
+  | GridMoveVisual
+  | RatioGraphVisual
+  | StackPlanVisual;
 
 export interface Player {
   id: number;
