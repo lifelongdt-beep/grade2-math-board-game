@@ -933,6 +933,18 @@ export interface LineGraphVisual {
  * 계산으로 정확히 만들 수 있습니다. 판(panel)을 여러 개 늘어놓아
  * 가·나·다·라 보기로 씁니다.
  */
+/**
+ * 띠그래프·원그래프입니다(6-1 5단원). 각 항목의 백분율을 띠 길이·부채꼴
+ * 크기 그대로 그립니다. hidden인 항목은 백분율 자리에 '?'를 적습니다.
+ */
+export interface RatioGraphVisual {
+  kind: 'ratio-graph';
+  label: string;
+  shape: 'band' | 'pie';
+  title: string;
+  items: Array<{ name: string; percent: number; hidden?: boolean }>;
+}
+
 export interface GridMoveVisual {
   kind: 'grid-move';
   label: string;
@@ -991,7 +1003,8 @@ export type QuestionVisual =
   | AngleVisual
   | BarGraphVisual
   | LineGraphVisual
-  | GridMoveVisual;
+  | GridMoveVisual
+  | RatioGraphVisual;
 
 export interface Player {
   id: number;

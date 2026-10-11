@@ -71,6 +71,7 @@ import { curriculum11 } from './data/curriculum11';
 import { curriculum12 } from './data/curriculum12';
 import { curriculum41 } from './data/curriculum41';
 import { curriculum42 } from './data/curriculum42';
+import { curriculum61 } from './data/curriculum61';
 import { curriculum32 } from './data/curriculum32';
 import { generateQuestions, ALL_CASTLE_DEFENSE_DANS } from './data/questionFactory';
 import type { AnswerRecord, ConceptTag, Difficulty, Lesson, Player, PlayerQuestionState, Question, SessionDuration, Unit } from './types';
@@ -144,10 +145,10 @@ type InitialRoute = {
 // 2학년 차시와 5학년 차시를 한 앱에서 씁니다. 2학년 문항을 지키는
 // 시험들이 curriculum만 훑도록, 두 학기는 파일을 따로 두고 여기서만
 // 이어 붙입니다.
-const curriculum: Unit[] = [...curriculum11, ...curriculum12, ...curriculum2, ...curriculum31, ...curriculum32, ...curriculum41, ...curriculum42, ...curriculum51, ...curriculum5];
+const curriculum: Unit[] = [...curriculum11, ...curriculum12, ...curriculum2, ...curriculum31, ...curriculum32, ...curriculum41, ...curriculum42, ...curriculum51, ...curriculum5, ...curriculum61];
 
 const isSemesterValue = (value: string | null): value is Unit['semester'] =>
-  value === '1-1' || value === '1-2' || value === '2-1' || value === '2-2' || value === '3-1' || value === '3-2' || value === '4-1' || value === '4-2' || value === '5-1' || value === '5-2';
+  value === '1-1' || value === '1-2' || value === '2-1' || value === '2-2' || value === '3-1' || value === '3-2' || value === '4-1' || value === '4-2' || value === '5-1' || value === '5-2' || value === '6-1';
 
 const parseSessionDuration = (value: string | null): SessionDuration => {
   const parsed = Number(value);
@@ -1441,6 +1442,7 @@ function App() {
             <option value="4-2">4학년 2학기</option>
             <option value="5-1">5학년 1학기</option>
             <option value="5-2">5학년 2학기</option>
+            <option value="6-1">6학년 1학기</option>
           </select>
         </label>
         <label>
