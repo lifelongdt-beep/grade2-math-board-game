@@ -6965,3 +6965,171 @@ body::before {
 .chance-tally strong {
   color: var(--teal-dark);
 }
+
+/* ── 세로셈 따라가기(자세히 보기) ───────────────────────────────── */
+.walk-lab {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.walk-board {
+  width: min(330px, 80vw);
+  height: auto;
+  /* 줄이 많은 나눗셈도 설명 글과 단추가 한 화면에 함께 보이게 합니다. */
+  max-height: 40vh;
+}
+
+/* 지금 계산하는 자리를 칠한 띠가 옆으로 미끄러져 옵니다. */
+.walk-focus {
+  animation: walk-focus-in 0.35s ease-out;
+}
+
+/* 새로 쓴 숫자는 톡 튀어나오고, 받아올림·받아내림 숫자는 아래에서
+   위로 날아올라 제자리에 앉습니다. */
+.walk-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: walk-pop-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.walk-fly {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: walk-fly-in 0.7s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes walk-focus-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes walk-pop-in {
+  0% { opacity: 0; transform: scale(0.3); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes walk-fly-in {
+  0% { opacity: 0; transform: translateY(70px) scale(1.4); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .walk-pop, .walk-fly, .walk-focus { animation: none; }
+}
+
+.walk-say {
+  margin: 0;
+  width: 100%;
+  min-height: 3.2em;
+  padding: 10px 12px;
+  border: 1px solid #cdebe6;
+  border-radius: var(--radius);
+  background: #f2fbfa;
+  color: var(--ink);
+  font-size: 15.5px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.walk-count {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--teal);
+  color: white;
+  font-size: 12px;
+  font-weight: 900;
+  vertical-align: 1px;
+}
+
+.walk-stop {
+  margin: 0;
+  color: #8a5a00;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.walk-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.walk-controls button {
+  min-height: 42px;
+  border: 2px solid var(--teal);
+  border-radius: var(--radius);
+  background: #f1fcfc;
+  padding: 8px 14px;
+  color: var(--teal-dark);
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.walk-controls button.walk-next {
+  background: var(--teal);
+  color: white;
+}
+
+.walk-controls button:disabled {
+  opacity: 0.4;
+}
+
+.hint-modal-tabs {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.hint-modal-tabs button {
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: white;
+  padding: 6px 14px;
+  font-weight: 900;
+  color: var(--muted);
+}
+
+.hint-modal-tabs button[aria-pressed='true'] {
+  border-color: var(--teal);
+  background: #e6f7f5;
+  color: var(--teal-dark);
+}
+
+/* ── 똑같이 나누어 보기(3-1 나눗셈) ─────────────────────────────── */
+.share-lab {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.share-lab .share-scene {
+  width: min(360px, 82vw);
+  height: auto;
+  max-height: 46vh;
+}
+
+/* 물건이 접시로 미끄러져 갑니다. */
+.share-item {
+  transition: transform 0.65s cubic-bezier(0.3, 0.9, 0.3, 1), fill 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-item { transition: none; }
+}
+
+.share-subtract {
+  margin: 0;
+  color: #8a5a00;
+  font-size: 14.5px;
+  font-weight: 900;
+  text-align: center;
+  line-height: 1.5;
+}

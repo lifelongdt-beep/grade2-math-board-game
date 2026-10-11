@@ -1,3 +1,4 @@
+import { ShareScene } from './ShareScene';
 import type { PlaneShapeVisualItem, QuestionVisual } from '../types';
 
 interface QuestionVisualGraphicProps {
@@ -3134,6 +3135,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'circles' && <CirclesGraphic visual={visual} />}
       {visual.kind === 'grouped' && <GroupedGraphic visual={visual} />}
       {visual.kind === 'picture-graph' && <PictureGraphGraphic visual={visual} />}
+      {visual.kind === 'share' && <ShareScene visual={visual} moved={0} showBoxes={visual.mode === 'deal' ? visual.groups ?? 0 : 0} />}
       {visual.kind === 'box-drawing' && <BoxDrawingGraphic visual={visual} />}
       {visual.kind === 'box-net' && <BoxNetGraphic visual={visual} />}
       {visual.kind === 'spinner' && <SpinnerGraphic visual={visual} />}

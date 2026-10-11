@@ -120,7 +120,19 @@ export interface Question {
   strategy: string;
   support: LearningSupport;
   visual?: QuestionVisual;
+  // 자세히 보기에서 한 자리씩 따라가는 세로셈입니다(3학년 계산 문항).
+  walkthrough?: Walkthrough;
 }
+
+export type Walkthrough =
+  | { kind: 'add' | 'sub'; a: number; b: number }
+  // b는 한 자리 또는 두 자리입니다. 두 자리면 a도 두 자리입니다.
+  | { kind: 'mul'; a: number; b: number }
+  // 나누는 수는 한 자리입니다(3-2).
+  | { kind: 'div'; a: number; b: number }
+  // 시간의 덧셈과 뺄셈(3-1 5단원). 60초에서 1분으로 받아올립니다.
+  // a에 시가 있으면 시각입니다(시는 그대로 내려씁니다).
+  | { kind: 'time'; op: '+' | '-'; a: { h?: number; m: number; s: number }; b: { m: number; s: number } };
 
 export interface LearningSupport {
   studentConcept: string;
@@ -744,6 +756,24 @@ export interface PictureGraphVisual {
   hideRow?: number;
 }
 
+// ── 3-1 3단원 나눗셈 ─────────────────────────────────────────────────
+// 나누기 전의 물건 total개입니다. 지도서는 두 상황을 모두 겪게 합니다.
+//   deal  groups명(접시)에게 하나씩 차례로 나누어 줍니다(한 명이 몇 개씩).
+//   group size개씩 묶어 덜어 냅니다(몇 묶음, 몇 명에게).
+// 문제 그림에는 나누기 전 모습만 그리고, 자세히 보기에서 직접 나누어 봅니다.
+export interface ShareVisual {
+  kind: 'share';
+  label: string;
+  total: number;
+  mode: 'deal' | 'group';
+  groups?: number;
+  size?: number;
+  /** 물건 이름입니다(사탕, 구슬 …). */
+  item: string;
+  /** 받는 쪽 이름입니다(명, 접시, 상자 …). */
+  holder: string;
+}
+
 export interface PatternVisual {
   kind: 'pattern';
   label: string;
@@ -782,6 +812,7 @@ export type QuestionVisual =
   | CircleVisual
   | GroupedVisual
   | PictureGraphVisual
+  | ShareVisual
   | PatternVisual;
 
 export interface Player {
