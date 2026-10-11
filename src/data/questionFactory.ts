@@ -39,6 +39,7 @@ import { generateGrade12Questions } from './grade12';
 import { generateGrade41Questions } from './grade41';
 import { generateGrade42Questions } from './grade42';
 import { generateGrade61Questions } from './grade61';
+import { generateGrade62Questions } from './grade62';
 import { buildFromTemplate, templateFits } from './questionTemplate';
 import type { DrawnVisual } from './questionTemplate';
 
@@ -1017,7 +1018,8 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'line-graph' ||
     visual.kind === 'grid-move' ||
     // 6학년 그림입니다.
-    visual.kind === 'ratio-graph'
+    visual.kind === 'ratio-graph' ||
+    visual.kind === 'stack-plan'
   ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };
   }
@@ -17355,6 +17357,8 @@ export const generateQuestions = (
   if (lesson.semester.startsWith('4')) return [];
   const grade61 = generateGrade61Questions(lesson, difficulty);
   if (grade61) return grade61;
+  const grade62 = generateGrade62Questions(lesson, difficulty);
+  if (grade62) return grade62;
   if (lesson.semester.startsWith('6')) return [];
 
   if (lesson.title === '구구단, 몬스터를 막아라!') {

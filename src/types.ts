@@ -945,6 +945,20 @@ export interface RatioGraphVisual {
   items: Array<{ name: string; percent: number; hidden?: boolean }>;
 }
 
+/**
+ * 쌓기나무를 위에서 본 모양입니다(6-2 3단원). heights[행][열]은 그 자리에
+ * 쌓인 개수이고, 아래쪽이 '앞', 오른쪽이 '옆'입니다. numbers를 켜면 칸에
+ * 개수를 적습니다(위에서 본 모양에 수를 쓰는 방법). hideRow·hideCell은
+ * 모르는 칸을 '?'로 둡니다.
+ */
+export interface StackPlanVisual {
+  kind: 'stack-plan';
+  label: string;
+  heights: number[][];
+  numbers?: boolean;
+  hidden?: [number, number];
+}
+
 export interface GridMoveVisual {
   kind: 'grid-move';
   label: string;
@@ -1004,7 +1018,8 @@ export type QuestionVisual =
   | BarGraphVisual
   | LineGraphVisual
   | GridMoveVisual
-  | RatioGraphVisual;
+  | RatioGraphVisual
+  | StackPlanVisual;
 
 export interface Player {
   id: number;
