@@ -37,6 +37,7 @@ import { generateGrade31Questions } from './grade31';
 import { generateGrade11Questions } from './grade11';
 import { generateGrade12Questions } from './grade12';
 import { generateGrade41Questions } from './grade41';
+import { generateGrade42Questions } from './grade42';
 import { buildFromTemplate, templateFits } from './questionTemplate';
 import type { DrawnVisual } from './questionTemplate';
 
@@ -122,6 +123,10 @@ const tagLabel: Record<ConceptTag, string> = {
   division: '나눗셈',
   angle: '각도',
   transform: '평면도형의 이동',
+  fractionDiv: '분수의 나눗셈',
+  decimalDiv: '소수의 나눗셈',
+  ratio: '비와 비율',
+  volume: '겉넓이와 부피',
 };
 
 const tagAdvice: Record<ConceptTag, string> = {
@@ -156,6 +161,10 @@ const tagAdvice: Record<ConceptTag, string> = {
   division: '똑같이 나누면 하나에 얼마인지, 몇씩 묶으면 몇 묶음인지 생각합니다.',
   angle: '각의 크기는 두 변이 벌어진 정도입니다.',
   transform: '도형을 밀고, 뒤집고, 돌리면 모양과 놓인 자리가 어떻게 바뀌는지 봅니다.',
+  fractionDiv: '나누는 수만큼 똑같이 나누거나, 나누는 수가 몇 번 들어가는지 봅니다.',
+  decimalDiv: '자연수의 나눗셈처럼 계산하고 소수점의 자리를 정합니다.',
+  ratio: '두 양을 나눗셈으로 비교합니다.',
+  volume: '겉넓이는 겉면의 넓이, 부피는 공간을 차지하는 크기입니다.',
 };
 
 const coreConceptGuide: Record<ConceptTag, string> = {
@@ -188,6 +197,10 @@ const coreConceptGuide: Record<ConceptTag, string> = {
   division: '나눗셈은 똑같이 나누는 것입니다. 곱셈과 나눗셈은 서로 거꾸로인 관계입니다.',
   angle: '각의 크기를 각도라고 하고 1°를 단위로 잽니다.',
   transform: '밀면 모양은 그대로이고 자리만 바뀝니다. 뒤집으면 방향이 반대로, 돌리면 돌린 만큼 방향이 바뀝니다.',
+  fractionDiv: '(분수)÷(자연수)는 1/(자연수)을 곱한 것과 같고, 분모가 같으면 분자끼리 나눕니다.',
+  decimalDiv: '나누는 수와 나누어지는 수에 똑같이 10, 100을 곱해도 몫은 같습니다.',
+  ratio: '(비율)=(비교하는 양)÷(기준량)이고, 비례식에서 외항의 곱과 내항의 곱은 같습니다.',
+  volume: '(직육면체의 부피)=(가로)×(세로)×(높이)입니다.',
 };
 
 const studentConceptGuide: Record<ConceptTag, string> = {
@@ -223,6 +236,10 @@ const studentConceptGuide: Record<ConceptTag, string> = {
   division: '전체가 얼마이고 몇으로 나누는지, 또는 몇씩 묶는지 찾으세요.',
   angle: '두 변이 벌어진 정도를 보세요.',
   transform: '어느 방향으로 얼마만큼 움직였는지 보세요.',
+  fractionDiv: '무엇을 무엇으로 나누는지 먼저 보세요.',
+  decimalDiv: '소수점을 어디에 찍을지 어림해 보세요.',
+  ratio: '기준량이 무엇인지 먼저 찾으세요.',
+  volume: '가로, 세로, 높이를 먼저 찾으세요.',
 };
 
 // 문항에서 수를 읽어 내지 못했을 때 쓰는 말입니다.
@@ -260,6 +277,10 @@ const studentHintGuide: Record<ConceptTag, string> = {
   division: '나누는 수의 단 곱셈구구에서 나누어지는 수가 나오는 곳을 찾아보세요.',
   angle: '직각(90°)과 견주어 보세요.',
   transform: '도형의 한 부분이 어디로 가는지 따라가 보세요.',
+  fractionDiv: '그림으로 나누어 보세요.',
+  decimalDiv: '자연수의 나눗셈으로 바꾸어 보세요.',
+  ratio: '기호 : 의 오른쪽이 기준량이에요.',
+  volume: '1 cm³ 쌓기나무가 몇 개 들어가는지 생각해 보세요.',
 };
 
 const readStrategyGuide: Record<ConceptTag, string> = {
@@ -292,6 +313,10 @@ const readStrategyGuide: Record<ConceptTag, string> = {
   division: '전체의 수, 나누는 수, 구하는 것을 차례로 표시합니다.',
   angle: '각의 꼭짓점과 두 변을 먼저 찾습니다.',
   transform: '밀기, 뒤집기, 돌리기 가운데 무엇을 했는지 먼저 봅니다.',
+  fractionDiv: '나누어지는 수와 나누는 수를 먼저 찾습니다.',
+  decimalDiv: '나누어지는 수와 나누는 수의 소수점 자리를 봅니다.',
+  ratio: '비교하는 양과 기준량을 먼저 찾습니다.',
+  volume: '겉넓이인지 부피인지 먼저 봅니다.',
 };
 
 const misconceptionGuide: Record<ConceptTag, string> = {
@@ -324,6 +349,10 @@ const misconceptionGuide: Record<ConceptTag, string> = {
   division: '나누어지는 수와 나누는 수의 자리를 바꾸면 다른 식이 됩니다.',
   angle: '변의 길이가 길어도 각의 크기는 그대로입니다.',
   transform: '돌리기와 뒤집기를 헷갈리지 마세요.',
+  fractionDiv: '분모끼리도 나누지 마세요. 분모가 같으면 분자끼리 나눠요.',
+  decimalDiv: '몫의 소수점 자리를 빠뜨리지 마세요.',
+  ratio: '3 : 2와 2 : 3은 다른 비예요.',
+  volume: '겉넓이는 cm², 부피는 cm³로 써요.',
 };
 
 const selfCheckGuide: Record<ConceptTag, string> = {
@@ -356,6 +385,10 @@ const selfCheckGuide: Record<ConceptTag, string> = {
   division: '몫과 나누는 수를 곱하면 나누어지는 수가 되나요?',
   angle: '어림한 각도와 잰 각도가 비슷한가요?',
   transform: '처음 도형의 한 부분을 표시하고 따라가 보았나요?',
+  fractionDiv: '몫에 나누는 수를 곱하면 나누어지는 수가 되나요?',
+  decimalDiv: '어림한 몫과 소수점 자리가 맞나요?',
+  ratio: '기준량을 바르게 골랐나요?',
+  volume: '단위를 바르게 썼나요?',
 };
 
 const primaryTag = (lesson: Lesson): ConceptTag => {
@@ -17314,6 +17347,8 @@ export const generateQuestions = (
   if (lesson.semester.startsWith('1')) return [];
   const grade41 = generateGrade41Questions(lesson, difficulty);
   if (grade41) return grade41;
+  const grade42 = generateGrade42Questions(lesson, difficulty);
+  if (grade42) return grade42;
   if (lesson.semester.startsWith('4')) return [];
 
   if (lesson.title === '구구단, 몬스터를 막아라!') {
