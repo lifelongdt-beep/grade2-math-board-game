@@ -1,7 +1,7 @@
 import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
-import { 고르지않은다각형, 정다각형 } from './geom';
+import { 고르지않은다각형, 모양조각점, 정다각형 } from './geom';
 
 // ════════════════════════════════════════════════════════════════════
 // 4-2 6단원 다각형
@@ -177,6 +177,8 @@ const 모양조각: G5Family = {
       strategy: '모양 조각으로 채우기',
       hint: '모양 조각을 정삼각형 조각 몇 개로 나눌 수 있는지 생각해 보세요.',
       steps: [`${큰} 1개는 정삼각형 조각 ${조각[큰]}개, ${작은} 1개는 정삼각형 조각 ${조각[작은]}개와 같습니다.`, `그러므로 ${작은} 조각이 ${v}개 필요합니다.`],
+      // 두 조각을 같은 단위(한 변의 길이)로 그려 크기를 견주게 합니다.
+      visual: { kind: 'figure-set', label: '모양 조각', items: [큰, 작은].map((이름) => ({ name: 이름, shape: '사각형' as const, points: 모양조각점(이름) })) },
     };
   },
 };
@@ -193,7 +195,18 @@ const 만들수있는: G5Family = {
       { p: '정사각형 모양 조각 4개를 가로 2줄, 세로 2줄로 이어 붙이면 어떤 정다각형이 될까요?', a: '정사각형', w: ['정육각형', '정오각형', '정팔각형'], s: '가로와 세로가 같은 큰 정사각형이 됩니다.' },
     ];
     const q = qs[seed % qs.length];
-    return { prompt: q.p, answer: q.a, wrongs: q.w, tag: 'shape', strategy: '모양 조각으로 만들기', hint: '조각을 머릿속으로 이어 붙여 보세요.', steps: [q.s] };
+    const 조각이름 = (['정삼각형', '사다리꼴', '마름모', '정사각형'] as const).find((x) => q.p.startsWith(x))!;
+    const 개수 = Number(/조각 (\d)개/.exec(q.p)![1]);
+    return {
+      prompt: q.p,
+      answer: q.a,
+      wrongs: q.w,
+      tag: 'shape',
+      strategy: '모양 조각으로 만들기',
+      hint: '조각을 머릿속으로 이어 붙여 보세요.',
+      steps: [q.s],
+      visual: { kind: 'figure-set', label: '모양 조각', items: [{ name: `${조각이름} ${개수}개`, shape: '사각형', points: 모양조각점(조각이름) }] },
+    };
   },
 };
 
