@@ -38,6 +38,7 @@ import { generateGrade11Questions } from './grade11';
 import { generateGrade12Questions } from './grade12';
 import { generateGrade41Questions } from './grade41';
 import { generateGrade42Questions } from './grade42';
+import { generateGrade61Questions } from './grade61';
 import { buildFromTemplate, templateFits } from './questionTemplate';
 import type { DrawnVisual } from './questionTemplate';
 
@@ -1014,7 +1015,9 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'angle' ||
     visual.kind === 'bar-graph' ||
     visual.kind === 'line-graph' ||
-    visual.kind === 'grid-move'
+    visual.kind === 'grid-move' ||
+    // 6학년 그림입니다.
+    visual.kind === 'ratio-graph'
   ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };
   }
@@ -17350,6 +17353,9 @@ export const generateQuestions = (
   const grade42 = generateGrade42Questions(lesson, difficulty);
   if (grade42) return grade42;
   if (lesson.semester.startsWith('4')) return [];
+  const grade61 = generateGrade61Questions(lesson, difficulty);
+  if (grade61) return grade61;
+  if (lesson.semester.startsWith('6')) return [];
 
   if (lesson.title === '구구단, 몬스터를 막아라!') {
     const dans = options?.castleDans?.length ? options.castleDans : ALL_CASTLE_DEFENSE_DANS;
