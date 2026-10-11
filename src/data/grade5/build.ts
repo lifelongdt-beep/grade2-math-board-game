@@ -18,6 +18,14 @@ import {
   g3TagLabel,
   g32Overrides,
 } from '../grade3/support';
+import {
+  g1CoreConcept,
+  g1Misconception,
+  g1ReadStrategy,
+  g1SelfCheck,
+  g1StudentConcept,
+  g1TagLabel,
+} from '../grade1/support';
 
 // ════════════════════════════════════════════════════════════════════
 // 5학년 문항을 만드는 곳
@@ -186,7 +194,7 @@ const toQuestion = (
   // 3학년 문항은 조사를 '을(를)'처럼 괄호 꼴로 적어 두기도 합니다. 여기서
   // 앞말에 맞추어 하나로 고릅니다. 5학년 문항은 이미 고른 채로 오므로
   // 손대지 않습니다.
-  if (lesson.semester.startsWith('3')) {
+  if (!lesson.semester.startsWith('5')) {
     const 고름 = resolveParticles;
     spec = {
       ...spec,
@@ -207,7 +215,9 @@ const toQuestion = (
   // 3학년 차시는 3학년 말로 적은 도움말을 씁니다. 같은 갈래 이름이라도
   // 학년마다 할 말이 다릅니다(grade3/support.ts).
   const 셋째 = lesson.semester.startsWith('3');
-  const 도움 = 셋째
+  const 도움 = lesson.semester.startsWith('1')
+    ? { student: g1StudentConcept, core: g1CoreConcept, read: g1ReadStrategy, mis: g1Misconception, check: g1SelfCheck, label: g1TagLabel }
+    : 셋째
     ? lesson.semester === '3-2'
       ? {
           student: { ...g3StudentConcept, ...g32Overrides.student },

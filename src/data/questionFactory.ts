@@ -34,6 +34,7 @@ import { questionBank } from './questionBank';
 import { generateGrade5Questions } from './grade5';
 import { generateGrade51Questions } from './grade51';
 import { generateGrade31Questions } from './grade31';
+import { generateGrade11Questions } from './grade11';
 import { buildFromTemplate, templateFits } from './questionTemplate';
 import type { DrawnVisual } from './questionTemplate';
 
@@ -951,7 +952,13 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'box-net' ||
     visual.kind === 'spinner' ||
     visual.kind === 'marble-bag' ||
-    visual.kind === 'array'
+    visual.kind === 'array' ||
+    // 1학년 그림입니다. 이름표만 다듬습니다.
+    visual.kind === 'counters' ||
+    visual.kind === 'ten-frame' ||
+    visual.kind === 'tens-ones' ||
+    visual.kind === 'solids' ||
+    visual.kind === 'compare'
   ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };
   }
@@ -17276,6 +17283,10 @@ export const generateQuestions = (
   // 3학년 차시가 여기까지 내려왔다면 아직 문항을 만들지 않은 차시입니다.
   // 2학년 생성기로 떨어뜨리면 3학년 차시에 2학년 문제가 나오므로 비워 둡니다.
   if (lesson.semester.startsWith('3')) return [];
+  // 1학년 차시도 같은 까닭으로 자기 길로 갑니다.
+  const grade11 = generateGrade11Questions(lesson, difficulty);
+  if (grade11) return grade11;
+  if (lesson.semester.startsWith('1')) return [];
 
   if (lesson.title === '구구단, 몬스터를 막아라!') {
     const dans = options?.castleDans?.length ? options.castleDans : ALL_CASTLE_DEFENSE_DANS;

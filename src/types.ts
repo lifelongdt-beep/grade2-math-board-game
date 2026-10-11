@@ -5,7 +5,7 @@ export type SessionDuration = 30 | 60 | 120;
 // 어느 학기인지입니다. 2학년 1·2학기로 시작했고, 5학년 2학기가 뒤에
 // 붙었습니다. 5학년은 차시도 문항도 따로 만들기 때문에(grade5 폴더),
 // 여기서 하는 일은 '어느 학기의 차시인가'를 한 곳에 적어 두는 것뿐입니다.
-export type Semester = '2-1' | '2-2' | '3-1' | '3-2' | '5-1' | '5-2';
+export type Semester = '1-1' | '2-1' | '2-2' | '3-1' | '3-2' | '5-1' | '5-2';
 
 export type ConceptTag =
   | 'number'
@@ -787,6 +787,94 @@ export interface PatternVisual {
   missingIndex?: number;
 }
 
+// ── 1학년 그림 ───────────────────────────────────────────────────────
+// 1학년 아이는 글을 겨우 읽습니다. 지도서도 "구체물을 직접 세어 보고
+// 수로 나타내는 활동"을 앞세웁니다. 그래서 1학년 문항은 셀 물건을
+// 그대로 그려 줍니다.
+
+/** 셀 물건입니다. 한 무리에 같은 물건을 같은 색으로 그립니다. */
+export type CounterIcon = 'apple' | 'star' | 'flower' | 'fish' | 'ball' | 'dot' | 'car' | 'bird';
+
+export interface CountersVisual {
+  kind: 'counters';
+  label: string;
+  groups: Array<{
+    count: number;
+    icon: CounterIcon;
+    /** 무리 밑에 적을 이름입니다(예: 빨간 구슬). */
+    name?: string;
+    /** 뒤에서부터 몇 개에 ×를 그립니다. 덜어 낸 것(뺄셈)입니다. */
+    crossed?: number;
+    /** 이 무리를 '?'로 가립니다. 모으기·가르기에서 모르는 쪽입니다. */
+    hidden?: boolean;
+  }>;
+  /** 무리 사이에 놓을 표시입니다. 모으기는 '+', 가르기는 없음. */
+  joiner?: '+' | '-' | '→';
+  /**
+   * 한 줄로 늘어놓고 몇째를 표시합니다. marks는 왼쪽에서 0부터 셉니다.
+   * sides가 있으면 양 끝에 '왼쪽', '오른쪽'을 적습니다.
+   */
+  line?: { marks: number[]; sides?: boolean };
+}
+
+/** 십 배열판입니다. 칸을 왼쪽 위부터 채웁니다. */
+export interface TenFrameVisual {
+  kind: 'ten-frame';
+  label: string;
+  /** 판의 수(1 또는 2). 2이면 20까지입니다. */
+  frames: number;
+  /** 채울 바둑돌 무리입니다. 색이 다르면 모으기를 보여 줍니다. */
+  fills: Array<{ count: number; color: 'teal' | 'orange' }>;
+  /** 뒤에서부터 몇 개에 ×를 그립니다. */
+  crossed?: number;
+}
+
+/** 10개씩 묶음과 낱개입니다. 50까지의 수에서 씁니다. */
+export interface TensOnesVisual {
+  kind: 'tens-ones';
+  label: string;
+  tens: number;
+  ones: number;
+  /** 묶음 수와 낱개 수를 숫자로 적습니다. 세어 보게 하려면 끕니다. */
+  showDigits?: boolean;
+}
+
+/** 1-1 2단원의 상자·둥근기둥·공 모양입니다. 이름은 쓰지 않습니다. */
+export type SolidShape = 'box' | 'cylinder' | 'sphere';
+
+export interface SolidsVisual {
+  kind: 'solids';
+  label: string;
+  items: Array<{
+    shape: SolidShape;
+    /** 가, 나, 다 … 밑에 붙일 이름입니다. */
+    name?: string;
+    /** 눈에 띄게 테를 두릅니다. */
+    active?: boolean;
+    /** 물건 이름(예: 휴지 상자). 모양 밑에 작게 적습니다. */
+    thing?: string;
+    /** 일부만 보이게 가립니다. 상자 속에서 보이는 부분 맞히기입니다. */
+    peek?: boolean;
+  }>;
+}
+
+/**
+ * 1-1 4단원 비교하기입니다. 지도서: 임의 단위나 표준 단위를 쓰지
+ * 않고 직관적 비교와 직접 비교만 합니다. 그래서 눈금이나 수를 그리지
+ * 않습니다.
+ */
+export interface CompareVisual {
+  kind: 'compare';
+  label: string;
+  mode: 'length' | 'weight' | 'area' | 'capacity' | 'water';
+  /**
+   * size는 그림의 크기입니다. length는 막대 길이, area는 판의 넓이,
+   * capacity는 그릇 크기, water는 같은 그릇에 담긴 물의 높이,
+   * weight는 무게(시소가 기우는 쪽을 정합니다).
+   */
+  items: Array<{ name: string; size: number; color?: string }>;
+}
+
 export type QuestionVisual =
   | PlaneShapesVisual
   | CubeStackVisual
@@ -819,7 +907,12 @@ export type QuestionVisual =
   | GroupedVisual
   | PictureGraphVisual
   | ShareVisual
-  | PatternVisual;
+  | PatternVisual
+  | CountersVisual
+  | TenFrameVisual
+  | TensOnesVisual
+  | SolidsVisual
+  | CompareVisual;
 
 export interface Player {
   id: number;
