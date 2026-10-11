@@ -155,7 +155,7 @@ const 자리모아쓰기 = (digits: number): G5Family => ({
     const ds = String(n).split('').map(Number);
     const 이름 = 자리이름.slice(0, digits).reverse();
     // 0인 자리는 말하지 않습니다(지도서: '1000이 0개'라고 쓰지 않음).
-    const 말 = ds.map((d, k) => (d === 0 ? '' : `${digits - 1 - k === 4 ? '10000' : 값이름(1, digits - 1 - k)}이 ${d}개`)).filter(Boolean).join(', ');
+    const 말 = ds.map((d, k) => (d === 0 ? '' : `${digits === 5 && digits - 1 - k === 4 ? '10000' : 값이름(1, digits - 1 - k)}이 ${d}개`)).filter(Boolean).join(', ');
     const 빠뜨림 = Number(ds.filter((d) => d !== 0).join(''));
     return {
       prompt: `${말}인 수는 얼마일까요?`,

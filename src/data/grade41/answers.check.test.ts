@@ -451,3 +451,51 @@ describe('4-1 6단원 규칙 찾기', () => {
     }
   });
 });
+
+describe('4-1 그림과 문항이 어긋나지 않습니다', () => {
+  const 각도 = (p: Array<[number, number]>, i: number) => {
+    const n = p.length;
+    const [o, a, b] = [p[i], p[(i + 1) % n], p[(i + n - 1) % n]];
+    const v1 = [a[0] - o[0], a[1] - o[1]];
+    const v2 = [b[0] - o[0], b[1] - o[1]];
+    return (Math.acos((v1[0] * v2[0] + v1[1] * v2[1]) / (Math.hypot(v1[0], v1[1]) * Math.hypot(v2[0], v2[1]))) * 180) / Math.PI;
+  };
+  it('각도기·시계·직선·도형 그림의 값이 문제와 같습니다', () => {
+    let count = 0;
+    for (const { q } of 모두) {
+      const v = q.visual;
+      if (v?.kind === 'protractor') {
+        expect(수(q.answer), q.prompt).toBe(v.deg);
+        count += 1;
+      }
+      if (v?.kind === 'clock') {
+        const m = /^(\d+)시 정각/.exec(q.prompt)!;
+        expect(v.hour, q.prompt).toBe(Number(m[1]));
+        expect(v.minute, q.prompt).toBe(0);
+      }
+      if (v?.kind === 'angle-split') {
+        expect(q.prompt, q.prompt).toContain(`한 각이 ${v.known}°`);
+        expect(수(q.answer), q.prompt).toBe(180 - v.known);
+      }
+      if (v?.kind === 'figure-set') {
+        for (const item of v.items) {
+          for (const label of item.angleLabels ?? []) {
+            if (label.text === '?') expect(Math.abs(각도(item.points as Array<[number, number]>, label.at) - 수(q.answer)), q.prompt).toBeLessThan(0.6);
+            else expect(Math.abs(각도(item.points as Array<[number, number]>, label.at) - 수(label.text)), q.prompt).toBeLessThan(0.6);
+            count += 1;
+          }
+        }
+      }
+      if (v?.kind === 'number-array') {
+        // 표의 이웃한 칸끼리 일정하게 커지고, ?를 채우면 그 규칙이 맞습니다.
+        const filled = v.rows.map((row) => row.map((x) => (x === null ? 수(q.answer) : x)));
+        const 가로 = filled[0][1] - filled[0][0];
+        const 세로 = filled[1][0] - filled[0][0];
+        filled.forEach((row, r) => row.forEach((x, c) => expect(x, q.prompt).toBe(filled[0][0] + r * 세로 + c * 가로)));
+        expect(v.rows.flat().filter((x) => x === null).length, q.prompt).toBe(1);
+        count += 1;
+      }
+    }
+    expect(count).toBeGreaterThan(100);
+  });
+});
