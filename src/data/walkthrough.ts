@@ -351,7 +351,12 @@ const timeWalk = (w: Extract<Walkthrough, { kind: 'time' }>): ColumnWalk => {
   return { type: 'column', cols: units.length, rows, frames, result: rm * 60 + rs, stopAt: 1, wide: true };
 };
 
-export const buildWalk = (w: Walkthrough): ColumnWalk | DivWalk => {
+export type AnyWalk = ColumnWalk | DivWalk | ExprWalk | DecWalk | ChainWalk;
+
+export const buildWalk = (w: Walkthrough): AnyWalk => {
+  if (w.kind === 'expr') return exprSteps(w.expr)!;
+  if (w.kind === 'decmul') return decWalk(w.a, w.b);
+  if (w.kind === 'chain') return { type: 'chain', lines: w.lines, says: w.says };
   const walk = w.kind === 'time' ? timeWalk(w)
     : w.kind === 'add' ? addWalk(w.a, w.b)
     : w.kind === 'sub' ? subWalk(w.a, w.b)
@@ -400,13 +405,15 @@ const deriveTime = (prompt: string, answer: string): Walkthrough | null => {
   return null;
 };
 
-export const deriveWalkthrough = (prompt: string, steps: string[], semester: string, answer = ''): Walkthrough | null => {
+export const deriveWalkthrough = (prompt: string, steps: string[], semester: string, answer = '', lessonId = ''): Walkthrough | null => {
+  if (semester.startsWith('5')) return deriveGrade5Walk(lessonId, steps, answer);
   if (!semester.startsWith('3')) return null;
   const 때 = semester === '3-1' ? deriveTime(prompt, answer) : null;
   if (때) return 때;
   if (/어림/.test(prompt) || /\d\/\d/.test(prompt) || 두단위.test(prompt) || /의 \d+\/\d+/.test(steps.join(' '))) return null;
   const 문제수 = new Set(prompt.match(/\d+/g) ?? []);
-  const 후보: Walkthrough[] = [];
+  type 셈 = Extract<Walkthrough, { kind: 'add' | 'sub' | 'mul' | 'div' }>;
+  const 후보: 셈[] = [];
   for (const line of steps) {
     for (const m of line.matchAll(식꼴)) {
       const a = Number(m[1]);
@@ -428,8 +435,178 @@ export const deriveWalkthrough = (prompt: string, steps: string[], semester: str
   if (!후보.length) return null;
   const 문제에서 = 후보.filter((w) => 문제수.has(String(w.a)) && 문제수.has(String(w.b)));
   const pool = 문제에서.length ? 문제에서 : 후보;
-  const 크기 = (w: Walkthrough) => String(w.a).length + String(w.b).length;
+  const 크기 = (w: 셈) => String(w.a).length + String(w.b).length;
   const 최대 = Math.max(...pool.map(크기));
   const 남은 = [...new Map(pool.filter((w) => 크기(w) === 최대).map((w) => [`${w.kind}${w.a},${w.b}`, w])).values()];
   return 남은.length === 1 ? 남은[0] : null;
+};
+
+// ════════════════════════════════════════════════════════════════════
+// 5학년: 혼합 계산, 소수의 곱셈, 분수 계산 줄
+// ════════════════════════════════════════════════════════════════════
+
+/** 혼합 계산의 한 장면입니다. hl은 지금 계산하는 부분(토큰 차례), fresh는 막 나온 값입니다. */
+export type ExprFrame = { tokens: string[]; hl: [number, number] | null; fresh: number | null; say: string };
+export type ExprWalk = { type: 'expr'; frames: ExprFrame[]; value: number };
+
+const 토큰 = (expr: string): string[] => [...(expr.replace(/\s+/g, '').match(/\d+|[+\-×÷()]/g) ?? [])];
+
+/** 계산 순서대로 한 번씩 계산합니다. 나누어떨어지지 않으면 null입니다. */
+export const exprSteps = (expr: string): ExprWalk | null => {
+  let t: string[] = [...토큰(expr)];
+  if (t.join('') !== expr.replace(/\s+/g, '')) return null;
+  const frames: ExprFrame[] = [{ tokens: [...t], hl: null, fresh: null, say: '계산하는 차례를 정해 한 부분씩 계산합니다.' }];
+  for (let guard = 0; guard < 20 && t.length > 1; guard += 1) {
+    // 가장 안쪽 괄호를 찾습니다.
+    const close = t.indexOf(')');
+    let from = 0;
+    let to = t.length - 1;
+    let 괄호 = false;
+    if (close >= 0) {
+      const open = t.lastIndexOf('(', close);
+      if (open < 0) return null;
+      from = open + 1;
+      to = close - 1;
+      괄호 = true;
+    }
+    let at = -1;
+    for (let k = from; k <= to; k += 1) if (t[k] === '×' || t[k] === '÷') { at = k; break; }
+    const 곱셈먼저 = at >= 0;
+    if (at < 0) for (let k = from; k <= to; k += 1) if (t[k] === '+' || t[k] === '-') { at = k; break; }
+    if (at < 0) return null;
+    const x = Number(t[at - 1]);
+    const y = Number(t[at + 1]);
+    const op = t[at];
+    if (Number.isNaN(x) || Number.isNaN(y)) return null;
+    const v = op === '+' ? x + y : op === '-' ? x - y : op === '×' ? x * y : x / y;
+    if (!Number.isInteger(v) || v < 0) return null;
+    const 남은연산 = t.slice(from, to + 1).filter((one) => /[+\-×÷]/.test(one)).length;
+    const 왜 = 괄호
+      ? '( ) 안을 가장 먼저 계산합니다.'
+      : 곱셈먼저
+        ? (t.filter((one) => one === '×' || one === '÷').length > 1 ? '곱셈과 나눗셈은 앞에서부터 차례로, 덧셈·뺄셈보다 먼저 계산합니다.' : '곱셈과 나눗셈을 덧셈·뺄셈보다 먼저 계산합니다.')
+        : '덧셈과 뺄셈은 앞에서부터 차례로 계산합니다.';
+    frames.push({ tokens: [...t], hl: [at - 1, at + 1], fresh: null, say: `${왜} ${x}${op}${y}=${v}` });
+    // 괄호 안이 이 계산 하나뿐이면 괄호도 함께 벗깁니다.
+    const 벗김 = 괄호 && 남은연산 === 1;
+    const left = 벗김 ? at - 2 : at - 1;
+    const right = 벗김 ? at + 2 : at + 1;
+    t = [...t.slice(0, left), String(v), ...t.slice(right + 1)];
+    frames.push({ tokens: [...t], hl: null, fresh: left, say: `${x}${op}${y}을(를) ${v}(으)로 바꾸어 씁니다.` });
+  }
+  if (t.length !== 1) return null;
+  const value = Number(t[0]);
+  frames.push({ tokens: [...t], hl: null, fresh: null, say: `그러므로 계산 결과는 ${value}입니다.` });
+  return { type: 'expr', frames: frames.map((f) => ({ ...f, say: 말(f.say) })), value };
+};
+
+/** 소수의 곱셈 장면입니다. point는 곱에서 소수점이 놓인 자리(오른쪽에서 몇 자리)입니다. */
+export type DecFrame = { stage: 'write' | 'whole' | 'count' | 'point' | 'done'; point: number; say: string };
+export type DecWalk = { type: 'decmul'; a: string; b: string; product: string; digits: string; places: [number, number]; frames: DecFrame[]; result: string };
+
+const 소수자리 = (x: string) => (x.includes('.') ? x.split('.')[1].length : 0);
+
+export const decWalk = (a: string, b: string): DecWalk => {
+  const pa = 소수자리(a);
+  const pb = 소수자리(b);
+  const ia = Number(a.replace('.', ''));
+  const ib = Number(b.replace('.', ''));
+  const whole = ia * ib;
+  const 자리 = pa + pb;
+  // 소수점을 찍을 자리가 모자라면 앞에 0을 채웁니다(0.3×0.2=0.06).
+  const digits = String(whole).padStart(자리 + 1, '0');
+  const raw = 자리 ? `${digits.slice(0, digits.length - 자리)}.${digits.slice(digits.length - 자리)}` : digits;
+  // 소수점 아래 끝자리 0은 지웁니다(교과서와 같음).
+  const result = 자리 ? raw.replace(/0+$/, '').replace(/\.$/, '') : raw;
+  const frames: DecFrame[] = [
+    { stage: 'write', point: 0, say: `${a} × ${b}에서 소수점을 지우고 자연수처럼 곱합니다.` },
+    { stage: 'whole', point: 0, say: `${ia} × ${ib} = ${whole}입니다.` },
+    { stage: 'count', point: 0, say: `${a}은(는) 소수점 아래 ${pa}자리, ${b}은(는) ${pb}자리입니다. ${pa} + ${pb} = ${자리}이므로 곱의 소수점 아래도 ${자리}자리입니다.` },
+    { stage: 'point', point: 자리, say: 자리 ? `${whole}의 오른쪽 끝에서 왼쪽으로 ${자리}자리 옮겨 소수점을 찍습니다.${digits !== String(whole) ? ' 모자란 자리에는 0을 채웁니다.' : ''}` : '소수점 아래 자리가 없으므로 그대로입니다.' },
+    { stage: 'done', point: 자리, say: `그러므로 ${a} × ${b} = ${result}입니다.${raw !== result ? ` (소수점 아래 끝의 0은 생략합니다.)` : ''}` },
+  ];
+  return { type: 'decmul', a, b, product: String(whole), digits, places: [pa, pb], frames: frames.map((f) => ({ ...f, say: 말(f.say) })), result };
+};
+
+/** 식을 한 줄씩 써 내려가는 풀이입니다. */
+export type ChainWalk = { type: 'chain'; lines: string[]; says: string[] };
+
+/** 분수 계산 줄에서 앞 줄과 견주어 무엇을 했는지 말합니다. */
+const 줄설명 = (prev: string, line: string): string => {
+  const op = (s: string) => (s.match(/ ([+\-×]) /) ?? [])[1];
+  const 분모들 = (s: string) => [...s.matchAll(/\/(\d+)/g)].map((m) => m[1]).join(',');
+  if (op(prev) && op(line) && op(prev) === op(line)) return 분모들(prev) !== 분모들(line) ? '분모를 같게 통분합니다.' : '식을 바꾸어 씁니다.';
+  if (op(prev) === '+' && !op(line)) return '분모는 그대로 두고 분자끼리 더합니다.';
+  if (op(prev) === '-' && !op(line)) return '분모는 그대로 두고 분자끼리 뺍니다.';
+  if (op(prev) === '×' && !op(line)) return '분자는 분자끼리, 분모는 분모끼리 곱합니다.';
+  if (/과|와/.test(line) && !/과|와/.test(prev)) return '가분수를 대분수로 나타냅니다.';
+  return '약분하여 간단히 나타냅니다.';
+};
+
+export const chainFrom = (steps: string[], answer: string): Walkthrough | null => {
+  // '1/3 + 4/5 = 5/15 + 12/15 = 17/15'처럼 = 로 이은 줄을 찾습니다.
+  const at = steps.findIndex((s) => / = /.test(s) && /\d\/\d/.test(s) && / [+\-×] /.test(s));
+  if (at < 0) return null;
+  // 여러 식을 견주는 문항(두 식 중 더 큰 것)은 따라갈 줄이 하나가 아닙니다.
+  if (steps.filter((s) => / = /.test(s) && / [+\-×] /.test(s)).length > 1) return null;
+  const stages = steps[at].replace(/입니다\.?$/, '').split(' = ').map((x) => x.trim());
+  if (stages.length < 2 || stages.some((x) => !/^[\d/과와 +\-×]+$/.test(x))) return null;
+  // 다음 줄이 약분·대분수로 고친 것이면 이어 붙입니다.
+  const 답 = answer.replace(/\s+(km|m|cm|mm|kg|g|t|L|mL|cm²|m²|시간|분|초)$/, '').trim();
+  if (stages[stages.length - 1] !== 답) {
+    if (!steps.slice(at + 1).some((s) => s.includes(답))) return null;
+    stages.push(답);
+  }
+  const says = stages.map((line, k) => (k === 0 ? '식을 씁니다.' : 줄설명(stages[k - 1], line)));
+  return { kind: 'chain', lines: stages, says };
+};
+
+/** 소수의 곱셈 문항에서 '그러므로 5.6 × 8 = 44.8'을 찾습니다. */
+const decFrom = (steps: string[]): Walkthrough | null => {
+  const found = new Map<string, Walkthrough>();
+  for (const s of steps) {
+    for (const m of s.matchAll(/(\d+(?:\.\d+)?) × (\d+(?:\.\d+)?) = (\d+(?:\.\d+)?)/g)) {
+      if (!m[1].includes('.') && !m[2].includes('.')) continue;
+      if (decWalk(m[1], m[2]).result !== m[3]) continue;
+      found.set(`${m[1]}×${m[2]}`, { kind: 'decmul', a: m[1], b: m[2] });
+    }
+  }
+  return found.size === 1 ? [...found.values()][0] : null;
+};
+
+/** 혼합 계산 문항에서 '45-7×3+5 = 45-21+5'의 첫 식을 찾습니다. */
+const exprFrom = (steps: string[]): Walkthrough | null => {
+  const 줄 = steps.filter((s) => /^[\d+\-×÷() ]+ = [\d+\-×÷() ]+$/.test(s.trim()));
+  if (!줄.length) return null;
+  const 시작들 = 줄.filter((s, k) => k === 0 || s.split(' = ')[0].trim() !== 줄[k - 1].split(' = ')[1].trim());
+  if (시작들.length !== 1) return null;
+  const expr = 줄[0].split(' = ')[0].trim();
+  if ((expr.match(/[+\-×÷]/g) ?? []).length < 2) return null;
+  const walk = exprSteps(expr);
+  const 끝 = Number(줄[줄.length - 1].split(' = ')[1].trim());
+  return walk && walk.value === 끝 ? { kind: 'expr', expr } : null;
+};
+
+/** 5학년 문항의 따라가기입니다. 차시마다 맞는 것만 봅니다. */
+export const deriveGrade5Walk = (lessonId: string, steps: string[], answer: string): Walkthrough | null => {
+  if (lessonId.startsWith('5-1-u1-')) return exprFrom(steps);
+  if (lessonId.startsWith('5-2-u4-')) return decFrom(steps);
+  if (lessonId.startsWith('5-1-u5-') || lessonId.startsWith('5-2-u2-')) return chainFrom(steps, answer);
+  return null;
+};
+
+/** 2학년 덧셈·뺄셈: 글 속의 식을 계산한 값이 답과 같을 때만 세로셈을 붙입니다. */
+export const deriveGrade2Walk = (prompt: string, answer: string, solution: string): Walkthrough | null => {
+  if (두단위.test(prompt)) return null;
+  const 답 = answer.replace(/[^\d]/g, '');
+  if (!답 || 답 !== answer.replace(/(개|장|명|마리|권|자루|번|cm|m)$/, '').trim()) return null;
+  for (const text of [prompt, solution]) {
+    for (const m of text.matchAll(/(\d+)\s*([+-])\s*(\d+)/g)) {
+      const a = Number(m[1]);
+      const b = Number(m[3]);
+      const c = m[2] === '+' ? a + b : a - b;
+      if (a >= 10 && c >= 0 && String(c) === 답 && !(a % 10 === 0 && b % 10 === 0)) return { kind: m[2] === '+' ? 'add' : 'sub', a, b };
+    }
+  }
+  return null;
 };
