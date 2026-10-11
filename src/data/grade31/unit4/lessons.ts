@@ -42,8 +42,8 @@ const 오개념: Record<MulKind, string> = {
 // ── 계산 ────────────────────────────────────────────────────────────
 const 계산문항 = (kind: MulKind): G5Family => ({
   id: `calc-${kind}`,
-  make: (seed) => {
-    const one = mulFor(kind, seed);
+  make: (seed, lv) => {
+    const one = mulFor(kind, seed, lv);
     return {
       prompt: `${eul(식(one))} 계산하면 얼마일까요?`,
       answer: String(one.result),
@@ -62,8 +62,8 @@ const 계산문항 = (kind: MulKind): G5Family => ({
 // ── 나누어 곱하기: 36×4=30×4+6×4 ────────────────────────────────────
 const 가르기문항 = (kind: MulKind): G5Family => ({
   id: `split-${kind}`,
-  make: (seed) => {
-    const one = mulFor(kind, seed + 7);
+  make: (seed, lv) => {
+    const one = mulFor(kind, seed + 7, lv);
     const t = Math.floor(one.a / 10) * 10;
     const o = one.a % 10;
     if (o === 0) return null;
@@ -88,8 +88,8 @@ const 가르기문항 = (kind: MulKind): G5Family => ({
 // ── 세로 계산에서 각 줄이 나타내는 것 ──────────────────────────────
 const 부분곱문항 = (kind: MulKind): G5Family => ({
   id: `partial-${kind}`,
-  make: (seed) => {
-    const one = mulFor(kind, seed + 11);
+  make: (seed, lv) => {
+    const one = mulFor(kind, seed + 11, lv);
     const t = Math.floor(one.a / 10);
     const o = one.a % 10;
     if (o === 0) return null;
@@ -115,8 +115,8 @@ const 부분곱문항 = (kind: MulKind): G5Family => ({
 // ── 수 모형 ─────────────────────────────────────────────────────────
 const 수모형문항 = (kind: MulKind): G5Family => ({
   id: `blocks-${kind}`,
-  make: (seed) => {
-    const one = mulFor(kind, seed + 13);
+  make: (seed, lv) => {
+    const one = mulFor(kind, seed + 13, lv);
     const t = Math.floor(one.a / 10);
     const o = one.a % 10;
     const 십 = t * one.m;
@@ -159,8 +159,8 @@ const 장면들 = [
 
 const 문장제문항 = (kind: MulKind, at: number): G5Family => ({
   id: `word-${kind}-${at}`,
-  make: (seed) => {
-    const one = mulFor(kind, seed + at * 17);
+  make: (seed, lv) => {
+    const one = mulFor(kind, seed + at * 17, lv);
     const scene = pick(장면들, seed + at)(one.a, one.m);
     const 단위 = (v: number) => `${v}${scene.unit}`;
     return {
@@ -189,8 +189,8 @@ const 이름들 = ['은지', '도윤', '서아', '하준', '지우', '민재'];
 
 const 고치기문항 = (kind: MulKind): G5Family => ({
   id: `fix-${kind}`,
-  make: (seed) => {
-    const one = mulFor(kind, seed + 19);
+  make: (seed, lv) => {
+    const one = mulFor(kind, seed + 19, lv);
     const ms = 실수들(one);
     if (!ms.length) return null;
     const mistake = pick(ms, seed);
@@ -212,7 +212,7 @@ const 고치기문항 = (kind: MulKind): G5Family => ({
 // ── 상: 수 카드로 가장 큰 곱 / 어떤 수 / 비교 ───────────────────────
 const 수카드문항: G5Family = {
   id: 'cards',
-  make: (seed) => {
+  make: (seed, lv) => {
     const next = rand(seed + 23);
     const cards = new Set<number>();
     while (cards.size < 3) cards.add(2 + next(8));
@@ -243,8 +243,8 @@ const 수카드문항: G5Family = {
 
 const 어떤수문항 = (kind: MulKind): G5Family => ({
   id: `unknown-${kind}`,
-  make: (seed) => {
-    const one = mulFor(kind, seed + 29);
+  make: (seed, lv) => {
+    const one = mulFor(kind, seed + 29, lv);
     return {
       prompt: `어떤 수를 ${euro(String(one.m))} 나누었더니 몫이 ${one.a}이었습니다. 어떤 수는 얼마일까요?`.replace(/(\d)이었습니다/, (_, d: string) => `${d}${particleOf(d, '이') === '이' ? '이었습니다' : '였습니다'}`),
       answer: String(one.result),
@@ -261,10 +261,10 @@ const 어떤수문항 = (kind: MulKind): G5Family => ({
 
 const 곱비교문항 = (kind: MulKind): G5Family => ({
   id: `biggest-${kind}`,
-  make: (seed) => {
+  make: (seed, lv) => {
     const list: Mul[] = [];
     for (let at = 0; at < 20 && list.length < 4; at += 1) {
-      const one = mulFor(kind, seed * 5 + at * 41);
+      const one = mulFor(kind, seed * 5 + at * 41, lv);
       if (list.some((o) => Math.abs(o.result - one.result) < 3)) continue;
       list.push(one);
     }
@@ -299,7 +299,7 @@ const 어림쌍 = (seed: number) => {
 
 const 어림식문항: G5Family = {
   id: 'est-expr',
-  make: (seed) => {
+  make: (seed, lv) => {
     const { a, m, r } = 어림쌍(seed);
     const 아래 = Math.floor(a / 10) * 10;
     const 다른 = r === 아래 ? 아래 + 10 : 아래;
@@ -320,7 +320,7 @@ const 어림식문항: G5Family = {
 
 const 어림값문항: G5Family = {
   id: 'est-value',
-  make: (seed) => {
+  make: (seed, lv) => {
     const { a, m, r } = 어림쌍(seed + 3);
     const 장면 = pick([
       { prompt: `한 상자에 귤이 ${a}개씩 들어 있습니다. ${m}상자에 들어 있는 귤은 약 몇 개인지 어림셈으로 구하면 얼마일까요?`, unit: '개' },
@@ -346,7 +346,7 @@ const 어림값문항: G5Family = {
 
 const 어림판단문항: G5Family = {
   id: 'est-check',
-  make: (seed) => {
+  make: (seed, lv) => {
     const { a, m, r } = 어림쌍(seed + 5);
     const exact = a * m;
     const 값 = r * m;
@@ -388,7 +388,7 @@ const 어림판단문항: G5Family = {
 // ── 단원 도입 ───────────────────────────────────────────────────────
 const 몇십문항: G5Family = {
   id: 'tens',
-  make: (seed) => {
+  make: (seed, lv) => {
     const next = rand(seed + 31);
     const t = 2 + next(8);
     const m = 2 + next(4);
@@ -410,8 +410,8 @@ const 몇십문항: G5Family = {
 
 const 반복덧셈문항: G5Family = {
   id: 'repeat-add',
-  make: (seed) => {
-    const one = mulFor(pick(['none', 'ones'] as MulKind[], seed), seed + 37);
+  make: (seed, lv) => {
+    const one = mulFor(pick(['none', 'ones'] as MulKind[], seed), seed + 37, lv);
     if (one.m > 5) return null;
     const 덧셈 = Array(one.m).fill(one.a).join('+');
     return {
@@ -430,7 +430,7 @@ const 반복덧셈문항: G5Family = {
 
 const 구구문항: G5Family = {
   id: 'times-table',
-  make: (seed) => {
+  make: (seed, lv) => {
     const next = rand(seed + 41);
     const a = 2 + next(8);
     const b = 2 + next(8);

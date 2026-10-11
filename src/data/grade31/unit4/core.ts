@@ -1,3 +1,4 @@
+import type { Difficulty } from '../../../types';
 import { rand } from '../../grade5/util';
 
 // ════════════════════════════════════════════════════════════════════
@@ -33,13 +34,17 @@ export const kindOf = (a: number, m: number): MulKind => {
   return 'both';
 };
 
-export const mulFor = (kind: MulKind, seed: number): Mul => {
+export const mulFor = (kind: MulKind, seed: number, lv?: Difficulty): Mul => {
   const next = rand(seed);
-  for (let attempt = 0; attempt < 400; attempt += 1) {
+  for (let attempt = 0; attempt < 600; attempt += 1) {
     const a = 11 + next(89);
     const m = 2 + next(8);
     // 11×m처럼 같은 숫자가 반복되거나 몇십(20, 30)만 계속 나오지 않게 섞습니다.
     if (kindOf(a, m) !== kind) continue;
+    // 수준에 맞춘 곱하는 수: 하는 2~5, 상은 5 이상(올림이 없는 꼴은
+    // 큰 수를 곱하기 어려워 3 이상). 앞쪽 시도에서만 고집합니다.
+    if (attempt < 450 && lv === '하' && m > 5) continue;
+    if (attempt < 450 && lv === '상' && m < (kind === 'none' ? 3 : 5)) continue;
     return { a, m, result: a * m, kind };
   }
   const fallback: Record<MulKind, [number, number]> = { none: [21, 3], tens: [32, 4], ones: [18, 2], both: [36, 4] };

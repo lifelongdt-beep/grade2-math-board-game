@@ -191,7 +191,7 @@ const 띠종이문항: G5Family = {
     const a = 2 + next(9);
     const 지름묻기 = next(2) === 0;
     return {
-      prompt: `띠 종이의 한 구멍에 누름 못을 꽂고, 누름 못에서 ${a} cm 떨어진 구멍에 연필을 넣어 한 바퀴 돌려 원을 그렸습니다. 이 원의 ${지름묻기 ? '지름' : '반지름'}은 몇 cm일까요?`,
+      prompt: `띠 종이의 누름 못에서 ${a} cm 떨어진 구멍에 연필을 넣어 원을 그렸습니다. 이 원의 ${지름묻기 ? '지름' : '반지름'}은 몇 cm일까요?`,
       answer: `${지름묻기 ? a * 2 : a} cm`,
       wrongs: (지름묻기 ? [a, a + 2, a * 4] : [a * 2, a + 1, a * 4]).map((v) => `${v} cm`),
       tag: 'shape',
@@ -200,6 +200,12 @@ const 띠종이문항: G5Family = {
       hint: '누름 못은 원의 무엇이 되고, 누름 못에서 연필까지의 거리는 무엇이 되나요?',
       steps: [`누름 못은 원의 중심, 누름 못에서 연필까지 ${a} cm는 반지름입니다.`, 지름묻기 ? `지름은 반지름의 2배이므로 ${a}×2=${a * 2}(cm)입니다.` : `그러므로 반지름은 ${a} cm입니다.`],
       misconceptionTip: '누름 못에서 연필까지의 거리는 지름이 아니라 반지름입니다.',
+      visual: {
+        kind: 'circles',
+        label: `띠 종이의 누름 못에서 ${a} cm 떨어진 구멍에 연필을 넣어 그린 원`,
+        circles: [{ cx: 0, cy: 0, r: a }],
+        strip: { angle: 20, holes: a + 1, pencilAt: a },
+      },
     };
   },
 };
@@ -223,6 +229,9 @@ const 지름반지름문항: G5Family = {
         ? ['지름은 반지름 2개를 이은 것과 같습니다.', `${r}×2=${r * 2}이므로 지름은 ${r * 2} cm입니다.`]
         : ['반지름은 지름의 반입니다.', `${r * 2}÷2=${r}이므로 반지름은 ${r} cm입니다.`],
       misconceptionTip: '반지름과 지름을 바꾸어 생각하지 마세요. 지름이 반지름보다 깁니다.',
+      visual: 반지름주고
+        ? { kind: 'circles', label: `반지름이 ${r} cm인 원`, circles: [{ cx: 0, cy: 0, r }], points: [{ x: 0, y: 0, name: 'ㅇ' }], segments: [{ from: [0, 0], to: [r * Math.cos(Math.PI / 6), -r * Math.sin(Math.PI / 6)], name: `${r} cm` }] }
+        : { kind: 'circles', label: `지름이 ${r * 2} cm인 원`, circles: [{ cx: 0, cy: 0, r }], points: [{ x: 0, y: 0, name: 'ㅇ' }], segments: [{ from: [-r, 0], to: [r, 0], name: `${r * 2} cm` }] },
     };
   },
 };
@@ -448,6 +457,7 @@ const 컴퍼스벌리기문항: G5Family = {
       hint: '컴퍼스를 벌린 길이는 원의 반지름인가요, 지름인가요?',
       steps: [`지름이 ${r * 2} cm이므로 반지름은 ${r * 2}÷2=${r}(cm)입니다.`, `컴퍼스는 반지름만큼 벌리므로 ${r} cm 벌립니다.`],
       misconceptionTip: `${r * 2} cm만큼 벌리면 지름이 ${r * 4} cm인 원이 그려집니다.`,
+      visual: { kind: 'circles', label: `지름이 ${r * 2} cm인 원`, circles: [{ cx: 0, cy: 0, r }], points: [{ x: 0, y: 0, name: 'ㅇ' }], segments: [{ from: [-r, 0], to: [r, 0], name: `${r * 2} cm` }] },
     };
   },
 };
@@ -544,6 +554,14 @@ const 같은거리문항: G5Family = {
       hint: '점을 찍을 때 점 ㅇ에서 얼마만큼 떨어진 곳에 찍었나요?',
       steps: [`모든 점을 점 ㅇ에서 ${a} cm 떨어진 곳에 찍었습니다.`, `그러므로 찍은 점들은 모두 점 ㅇ에서 ${a} cm 떨어져 있습니다.`],
       misconceptionTip: '점의 위치가 달라도 점 ㅇ까지의 거리는 모두 같습니다.',
+      // 점 ㅇ과 찍은 점 8개, 그 가운데 한 점까지만 길이를 적습니다.
+      visual: {
+        kind: 'circles',
+        label: `점 ㅇ에서 ${a} cm 떨어진 곳에 찍은 점들`,
+        circles: [{ cx: 0, cy: 0, r: a, faint: true }],
+        points: [{ x: 0, y: 0, name: 'ㅇ' }, ...Array.from({ length: 8 }, (_, k) => ({ x: a * Math.cos(Math.PI / 8 + (k * Math.PI) / 4), y: a * Math.sin(Math.PI / 8 + (k * Math.PI) / 4) }))],
+        segments: [{ from: [0, 0], to: [a * Math.cos(-Math.PI / 8), a * Math.sin(-Math.PI / 8)], name: `${a} cm` }],
+      },
     };
   },
 };
@@ -554,7 +572,7 @@ const 운동장문항: G5Family = {
     const next = rand(seed + 13);
     const a = 2 + next(14);
     return {
-      prompt: `운동장에 막대를 꽂고 길이가 ${a} m인 줄의 한쪽 끝을 묶었습니다. 줄을 팽팽하게 당긴 채 한 바퀴 돌며 선을 그었습니다. 막대에서 그은 선까지의 거리는 어디에서나 몇 m일까요?`,
+      prompt: `막대에 묶은 ${a} m 줄을 팽팽하게 당겨 한 바퀴 돌며 선을 그었습니다. 막대에서 선까지의 거리는 어디에서나 몇 m일까요?`,
       answer: `${a} m`,
       wrongs: [`${a * 2} m`, `${a + 1} m`, '곳마다 다릅니다.'],
       tag: 'shape',
@@ -563,6 +581,7 @@ const 운동장문항: G5Family = {
       hint: '줄을 팽팽하게 당기면 막대에서 줄 끝까지의 거리는 어떻게 되나요?',
       steps: [`줄의 길이가 ${a} m이므로 줄 끝은 막대에서 늘 ${a} m 떨어져 있습니다.`, `그러므로 그은 선은 막대에서 어디에서나 ${a} m 떨어져 있습니다.`],
       misconceptionTip: '줄을 느슨하게 하면 거리가 달라져 원이 그려지지 않습니다.',
+      visual: { kind: 'circles', label: `막대에 묶은 ${a} m 줄로 그은 선`, circles: [{ cx: 0, cy: 0, r: a }], points: [{ x: 0, y: 0, name: '막대' }], segments: [{ from: [0, 0], to: [a * Math.cos(Math.PI / 6), -a * Math.sin(Math.PI / 6)], name: `줄 ${a} m` }] },
     };
   },
 };
