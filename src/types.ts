@@ -132,7 +132,13 @@ export type Walkthrough =
   | { kind: 'div'; a: number; b: number }
   // 시간의 덧셈과 뺄셈(3-1 5단원). 60초에서 1분으로 받아올립니다.
   // a에 시가 있으면 시각입니다(시는 그대로 내려씁니다).
-  | { kind: 'time'; op: '+' | '-'; a: { h?: number; m: number; s: number }; b: { m: number; s: number } };
+  | { kind: 'time'; op: '+' | '-'; a: { h?: number; m: number; s: number }; b: { m: number; s: number } }
+  // 혼합 계산(5-1 1단원). 계산 순서대로 한 부분씩 줄여 갑니다.
+  | { kind: 'expr'; expr: string }
+  // 소수의 곱셈(5-2 4단원). 자연수처럼 곱한 뒤 소수점을 옮깁니다.
+  | { kind: 'decmul'; a: string; b: string }
+  // 분수 계산처럼 식을 한 줄씩 써 내려가는 풀이입니다. says는 줄마다의 설명입니다.
+  | { kind: 'chain'; lines: string[]; says: string[] };
 
 export interface LearningSupport {
   studentConcept: string;

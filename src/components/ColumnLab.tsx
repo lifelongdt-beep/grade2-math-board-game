@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Walkthrough } from '../types';
-import { buildWalk, type ColumnWalk, type DivWalk } from '../data/walkthrough';
+import { buildWalk, type AnyWalk, type ChainWalk, type ColumnWalk, type DecWalk, type DivWalk, type ExprWalk } from '../data/walkthrough';
+import { MathText } from './MathText';
 import { playTapSound } from '../sound';
 
 // ════════════════════════════════════════════════════════════════════
@@ -24,7 +25,16 @@ const 기본칸 = 46;
 const 줄높이 = { small: 26, digit: 50, line: 12, label: 24 } as const;
 
 /** 답을 고르기 전에 보여 줄 마지막 장면입니다. */
-export const hintStop = (walk: ColumnWalk | DivWalk): number => {
+/** 장면의 수와 장면마다의 설명입니다. */
+const 장면수 = (walk: AnyWalk) => (walk.type === 'chain' ? walk.lines.length : walk.frames.length);
+const 설명 = (walk: AnyWalk, at: number) => (walk.type === 'chain' ? walk.says[at] : walk.frames[at].say);
+
+export const hintStop = (walk: AnyWalk): number => {
+  // 마지막 계산 하나는 아이가 직접 합니다.
+  if (walk.type === 'expr') return Math.max(1, walk.frames.length - 3);
+  // 소수점을 어디에 찍을지 센 데까지 보여 주고, 찍는 것은 아이가 합니다.
+  if (walk.type === 'decmul') return 2;
+  if (walk.type === 'chain') return Math.max(0, walk.lines.length - 2);
   if (walk.type === 'div') {
     // 마지막으로 몫을 쓰는 장면 바로 앞까지 보여 줍니다.
     let last = -1;
@@ -152,9 +162,87 @@ function DivBoard({ walk, at }: { walk: DivWalk; at: number }) {
   );
 }
 
+// ── 혼합 계산: 지금 계산할 부분을 칠하고, 계산한 값으로 바꾸어 식을 줄입니다 ──
+function ExprBoard({ walk, at }: { walk: ExprWalk; at: number }) {
+  const frame = walk.frames[at];
+  return (
+    <div className="expr-board" role="img" aria-label="계산 순서">
+      {frame.tokens.map((tok, k) => {
+        const 칠함 = frame.hl && k >= frame.hl[0] && k <= frame.hl[1];
+        const 새값 = frame.fresh === k;
+        return (
+          <span
+            key={`${at}-${k}-${tok}`}
+            className={`expr-tok${칠함 ? ' expr-hl' : ''}${새값 ? ' expr-fresh walk-pop' : ''}${/[+\-×÷]/.test(tok) ? ' expr-op' : ''}`}
+          >
+            {tok === '-' ? '−' : tok}
+          </span>
+        );
+      })}
+      {frame.hl && (
+        <span key={`under-${at}`} className="expr-under">
+          먼저!
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ── 소수의 곱셈: 자연수처럼 곱한 다음, 소수점이 오른쪽 끝에서 한 자리씩 뛰어 갑니다 ──
+function DecBoard({ walk, at }: { walk: DecWalk; at: number }) {
+  const frame = walk.frames[at];
+  const 칸 = 34;
+  const ds = walk.digits.split('');
+  const width = Math.max(ds.length * 칸 + 60, 300);
+  const 시작 = (width - ds.length * 칸) / 2;
+  const 보임 = frame.stage !== 'write';
+  const 점 = frame.stage === 'point' || frame.stage === 'done';
+  // 소수점은 오른쪽 끝(자리 0)에서 출발해 point 자리만큼 왼쪽으로 뜁니다.
+  const 점x = 시작 + (ds.length - (점 ? frame.point : 0)) * 칸;
+  const 자리표시 = (x: string, n: number) => (n ? `${x} (${n}자리)` : `${x} (0자리)`);
+  return (
+    <svg className="walk-board" viewBox={`0 0 ${width} 190`} role="img" aria-label="소수의 곱셈">
+      <rect x="2" y="2" width={width - 4} height="186" rx="14" fill="#fffdf6" stroke="#eadfbe" />
+      <text x={width / 2} y="40" textAnchor="middle" fontSize="26" fontWeight="900" fill="#24364a">
+        {walk.a} × {walk.b}
+      </text>
+      {frame.stage !== 'write' && (
+        <text x={width / 2} y="70" textAnchor="middle" fontSize="15" fontWeight="800" fill={frame.stage === 'count' ? '#d0482f' : '#6b7c8f'}>
+          {frame.stage === 'whole' ? `${walk.a.replace('.', '')} × ${walk.b.replace('.', '')}` : `${자리표시(walk.a, walk.places[0])} · ${자리표시(walk.b, walk.places[1])}`}
+        </text>
+      )}
+      {보임 && ds.map((d, k) => (
+        <text key={`${k}-${d}`} className="walk-pop" x={시작 + k * 칸 + 칸 / 2} y="135" textAnchor="middle" fontSize="34" fontWeight="900" fill={d === '0' && k < ds.length - walk.product.length ? '#d0482f' : '#0f7175'}>
+          {d}
+        </text>
+      ))}
+      {보임 && (
+        <circle className="dec-point" cx={0} cy={0} r="5.5" fill={점 ? '#d0482f' : 'transparent'} style={{ transform: `translate(${점x}px, 138px)` }} />
+      )}
+      {점 && frame.point > 0 && Array.from({ length: frame.point }, (_, k) => (
+        <path key={k} className="dec-hop" d={`M ${시작 + (ds.length - k) * 칸} 150 q ${-칸 / 2} 22 ${-칸} 0`} fill="none" stroke="#d0482f" strokeWidth="2" strokeDasharray="4 3" style={{ animationDelay: `${k * 0.25}s` }} />
+      ))}
+    </svg>
+  );
+}
+
+// ── 분수 계산: 칠판에 한 줄씩 써 내려갑니다 ──────────────────────────
+function ChainBoard({ walk, at }: { walk: ChainWalk; at: number }) {
+  return (
+    <div className="chain-board">
+      {walk.lines.slice(0, at + 1).map((line, k) => (
+        <div key={k} className={`chain-line${k === at ? ' chain-new' : ''}`}>
+          <span className="chain-eq">{k === 0 ? '' : '='}</span>
+          <MathText text={line} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ColumnLab({ walkthrough, reveal }: { walkthrough: Walkthrough; reveal: boolean }) {
   const walk = useMemo(() => buildWalk(walkthrough), [walkthrough]);
-  const stop = reveal ? walk.frames.length - 1 : hintStop(walk);
+  const stop = reveal ? 장면수(walk) - 1 : hintStop(walk);
   const [at, setAt] = useState(0);
   const [playing, setPlaying] = useState(false);
 
@@ -165,22 +253,26 @@ export function ColumnLab({ walkthrough, reveal }: { walkthrough: Walkthrough; r
       setPlaying(false);
       return undefined;
     }
-    const wait = 1400 + walk.frames[at].say.length * 35;
+    const wait = 1400 + 설명(walk, at).length * 35;
     const timer = window.setTimeout(() => setAt((v) => Math.min(stop, v + 1)), wait);
     return () => window.clearTimeout(timer);
   }, [playing, at, stop, walk]);
 
   const 끝 = at >= stop;
-  const 멈춤 = 끝 && !reveal && stop < walk.frames.length - 1;
+  const 멈춤 = 끝 && !reveal && stop < 장면수(walk) - 1;
   return (
     <div className="walk-lab">
-      {walk.type === 'div' ? <DivBoard walk={walk} at={at} /> : <ColumnBoard walk={walk} at={at} />}
+      {walk.type === 'div' && <DivBoard walk={walk} at={at} />}
+      {walk.type === 'column' && <ColumnBoard walk={walk} at={at} />}
+      {walk.type === 'expr' && <ExprBoard walk={walk} at={at} />}
+      {walk.type === 'decmul' && <DecBoard walk={walk} at={at} />}
+      {walk.type === 'chain' && <ChainBoard walk={walk} at={at} />}
       <p className="walk-say" aria-live="polite">
-        <span className="walk-count">{at + 1}/{stop + 1}</span> {walk.frames[at].say}
+        <span className="walk-count">{at + 1}/{stop + 1}</span> {설명(walk, at)}
       </p>
       {멈춤 && (
         <p className="walk-stop">
-          여기까지! <strong>남은 자리는 직접 계산해 보세요.</strong>
+          여기까지! <strong>{walk.type === 'decmul' ? '소수점은 직접 찍어 보세요.' : walk.type === 'column' || walk.type === 'div' ? '남은 자리는 직접 계산해 보세요.' : '마지막 계산은 직접 해 보세요.'}</strong>
         </p>
       )}
       <div className="walk-controls">
@@ -188,7 +280,7 @@ export function ColumnLab({ walkthrough, reveal }: { walkthrough: Walkthrough; r
           ◀ 앞으로
         </button>
         <button type="button" className="walk-next" disabled={끝} onClick={() => { playTapSound(); setPlaying(false); setAt((v) => Math.min(stop, v + 1)); }}>
-          다음 자리 ▶
+          {walk.type === 'column' || walk.type === 'div' ? '다음 자리 ▶' : '다음 ▶'}
         </button>
         <button
           type="button"

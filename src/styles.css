@@ -7133,3 +7133,106 @@ body::before {
   text-align: center;
   line-height: 1.5;
 }
+
+/* ── 혼합 계산 식 따라가기 ─────────────────────────────────────── */
+.expr-board {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  min-height: 96px;
+  width: 100%;
+  padding: 22px 10px 30px;
+  border: 1px solid #eadfbe;
+  border-radius: var(--radius);
+  background: #fffdf6;
+  font-size: 34px;
+  font-weight: 900;
+  color: #24364a;
+}
+
+.expr-tok {
+  padding: 2px 3px;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+}
+
+.expr-op {
+  color: #6b7c8f;
+}
+
+.expr-hl {
+  background: #ffe2a8;
+  color: #8a3b00;
+  box-shadow: 0 0 0 2px #e0a33a inset;
+  animation: expr-pulse 1.1s ease-in-out infinite;
+}
+
+.expr-fresh {
+  background: #d6f2f0;
+  color: #0f7175;
+}
+
+.expr-under {
+  position: absolute;
+  bottom: 6px;
+  font-size: 13px;
+  color: #d0482f;
+}
+
+@keyframes expr-pulse {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* ── 소수점 뛰기 ────────────────────────────────────────────────── */
+.dec-point {
+  transition: transform 0.9s cubic-bezier(0.4, 1.6, 0.5, 1), fill 0.3s;
+}
+
+.dec-hop {
+  opacity: 0;
+  animation: walk-focus-in 0.4s ease-out forwards;
+}
+
+/* ── 분수 계산 줄 ───────────────────────────────────────────────── */
+.chain-board {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #eadfbe;
+  border-radius: var(--radius);
+  background: #fffdf6;
+  font-size: 24px;
+  font-weight: 900;
+  color: #24364a;
+}
+
+.chain-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chain-eq {
+  min-width: 18px;
+  color: #6b7c8f;
+}
+
+.chain-new {
+  color: #0f7175;
+  animation: chain-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes chain-in {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .expr-hl, .chain-new, .dec-hop { animation: none; opacity: 1; }
+  .dec-point { transition: none; }
+}
