@@ -1,4 +1,4 @@
-import type { Difficulty } from '../../../types';
+import type { Difficulty, QuestionVisual } from '../../../types';
 import type { G5Family } from '../../grade5/build';
 import { gwa, pick, rand } from '../../grade5/util';
 
@@ -66,6 +66,11 @@ const 도입문항: G5Family = {
       hint: '같은 크기의 종이를 더 적게 나눈 한 조각이 더 큽니다.',
       steps: [`똑같이 ${큰}조각으로 나눈 한 조각이 ${a + b - 큰}조각으로 나눈 한 조각보다 큽니다.`, `그러므로 ${분수(1, 큰)}이(가) 더 큽니다.`],
       misconceptionTip: '분모가 크다고 큰 분수가 아닙니다.',
+      visual: {
+        kind: 'partition',
+        label: `같은 크기의 띠를 똑같이 ${a}칸, ${b}칸으로 나누어 한 칸씩 칠한 그림`,
+        figures: [{ name: 분수(1, a), shape: 'bar', parts: a, shaded: [0] }, { name: 분수(1, b), shape: 'bar', parts: b, shaded: [0] }],
+      },
     };
   },
 };
@@ -202,6 +207,7 @@ const 거꾸로문항: G5Family = {
       hint: `${분수(a, b)}은(는) ${분수(1, b)}이(가) 몇 개인가요?`,
       steps: [`${분수(a, b)}은(는) ${분수(1, b)}이(가) ${a}개입니다.`, `${한묶음}×${a}=${한묶음 * a}이므로 ${N}의 ${분수(a, b)}은(는) ${한묶음 * a}입니다.`],
       misconceptionTip: '분자만큼 더하는 것이 아니라 단위분수만큼을 분자의 수만큼 모읍니다.',
+      visual: { kind: 'grouped', label: `${N}개를 똑같이 ${b}묶음으로 나눈 그림`, groups: b, perGroup: 한묶음, shadedGroups: 1 },
     };
   },
 };
@@ -260,7 +266,7 @@ const 진가분수문항: G5Family = {
 
 const 자연수분수문항: G5Family = {
   id: 'whole-fraction',
-  make: (seed) => {
+  make: (seed, lv) => {
     const next = rand(seed + 7);
     const d = 2 + next(8);
     const w = 1 + next(4);
@@ -287,11 +293,24 @@ const 자연수분수문항: G5Family = {
       hint: `1은 ${분수(1, d)}이(가) 몇 개인가요? ${w}은(는) 몇 개일까요?`,
       steps: [`1=${분수(d, d)}이므로 1은 ${분수(1, d)}이(가) ${d}개입니다.`, `${w}은(는) ${분수(1, d)}이(가) ${d}×${w}=${w * d}개이므로 ${분수(w * d, d)}입니다.`],
       misconceptionTip: '자연수를 분자에 그대로 쓰면 안 됩니다.',
+      ...(lv !== '상' && w <= 4 ? { visual: 띠들(w * d, d, `똑같이 ${d}칸으로 나눈 띠 ${w}개를 모두 칠한 그림`) } : {}),
     };
   },
 };
 
 // ── 6차시: 대분수 ───────────────────────────────────────────────────
+// 1을 띠 하나로 보고, 단위분수 조각을 칠한 띠 여러 개입니다(대분수·가분수).
+// 상 수준은 그림 없이 수로만 생각하게 합니다.
+const 띠들 = (칠한: number, d: number, label: string): QuestionVisual => ({
+  kind: 'partition',
+  label,
+  figures: Array.from({ length: Math.max(1, Math.ceil(칠한 / d)) }, (_, k) => ({
+    shape: 'bar' as const,
+    parts: d,
+    shaded: Array.from({ length: Math.min(d, 칠한 - k * d) }, (_, at) => at),
+  })),
+});
+
 const 대분수만들기 = (seed: number) => {
   const next = rand(seed);
   const d = 2 + next(8);
@@ -302,7 +321,7 @@ const 대분수만들기 = (seed: number) => {
 
 const 대분수가분수문항: G5Family = {
   id: 'mixed-to-improper',
-  make: (seed) => {
+  make: (seed, lv) => {
     const { d, w, n, 가 } = 대분수만들기(seed + 8);
     return {
       prompt: `${대분수(w, n, d)}을(를) 가분수로 나타내면 얼마일까요?`,
@@ -314,13 +333,14 @@ const 대분수가분수문항: G5Family = {
       hint: `1은 ${분수(1, d)}이(가) ${d}개입니다. ${w}은(는) ${분수(1, d)}이(가) 몇 개인지 먼저 세어 보세요.`,
       steps: [`${w}은(는) ${분수(1, d)}이(가) ${w * d}개, ${분수(n, d)}은(는) ${분수(1, d)}이(가) ${n}개입니다.`, `${분수(1, d)}이(가) 모두 ${w * d}+${n}=${가}개이므로 ${분수(가, d)}입니다.`],
       misconceptionTip: '자연수를 분자에 그대로 더하면 안 됩니다. 자연수를 먼저 분모가 같은 분수로 바꿉니다.',
+      ...(lv !== '상' ? { visual: 띠들(가, d, `똑같이 ${d}칸으로 나눈 띠에 ${대분수(w, n, d)}만큼 칠한 그림`) } : {}),
     };
   },
 };
 
 const 가분수대분수문항: G5Family = {
   id: 'improper-to-mixed',
-  make: (seed) => {
+  make: (seed, lv) => {
     const { d, w, n, 가 } = 대분수만들기(seed + 9);
     const 후보 = [
       n + 1 < d ? 대분수(w, n + 1, d) : 대분수(w, n - 1 || 1, d),
@@ -338,6 +358,7 @@ const 가분수대분수문항: G5Family = {
       hint: `${분수(가, d)}은(는) ${분수(1, d)}이(가) ${가}개입니다. ${d}개씩 묶으면 몇 묶음이고 몇 개가 남나요?`,
       steps: [`${분수(1, d)}이(가) ${가}개를 ${d}개씩 묶으면 ${w}묶음이고 ${n}개가 남습니다.`, `${w}묶음은 자연수 ${w}, 남은 ${n}개는 ${분수(n, d)}이므로 ${대분수(w, n, d)}입니다.`],
       misconceptionTip: '대분수의 분수 부분은 진분수여야 합니다. 분자가 분모보다 크면 한 번 더 묶으세요.',
+      ...(lv !== '상' ? { visual: 띠들(가, d, `똑같이 ${d}칸으로 나눈 띠에서 ${가}칸을 칠한 그림`) } : {}),
     };
   },
 };

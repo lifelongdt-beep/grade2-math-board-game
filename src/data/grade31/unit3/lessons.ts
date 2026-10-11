@@ -27,15 +27,19 @@ import { eul, eun, euro, gwa, i as iJosa, pick, rand } from '../../grade5/util';
 type Div = { a: number; b: number; q: number };
 
 /** 나누어떨어지는 나눗셈 a÷b=q 입니다. b, q는 2~9입니다. */
-const 나눗셈 = (seed: number, opts: { maxA?: number; maxB?: number } = {}): Div => {
+const 나눗셈 = (seed: number, opts: { maxA?: number; maxB?: number } = {}, lv?: Difficulty): Div => {
   const next = rand(seed);
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  for (let attempt = 0; attempt < 200; attempt += 1) {
     const b = 2 + next((opts.maxB ?? 9) - 1);
     const q = 2 + next(8);
     const a = b * q;
     if (a > (opts.maxA ?? 81)) continue;
     // 나누는 수와 몫이 같으면 '어느 것이 몫인지' 묻는 문항이 무너집니다.
     if (b === q) continue;
+    // 수준에 맞춘 곱셈구구: 하는 2~5단 안에서, 상은 6단 이상이 끼게.
+    // 앞쪽 시도에서만 고집하고, 범위가 좁아 못 찾으면 풉니다.
+    if (attempt < 150 && lv === '하' && (b > 5 || q > 5)) continue;
+    if (attempt < 150 && lv === '상' && b < 6 && q < 6) continue;
     return { a, b, q };
   }
   return { a: 12, b: 3, q: 4 };
@@ -55,8 +59,8 @@ const 물건들 = [
 // ── 단원 도입: 곱셈구구 떠올리기 ────────────────────────────────────
 const 곱셈구구문항: G5Family = {
   id: 'review-times',
-  make: (seed) => {
-    const { b, q, a } = 나눗셈(seed);
+  make: (seed, lv) => {
+    const { b, q, a } = 나눗셈(seed, {}, lv);
     return {
       prompt: `${b}×${eun(String(q))} 얼마일까요?`,
       answer: String(a),
@@ -73,8 +77,8 @@ const 곱셈구구문항: G5Family = {
 
 const 빈칸곱셈문항: G5Family = {
   id: 'review-blank',
-  make: (seed) => {
-    const { b, q, a } = 나눗셈(seed + 5);
+  make: (seed, lv) => {
+    const { b, q, a } = 나눗셈(seed + 5, {}, lv);
     return {
       prompt: `${b}×□=${a}에서 □ 안에 알맞은 수는 얼마일까요?`,
       answer: String(q),
@@ -91,8 +95,8 @@ const 빈칸곱셈문항: G5Family = {
 
 const 똑같이나누기도입문항: G5Family = {
   id: 'review-share',
-  make: (seed) => {
-    const d = 나눗셈(seed + 9, { maxA: 20, maxB: 4 });
+  make: (seed, lv) => {
+    const d = 나눗셈(seed + 9, { maxA: 20, maxB: 4 }, lv);
     const thing = pick(물건들, seed);
     return {
       prompt: `${thing.이름} ${eul(`${d.a}${thing.단위}`)} ${d.b}명이 똑같이 나누어 가지려고 합니다. 한 명이 몇 ${thing.단위}씩 가질 수 있을까요?`,
@@ -104,6 +108,7 @@ const 똑같이나누기도입문항: G5Family = {
       hint: `${d.b}명에게 하나씩 차례로 나누어 주는 것을 그려 보세요. 다 나누어 주었을 때 한 명이 가진 수를 세면 됩니다.`,
       steps: [`${eul(`${d.a}${thing.단위}`)} ${d.b}명에게 하나씩 차례로 나누어 줍니다.`, `한 명이 ${d.q}${thing.단위}씩 가지면 ${d.b}명이 모두 ${eul(`${d.a}${thing.단위}`)} 가집니다.`, `그러므로 한 명이 ${d.q}${thing.단위}씩 가질 수 있습니다.`],
       misconceptionTip: '전체에서 사람 수를 빼면 안 됩니다. 똑같이 나누는 것입니다.',
+      visual: { kind: 'share', label: `${thing.이름} ${d.a}${thing.단위}와 ${d.b}명`, total: d.a, mode: 'deal', groups: d.b, item: thing.이름, holder: '명' },
     };
   },
 };
@@ -111,8 +116,8 @@ const 똑같이나누기도입문항: G5Family = {
 // ── 2차시: 똑같이 나누어 주기, 나눗셈식 ────────────────────────────
 const 나누어주기문항 = (작게: boolean): G5Family => ({
   id: `share-${작게 ? 's' : 'l'}`,
-  make: (seed) => {
-    const d = 나눗셈(seed, 작게 ? { maxA: 40, maxB: 6 } : {});
+  make: (seed, lv) => {
+    const d = 나눗셈(seed, 작게 ? { maxA: 40, maxB: 6 } : {}, lv);
     const thing = pick(물건들, seed + 1);
     return {
       prompt: `${thing.이름} ${eul(`${d.a}${thing.단위}`)} ${d.b}명에게 똑같이 나누어 주려고 합니다. 한 명에게 몇 ${thing.단위}씩 줄 수 있을까요?`,
@@ -129,14 +134,16 @@ const 나누어주기문항 = (작게: boolean): G5Family => ({
       ],
       misconceptionTip: '나눗셈식의 앞에는 전체의 수, 뒤에는 나누어 줄 사람 수를 씁니다. 두 수의 자리를 바꾸면 안 됩니다.',
       selfCheck: `한 명이 받은 수에 사람 수를 곱하면 처음의 ${iJosa(`${d.a}${thing.단위}`)} 되나요?`,
+      // 나누기 전의 모습입니다. 자세히 보기에서 한 바퀴씩 직접 나누어 줍니다.
+      visual: { kind: 'share', label: `${thing.이름} ${d.a}${thing.단위}와 ${d.b}명`, total: d.a, mode: 'deal', groups: d.b, item: thing.이름, holder: '명' },
     };
   },
 });
 
 const 나눗셈식고르기문항: G5Family = {
   id: 'share-expr',
-  make: (seed) => {
-    const d = 나눗셈(seed + 3, { maxA: 40, maxB: 6 });
+  make: (seed, lv) => {
+    const d = 나눗셈(seed + 3, { maxA: 40, maxB: 6 }, lv);
     const thing = pick(물건들, seed);
     return {
       prompt: `${thing.이름} ${eul(`${d.a}${thing.단위}`)} ${d.b}명에게 똑같이 나누어 주면 한 명에게 ${d.q}${thing.단위}씩 줄 수 있습니다. 이것을 나눗셈식으로 바르게 나타낸 것은 어느 것일까요?`,
@@ -157,8 +164,8 @@ const 나눗셈식고르기문항: G5Family = {
 
 const 읽기문항: G5Family = {
   id: 'read-div',
-  make: (seed) => {
-    const d = 나눗셈(seed + 11, { maxA: 40, maxB: 6 });
+  make: (seed, lv) => {
+    const d = 나눗셈(seed + 11, { maxA: 40, maxB: 6 }, lv);
     return {
       prompt: `${eul(식(d))} 바르게 읽은 것은 어느 것일까요?`,
       answer: `${d.a} 나누기 ${eun(String(d.b))} ${gwa(String(d.q))} 같습니다.`,
@@ -179,8 +186,8 @@ const 읽기문항: G5Family = {
 
 const 용어문항: G5Family = {
   id: 'terms',
-  make: (seed) => {
-    const d = 나눗셈(seed + 17, { maxA: 40, maxB: 6 });
+  make: (seed, lv) => {
+    const d = 나눗셈(seed + 17, { maxA: 40, maxB: 6 }, lv);
     const 무엇 = pick(['몫', '나누는 수', '나누어지는 수'] as const, seed);
     const answer = 무엇 === '몫' ? d.q : 무엇 === '나누는 수' ? d.b : d.a;
     return {
@@ -200,13 +207,13 @@ const 용어문항: G5Family = {
 // ── 3차시: 몇씩 묶기, 뺄셈식 ────────────────────────────────────────
 const 묶기문항 = (작게: boolean): G5Family => ({
   id: `group-${작게 ? 's' : 'l'}`,
-  make: (seed) => {
-    const d = 나눗셈(seed + 23, 작게 ? { maxA: 40, maxB: 6 } : {});
+  make: (seed, lv) => {
+    const d = 나눗셈(seed + 23, 작게 ? { maxA: 40, maxB: 6 } : {}, lv);
     const 장면 = pick([
-      { prompt: `떡 ${d.a}개를 한 접시에 ${d.b}개씩 담으려고 합니다. 접시는 몇 개 필요할까요?`, unit: '개', 답: (v: number) => `접시는 ${v}개 필요합니다.` },
-      { prompt: `연필 ${d.a}자루를 한 명에게 ${d.b}자루씩 나누어 주려고 합니다. 몇 명에게 나누어 줄 수 있을까요?`, unit: '명', 답: (v: number) => `${v}명에게 나누어 줄 수 있습니다.` },
-      { prompt: `구슬 ${d.a}개를 한 상자에 ${d.b}개씩 넣으려고 합니다. 상자는 몇 개 필요할까요?`, unit: '개', 답: (v: number) => `상자는 ${v}개 필요합니다.` },
-      { prompt: `학생 ${d.a}명이 한 모둠에 ${d.b}명씩 모이면 몇 모둠이 될까요?`, unit: '모둠', 답: (v: number) => `${v}모둠이 됩니다.` },
+      { prompt: `떡 ${d.a}개를 한 접시에 ${d.b}개씩 담으려고 합니다. 접시는 몇 개 필요할까요?`, unit: '개', 답: (v: number) => `접시는 ${v}개 필요합니다.`, item: '떡' },
+      { prompt: `연필 ${d.a}자루를 한 명에게 ${d.b}자루씩 나누어 주려고 합니다. 몇 명에게 나누어 줄 수 있을까요?`, unit: '명', 답: (v: number) => `${v}명에게 나누어 줄 수 있습니다.`, item: '연필' },
+      { prompt: `구슬 ${d.a}개를 한 상자에 ${d.b}개씩 넣으려고 합니다. 상자는 몇 개 필요할까요?`, unit: '개', 답: (v: number) => `상자는 ${v}개 필요합니다.`, item: '구슬' },
+      { prompt: `학생 ${d.a}명이 한 모둠에 ${d.b}명씩 모이면 몇 모둠이 될까요?`, unit: '모둠', 답: (v: number) => `${v}모둠이 됩니다.`, item: '학생' },
     ], seed);
     return {
       prompt: 장면.prompt,
@@ -223,14 +230,16 @@ const 묶기문항 = (작게: boolean): G5Family => ({
       ],
       misconceptionTip: '한 묶음의 수를 답으로 쓰면 안 됩니다. 몇 묶음인지를 묻고 있습니다.',
       selfCheck: '묶음의 수에 한 묶음의 수를 곱하면 전체의 수가 되나요?',
+      // 묶기 전의 모습입니다. 자세히 보기에서 몇 개씩 묶어 덜어 냅니다.
+      visual: { kind: 'share', label: `${장면.item} ${d.a}${장면.unit === '모둠' ? '명' : 장면.unit === '명' ? '자루' : '개'}`, total: d.a, mode: 'group', size: d.b, item: 장면.item, holder: '묶음' },
     };
   },
 });
 
 const 뺄셈식문항: G5Family = {
   id: 'subtract-expr',
-  make: (seed) => {
-    const d = 나눗셈(seed + 29, { maxA: 40, maxB: 6 });
+  make: (seed, lv) => {
+    const d = 나눗셈(seed + 29, { maxA: 40, maxB: 6 }, lv);
     if (d.q > 6) return null;
     const 뺄셈 = `${d.a}${`-${d.b}`.repeat(d.q)}=0`;
     return {
@@ -250,8 +259,8 @@ const 뺄셈식문항: G5Family = {
 
 const 묶음그림문항: G5Family = {
   id: 'group-picture',
-  make: (seed) => {
-    const d = 나눗셈(seed + 31, { maxA: 30, maxB: 6 });
+  make: (seed, lv) => {
+    const d = 나눗셈(seed + 31, { maxA: 30, maxB: 6 }, lv);
     if (d.q > 6) return null;
     const visual: ArrayVisual = { kind: 'array', label: `구슬 ${d.a}개를 ${d.b}개씩 묶은 그림`, rows: d.q, columns: d.b, hideCaption: true };
     return {
@@ -272,8 +281,8 @@ const 묶음그림문항: G5Family = {
 // ── 4차시: 곱셈과 나눗셈의 관계 ─────────────────────────────────────
 const 곱셈에서나눗셈문항: G5Family = {
   id: 'mul-to-div',
-  make: (seed) => {
-    const d = 나눗셈(seed + 37);
+  make: (seed, lv) => {
+    const d = 나눗셈(seed + 37, {}, lv);
     const 곱셈 = `${d.b}×${d.q}=${d.a}`;
     return {
       prompt: `곱셈식 ${eul(곱셈)} 나눗셈식 2개로 바르게 나타낸 것은 어느 것일까요?`,
@@ -299,8 +308,8 @@ const 곱셈에서나눗셈문항: G5Family = {
 
 const 나눗셈에서곱셈문항: G5Family = {
   id: 'div-to-mul',
-  make: (seed) => {
-    const d = 나눗셈(seed + 41);
+  make: (seed, lv) => {
+    const d = 나눗셈(seed + 41, {}, lv);
     const answer = `${d.b}×${d.q}=${d.a}`;
     return {
       prompt: `나눗셈식 ${eul(식(d))} 곱셈식으로 바르게 나타낸 것은 어느 것일까요?`,
@@ -320,8 +329,8 @@ const 나눗셈에서곱셈문항: G5Family = {
 
 const 같은상황문항: G5Family = {
   id: 'same-situation',
-  make: (seed) => {
-    const d = 나눗셈(seed + 43, { maxA: 54 });
+  make: (seed, lv) => {
+    const d = 나눗셈(seed + 43, { maxA: 54 }, lv);
     const thing = pick(물건들, seed + 2);
     return {
       prompt: `${iJosa(thing.이름)} 한 묶음에 ${d.b}${thing.단위}씩 ${d.q}묶음 있습니다. 모두 몇 ${thing.단위}인지 곱셈식으로 나타내면 ${d.b}×${d.q}=${d.a}입니다. 이 ${eul(thing.이름)} ${d.b}${thing.단위}씩 묶으면 몇 묶음인지 나타내는 나눗셈식은 어느 것일까요?`,
@@ -344,8 +353,8 @@ const 같은상황문항: G5Family = {
 // ── 5차시: 몫을 곱셈으로 구하기 ─────────────────────────────────────
 const 몫구하기문항: G5Family = {
   id: 'quotient',
-  make: (seed) => {
-    const d = 나눗셈(seed + 47);
+  make: (seed, lv) => {
+    const d = 나눗셈(seed + 47, {}, lv);
     return {
       prompt: `${d.a}÷${eul(String(d.b))} 계산하면 몫은 얼마일까요?`,
       answer: String(d.q),
@@ -363,8 +372,8 @@ const 몫구하기문항: G5Family = {
 
 const 몇단문항: G5Family = {
   id: 'which-dan',
-  make: (seed) => {
-    const d = 나눗셈(seed + 53);
+  make: (seed, lv) => {
+    const d = 나눗셈(seed + 53, {}, lv);
     const 다른단 = [d.b - 1, d.b + 1, d.q, d.a % 10 || 3].filter((v) => v >= 2 && v <= 9 && v !== d.b);
     return {
       prompt: `${d.a}÷${d.b}의 몫을 구할 때 이용하면 좋은 곱셈구구는 몇 단일까요?`,
@@ -382,10 +391,10 @@ const 몇단문항: G5Family = {
 
 const 몫비교문항: G5Family = {
   id: 'compare-quotient',
-  make: (seed) => {
+  make: (seed, lv) => {
     const divs: Div[] = [];
     for (let at = 0; at < 20 && divs.length < 4; at += 1) {
-      const one = 나눗셈(seed * 7 + at * 13);
+      const one = 나눗셈(seed * 7 + at * 13, {}, lv);
       if (divs.some((other) => other.q === one.q || other.a === one.a)) continue;
       divs.push(one);
     }
@@ -407,8 +416,8 @@ const 몫비교문항: G5Family = {
 
 const 어떤수나눗셈문항: G5Family = {
   id: 'unknown-dividend',
-  make: (seed) => {
-    const d = 나눗셈(seed + 59);
+  make: (seed, lv) => {
+    const d = 나눗셈(seed + 59, {}, lv);
     const 무엇 = pick(['나누어지는 수', '나누는 수'] as const, seed);
     if (무엇 === '나누어지는 수') {
       return {
@@ -439,7 +448,7 @@ const 어떤수나눗셈문항: G5Family = {
 
 const 두번나누기문항: G5Family = {
   id: 'two-step',
-  make: (seed) => {
+  make: (seed, lv) => {
     const next = rand(seed + 61);
     // 사과 a개를 b개씩 봉지에 담아 → 봉지 m개, 봉지를 n명에게 똑같이 → 한 명에 k봉지
     const b = 2 + next(4);
@@ -478,7 +487,7 @@ export const unit3Lesson = (lessonNo: number, difficulty: Difficulty): G5Family[
     return [묶기문항(true), 뺄셈식문항, 묶음그림문항];
   }
   if (lessonNo === 4) {
-    if (하) return [곱셈에서나눗셈문항, 나눗셈에서곱셈문항];
+    if (하) return [곱셈에서나눗셈문항, 나눗셈에서곱셈문항, 같은상황문항];
     if (상) return [같은상황문항, 어떤수나눗셈문항, 곱셈에서나눗셈문항];
     return [곱셈에서나눗셈문항, 나눗셈에서곱셈문항, 같은상황문항];
   }

@@ -1,3 +1,4 @@
+import { ShareScene } from './ShareScene';
 import type { PlaneShapeVisualItem, QuestionVisual } from '../types';
 
 interface QuestionVisualGraphicProps {
@@ -917,6 +918,12 @@ function CirclesGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'c
   visual.circles.forEach((c) => { xs.push(c.cx - c.r, c.cx + c.r); ys.push(c.cy - c.r, c.cy + c.r); });
   (visual.points ?? []).forEach((p) => { xs.push(p.x); ys.push(p.y); });
   if (visual.rect) { xs.push(visual.rect.x, visual.rect.x + visual.rect.w); ys.push(visual.rect.y, visual.rect.y + visual.rect.h); }
+  // 띠 종이: 중심에서 angle도 방향(위쪽이 +)으로 놓고, 끝을 반 칸씩 남깁니다.
+  const strip = visual.strip;
+  const c0 = visual.circles[0];
+  const dir: [number, number] = strip ? [Math.cos((strip.angle * Math.PI) / 180), -Math.sin((strip.angle * Math.PI) / 180)] : [1, 0];
+  const along = (t: number): [number, number] => [c0.cx + dir[0] * t, c0.cy + dir[1] * t];
+  if (strip) [along(-0.6), along(strip.holes + 0.6)].forEach(([x, y]) => { xs.push(x); ys.push(y); });
   const minX = Math.min(...xs);
   const maxX = Math.max(...xs);
   const minY = Math.min(...ys);
@@ -945,11 +952,53 @@ function CirclesGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'c
         <rect x={X(visual.rect.x)} y={Y(visual.rect.y)} width={visual.rect.w * scale} height={visual.rect.h * scale} fill="none" stroke="#506579" strokeWidth="2.5" />
       )}
       {visual.circles.map((c, k) => (
-        <circle key={k} cx={X(c.cx)} cy={Y(c.cy)} r={c.r * scale} fill="none" stroke="#0f7175" strokeWidth="3" />
+        <circle key={k} cx={X(c.cx)} cy={Y(c.cy)} r={c.r * scale} fill="none" stroke={c.faint ? '#9fc9cc' : '#0f7175'} strokeWidth={c.faint ? 2 : 3} strokeDasharray={c.faint ? '6 6' : undefined} />
       ))}
+      {strip && (() => {
+        const half = 11;
+        const nx = -dir[1];
+        const ny = dir[0];
+        const [ax, ay] = along(-0.6);
+        const [bx, by] = along(strip.holes + 0.6);
+        const corner = (x: number, y: number, side: number) => `${X(x) + nx * half * side},${Y(y) + ny * half * side}`;
+        const [px, py] = along(strip.pencilAt);
+        // 길이 글씨는 띠 종이 바깥쪽(아래)으로 비켜 씁니다.
+        const side = ny > 0 ? 1 : -1;
+        const [mx, my] = along(strip.pencilAt / 2);
+        return (
+          <g>
+            <polygon points={[corner(ax, ay, 1), corner(bx, by, 1), corner(bx, by, -1), corner(ax, ay, -1)].join(' ')} fill="#fff4c9" fillOpacity="0.92" stroke="#b08a1e" strokeWidth="2" />
+            {Array.from({ length: strip.holes + 1 }, (_, k) => {
+              const [hx, hy] = along(k);
+              return <circle key={k} cx={X(hx)} cy={Y(hy)} r="3.2" fill="#ffffff" stroke="#8a6a12" strokeWidth="1.5" />;
+            })}
+            <circle cx={X(px)} cy={Y(py)} r="7" fill="#2f6fd6" stroke="#ffffff" strokeWidth="2" />
+            <text x={X(px) + nx * 26 * -side} y={Y(py) + ny * 26 * -side + 6} textAnchor="middle" fill="#2f6fd6" fontSize="15" fontWeight="900">연필</text>
+            <circle cx={X(c0.cx)} cy={Y(c0.cy)} r="7" fill="#d0482f" stroke="#ffffff" strokeWidth="2" />
+            <text x={X(c0.cx) + nx * 26 * -side} y={Y(c0.cy) + ny * 26 * -side + 6} textAnchor="middle" fill="#d0482f" fontSize="15" fontWeight="900">누름 못</text>
+            <text x={X(mx) + nx * 24 * side} y={Y(my) + ny * 24 * side + 6} textAnchor="middle" fill="#24364a" fontSize="16" fontWeight="900">{strip.pencilAt} cm</text>
+          </g>
+        );
+      })()}
       {(visual.segments ?? []).map((s, k) => (
         <line key={k} x1={X(s.from[0])} y1={Y(s.from[1])} x2={X(s.to[0])} y2={Y(s.to[1])} stroke="#d0482f" strokeWidth="3" strokeLinecap="round" />
       ))}
+      {(visual.segments ?? []).filter((s) => s.name).map((s, k) => {
+        // 선분 가운데에서 선분과 수직으로(위쪽으로) 비켜 씁니다.
+        const x1 = X(s.from[0]);
+        const y1 = Y(s.from[1]);
+        const x2 = X(s.to[0]);
+        const y2 = Y(s.to[1]);
+        const len = Math.hypot(x2 - x1, y2 - y1) || 1;
+        let nx = -(y2 - y1) / len;
+        let ny = (x2 - x1) / len;
+        if (ny > 0) { nx = -nx; ny = -ny; }
+        return (
+          <text key={`n${k}`} x={(x1 + x2) / 2 + nx * 14} y={(y1 + y2) / 2 + ny * 14 + 6} textAnchor="middle" fill="#d0482f" fontSize="16" fontWeight="900" stroke="#f6fcff" strokeWidth="4" paintOrder="stroke">
+            {s.name}
+          </text>
+        );
+      })}
       {(visual.points ?? []).map((p, k) => {
         const [lx, ly] = labelAt(p);
         return (
@@ -3086,6 +3135,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'circles' && <CirclesGraphic visual={visual} />}
       {visual.kind === 'grouped' && <GroupedGraphic visual={visual} />}
       {visual.kind === 'picture-graph' && <PictureGraphGraphic visual={visual} />}
+      {visual.kind === 'share' && <ShareScene visual={visual} moved={0} showBoxes={visual.mode === 'deal' ? visual.groups ?? 0 : 0} />}
       {visual.kind === 'box-drawing' && <BoxDrawingGraphic visual={visual} />}
       {visual.kind === 'box-net' && <BoxNetGraphic visual={visual} />}
       {visual.kind === 'spinner' && <SpinnerGraphic visual={visual} />}

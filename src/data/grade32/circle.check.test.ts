@@ -137,6 +137,28 @@ describe('3-2 3단원 원', () => {
     }
   });
 
+  it('글에 쓴 길이와 그림에 적은 길이·그린 길이가 같습니다', () => {
+    let count = 0;
+    for (const q of 모두) {
+      if (q.visual?.kind !== 'circles') continue;
+      const v = q.visual;
+      const 띠 = /누름 못에서 (\d+) cm/.exec(q.prompt);
+      if (띠) {
+        expect(v.strip?.pencilAt).toBe(Number(띠[1]));
+        expect(v.circles[0].r).toBe(Number(띠[1]));
+        count += 1;
+      }
+      for (const seg of v.segments ?? []) {
+        const n = /(\d+) (cm|m)$/.exec(seg.name ?? '');
+        if (!n) continue;
+        expect(Math.abs(거리(seg.from, seg.to) - Number(n[1])), q.prompt).toBeLessThan(1e-9);
+        expect(q.prompt.includes(`${n[1]} ${n[2]}`), q.prompt).toBe(true);
+        count += 1;
+      }
+    }
+    expect(count).toBeGreaterThan(20);
+  });
+
   it('원의 크기 비교가 맞습니다', () => {
     for (const q of 모두) {
       const m = /^가장 (큰|작은) 원은 어느 것일까요\? \((.+)\)$/.exec(q.prompt);

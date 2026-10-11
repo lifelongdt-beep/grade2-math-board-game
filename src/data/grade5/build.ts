@@ -1,6 +1,7 @@
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, Question, QuestionVisual } from '../../types';
 import { parse as parseFraction } from './fraction';
 import { rand, resolveParticles } from './util';
+import { deriveWalkthrough } from '../walkthrough';
 import {
   g5CoreConcept,
   g5Misconception,
@@ -75,7 +76,9 @@ export type G5Spec = {
 
 export type G5Family = {
   id: string;
-  make: (seed: number) => G5Spec | null;
+  // 수준을 받으면 수의 크기도 수준에 맞춥니다(3학년). 받지 않는 뭉치는
+  // 문항 갈래로만 수준을 나눕니다.
+  make: (seed: number, difficulty?: Difficulty) => G5Spec | null;
 };
 
 const difficultyDesign: Record<Difficulty, { label: string; solutionLead: string }> = {
@@ -231,6 +234,8 @@ const toQuestion = (
     selfCheck: spec.selfCheck ?? 도움.check[spec.tag] ?? '답을 문제에 다시 넣어 말이 되는지 확인했나요?',
   };
 
+  const walk = deriveWalkthrough(spec.prompt, spec.steps, lesson.semester, spec.answer);
+
   return {
     id: `${lesson.id}-${difficulty}-${slot + 1}`,
     lessonId: lesson.id,
@@ -246,6 +251,7 @@ const toQuestion = (
     strategy,
     support,
     ...(spec.visual ? { visual: spec.visual } : {}),
+    ...(walk ? { walkthrough: walk } : {}),
   };
 };
 
@@ -278,7 +284,7 @@ export const buildGrade5Questions = (
   for (let round = 0; round < 200 && made.length < SLOTS_PER_LESSON; round += 1) {
     for (const family of families) {
       if (made.length >= SLOTS_PER_LESSON) break;
-      const spec = family.make(salt + round * 37 + family.id.length);
+      const spec = family.make(salt + round * 37 + family.id.length, difficulty);
       if (!spec) continue;
       // 같은 문제인지는 글만으로 보면 안 됩니다. '그림이 나타내는 수의
       // 범위는?'처럼 수가 그림에만 있는 문항은 글이 늘 똑같아서, 글로만

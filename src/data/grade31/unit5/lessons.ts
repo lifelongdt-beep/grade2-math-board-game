@@ -228,6 +228,15 @@ const km어림문항: G5Family = {
       hint: `${한번} m를 계속 더해 1000 m가 될 때까지 세어 보세요.`,
       steps: [`${한번} m를 ${번}번 더하면 ${한번 * 번} m입니다.`, `1000 m=1 km이므로 약 ${번}번 가면 1 km가 됩니다.`],
       misconceptionTip: '1 km는 100 m가 아니라 1000 m입니다.',
+      // 0에서 1000 m까지 아는 거리만큼씩 눈금을 긋습니다. 자세히 보기에서 한 번씩 뛰어 봅니다.
+      visual: {
+        kind: 'number-line',
+        label: `0 m부터 1000 m(1 km)까지 ${한번} m씩 눈금을 그은 수직선`,
+        start: 0,
+        end: 1000,
+        step: 한번,
+        marks: [{ value: 한번, label: '공원', active: true }, { value: 1000, label: '1 km' }],
+      },
     };
   },
 };

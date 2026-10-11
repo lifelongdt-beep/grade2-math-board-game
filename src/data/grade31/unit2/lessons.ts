@@ -187,6 +187,16 @@ const 도형수세기문항: G5Family = {
         `그러므로 ${도형.이름}의 ${무엇}은 ${value}개입니다.`,
       ],
       misconceptionTip: '원을 그릴 때 시작한 곳을 꼭짓점이라고 여기면 안 됩니다. 원에는 꼭짓점이 없습니다.',
+      // 그림을 보며 하나씩 짚어 세게 합니다(2학년에서 하던 방법).
+      visual: {
+        kind: 'figure-set',
+        label: 도형.이름,
+        items: [도형.이름 === '삼각형'
+          ? { shape: '직각삼각형', points: makeShape('acute-triangle', seed).points }
+          : 도형.이름 === '사각형'
+            ? { shape: '사각형', points: makeShape('quad', seed).points }
+            : { shape: 도형.이름 === '오각형' ? '정오각형' : 도형.이름 === '육각형' ? '정육각형' : '원' }],
+      },
     };
   },
 };
@@ -335,6 +345,7 @@ const 같은이름문항: G5Family = {
         `그러므로 ${선이름[꼴]} ${p}${q}은 ${answer}이라고도 합니다.`,
       ],
       misconceptionTip: '반직선은 차례를 바꾸면 다른 도형입니다. 반직선 ㄱㄴ은 점 ㄱ에서, 반직선 ㄴㄱ은 점 ㄴ에서 시작합니다.',
+      visual: 선그림판(`${선이름[꼴]} ${p}${q}`, [선그림(꼴, next(99), [p, q])]),
     };
   },
 };
@@ -361,6 +372,11 @@ const 반직선다름문항: G5Family = {
         '시작하는 점과 늘어나는 쪽이 달라서 서로 다른 도형입니다.',
       ],
       misconceptionTip: '같은 두 점을 쓴다고 같은 반직선이 아닙니다. 시작하는 점이 다르면 다른 반직선입니다.',
+      // 같은 두 점에서 시작점만 바꾼 반직선 둘을 나란히 그립니다.
+      visual: 선그림판(`반직선 ${p}${q}과 반직선 ${q}${p}`, [
+        { shape: 'ray', points: [[-0.8, 0], [-0.1, 0]], labels: [p, q], name: `반직선 ${p}${q}` },
+        { shape: 'ray', points: [[0.8, 0], [0.1, 0]], labels: [q, p], name: `반직선 ${q}${p}` },
+      ]),
     };
   },
 };
@@ -552,6 +568,15 @@ const 각더하기문항: G5Family = {
         `${a.수}+${b.수}=${sum}이므로 각은 모두 ${sum}개입니다.`,
       ],
       misconceptionTip: '변의 수와 각의 수를 헷갈리지 마세요. 이 도형들은 변의 수와 꼭짓점의 수가 같습니다.',
+      visual: {
+        kind: 'figure-set',
+        label: `${a.이름}과 ${b.이름}`,
+        items: [a, b].map((one, at) => (one.shape === 'triangle'
+          ? { shape: '직각삼각형' as const, points: makeShape('acute-triangle', seed + at).points }
+          : one.shape === 'square'
+            ? { shape: '사각형' as const, points: makeShape('quad', seed + at).points }
+            : { shape: one.shape })),
+      },
     };
   },
 };
@@ -788,7 +813,7 @@ const 뜻문항 = (target: 고를도형): G5Family => ({
 
 const 직각수문항 = (target: 고를도형): G5Family => ({
   id: `right-in-${target}`,
-  make: () => {
+  make: (seed) => {
     const count = target === 'right-triangle' ? 1 : 4;
     return {
       prompt: `${도형이름[target]}에서 직각은 몇 개일까요?`,
@@ -800,6 +825,8 @@ const 직각수문항 = (target: 고를도형): G5Family => ({
       hint: `${도형이름[target]}의 뜻을 떠올려 보세요. 뜻 속에 직각이 몇 개인지 들어 있습니다.`,
       steps: [`${eun(도형이름[target])} ${도형뜻[target]}입니다.`, `그러므로 직각은 ${count}개입니다.`],
       misconceptionTip: target === 'right-triangle' ? '삼각형에는 직각이 두 개 있을 수 없습니다.' : '네 각이 모두 직각이어야 합니다.',
+      // 직각 표시는 하지 않습니다. 삼각자를 대어 보듯 꼭짓점마다 살펴보게 합니다.
+      visual: 도형그림판(도형이름[target], [{ kind: target, points: makeShape(target, seed).points }]),
     };
   },
 });
@@ -823,6 +850,12 @@ const 자르기문항: G5Family = {
         '그러므로 직각삼각형 2개가 생깁니다.',
       ],
       misconceptionTip: '자른 선 때문에 각이 바뀌는 것은 직각이 아닌 두 각입니다. 남아 있는 직각을 찾으세요.',
+      // 자를 선을 점선으로 그어 둡니다.
+      visual: {
+        kind: 'figure-set',
+        label: `마주 보는 두 꼭짓점을 이은 선을 그은 ${종이} 모양의 종이`,
+        items: [{ shape: 종이 === '직사각형' ? '직사각형' : '정사각형', diagonals: [{ from: 0, to: 2, text: '' }] }],
+      },
     };
   },
 };
@@ -866,6 +899,11 @@ const 정사각형변문항: G5Family = {
       hint: '정사각형의 뜻에서 변의 길이에 대한 조건을 떠올려 보세요.',
       steps: ['정사각형은 네 변의 길이가 모두 같습니다.', `그러므로 다른 한 변의 길이도 ${side} cm입니다.`],
       misconceptionTip: '네 변의 길이를 모두 더한 것을 묻는 것이 아닙니다. 한 변의 길이를 묻고 있습니다.',
+      visual: {
+        kind: 'figure-set',
+        label: `한 변이 ${side} cm인 정사각형`,
+        items: [{ shape: '정사각형', edgeLabels: [{ from: 0, to: 1, text: `${side} cm` }] }],
+      },
     };
   },
 };
@@ -890,6 +928,16 @@ const 가장큰정사각형문항: G5Family = {
         `그러므로 가장 큰 정사각형의 한 변의 길이는 ${short} cm입니다.`,
       ],
       misconceptionTip: '긴 변에 맞추면 종이가 모자랍니다. 짧은 변에 맞추어야 합니다.',
+      // 적힌 길이의 비율대로 그립니다.
+      visual: {
+        kind: 'figure-set',
+        label: `가로 ${long} cm, 세로 ${short} cm인 직사각형`,
+        items: [{
+          shape: '직사각형',
+          points: [[-0.95, -0.95 * short / long], [0.95, -0.95 * short / long], [0.95, 0.95 * short / long], [-0.95, 0.95 * short / long]],
+          edgeLabels: [{ from: 0, to: 1, text: `${long} cm` }, { from: 1, to: 2, text: `${short} cm` }],
+        }],
+      },
     };
   },
 };

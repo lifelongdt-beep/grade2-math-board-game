@@ -1,6 +1,8 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { X } from 'lucide-react';
-import type { QuestionVisual } from '../types';
+import type { QuestionVisual, Walkthrough } from '../types';
+import { ColumnLab } from './ColumnLab';
+import { ShareLab } from './ShareLab';
 import { QuestionVisualGraphic } from './QuestionVisualGraphic';
 import { SymmetryLab, 실험보는차례, 실험이름, 무엇을해볼까 } from './SymmetryLab';
 import { AreaLab, 자르기보는차례, 자르기이름, 무엇을잘라볼까 } from './AreaLab';
@@ -10,7 +12,11 @@ import { FractionLab, 분수보는차례, 분수이름, 무엇을겹쳐볼까 } 
 import { playTapSound } from '../sound';
 
 interface InteractiveHintModalProps {
-  visual: QuestionVisual;
+  visual?: QuestionVisual;
+  /** 세로셈 따라가기입니다. 그림이 없는 계산 문항도 이것으로 자세히 봅니다. */
+  walkthrough?: Walkthrough;
+  /** 답을 고른 뒤(틀린 뒤)면 세로셈을 끝까지 보여 줍니다. */
+  reveal?: boolean;
   /** 문제 글입니다. 무엇을 묻는지에 따라 내줄 도움이 달라집니다 —
       점대칭은 돌려 보아야 하고 선대칭은 접어 보아야 합니다. */
   prompt?: string;
@@ -436,6 +442,7 @@ function EnlargedVisual({ visual }: { visual: QuestionVisual }) {
 const widgetTitleFor = (visual: QuestionVisual, prompt: string) => {
   const 실험 = 분수이름(visual) ?? 가능성이름(visual, prompt) ?? 접기이름(visual, prompt) ?? 자르기이름(visual) ?? 실험이름(visual, prompt);
   if (실험) return 실험;
+  if (visual.kind === 'share') return visual.mode === 'deal' ? '하나씩 나누어 주어 보세요' : '묶어서 덜어 내 보세요';
   if (visual.kind === 'clock') return '시계를 움직여 보세요';
   if (visual.kind === 'place-value') return '수 모형을 모으거나 지워 보세요';
   if (visual.kind === 'number-line') return '한 번씩 뛰어 보세요';
@@ -445,7 +452,8 @@ const widgetTitleFor = (visual: QuestionVisual, prompt: string) => {
   return enlargedCaptionFor(visual);
 };
 
-export function InteractiveHintModal({ visual, prompt = '', onClose }: InteractiveHintModalProps) {
+function VisualHint({ visual, prompt }: { visual: QuestionVisual; prompt: string }) {
+  if (visual.kind === 'share') return <ShareLab visual={visual} />;
   const isCountable = COUNTABLE_KINDS.has(visual.kind);
   // 합동과 대칭은 접어 보고 돌려 보아야 합니다. 그림을 크게만 보여
   // 주면 아이는 여전히 '어느 꼭짓점이 어느 꼭짓점과 겹치는지'를
@@ -474,25 +482,47 @@ export function InteractiveHintModal({ visual, prompt = '', onClose }: Interacti
     visual.kind !== 'place-value' &&
     visual.kind !== 'number-line';
   return (
+    <>
+      {실험할것 && <SymmetryLab visual={visual} prompt={prompt} />}
+      {자를것 && <AreaLab visual={visual} />}
+      {접을것 && <BoxLab visual={visual} prompt={prompt} />}
+      {가능성할것 && <ChanceLab visual={visual} prompt={prompt} />}
+      {분수할것 && <FractionLab visual={visual} />}
+      {실험실없음 && visual.kind === 'clock' && <InteractiveClock />}
+      {실험실없음 && visual.kind === 'place-value' && <InteractivePlaceValue visual={visual} />}
+      {실험실없음 && visual.kind === 'number-line' && <InteractiveJumps visual={visual} />}
+      {그냥그림 && isCountable && <InteractiveCounter visual={visual} />}
+      {그냥그림 && !isCountable && <EnlargedVisual visual={visual} />}
+      <PictureReadingSteps visual={visual} prompt={prompt} />
+    </>
+  );
+}
+
+export function InteractiveHintModal({ visual, walkthrough, reveal = false, prompt = '', onClose }: InteractiveHintModalProps) {
+  // 그림과 세로셈이 함께 있으면 둘 다 볼 수 있게 고르는 단추를 둡니다.
+  // 틀린 뒤라면 세로셈을 먼저 보여 줍니다 — 어디서 어긋났는지 찾는 일이 먼저입니다.
+  const [보기, set보기] = useState<'그림' | '세로셈'>(walkthrough && (!visual || reveal) ? '세로셈' : '그림');
+  const 세로셈 = walkthrough && 보기 === '세로셈';
+  const title = 세로셈 ? '한 자리씩 따라가 보세요' : visual ? widgetTitleFor(visual, prompt) : '';
+  return (
     <div className="hint-modal-overlay" role="dialog" aria-modal="true" aria-label="움직여 보는 힌트">
       <div className="hint-modal-card">
         <header>
-          <h3>🔍 {widgetTitleFor(visual, prompt)}</h3>
+          <h3>🔍 {title}</h3>
           <button type="button" className="hint-modal-close" onClick={onClose} aria-label="닫기">
             <X size={22} />
           </button>
         </header>
-        {실험할것 && <SymmetryLab visual={visual} prompt={prompt} />}
-        {자를것 && <AreaLab visual={visual} />}
-        {접을것 && <BoxLab visual={visual} prompt={prompt} />}
-        {가능성할것 && <ChanceLab visual={visual} prompt={prompt} />}
-        {분수할것 && <FractionLab visual={visual} />}
-        {실험실없음 && visual.kind === 'clock' && <InteractiveClock />}
-        {실험실없음 && visual.kind === 'place-value' && <InteractivePlaceValue visual={visual} />}
-        {실험실없음 && visual.kind === 'number-line' && <InteractiveJumps visual={visual} />}
-        {그냥그림 && isCountable && <InteractiveCounter visual={visual} />}
-        {그냥그림 && !isCountable && <EnlargedVisual visual={visual} />}
-        <PictureReadingSteps visual={visual} prompt={prompt} />
+        {visual && walkthrough && (
+          <div className="hint-modal-tabs">
+            {(['그림', '세로셈'] as const).map((one) => (
+              <button key={one} type="button" aria-pressed={보기 === one} onClick={() => { playTapSound(); set보기(one); }}>
+                {one === '그림' ? '그림으로 보기' : '세로셈으로 보기'}
+              </button>
+            ))}
+          </div>
+        )}
+        {세로셈 ? <ColumnLab walkthrough={walkthrough} reveal={reveal} /> : visual ? <VisualHint visual={visual} prompt={prompt} /> : null}
         <button type="button" className="hint-modal-done" onClick={onClose}>
           다 봤어요
         </button>
