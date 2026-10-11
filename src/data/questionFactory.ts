@@ -1,3 +1,4 @@
+import { deriveGrade2Walk } from './walkthrough';
 import {
   pickBySeed,
   pickSome,
@@ -1615,6 +1616,8 @@ const makeQuestion = (
     prompt,
     madeChoices.answer,
   );
+  // 2학년 덧셈·뺄셈 문항은 자세히 보기에서 세로셈을 한 자리씩 따라갑니다.
+  const walk = lesson.semester.startsWith('2') ? deriveGrade2Walk(prompt, madeChoices.answer, solution) : null;
   return enforceSecondGradeLanguage({
     id: `${lesson.id}-${difficulty}-${index + 1}`,
     lessonId: lesson.id,
@@ -1629,6 +1632,7 @@ const makeQuestion = (
     strategy: leveledStrategy,
     support,
     ...(visual ? { visual } : {}),
+    ...(walk ? { walkthrough: walk } : {}),
     ...(choicePictures
       ? { choiceVisuals: madeChoices.options.map((option) => choicePictures[option]) }
       : {}),

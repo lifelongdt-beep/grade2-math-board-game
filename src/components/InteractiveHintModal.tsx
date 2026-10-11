@@ -503,7 +503,14 @@ export function InteractiveHintModal({ visual, walkthrough, reveal = false, prom
   // 틀린 뒤라면 세로셈을 먼저 보여 줍니다 — 어디서 어긋났는지 찾는 일이 먼저입니다.
   const [보기, set보기] = useState<'그림' | '세로셈'>(walkthrough && (!visual || reveal) ? '세로셈' : '그림');
   const 세로셈 = walkthrough && 보기 === '세로셈';
-  const title = 세로셈 ? '한 자리씩 따라가 보세요' : visual ? widgetTitleFor(visual, prompt) : '';
+  const 따라가기제목 = walkthrough?.kind === 'expr'
+    ? '계산 순서를 따라가 보세요'
+    : walkthrough?.kind === 'chain'
+      ? '한 줄씩 따라가 보세요'
+      : walkthrough?.kind === 'decmul'
+        ? '소수점을 옮겨 보세요'
+        : '한 자리씩 따라가 보세요';
+  const title = 세로셈 ? 따라가기제목 : visual ? widgetTitleFor(visual, prompt) : '';
   return (
     <div className="hint-modal-overlay" role="dialog" aria-modal="true" aria-label="움직여 보는 힌트">
       <div className="hint-modal-card">
@@ -517,7 +524,7 @@ export function InteractiveHintModal({ visual, walkthrough, reveal = false, prom
           <div className="hint-modal-tabs">
             {(['그림', '세로셈'] as const).map((one) => (
               <button key={one} type="button" aria-pressed={보기 === one} onClick={() => { playTapSound(); set보기(one); }}>
-                {one === '그림' ? '그림으로 보기' : '세로셈으로 보기'}
+                {one === '그림' ? '그림으로 보기' : walkthrough.kind === 'expr' || walkthrough.kind === 'chain' || walkthrough.kind === 'decmul' ? '차례대로 보기' : '세로셈으로 보기'}
               </button>
             ))}
           </div>
