@@ -115,7 +115,7 @@ const 가위표 = (x: number, y: number, r = 11) => (
 
 export function CountersGraphic({ visual }: { visual: CountersVisual }) {
   const cell = 30;
-  const perRow = 5;
+  const perRow = visual.perRow ?? 5;
   const pad = 14;
 
   // 한 줄로 늘어놓고 몇째를 보는 그림입니다.
@@ -258,7 +258,7 @@ export function TenFrameGraphic({ visual }: { visual: TenFrameVisual }) {
 // 연결 모형과 수 세기 칩으로 10개씩 묶음과 낱개를 보여 줍니다.
 export function TensOnesGraphic({ visual }: { visual: TensOnesVisual }) {
   const cube = 11;
-  const tens = Math.max(0, Math.min(visual.tens, 5));
+  const tens = Math.max(0, Math.min(visual.tens, 10));
   const ones = Math.max(0, Math.min(visual.ones, 9));
   const tensW = Math.max(1, tens) * (cube + 9);
   const onesCols = Math.max(1, Math.ceil(ones / 5));
