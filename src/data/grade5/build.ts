@@ -234,7 +234,7 @@ const toQuestion = (
     selfCheck: spec.selfCheck ?? 도움.check[spec.tag] ?? '답을 문제에 다시 넣어 말이 되는지 확인했나요?',
   };
 
-  const walk = deriveWalkthrough(spec.prompt, spec.steps, lesson.semester, spec.answer);
+  const walk = deriveWalkthrough(resolveParticles(spec.prompt), spec.steps.map(resolveParticles), lesson.semester, spec.answer, lesson.id);
 
   return {
     id: `${lesson.id}-${difficulty}-${slot + 1}`,
