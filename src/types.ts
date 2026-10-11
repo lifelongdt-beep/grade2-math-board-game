@@ -704,10 +704,15 @@ export interface MulGridVisual {
 export interface CircleVisual {
   kind: 'circles';
   label: string;
-  circles: Array<{ cx: number; cy: number; r: number }>;
+  // faint: 연한 점선으로 그립니다(점들이 원을 이룬다는 것을 살짝 보여 줄 때).
+  circles: Array<{ cx: number; cy: number; r: number; faint?: boolean }>;
   points?: Array<{ x: number; y: number; name?: string }>;
+  // name은 선분 옆에 쓰는 글(길이 등)입니다.
   segments?: Array<{ from: [number, number]; to: [number, number]; name?: string }>;
   rect?: { x: number; y: number; w: number; h: number };
+  // 띠 종이로 원을 그리는 그림입니다. 첫 원의 중심(누름 못)에서 angle도 방향으로
+  // 1 cm마다 구멍이 뚫린 띠 종이를 놓고, pencilAt cm 구멍에 연필을 꽂습니다.
+  strip?: { angle: number; holes: number; pencilAt: number };
 }
 
 // ── 3-2 4단원 분수(이산량) ─────────────────────────────────────────
