@@ -1,4 +1,5 @@
 import { ShareScene } from './ShareScene';
+import { AngleGraphic, BarGraphGraphic, GridMoveGraphic, LineGraphGraphic } from './Grade4Visuals';
 import { CompareGraphic, CountersGraphic, SolidsGraphic, TenFrameGraphic, TensOnesGraphic } from './Grade1Visuals';
 import type { PlaneShapeVisualItem, QuestionVisual } from '../types';
 
@@ -3168,6 +3169,10 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'tens-ones' && <TensOnesGraphic visual={visual} />}
       {visual.kind === 'solids' && <SolidsGraphic visual={visual} />}
       {visual.kind === 'compare' && <CompareGraphic visual={visual} />}
+      {visual.kind === 'angle' && <AngleGraphic visual={visual} />}
+      {visual.kind === 'bar-graph' && <BarGraphGraphic visual={visual} />}
+      {visual.kind === 'line-graph' && <LineGraphGraphic visual={visual} />}
+      {visual.kind === 'grid-move' && <GridMoveGraphic visual={visual} />}
     </figure>
   );
 }

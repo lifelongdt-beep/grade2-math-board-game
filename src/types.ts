@@ -5,7 +5,7 @@ export type SessionDuration = 30 | 60 | 120;
 // 어느 학기인지입니다. 2학년 1·2학기로 시작했고, 5학년 2학기가 뒤에
 // 붙었습니다. 5학년은 차시도 문항도 따로 만들기 때문에(grade5 폴더),
 // 여기서 하는 일은 '어느 학기의 차시인가'를 한 곳에 적어 두는 것뿐입니다.
-export type Semester = '1-1' | '1-2' | '2-1' | '2-2' | '3-1' | '3-2' | '5-1' | '5-2';
+export type Semester = '1-1' | '1-2' | '2-1' | '2-2' | '3-1' | '3-2' | '4-1' | '4-2' | '5-1' | '5-2';
 
 export type ConceptTag =
   | 'number'
@@ -49,7 +49,10 @@ export type ConceptTag =
   // 반올림)와 다릅니다 — 3학년은 가까운 몇백으로 어림해 계산 결과를
   // 짐작합니다. 두 학년을 한 이름으로 묶으면 선생님 분석에서 섞입니다.
   | 'estimate'
-  | 'division';
+  | 'division'
+  // ── 4학년에서 쓰는 갈래입니다 ──────────────────────────────────
+  | 'angle'
+  | 'transform';
 
 // 차시가 '무엇을 물어도 되는가'를 적어 둔 선언입니다.
 //
@@ -328,7 +331,7 @@ export interface FractionModelVisual {
 export type FigureShapeName =
   | '정삼각형' | '이등변삼각형' | '직각삼각형' | '둔각삼각형'
   | '정사각형' | '직사각형' | '마름모' | '평행사변형'
-  | '사다리꼴' | '사각형'
+  | '사다리꼴' | '사각형' | '삼각형' | '오각형' | '육각형'
   | '정오각형' | '정육각형' | '원';
 
 export interface FigureSetVisual {
@@ -877,6 +880,69 @@ export interface CompareVisual {
   items: Array<{ name: string; size: number; color?: string }>;
 }
 
+// ── 4학년 그림 ───────────────────────────────────────────────────────
+
+/**
+ * 각을 그립니다(4-1 2단원 각도). 꼭짓점에서 오른쪽으로 뻗은 변과
+ * deg만큼 벌어진 변을 긋고 호를 그립니다. text를 적으면 호 옆에 씁니다
+ * ('?'나 '60°'). 재어 보게 하려는 그림에는 각도를 적지 않습니다.
+ */
+export interface AngleVisual {
+  kind: 'angle';
+  label: string;
+  items: Array<{ deg: number; name?: string; text?: string; rotate?: number }>;
+}
+
+/** 막대그래프입니다(4-1 5단원). 세로 눈금 한 칸이 step입니다. */
+export interface BarGraphVisual {
+  kind: 'bar-graph';
+  label: string;
+  title: string;
+  /** 눈금 이름(세로)입니다. 예: '학생 수(명)' */
+  valueLabel: string;
+  step: number;
+  /** 눈금의 가장 큰 값입니다. */
+  max: number;
+  bars: Array<{ name: string; value: number; hidden?: boolean }>;
+  /** 막대를 가로로 그립니다. */
+  horizontal?: boolean;
+}
+
+/** 꺾은선그래프입니다(4-2 5단원). from이 있으면 그 아래를 물결선으로 줄입니다. */
+export interface LineGraphVisual {
+  kind: 'line-graph';
+  label: string;
+  title: string;
+  valueLabel: string;
+  step: number;
+  max: number;
+  from?: number;
+  points: Array<{ name: string; value: number; hidden?: boolean }>;
+}
+
+/**
+ * 모눈 위의 도형과 점입니다(4-1 4단원 평면도형의 이동). 도형은 채운
+ * 칸(cells)으로 나타냅니다. 칸으로 그리면 밀기·뒤집기·돌리기의 결과를
+ * 계산으로 정확히 만들 수 있습니다. 판(panel)을 여러 개 늘어놓아
+ * 가·나·다·라 보기로 씁니다.
+ */
+export interface GridMoveVisual {
+  kind: 'grid-move';
+  label: string;
+  size: number;
+  /** 첫 칸을 다른 색으로 칠하지 않습니다(방향 표시가 필요 없는 모양 배열). */
+  plain?: boolean;
+  panels: Array<{
+    name?: string;
+    cells?: Array<[number, number]>;
+    /** 점 하나와 그 점을 옮긴 자리(있으면)입니다. */
+    point?: [number, number];
+    target?: [number, number];
+    /** 판 위에 쓸 짧은 말(예: 처음 도형) */
+    caption?: string;
+  }>;
+}
+
 export type QuestionVisual =
   | PlaneShapesVisual
   | CubeStackVisual
@@ -914,7 +980,11 @@ export type QuestionVisual =
   | TenFrameVisual
   | TensOnesVisual
   | SolidsVisual
-  | CompareVisual;
+  | CompareVisual
+  | AngleVisual
+  | BarGraphVisual
+  | LineGraphVisual
+  | GridMoveVisual;
 
 export interface Player {
   id: number;

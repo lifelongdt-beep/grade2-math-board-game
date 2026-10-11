@@ -26,6 +26,14 @@ import {
   g1StudentConcept,
   g1TagLabel,
 } from '../grade1/support';
+import {
+  g4CoreConcept,
+  g4Misconception,
+  g4ReadStrategy,
+  g4SelfCheck,
+  g4StudentConcept,
+  g4TagLabel,
+} from '../grade4/support';
 
 // ════════════════════════════════════════════════════════════════════
 // 5학년 문항을 만드는 곳
@@ -217,7 +225,9 @@ const toQuestion = (
   const 셋째 = lesson.semester.startsWith('3');
   const 도움 = lesson.semester.startsWith('1')
     ? { student: g1StudentConcept, core: g1CoreConcept, read: g1ReadStrategy, mis: g1Misconception, check: g1SelfCheck, label: g1TagLabel }
-    : 셋째
+    : lesson.semester.startsWith('4')
+      ? { student: g4StudentConcept, core: g4CoreConcept, read: g4ReadStrategy, mis: g4Misconception, check: g4SelfCheck, label: g4TagLabel }
+      : 셋째
     ? lesson.semester === '3-2'
       ? {
           student: { ...g3StudentConcept, ...g32Overrides.student },
