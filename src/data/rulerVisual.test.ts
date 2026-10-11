@@ -231,7 +231,10 @@ describe('ruler visual', () => {
           const inPrompt = (question.prompt.match(/\d+/g) ?? []).map(Number);
           if (inPrompt.includes(answer)) continue;
 
-          if (question.visual.bars.some((bar) => bar.value === answer)) {
+          // 구할 값의 막대는 길이만 그리고 글자를 '?'나 '□'로 가립니다 —
+          // 막대그림으로 처음 수를 찾는 교과서 그림 그대로입니다.
+          const hidden = (text?: string) => text !== undefined && /[?□]/.test(text);
+          if (question.visual.bars.some((bar) => bar.value === answer && !hidden(bar.text))) {
             gaveItAway.push(`${question.id}: '${question.prompt}' → ${question.answer} 인데 막대에 ${answer}`);
           }
         }

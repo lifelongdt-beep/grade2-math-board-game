@@ -74,7 +74,9 @@ export type VisualSpec =
   | { kind: 'clock'; hour: string; minute: string; endHour?: string; endMinute?: string; blank?: boolean; label?: string }
   | { kind: 'unit-measure'; object: string; unit: string; count: string }
   | { kind: 'ruler'; start: string; end: string; label?: string }
-  | { kind: 'bar-model'; bars: Array<{ label: string; value: string }>; label?: string }
+  // text는 막대 옆에 적을 글입니다. '1m 70cm'처럼 문제에 적힌 대로 쓰거나,
+  // 구할 값이면 '?'를 씁니다. 비우면 value를 그대로 적습니다.
+  | { kind: 'bar-model'; bars: Array<{ label: string; value: string; text?: string }>; label?: string }
   | {
       kind: 'table';
       columns: Array<{ name: string; value: string }>;
@@ -103,7 +105,7 @@ export type DrawnVisual =
   | { kind: 'clock'; hour: number; minute: number; endHour?: number; endMinute?: number; blank?: boolean; label?: string }
   | { kind: 'unit-measure'; object: string; unit: string; count: number }
   | { kind: 'ruler'; start: number; end: number; label?: string }
-  | { kind: 'bar-model'; bars: Array<{ label: string; value: number }>; label?: string }
+  | { kind: 'bar-model'; bars: Array<{ label: string; value: number; text?: string }>; label?: string }
   | {
       kind: 'table';
       // value가 null이면 학생이 채워야 할 빈칸입니다.
@@ -373,12 +375,13 @@ const resolveVisual = (
   }
 
   if (spec.kind === 'bar-model') {
-    const bars: Array<{ label: string; value: number }> = [];
+    const bars: Array<{ label: string; value: number; text?: string }> = [];
     for (const bar of spec.bars) {
       const value = at(bar.value);
       const label = text(bar.label);
       if (value === null || value < 0 || !label) return null;
-      bars.push({ label, value });
+      const note = text(bar.text);
+      bars.push(note === undefined ? { label, value } : { label, value, text: note });
     }
     return { kind: 'bar-model', bars, label: text(spec.label) };
   }
