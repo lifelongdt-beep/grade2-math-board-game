@@ -257,6 +257,60 @@ describe('생각하는 문항(6학년)', () => {
   });
 });
 
+describe('생각하는 문항(1학년)', () => {
+  it('답이 맞습니다', () => {
+    const 셈 = new Map<string, number>();
+    const 센다 = (k: string) => 셈.set(k, (셈.get(k) ?? 0) + 1);
+    for (const q of 모두) {
+      const p = q.prompt;
+      let m = /^(□|\d+)([+-])(□|\d+)=(\d+)에서 □ 안에 알맞은 수는/.exec(p);
+      if (m) {
+        const x = Number(q.answer);
+        const a = m[1] === '□' ? x : Number(m[1]);
+        const b = m[3] === '□' ? x : Number(m[3]);
+        expect(m[2] === '+' ? a + b : a - b, p).toBe(Number(m[4]));
+        센다('빈칸');
+      }
+      m = /^두 수를 모아서\(더해서\) (\d+)(?:이|가) 되는 것은/.exec(p);
+      if (m) {
+        const 합 = (t: string) => t.split(/과 |와 /).map(Number).reduce((s, x) => s + x, 0);
+        expect(합(q.answer), p).toBe(Number(m[1]));
+        for (const c of q.choices.filter((c) => c !== q.answer)) expect(합(c) === Number(m![1]), c).toBe(false);
+        센다('합짝');
+      }
+      m = /^(\d+)(?:과|와) (\d+) 사이에 있는 수는 모두 몇 개/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe(Number(m[2]) - Number(m[1]) - 1); 센다('사이'); }
+      m = /^(\d+)보다 (\d+)만큼 더 큰 수보다 (\d+)만큼 더 작은 수/.exec(p);
+      if (m) { expect(Number(q.answer), p).toBe(Number(m[1]) + Number(m[2]) - Number(m[3])); 센다('두단계'); }
+      m = /^(\d+)\+(\d+)=(\d+)(?:을|를) 보고 만들 수 있는 뺄셈식/.exec(p);
+      if (m) {
+        const [a, b, c] = [1, 2, 3].map((k) => Number(m![k]));
+        expect(a + b, p).toBe(c);
+        expect([`${c}-${a}=${b}`, `${c}-${b}=${a}`].includes(q.answer), p).toBe(true);
+        센다('식관계');
+      }
+      m = /^수 카드 ([\d, ]+) 가운데 2장을 골라 몇십몇을 만들려고 합니다. (?:(\d+)까지의 수 가운데 )?만들 수 있는 가장 (큰|작은) 수/.exec(p);
+      if (m) {
+        const 카드 = m[1].split(', ').map(Number); const 최대 = m[2] ? Number(m[2]) : 99;
+        const 수들 = 카드.flatMap((t) => 카드.filter((o) => o !== t).map((o) => t * 10 + o)).filter((x) => x <= 최대);
+        expect(Number(q.answer), p).toBe(m[3] === '큰' ? Math.max(...수들) : Math.min(...수들));
+        센다('카드');
+      }
+      m = /^사탕이 (\d+)개 있었습니다. 그중에서 (\d+)개를 먹고, 언니에게 (\d+)개를 더 받았습니다/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe(Number(m[1]) - Number(m[2]) + Number(m[3])); 센다('이야기'); }
+      m = /^(\d+)(?:과|와) (\d+) 사이에 있는 수 가운데 (짝수|홀수)는 모두 몇 개/.exec(p);
+      if (m) {
+        const n = Array.from({ length: Number(m[2]) - Number(m[1]) - 1 }, (_, k) => Number(m![1]) + 1 + k).filter((x) => (x % 2 === 0) === (m![3] === '짝수')).length;
+        expect(수(q.answer), p).toBe(n);
+        센다('짝홀');
+      }
+      m = /^지금 시각은 (\d+)시( 30분)?입니다. 긴바늘이 (\d)바퀴 돌면/.exec(p);
+      if (m) { const h = ((Number(m[1]) + Number(m[3]) - 1) % 12) + 1; expect(q.answer, p).toBe(`${h}시${m[2] ?? ''}`); 센다('시각'); }
+    }
+    for (const k of ['빈칸', '합짝', '사이', '두단계', '식관계', '카드', '이야기', '짝홀', '시각']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+  });
+});
+
 describe('생각하는 문항(자연수)', () => {
   it('거꾸로·잘못 계산·수 카드·어림·나머지·□ 범위·문장제 답이 맞습니다', () => {
     const 셈 = new Map<string, number>();

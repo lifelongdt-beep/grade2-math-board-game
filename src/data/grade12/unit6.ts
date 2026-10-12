@@ -2,6 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { eun } from '../grade5/util';
 import { 고르개, 사이, 수보기 } from '../grade11/common';
+import { 두단계이야기, 빈칸셈, 식관계 } from '../grade1/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 1-2 6단원 덧셈과 뺄셈(3)
@@ -200,15 +201,15 @@ export const unit6Lesson12 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
       return [도입];
     case 2:
       if (lv === '하') return [덧셈(['T+O', 'T+T']), 덧셈(['TO+O'])];
-      if (lv === '중') return [덧셈(['TO+O', 'T+T']), 덧셈(['TO+TO'])];
-      return [덧셈(['TO+TO']), 문장([0])];
+      if (lv === '중') return [덧셈(['TO+O', 'T+T']), 덧셈(['TO+TO']), 빈칸셈('1-2-6', '+', 99, 20)];
+      return [덧셈(['TO+TO']), 문장([0]), 빈칸셈('1-2-6', '+', 99, 20)];
     case 3:
       if (lv === '하') return [뺄셈(['T-T']), 뺄셈(['TO-O'])];
-      if (lv === '중') return [뺄셈(['TO-O', 'T-T']), 뺄셈(['TO-TO'])];
-      return [뺄셈(['TO-TO']), 문장([1, 2])];
+      if (lv === '중') return [뺄셈(['TO-O', 'T-T']), 뺄셈(['TO-TO']), 빈칸셈('1-2-6', '-', 99, 20)];
+      return [뺄셈(['TO-TO']), 문장([1, 2]), 빈칸셈('1-2-6', '-', 99, 20)];
     case 4:
-      if (lv === '하') return [덧셈(['TO+TO']), 뺄셈(['TO-TO'])];
-      return [문장([0, 1, 2]), 알맞은식];
+      if (lv === '하') return [덧셈(['TO+TO']), 뺄셈(['TO-TO']), 식관계('1-2-6', 99)];
+      return [문장([0, 1, 2]), 알맞은식, 두단계이야기('1-2-6', 99), 식관계('1-2-6', 99)];
     default:
       return null;
   }

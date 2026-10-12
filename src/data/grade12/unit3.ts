@@ -2,6 +2,7 @@ import type { Difficulty, PlaneShapeKind, PlaneShapeVisualItem } from '../../typ
 import type { G5Family } from '../grade5/build';
 import { eun } from '../grade5/util';
 import { 고르개, 사이 } from '../grade11/common';
+import { 시각뒤 } from '../grade1/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 1-2 3단원 모양과 시각
@@ -303,11 +304,11 @@ export const unit3Lesson12 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
       if (lv === '하') return [모양세기(true)];
       return [모양세기(true), 가장많이];
     case 5:
-      if (lv === '하') return [시계읽기(false)];
-      if (lv === '중') return [시계읽기(false), 바늘말로];
-      return [바늘말로, 짧은바늘어디];
+      if (lv === '하') return [시계읽기(false), 바늘말로];
+      if (lv === '중') return [시계읽기(false), 바늘말로, 시각뒤('1-2-3', false)];
+      return [바늘말로, 짧은바늘어디, 시각뒤('1-2-3', false)];
     case 6:
-      if (lv === '하') return [시계읽기(true)];
+      if (lv === '하') return [시계읽기(true), 시각뒤('1-2-3', true)];
       if (lv === '중') return [시계읽기(true), 바늘말로, 짧은바늘어디];
       return [짧은바늘어디, 늦은시각, 시계읽기(true)];
     default:
