@@ -62,18 +62,21 @@ const 배열표: G5Family = {
     const 가로 = [1, 10, 100][next(3)];
     const 세로 = [1000, 100, 10][next(3)];
     if (가로 === 세로) return null;
-    const s = 사이(next, 1, 5) * 1000 + 사이(next, 0, 9) * 100 + 사이(next, 0, 9) * 10 + 사이(next, 0, 9);
+    const s = 사이(next, 1, 5) * 1000 + 사이(next, 0, 6) * 100 + 사이(next, 0, 6) * 10 + 사이(next, 0, 6);
     const r = 사이(next, 1, 2);
     const c = 사이(next, 1, 3);
     const ans = s + r * 세로 + c * 가로;
+    // 표 전체를 보여 주고 한 칸만 비웁니다. 규칙은 표에서 찾게 합니다.
+    const rows = Array.from({ length: 3 }, (_, rr) => Array.from({ length: 4 }, (_, cc) => (rr === r && cc === c ? null : s + rr * 세로 + cc * 가로)));
     return {
-      prompt: `수 배열표에서 오른쪽으로 한 칸 갈 때마다 ${가로}씩, 아래쪽으로 한 칸 갈 때마다 ${세로}씩 커집니다. 맨 왼쪽 위의 수가 ${s}일 때, 그 수에서 아래쪽으로 ${r}칸, 오른쪽으로 ${c}칸 간 곳의 수는 얼마일까요?`,
+      prompt: '수 배열표에서 규칙을 찾아 ? 안에 알맞은 수를 구하면 얼마일까요?',
       answer: String(ans),
       wrongs: [...new Set([s + r * 가로 + c * 세로, ans + 가로, ans - 세로, s + (r + c) * 세로])].filter((x) => x !== ans).map(String),
       tag: 'pattern',
       strategy: '수 배열표의 규칙',
-      hint: '아래쪽으로 간 만큼, 오른쪽으로 간 만큼 따로 더하세요.',
-      steps: [`아래쪽으로 ${r}칸: ${s}+${r * 세로}=${s + r * 세로}`, `오른쪽으로 ${c}칸: ${s + r * 세로}+${c * 가로}=${ans}`],
+      hint: '오른쪽으로 갈 때와 아래쪽으로 갈 때 각각 몇씩 커지는지 찾아요.',
+      steps: [`오른쪽으로 한 칸 갈 때마다 ${가로}씩, 아래쪽으로 한 칸 갈 때마다 ${세로}씩 커집니다.`, `? 바로 왼쪽 수 ${ans - 가로}보다 ${가로} 큰 ${ans}입니다.`],
+      visual: { kind: 'number-array', label: '수 배열표', rows },
     };
   },
 };

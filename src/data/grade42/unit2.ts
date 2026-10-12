@@ -206,6 +206,16 @@ const 이등변각: G5Family = {
   },
 };
 
+/** 같은 두 변이 같은, 밑변이 다른인 이등변삼각형 그림입니다. 변 이름표: 밑변, 오른쪽, 왼쪽. */
+const 이등변그림 = (같은: number, 다른: number, 글: [string, string, string]): FigureSetVisual => {
+  const 밑각 = (Math.acos(다른 / 2 / 같은) * 180) / Math.PI;
+  return {
+    kind: 'figure-set',
+    label: '이등변삼각형',
+    items: [{ shape: '이등변삼각형', points: 삼각형(밑각, 밑각), edgeLabels: [{ from: 0, to: 1, text: 글[0] }, { from: 1, to: 2, text: 글[1] }, { from: 2, to: 0, text: 글[2] }] }],
+  };
+};
+
 const 이등변둘레: G5Family = {
   id: 'iso-perimeter',
   make: (seed) => {
@@ -225,6 +235,7 @@ const 이등변둘레: G5Family = {
         hint: '둘레에서 다른 한 변을 빼면 같은 두 변의 합이에요.',
         steps: [`${둘레}-${다른}=${둘레 - 다른}`, `${둘레 - 다른}÷2=${같은}이므로 ${같은} cm입니다.`],
         minusIsOperator: true,
+        visual: 이등변그림(같은, 다른, [`${다른} cm`, '?', '?']),
       };
     }
     const 둘레 = 같은 * 2 + 다른;
@@ -236,6 +247,7 @@ const 이등변둘레: G5Family = {
       strategy: '이등변삼각형의 둘레',
       hint: '같은 길이의 변이 두 개예요.',
       steps: [`${같은}+${같은}+${다른}=${둘레}이므로 ${둘레} cm입니다.`],
+      visual: 이등변그림(같은, 다른, [`${다른} cm`, `${같은} cm`, `${같은} cm`]),
     };
   },
 };
@@ -256,6 +268,7 @@ const 정삼각형: G5Family = {
         strategy: '정삼각형의 둘레',
         hint: '정삼각형은 세 변의 길이가 모두 같아요.',
         steps: [`${s}×3=${s * 3}이므로 ${s * 3} cm입니다.`],
+        visual: { kind: 'figure-set', label: '정삼각형', items: [{ shape: '정삼각형', points: 삼각형(60, 60), edgeLabels: [{ from: 0, to: 1, text: `${s} cm` }] }] },
       };
     }
     if (kind === 1) {

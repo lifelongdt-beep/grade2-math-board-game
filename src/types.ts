@@ -934,6 +934,43 @@ export interface LineGraphVisual {
  * 가·나·다·라 보기로 씁니다.
  */
 /**
+ * 각도기를 각에 댄 그림입니다(4-1 2단원). 한 변을 안쪽 눈금 0(오른쪽)
+ * 또는 바깥쪽 눈금 0(왼쪽)에 맞추고, 다른 변은 deg만큼 벌어지게 그립니다.
+ * 각도기에는 안쪽·바깥쪽 눈금 숫자를 모두 적습니다 — 어느 눈금을 읽을지가
+ * 이 그림의 핵심입니다.
+ */
+export interface ProtractorVisual {
+  kind: 'protractor';
+  label: string;
+  deg: number;
+  base: 'inner' | 'outer';
+}
+
+/** 한 직선 위에 이웃한 두 각입니다(4-1 2단원). 한 각에 known°, 다른 각에 '?'를 적습니다. */
+export interface AngleSplitVisual {
+  kind: 'angle-split';
+  label: string;
+  known: number;
+}
+
+/**
+ * 평행선 사이에 그은 선분들입니다(4-2 4단원). 수직인 선분에만 직각 표시를
+ * 합니다. 길이 글자는 선분 옆에 적습니다.
+ */
+export interface ParallelDistanceVisual {
+  kind: 'parallel-distance';
+  label: string;
+  segments: Array<{ text: string; slant: number }>;
+}
+
+/** 수 배열표입니다(4-1 6단원). null인 칸은 '?'로 둡니다. */
+export interface NumberArrayVisual {
+  kind: 'number-array';
+  label: string;
+  rows: Array<Array<number | null>>;
+}
+
+/**
  * 띠그래프·원그래프입니다(6-1 5단원). 각 항목의 백분율을 띠 길이·부채꼴
  * 크기 그대로 그립니다. hidden인 항목은 백분율 자리에 '?'를 적습니다.
  */
@@ -1019,7 +1056,11 @@ export type QuestionVisual =
   | LineGraphVisual
   | GridMoveVisual
   | RatioGraphVisual
-  | StackPlanVisual;
+  | StackPlanVisual
+  | ProtractorVisual
+  | AngleSplitVisual
+  | ParallelDistanceVisual
+  | NumberArrayVisual;
 
 export interface Player {
   id: number;

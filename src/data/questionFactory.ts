@@ -1019,7 +1019,11 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'grid-move' ||
     // 6학년 그림입니다.
     visual.kind === 'ratio-graph' ||
-    visual.kind === 'stack-plan'
+    visual.kind === 'stack-plan' ||
+    visual.kind === 'protractor' ||
+    visual.kind === 'angle-split' ||
+    visual.kind === 'parallel-distance' ||
+    visual.kind === 'number-array'
   ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };
   }

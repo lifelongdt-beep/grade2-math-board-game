@@ -343,3 +343,47 @@ describe('4-2 6단원 다각형', () => {
     }
   });
 });
+
+describe('4-2 그림과 문항이 어긋나지 않습니다', () => {
+  type P = [number, number];
+  const 각도 = (p: P[], i: number) => {
+    const n = p.length;
+    const [o, a, b] = [p[i], p[(i + 1) % n], p[(i + n - 1) % n]];
+    const v1 = [a[0] - o[0], a[1] - o[1]];
+    const v2 = [b[0] - o[0], b[1] - o[1]];
+    return (Math.acos((v1[0] * v2[0] + v1[1] * v2[1]) / (Math.hypot(v1[0], v1[1]) * Math.hypot(v2[0], v2[1]))) * 180) / Math.PI;
+  };
+  const 길이 = (p: P[], a: number, b: number) => Math.hypot(p[a][0] - p[b][0], p[a][1] - p[b][1]);
+  it('적힌 각도와 그린 각, 적힌 길이의 비와 그린 변의 비가 같습니다', () => {
+    let count = 0;
+    for (const { q } of 모두) {
+      if (q.visual?.kind !== 'figure-set') continue;
+      for (const item of q.visual.items) {
+        const p = (item.points ?? []) as P[];
+        for (const label of item.angleLabels ?? []) {
+          const want = label.text === '?' ? 수(q.answer) : 수(label.text);
+          if (label.text === '?' && !/°$/.test(q.answer)) continue;
+          expect(Math.abs(각도(p, label.at) - want), q.prompt).toBeLessThan(0.6);
+          count += 1;
+        }
+        const 적힌 = (item.edgeLabels ?? []).filter((e) => /cm$/.test(e.text));
+        for (let k = 1; k < 적힌.length; k += 1) {
+          const [e0, e1] = [적힌[0], 적힌[k]];
+          const 그린비 = 길이(p, e1.from, e1.to) / 길이(p, e0.from, e0.to);
+          const 적힌비 = 수(e1.text) / 수(e0.text);
+          expect(Math.abs(그린비 - 적힌비), q.prompt).toBeLessThan(0.01);
+          count += 1;
+        }
+      }
+    }
+    expect(count).toBeGreaterThan(100);
+  });
+  it('평행선 그림에서 수직인 선분이 하나뿐이고 그 길이가 답입니다', () => {
+    for (const { q } of 모두) {
+      if (q.visual?.kind !== 'parallel-distance') continue;
+      const 수직 = q.visual.segments.filter((s) => s.slant === 0);
+      expect(수직.length, q.prompt).toBe(1);
+      expect(수직[0].text, q.prompt).toBe(q.answer);
+    }
+  });
+});

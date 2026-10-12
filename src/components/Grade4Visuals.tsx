@@ -1,4 +1,4 @@
-import type { AngleVisual, BarGraphVisual, GridMoveVisual, LineGraphVisual } from '../types';
+import type { AngleSplitVisual, AngleVisual, BarGraphVisual, GridMoveVisual, LineGraphVisual, NumberArrayVisual, ParallelDistanceVisual, ProtractorVisual } from '../types';
 
 // ════════════════════════════════════════════════════════════════════
 // 4학년 그림 — 각, 막대그래프, 꺾은선그래프, 모눈 위 도형의 이동
@@ -209,6 +209,130 @@ export function GridMoveGraphic({ visual }: { visual: GridMoveVisual }) {
           </g>
         );
       })}
+    </svg>
+  );
+}
+
+// ── 각도기 ──────────────────────────────────────────────────────────
+// 안쪽 눈금은 오른쪽이 0이고 시계 반대 방향으로 커집니다. 바깥쪽 눈금은
+// 왼쪽이 0이고 시계 방향으로 커집니다(교과서 각도기와 같습니다).
+export function ProtractorGraphic({ visual }: { visual: ProtractorVisual }) {
+  const cx = 230;
+  const cy = 232;
+  const R = 200;
+  const 점 = (deg: number, r: number) => [cx + r * Math.cos((deg * Math.PI) / 180), cy - r * Math.sin((deg * Math.PI) / 180)] as const;
+  // 화면 각도(오른쪽 0, 반시계)로 두 변을 정합니다.
+  const 밑변 = visual.base === 'inner' ? 0 : 180;
+  const 다른변 = visual.base === 'inner' ? visual.deg : 180 - visual.deg;
+  return (
+    <svg viewBox="0 0 460 262" role="img" aria-label={visual.label}>
+      <rect x="2" y="2" width="456" height="258" rx="12" {...판} />
+      <path d={`M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy} Z`} fill="#fffde7" stroke="#8d6e63" strokeWidth="1.6" />
+      {Array.from({ length: 181 }, (_, t) => {
+        const 길이 = t % 10 === 0 ? 14 : t % 5 === 0 ? 9 : 5;
+        const [x1, y1] = 점(t, R);
+        const [x2, y2] = 점(t, R - 길이);
+        return <line key={t} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#6d4c41" strokeWidth={t % 10 === 0 ? 1.4 : 0.7} />;
+      })}
+      {Array.from({ length: 19 }, (_, k) => {
+        const t = k * 10;
+        const [ox, oy] = 점(t, R - 28);
+        const [ix, iy] = 점(t, R - 54);
+        return (
+          <g key={k}>
+            <text x={ox} y={oy + 5} textAnchor="middle" fill="#4e342e" fontSize="14" fontWeight="800">{180 - t}</text>
+            <text x={ix} y={iy + 5} textAnchor="middle" fill="#1565c0" fontSize="13" fontWeight="800">{t}</text>
+          </g>
+        );
+      })}
+      <line x1={cx - R - 8} y1={cy} x2={cx + R + 8} y2={cy} stroke="#6d4c41" strokeWidth="1.4" />
+      {[밑변, 다른변].map((d, k) => {
+        const [x, y] = 점(d, R + 18);
+        return <line key={k} x1={cx} y1={cy} x2={x} y2={y} stroke="#d84315" strokeWidth="4" strokeLinecap="round" />;
+      })}
+      <circle cx={cx} cy={cy} r="4.5" fill="#d84315" />
+      <text x="12" y="22" fill="#4e342e" fontSize="12" fontWeight="800">바깥쪽 눈금(검정)</text>
+      <text x="12" y="38" fill="#1565c0" fontSize="12" fontWeight="800">안쪽 눈금(파랑)</text>
+    </svg>
+  );
+}
+
+// ── 한 직선 위의 두 각 ──────────────────────────────────────────────
+export function AngleSplitGraphic({ visual }: { visual: AngleSplitVisual }) {
+  const cx = 170;
+  const cy = 120;
+  const r = 110;
+  const a = (visual.known * Math.PI) / 180;
+  const ex = cx + r * Math.cos(a);
+  const ey = cy - r * Math.sin(a);
+  const 호 = (from: number, to: number, rr: number) => {
+    const p = (d: number) => [cx + rr * Math.cos((d * Math.PI) / 180), cy - rr * Math.sin((d * Math.PI) / 180)];
+    const [x0, y0] = p(from);
+    const [x1, y1] = p(to);
+    return `M ${x0} ${y0} A ${rr} ${rr} 0 0 0 ${x1} ${y1}`;
+  };
+  const 글자 = (d: number, rr: number) => [cx + rr * Math.cos((d * Math.PI) / 180), cy - rr * Math.sin((d * Math.PI) / 180) + 5];
+  const [kx, ky] = 글자(visual.known / 2, 52);
+  const [ux, uy] = 글자((visual.known + 180) / 2, 52);
+  return (
+    <svg viewBox="0 0 340 150" role="img" aria-label={visual.label}>
+      <rect x="2" y="2" width="336" height="146" rx="12" {...판} />
+      <line x1={cx - r - 30} y1={cy} x2={cx + r + 30} y2={cy} stroke={선} strokeWidth="3" />
+      <line x1={cx} y1={cy} x2={ex} y2={ey} stroke={선} strokeWidth="3" />
+      <path d={호(0, visual.known, 30)} fill="none" stroke="#ef6c00" strokeWidth="2" />
+      <path d={호(visual.known, 180, 24)} fill="none" stroke="#1565c0" strokeWidth="2" />
+      <text x={kx} y={ky} textAnchor="middle" fill="#bf360c" fontSize="15" fontWeight="900">{visual.known}°</text>
+      <text x={ux} y={uy} textAnchor="middle" fill="#1565c0" fontSize="17" fontWeight="900">?</text>
+    </svg>
+  );
+}
+
+// ── 평행선 사이의 선분 ──────────────────────────────────────────────
+export function ParallelDistanceGraphic({ visual }: { visual: ParallelDistanceVisual }) {
+  const top = 36;
+  const bottom = 116;
+  const segs = visual.segments.slice(0, 4);
+  return (
+    <svg viewBox="0 0 380 150" role="img" aria-label={visual.label}>
+      <rect x="2" y="2" width="376" height="146" rx="12" {...판} />
+      <line x1="16" y1={top} x2="364" y2={top} stroke={선} strokeWidth="3" />
+      <line x1="16" y1={bottom} x2="364" y2={bottom} stroke={선} strokeWidth="3" />
+      <text x="20" y={top - 8} fill="#56708a" fontSize="11" fontWeight="800">가</text>
+      <text x="20" y={bottom + 18} fill="#56708a" fontSize="11" fontWeight="800">나</text>
+      {segs.map((sg, k) => {
+        const x = 70 + k * (260 / Math.max(1, segs.length - 1 || 1));
+        const x2 = x + sg.slant;
+        return (
+          <g key={k}>
+            <line x1={x} y1={top} x2={x2} y2={bottom} stroke="#ef6c00" strokeWidth="2.6" />
+            {sg.slant === 0 && <path d={`M ${x} ${bottom - 10} h 10 v 10`} fill="none" stroke="#ef6c00" strokeWidth="1.6" />}
+            <text x={(x + x2) / 2 + 8} y={(top + bottom) / 2} fill="#bf360c" fontSize="13" fontWeight="900">{sg.text}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// ── 수 배열표 ───────────────────────────────────────────────────────
+export function NumberArrayGraphic({ visual }: { visual: NumberArrayVisual }) {
+  const rows = visual.rows;
+  const cols = Math.max(...rows.map((r) => r.length));
+  const w = 70;
+  const h = 34;
+  const width = cols * w + 20;
+  const height = rows.length * h + 20;
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
+      <rect x="2" y="2" width={width - 4} height={height - 4} rx="12" {...판} />
+      {rows.map((row, r) =>
+        row.map((v, c) => (
+          <g key={`${r}-${c}`}>
+            <rect x={10 + c * w} y={10 + r * h} width={w} height={h} fill={v === null ? '#fff3e0' : '#ffffff'} stroke="#90a4ae" />
+            <text x={10 + c * w + w / 2} y={10 + r * h + h / 2 + 5} textAnchor="middle" fill={v === null ? '#bf360c' : 글} fontSize="14" fontWeight="900">{v === null ? '?' : v}</text>
+          </g>
+        )),
+      )}
     </svg>
   );
 }
