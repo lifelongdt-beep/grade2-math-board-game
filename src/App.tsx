@@ -1266,7 +1266,7 @@ function App() {
       if (!current) return prev;
       // 올라갔으면 그 수준의 소리를 들려 줍니다. 소리만으로도 옆자리
       // 친구가 올라간 것을 압니다.
-      const moved = advancePlayerState(current, players.length, current.correct === false);
+      const moved = advancePlayerState(current, players.length, current.correct === false, questionBanks.하.length);
       if (moved.justMoved === 'up') playDifficultySound(moved.level);
       // '다음 문제'를 누르는 자리는 정답을 맞힌 뒤와 오답 도움말을 본 뒤,
       // 두 곳입니다. 오답이었으면 그 문제를 다시 낼 줄에 넣습니다.
@@ -1374,7 +1374,7 @@ function App() {
       if (isCorrect) {
         return {
           ...prev,
-          [player.id]: advancePlayerState(currentState, players.length, false),
+          [player.id]: advancePlayerState(currentState, players.length, false, questionBanks.하.length),
         };
       }
 
