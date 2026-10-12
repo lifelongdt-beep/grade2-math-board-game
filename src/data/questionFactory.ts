@@ -1021,6 +1021,9 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'ratio-graph' ||
     visual.kind === 'stack-plan' ||
     visual.kind === 'solid-figure' ||
+    visual.kind === 'beaker' ||
+    visual.kind === 'scale-dial' ||
+    visual.kind === 'balance' ||
     visual.kind === 'solid-net' ||
     visual.kind === 'circle-region' ||
     visual.kind === 'protractor' ||
