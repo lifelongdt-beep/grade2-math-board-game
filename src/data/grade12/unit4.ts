@@ -2,6 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { eun, i as 이가붙임 } from '../grade5/util';
 import { 고르개, 물건들, 사이, 수보기 } from '../grade11/common';
+import { 두단계이야기, 빈칸셈, 식관계 } from '../grade1/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 1-2 4단원 덧셈과 뺄셈(2)
@@ -309,19 +310,19 @@ export const unit4Lesson12 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
       if (lv === '상') return [덧셈그림, 덧셈계산(false)];
       return [덧셈그림, 덧셈계산(true)];
     case 3:
-      if (lv === '하') return [덧셈계산(true), 덧셈계산(false)];
-      if (lv === '중') return [덧셈계산(false), 가르기과정];
-      return [가르기과정, 덧셈계산(false)];
+      if (lv === '하') return [덧셈계산(true), 덧셈계산(false), 빈칸셈('1-2-4', '+', 18, 11)];
+      if (lv === '중') return [덧셈계산(false), 가르기과정, 빈칸셈('1-2-4', '+', 18, 11)];
+      return [가르기과정, 덧셈계산(false), 빈칸셈('1-2-4', '+', 18, 11), 두단계이야기('1-2-4', 18)];
     case 4:
       if (lv === '하') return [여러덧셈, 덧셈계산(false)];
       return [여러덧셈, 합같은식];
     case 5:
-      if (lv === '상') return [뺄셈그림, 뺄셈계산('몇')];
-      return [뺄셈그림];
+      if (lv === '상') return [뺄셈그림, 뺄셈계산('몇'), 식관계('1-2-4', 18)];
+      return [뺄셈그림, 식관계('1-2-4', 18)];
     case 6:
-      if (lv === '하') return [뺄셈계산('십'), 뺄셈계산('몇')];
-      if (lv === '중') return [뺄셈계산('몇'), 뺄셈과정];
-      return [뺄셈과정, 뺄셈계산('몇')];
+      if (lv === '하') return [뺄셈계산('십'), 뺄셈계산('몇'), 빈칸셈('1-2-4', '-', 18, 11)];
+      if (lv === '중') return [뺄셈계산('몇'), 뺄셈과정, 빈칸셈('1-2-4', '-', 18, 11)];
+      return [뺄셈과정, 뺄셈계산('몇'), 빈칸셈('1-2-4', '-', 18, 11), 두단계이야기('1-2-4', 18)];
     case 7:
       if (lv === '하') return [여러뺄셈, 뺄셈계산('몇')];
       return [여러뺄셈, 차같은식];

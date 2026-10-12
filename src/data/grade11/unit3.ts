@@ -2,6 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { eul, eun, gwa, i as 이가 } from '../grade5/util';
 import { 고르개, 물건둘, 물건들, 사이, 셈그림, 수보기 } from './common';
+import { 두단계이야기, 빈칸셈, 식관계, 합짝 } from '../grade1/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 1-1 3단원 덧셈과 뺄셈
@@ -573,30 +574,30 @@ export const unit3Lesson11 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
       if (lv === '중') return [가르기(true), 모으기빈칸];
       return [가르기아닌것, 모으기빈칸];
     case 4:
-      return [이야기];
+      return lv === '하' ? [이야기, 합짝('1-1-3', 9)] : [이야기, 합짝('1-1-3', 9), 식관계('1-1-3', 9)];
     case 5:
-      if (lv === '하') return [덧셈식고르기];
-      if (lv === '중') return [덧셈식고르기, 덧셈읽기];
-      return [덧셈읽기, 덧셈문장];
+      if (lv === '하') return [덧셈식고르기, 합짝('1-1-3', 9)];
+      if (lv === '중') return [덧셈식고르기, 덧셈읽기, 빈칸셈('1-1-3', '+', 9)];
+      return [덧셈읽기, 덧셈문장, 빈칸셈('1-1-3', '+', 9), 합짝('1-1-3', 9)];
     case 6:
-      if (lv === '하') return [덧셈(true), 덧셈(false)];
-      if (lv === '중') return [덧셈(false), 덧셈문장];
-      return [바꾸어더하기, 덧셈문장];
+      if (lv === '하') return [덧셈(true), 덧셈(false), 빈칸셈('1-1-3', '+', 9)];
+      if (lv === '중') return [덧셈(false), 덧셈문장, 빈칸셈('1-1-3', '+', 9)];
+      return [바꾸어더하기, 덧셈문장, 빈칸셈('1-1-3', '+', 9), 합짝('1-1-3', 9)];
     case 7:
-      if (lv === '하') return [뺄셈식고르기(false)];
-      if (lv === '중') return [뺄셈식고르기(false), 뺄셈식고르기(true), 뺄셈읽기];
-      return [뺄셈식고르기(true), 뺄셈읽기];
+      if (lv === '하') return [뺄셈식고르기(false), 식관계('1-1-3', 9)];
+      if (lv === '중') return [뺄셈식고르기(false), 뺄셈식고르기(true), 뺄셈읽기, 식관계('1-1-3', 9)];
+      return [뺄셈식고르기(true), 뺄셈읽기, 식관계('1-1-3', 9)];
     case 8:
-      if (lv === '하') return [뺄셈(true), 뺄셈(false)];
-      if (lv === '중') return [뺄셈(false), 뺄셈문장];
-      return [뺄셈문장];
+      if (lv === '하') return [뺄셈(true), 뺄셈(false), 빈칸셈('1-1-3', '-', 9)];
+      if (lv === '중') return [뺄셈(false), 뺄셈문장, 빈칸셈('1-1-3', '-', 9)];
+      return [뺄셈문장, 빈칸셈('1-1-3', '-', 9), 두단계이야기('1-1-3', 9)];
     case 9:
-      if (lv === '상') return [영문장, 영셈];
+      if (lv === '상') return [영문장, 영셈, 빈칸셈('1-1-3', '-', 9)];
       return [영셈, 영문장];
     case 10:
-      if (lv === '하') return [덧셈(false), 뺄셈(false)];
-      if (lv === '중') return [값이같은식];
-      return [가장큰식, 값이같은식];
+      if (lv === '하') return [덧셈(false), 뺄셈(false), 빈칸셈('1-1-3', '+', 9), 두단계이야기('1-1-3', 9)];
+      if (lv === '중') return [값이같은식, 빈칸셈('1-1-3', '-', 9), 두단계이야기('1-1-3', 9), 식관계('1-1-3', 9)];
+      return [가장큰식, 값이같은식, 두단계이야기('1-1-3', 9), 빈칸셈('1-1-3', '-', 9)];
     default:
       return null;
   }
