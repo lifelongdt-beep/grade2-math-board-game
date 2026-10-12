@@ -95,3 +95,36 @@ describe('the child keeps getting new questions', () => {
     }
   });
 });
+
+// ════════════════════════════════════════════════════════════════════
+// 여럿이 함께 풀 때 한 학생이 몇 문제만 맴돌지 않는지
+// ────────────────────────────────────────────────────────────────────
+// 한 학생은 사람 수만큼 건너뛰며 문제를 받습니다. 여섯 명이 서른 문항을
+// 나누어 풀면 한 학생이 0, 6, 12, 18, 24번만 받고 다시 0번으로 돌아와,
+// 아홉 번째 문제에서 같은 문제가 또 나왔습니다(2-2 길이 재기 2차시에서
+// 선생님이 알려 주신 일입니다). 문제집을 다 쓰기 전에는 같은 자리가
+// 다시 나오면 안 됩니다.
+// ════════════════════════════════════════════════════════════════════
+describe('여럿이 함께 풀어도 같은 문제가 일찍 돌아오지 않습니다', () => {
+  for (const bankSize of [30, 60, 90]) {
+    it(`문제집 ${bankSize}문항`, () => {
+      const 어긋난것: string[] = [];
+      for (let players = 1; players <= 10; players += 1) {
+        for (let seat = 0; seat < players; seat += 1) {
+          let state = createInitialPlayerState(seat * 4);
+          const 본자리 = new Set<number>();
+          for (let turn = 0; turn < bankSize; turn += 1) {
+            const at = state.questionIndex % bankSize;
+            if (본자리.has(at)) {
+              어긋난것.push(`${players}명 ${seat + 1}번 학생: ${turn + 1}번째에 ${at}번 문제가 또 나옴`);
+              break;
+            }
+            본자리.add(at);
+            state = advancePlayerState(state, players, false, bankSize);
+          }
+        }
+      }
+      expect(어긋난것).toEqual([]);
+    });
+  }
+});
