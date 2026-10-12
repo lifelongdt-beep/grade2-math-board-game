@@ -1,6 +1,7 @@
 import type { AngleVisual, Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
+import { 네각사각형, 삼각형 } from '../grade42/geom';
 
 // ════════════════════════════════════════════════════════════════════
 // 4-1 2단원 각도
@@ -85,16 +86,17 @@ const 눈금읽기: G5Family = {
     const d = 사이(next, 2, 34) * 5;
     if (d === 90) return null;
     const 안쪽 = next(2) === 0;
-    // 한 변이 바깥쪽 눈금 0에 맞추어져 있으면 바깥쪽 눈금을 읽습니다.
+    // 한 변이 지나는 쪽의 눈금 0에서부터 읽어야 합니다. 반대쪽 눈금을 읽으면 180에서 뺀 값이 나옵니다.
     return {
-      prompt: `각도기의 밑금을 각의 한 변에 맞추었더니 그 변이 ${안쪽 ? '안쪽' : '바깥쪽'} 눈금 0을 지납니다. 다른 변이 지나는 눈금이 안쪽 ${안쪽 ? d : 180 - d}, 바깥쪽 ${안쪽 ? 180 - d : d}일 때 각도는 몇 도일까요?`,
+      prompt: '각도기로 잰 각도는 몇 도일까요?',
       answer: `${d}°`,
       wrongs: [`${180 - d}°`, `${d + 10}°`, `${d - 5}°`].filter((w) => w !== `${d}°`),
       tag: 'angle',
       strategy: '각도기 눈금 바르게 읽기',
-      hint: '0에서 시작한 쪽의 눈금을 따라 읽어요.',
-      steps: [`한 변이 ${안쪽 ? '안쪽' : '바깥쪽'} 눈금 0을 지나므로 ${안쪽 ? '안쪽' : '바깥쪽'} 눈금을 읽습니다.`, `그러므로 각도는 ${d}°입니다.`],
+      hint: '각의 한 변이 지나는 눈금 0을 먼저 찾고, 그 0에서 시작하는 눈금을 따라 읽어요.',
+      steps: [`한 변이 ${안쪽 ? '안쪽(파란)' : '바깥쪽'} 눈금 0을 지나므로 ${안쪽 ? '안쪽' : '바깥쪽'} 눈금을 읽습니다.`, `다른 변이 지나는 ${안쪽 ? '안쪽' : '바깥쪽'} 눈금은 ${d}이므로 ${d}°입니다.`],
       misconceptionTip: '안쪽 눈금과 바깥쪽 눈금을 섞어 읽으면 180°에서 뺀 값이 나와요.',
+      visual: { kind: 'protractor', label: '각도기로 각도 재기', deg: d, base: 안쪽 ? 'inner' : 'outer' },
     };
   },
 };
@@ -154,6 +156,7 @@ const 시계각: G5Family = {
       strategy: '시계에서 예각, 직각, 둔각 찾기',
       hint: '시계에서 숫자 한 칸은 30°예요.',
       steps: [`${h}시에는 두 바늘 사이가 숫자 ${Math.min(h, 12 - h)}칸이므로 ${각}°입니다.`, `그러므로 ${종류}입니다.`],
+      visual: { kind: 'clock', label: `${h}시`, hour: h, minute: 0 },
     };
   },
 };
@@ -222,6 +225,7 @@ const 직선나머지: G5Family = {
       hint: '직선을 이루는 각은 180°예요.',
       steps: [`두 각의 합은 180°입니다.`, `180-${a}=${180 - a}이므로 ${180 - a}°입니다.`],
       minusIsOperator: true,
+      visual: { kind: 'angle-split', label: '한 직선 위의 두 각', known: a },
     };
   },
 };
@@ -245,6 +249,7 @@ const 삼각형나머지: G5Family = {
       steps: ['삼각형의 세 각의 크기의 합은 180°입니다.', `180-${a}-${b}=${c}이므로 ${c}°입니다.`],
       misconceptionTip: '사각형의 360°와 헷갈리지 마세요.',
       minusIsOperator: true,
+      visual: { kind: 'figure-set', label: '삼각형', items: [{ shape: '삼각형', points: 삼각형(a, b), angleLabels: [{ at: 0, text: `${a}°` }, { at: 1, text: `${b}°` }, { at: 2, text: '?' }] }] },
     };
   },
 };
@@ -258,6 +263,8 @@ const 사각형나머지: G5Family = {
     const c = 사이(next, 12, 26) * 5;
     const d = 360 - a - b - c;
     if (d <= 10 || d >= 180) return null;
+    const 모양 = 네각사각형(a, b, c, d);
+    if (!모양) return null;
     return {
       prompt: `사각형의 세 각의 크기가 ${a}°, ${b}°, ${c}°일 때 나머지 한 각의 크기는 몇 도일까요?`,
       answer: `${d}°`,
@@ -268,6 +275,7 @@ const 사각형나머지: G5Family = {
       steps: ['사각형의 네 각의 크기의 합은 360°입니다.', `360-${a}-${b}-${c}=${d}이므로 ${d}°입니다.`],
       misconceptionTip: '삼각형의 180°와 헷갈리지 마세요.',
       minusIsOperator: true,
+      visual: { kind: 'figure-set', label: '사각형', items: [{ shape: '사각형', points: 모양, angleLabels: [{ at: 0, text: `${a}°` }, { at: 1, text: `${b}°` }, { at: 2, text: `${c}°` }, { at: 3, text: '?' }] }] },
     };
   },
 };

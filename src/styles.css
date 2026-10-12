@@ -1326,6 +1326,11 @@ button:disabled {
   height: calc(var(--visual-height) * 1.81);
 }
 
+.question-visual-figure.is-scale {
+  width: min(100%, 420px);
+  height: calc(var(--visual-height) * 1.6);
+}
+
 .question-visual-figure svg {
   display: block;
   width: 100%;

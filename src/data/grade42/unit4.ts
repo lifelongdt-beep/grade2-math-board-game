@@ -61,6 +61,10 @@ const 모양 = (k: 종류, next: (b: number) => number): Pt[] => {
   }
 };
 
+/** 밑변 w, 옆변 L, 왼쪽 아래 각이 a°인 평행사변형(마름모는 w=L)입니다. 그림의 각과 길이가 적힌 값과 같습니다. */
+const 평행사변형점 = (w: number, L: number, a: number): Pt[] => 사각형(w, w, L * Math.sin((a * Math.PI) / 180), L * Math.cos((a * Math.PI) / 180));
+const 변글 = (글: Array<[number, number, string]>) => 글.map(([from, to, text]) => ({ from, to, text }));
+
 const 다변 = (pts: Pt[]) => pts.map((p, k) => [p, pts[(k + 1) % pts.length]] as const);
 const 평행 = (a: readonly [Pt, Pt], b: readonly [Pt, Pt]) => Math.abs((a[1][0] - a[0][0]) * (b[1][1] - b[0][1]) - (a[1][1] - a[0][1]) * (b[1][0] - b[0][0])) < 1e-3;
 /** 마주 보는 두 쌍의 변이 이루는 방향 차이 가운데 작은 것(도)입니다. */
@@ -192,6 +196,7 @@ const 평행선거리: G5Family = {
         strategy: '평행선 사이의 거리',
         hint: '평행선 사이의 거리는 두 평행선에 수직인 선분의 길이예요.',
         steps: [`가로인 두 변 사이에 수직인 선분은 세로이므로 ${h} cm입니다.`],
+        visual: { kind: 'figure-set', label: '직사각형', items: [{ shape: '직사각형', points: 사각형(w, w, h, 0), edgeLabels: 변글([[0, 1, `${w} cm`], [1, 2, `${h} cm`]]) }] },
       };
     }
     return {
@@ -203,6 +208,16 @@ const 평행선거리: G5Family = {
       hint: '평행선 사이에 그은 선분 가운데 수직인 선분의 길이가 거리예요. 그 선분이 가장 짧아요.',
       steps: [`평행선에 수직인 선분의 길이가 평행선 사이의 거리이므로 ${h} cm입니다.`],
       misconceptionTip: '비스듬히 그은 선분은 거리가 아니에요.',
+      // 선분 차례를 섞어, 수직인 선분이 늘 가운데 있지 않게 합니다.
+      visual: {
+        kind: 'parallel-distance',
+        label: '평행선 가와 나 사이에 그은 선분',
+        segments: [
+          { text: `${비스듬 + 2} cm`, slant: 60 },
+          { text: `${h} cm`, slant: 0 },
+          { text: `${비스듬} cm`, slant: -40 },
+        ].sort((p, q) => ((p.slant * 7 + seed) % 5) - ((q.slant * 7 + seed) % 5)),
+      },
     };
   },
 };
@@ -224,7 +239,7 @@ const 평행사변형성질: G5Family = {
         strategy: '평행사변형의 이웃한 두 각의 합',
         hint: '평행사변형에서 이웃한 두 각의 크기의 합은 180°예요.',
         steps: [`180°-${a}°=${180 - a}°입니다.`],
-        visual: { kind: 'figure-set', label: '평행사변형', items: [{ shape: '평행사변형', points: 모양('평행사변형', next) }] },
+        visual: { kind: 'figure-set', label: '평행사변형', items: [{ shape: '평행사변형', points: 평행사변형점(10, 6, a), angleLabels: [{ at: 0, text: `${a}°` }, { at: 1, text: '?' }] }] },
         minusIsOperator: true,
       };
     }
@@ -240,6 +255,7 @@ const 평행사변형성질: G5Family = {
         strategy: '평행사변형의 마주 보는 변의 길이',
         hint: '평행사변형은 마주 보는 두 변의 길이가 같아요.',
         steps: [`(${x}+${y})×2=${(x + y) * 2}이므로 ${(x + y) * 2} cm입니다.`],
+        visual: { kind: 'figure-set', label: '평행사변형', items: [{ shape: '평행사변형', points: 평행사변형점(x, y, 65), edgeLabels: 변글([[0, 1, `${x} cm`], [3, 0, `${y} cm`]]) }] },
       };
     }
     const a = 사이(next, 7, 17) * 5;
@@ -252,6 +268,7 @@ const 평행사변형성질: G5Family = {
       strategy: '평행사변형의 마주 보는 각',
       hint: '평행사변형은 마주 보는 두 각의 크기가 같아요.',
       steps: [`마주 보는 각의 크기는 같으므로 ${a}°입니다.`],
+      visual: { kind: 'figure-set', label: '평행사변형', items: [{ shape: '평행사변형', points: 평행사변형점(10, 6, a), angleLabels: [{ at: 0, text: `${a}°` }, { at: 2, text: '?' }] }] },
     };
   },
 };
@@ -271,6 +288,7 @@ const 마름모성질: G5Family = {
         strategy: '마름모의 네 변',
         hint: '마름모는 네 변의 길이가 모두 같아요.',
         steps: [`${s}×4=${s * 4}이므로 ${s * 4} cm입니다.`],
+        visual: { kind: 'figure-set', label: '마름모', items: [{ shape: '마름모', points: 평행사변형점(1, 1, 60), edgeLabels: 변글([[0, 1, `${s} cm`]]) }] },
       };
     }
     if (kind === 1) {
@@ -295,6 +313,7 @@ const 마름모성질: G5Family = {
       hint: '마름모도 마주 보는 두 쌍의 변이 평행해서 이웃한 두 각의 합이 180°예요.',
       steps: [`180°-${a}°=${180 - a}°입니다.`],
       minusIsOperator: true,
+      visual: { kind: 'figure-set', label: '마름모', items: [{ shape: '마름모', points: 평행사변형점(1, 1, a), angleLabels: [{ at: 0, text: `${a}°` }, { at: 1, text: '?' }] }] },
     };
   },
 };
@@ -331,6 +350,7 @@ const 직사각형정사각형: G5Family = {
         strategy: '직사각형의 둘레',
         hint: '직사각형은 마주 보는 두 변의 길이가 같아요.',
         steps: [`(${w}+${h})×2=${(w + h) * 2}이므로 ${(w + h) * 2} cm입니다.`],
+        visual: { kind: 'figure-set', label: '직사각형', items: [{ shape: '직사각형', points: 사각형(w, w, h, 0), edgeLabels: 변글([[0, 1, `${w} cm`], [1, 2, `${h} cm`]]) }] },
       };
     }
     return {

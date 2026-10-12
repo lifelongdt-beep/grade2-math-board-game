@@ -1,5 +1,5 @@
 import { ShareScene } from './ShareScene';
-import { AngleGraphic, BarGraphGraphic, GridMoveGraphic, LineGraphGraphic } from './Grade4Visuals';
+import { AngleGraphic, AngleSplitGraphic, BarGraphGraphic, GridMoveGraphic, LineGraphGraphic, NumberArrayGraphic, ParallelDistanceGraphic, ProtractorGraphic } from './Grade4Visuals';
 import { RatioGraphGraphic, StackPlanGraphic } from './Grade6Visuals';
 import { CompareGraphic, CountersGraphic, SolidsGraphic, TenFrameGraphic, TensOnesGraphic } from './Grade1Visuals';
 import type { PlaneShapeVisualItem, QuestionVisual } from '../types';
@@ -3127,6 +3127,9 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
         'question-visual-figure',
         visual.kind === 'clock' ? 'is-clock' : '',
         visual.kind === 'table' ? 'is-table' : '',
+        // 눈금을 읽어야 하는 그림은 키를 키웁니다. 같은 키로 두면 각도기·
+        // 그래프의 눈금 숫자가 읽을 수 없을 만큼 작아집니다.
+        visual.kind === 'protractor' || visual.kind === 'bar-graph' || visual.kind === 'line-graph' || (visual.kind === 'ratio-graph' && visual.shape === 'pie') ? 'is-scale' : '',
         className,
       ]
         .filter(Boolean)
@@ -3174,6 +3177,10 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'bar-graph' && <BarGraphGraphic visual={visual} />}
       {visual.kind === 'line-graph' && <LineGraphGraphic visual={visual} />}
       {visual.kind === 'grid-move' && <GridMoveGraphic visual={visual} />}
+      {visual.kind === 'protractor' && <ProtractorGraphic visual={visual} />}
+      {visual.kind === 'angle-split' && <AngleSplitGraphic visual={visual} />}
+      {visual.kind === 'parallel-distance' && <ParallelDistanceGraphic visual={visual} />}
+      {visual.kind === 'number-array' && <NumberArrayGraphic visual={visual} />}
       {visual.kind === 'ratio-graph' && <RatioGraphGraphic visual={visual} />}
       {visual.kind === 'stack-plan' && <StackPlanGraphic visual={visual} />}
     </figure>
