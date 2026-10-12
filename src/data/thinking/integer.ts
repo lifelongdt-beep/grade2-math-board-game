@@ -22,12 +22,14 @@ export type 범위 = [number, number];
 const 다른 = <T,>(ans: T, xs: T[]) => [...new Set(xs)].filter((x) => x !== ans && (typeof x !== 'number' || x > 0));
 
 /** 어떤 수에 b를 곱했더니 v — 어떤 수를 구합니다. 나눗셈이면 몫과 나머지로 처음 수를 구합니다. */
-export const 어떤수 = (id: string, 연산: '×' | '÷', a범위: 범위, b범위: 범위, b단위 = 1, tag: ConceptTag = 연산 === '×' ? 'multiplication' : 'division'): G5Family => ({
+export const 어떤수 = (id: string, 연산: '×' | '÷', a범위: 범위, b범위: 범위, b단위 = 1, tag: ConceptTag = 연산 === '×' ? 'multiplication' : 'division', 조건?: (a: number, b: number) => boolean): G5Family => ({
   id: `${id}-unknown`,
   make: (seed) => {
     const next = 고르개(seed);
     const a = 사이(next, ...a범위);
     const b = 사이(next, ...b범위) * b단위;
+    // 차시가 다루는 올림 꼴만 내도록 곱하는 두 수를 거를 수 있습니다.
+    if (조건 && !조건(a, b)) return null;
     if (연산 === '×') {
       const v = a * b;
       return {
@@ -59,13 +61,14 @@ export const 어떤수 = (id: string, 연산: '×' | '÷', a범위: 범위, b범
 });
 
 /** 곱해야 할 것을 더했다(나누어야 할 것을 곱했다) — 바르게 계산한 값을 구합니다. */
-export const 잘못계산 = (id: string, 바른: '×' | '÷', a범위: 범위, b범위: 범위, tag: ConceptTag = 바른 === '×' ? 'multiplication' : 'division'): G5Family => ({
+export const 잘못계산 = (id: string, 바른: '×' | '÷', a범위: 범위, b범위: 범위, tag: ConceptTag = 바른 === '×' ? 'multiplication' : 'division', 조건?: (a: number, b: number) => boolean): G5Family => ({
   id: `${id}-mistake`,
   make: (seed) => {
     const next = 고르개(seed);
     const b = 사이(next, ...b범위);
     if (바른 === '×') {
       const a = 사이(next, ...a범위);
+      if (조건 && !조건(a, b)) return null;
       const 잘못 = a + b;
       const v = a * b;
       return {
@@ -309,6 +312,85 @@ export const 두단계문장제 = (id: string, a범위: 범위, b범위: 범위)
       strategy: '두 곱을 구해 견주기',
       hint: '두 가게에서 판 구슬을 각각 구하여 견주어요.',
       steps: [`가 가게: ${a}×${b}=${가}개, 나 가게: ${d}×${c}=${나}개`, `${Math.max(가, 나)}-${Math.min(가, 나)}=${차}개`],
+      minusIsOperator: true,
+    };
+  },
+});
+
+/** 어떤 수에 b를 더했더니(뺐더니) X — 어떤 수 */
+export const 어떤수덧뺄 = (id: string, 연산: '+' | '-', 범위: 범위): G5Family => ({
+  id: `${id}-unknown-${연산}`,
+  make: (seed) => {
+    const next = 고르개(seed);
+    const x = 사이(next, ...범위);
+    const b = 사이(next, ...범위);
+    const X = 연산 === '+' ? x + b : x - b;
+    if (X <= 0) return null;
+    return {
+      prompt: 연산 === '+' ? `어떤 수에 ${b}을(를) 더했더니 ${X}이(가) 되었습니다. 어떤 수는 얼마일까요?` : `어떤 수에서 ${b}을(를) 뺐더니 ${X}이(가) 되었습니다. 어떤 수는 얼마일까요?`,
+      answer: String(x),
+      wrongs: 다른(x, [연산 === '+' ? X + b : X - b, x + 10, x - 10, x + 100, Math.abs(X - b)]).slice(0, 3).map(String),
+      tag: 연산 === '+' ? 'addition' : 'subtraction',
+      strategy: '덧셈과 뺄셈의 관계로 어떤 수 구하기',
+      hint: 연산 === '+' ? '□+(더한 수)=(결과)이면 □=(결과)-(더한 수)예요.' : '□-(뺀 수)=(결과)이면 □=(결과)+(뺀 수)예요.',
+      steps: [연산 === '+' ? `□+${b}=${X}` : `□-${b}=${X}`, 연산 === '+' ? `□=${X}-${b}=${x}` : `□=${X}+${b}=${x}`],
+      misconceptionTip: '더한 것을 되돌리려면 빼고, 뺀 것을 되돌리려면 더해요.',
+      minusIsOperator: true,
+    };
+  },
+});
+
+/** 더해야 할 것을 뺐다(빼야 할 것을 더했다) — 바르게 계산한 값 */
+export const 잘못계산덧뺄 = (id: string, 범위: 범위): G5Family => ({
+  id: `${id}-mistake-addsub`,
+  make: (seed) => {
+    const next = 고르개(seed);
+    const x = 사이(next, ...범위);
+    const b = 사이(next, ...범위);
+    const 더해야 = next(2) === 0;
+    const 잘못 = 더해야 ? x - b : x + b;
+    const v = 더해야 ? x + b : x - b;
+    if (잘못 <= 0 || v <= 0) return null;
+    return {
+      prompt: 더해야
+        ? `어떤 수에 ${b}을(를) 더해야 할 것을 잘못하여 뺐더니 ${잘못}이(가) 되었습니다. 바르게 계산한 값은 얼마일까요?`
+        : `어떤 수에서 ${b}을(를) 빼야 할 것을 잘못하여 더했더니 ${잘못}이(가) 되었습니다. 바르게 계산한 값은 얼마일까요?`,
+      answer: String(v),
+      wrongs: 다른(v, [x, 더해야 ? 잘못 + b : 잘못 - b, 더해야 ? v + b : v - b, v + 10]).slice(0, 3).map(String),
+      tag: 더해야 ? 'addition' : 'subtraction',
+      strategy: '잘못 계산한 식에서 어떤 수를 찾아 바르게 계산하기',
+      hint: '먼저 잘못 계산한 식으로 어떤 수를 찾아요.',
+      steps: 더해야
+        ? [`□-${b}=${잘못}이므로 □=${잘못}+${b}=${x}입니다.`, `바르게 계산하면 ${x}+${b}=${v}입니다.`]
+        : [`□+${b}=${잘못}이므로 □=${잘못}-${b}=${x}입니다.`, `바르게 계산하면 ${x}-${b}=${v}입니다.`],
+      minusIsOperator: true,
+    };
+  },
+});
+
+/** 수 카드 세 장으로 만든 가장 큰 세 자리 수와 가장 작은 세 자리 수의 합(차) */
+export const 수카드합차 = (id: string): G5Family => ({
+  id: `${id}-cards-addsub`,
+  make: (seed) => {
+    const next = 고르개(seed);
+    const 카드: number[] = [];
+    while (카드.length < 3) {
+      const c = 사이(next, 1, 9);
+      if (!카드.includes(c)) 카드.push(c);
+    }
+    const 오름 = [...카드].sort((a, b) => a - b);
+    const 큰 = 오름[2] * 100 + 오름[1] * 10 + 오름[0];
+    const 작은 = 오름[0] * 100 + 오름[1] * 10 + 오름[2];
+    const 합 = next(2) === 0;
+    const v = 합 ? 큰 + 작은 : 큰 - 작은;
+    return {
+      prompt: `수 카드 ${카드.join(', ')}을(를) 한 번씩만 사용하여 세 자리 수를 만들려고 합니다. 만들 수 있는 가장 큰 수와 가장 작은 수의 ${합 ? '합' : '차'}은(는) 얼마일까요?`,
+      answer: String(v),
+      wrongs: 다른(v, [합 ? 큰 - 작은 : 큰 + 작은, 큰, v + 10, v - 9, v + 100]).slice(0, 3).map(String),
+      tag: 합 ? 'addition' : 'subtraction',
+      strategy: '자릿값을 생각하여 가장 큰 수와 가장 작은 수 만들기',
+      hint: '가장 큰 수는 높은 자리부터 큰 숫자를, 가장 작은 수는 높은 자리부터 작은 숫자를 놓아요.',
+      steps: [`가장 큰 수는 ${큰}, 가장 작은 수는 ${작은}입니다.`, `${큰}${합 ? '+' : '-'}${작은}=${v}`],
       minusIsOperator: true,
     };
   },
