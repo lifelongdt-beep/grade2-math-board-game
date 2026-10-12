@@ -33,11 +33,14 @@ const 세기 = (id: string, lo: number, hi: number): G5Family => ({
     const n = 사이(next, lo, hi);
     // 상: 두 가지 물건이 함께 있을 때 한 가지만 셉니다.
     if (lv === '상') {
-      const m = 사이(next, 1, 9);
+      // 이 단원은 9까지의 수입니다. 아직 배우지 않은 수(10, 13 …)는
+      // 그림에도 보기에도 내지 않습니다. 함께 놓인 다른 물건도 이 차시의
+      // 수 범위 안에서만 그립니다.
+      const m = 사이(next, 1, hi);
       return {
         prompt: `그림에서 ${eun(a.이름)} 몇 ${a.단위}일까요?`,
         answer: `${n}${a.단위}`,
-        wrongs: [n + m, m, n + 1, n - 1].filter((v) => v > 0 && v !== n && v <= 18).map((v) => `${v}${a.단위}`),
+        wrongs: [...new Set([n + m, m, n + 1, n - 1, n - 2])].filter((v) => v > 0 && v !== n && v <= 9).map((v) => `${v}${a.단위}`),
         tag: 'number',
         strategy: '여러 가지 중 하나만 세기',
         hint: `${a.이름}만 하나씩 짚으며 세어 보세요. ${eun(b.이름)} 세지 않아요.`,
@@ -52,7 +55,7 @@ const 세기 = (id: string, lo: number, hi: number): G5Family => ({
     return {
       prompt: `${a.이름}${eun(a.이름).slice(a.이름.length)} 몇 ${a.단위}일까요?`,
       answer: `${n}${a.단위}`,
-      wrongs: [n + 1, n - 1, n + 2, n - 2].filter((v) => v > 0 && v <= 10).map((v) => `${v}${a.단위}`),
+      wrongs: [n + 1, n - 1, n + 2, n - 2, n - 3].filter((v) => v > 0 && v <= 9).map((v) => `${v}${a.단위}`),
       tag: 'number',
       strategy: '그림의 물건 세기',
       hint: '하나씩 짚으며 하나, 둘, 셋 … 세어 보세요.',

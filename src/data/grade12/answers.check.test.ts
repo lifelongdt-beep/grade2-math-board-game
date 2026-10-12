@@ -170,3 +170,53 @@ describe('1-2 6단원 덧셈과 뺄셈(3)', () => {
     }
   });
 });
+
+// ════════════════════════════════════════════════════════════════════
+// 수 배열표·색칠 그림이 문항과 같습니다
+// ════════════════════════════════════════════════════════════════════
+describe('1-2 그림과 문항이 어긋나지 않습니다', () => {
+  it('수 배열표 그림은 1부터 100까지의 배열 그대로이고, ? 칸이 답입니다', () => {
+    let 그림수 = 0;
+    for (const { q } of 단원(5)) {
+      const v = q.visual;
+      if (/수 배열표/.test(q.prompt)) expect(v?.kind, q.prompt).toBe('number-array');
+      if (v?.kind !== 'number-array') continue;
+      그림수 += 1;
+      // 한 줄에 10칸이고, 칸의 수는 (줄)×10+(칸)+1입니다.
+      for (const row of v.rows) {
+        expect(row.length, q.prompt).toBe(10);
+        const 첫 = row.find((x) => x !== null)!;
+        const 줄첫 = 첫 - row.indexOf(첫);
+        expect((줄첫 - 1) % 10, q.prompt).toBe(0);
+        row.forEach((x, c) => { if (x !== null) expect(x, q.prompt).toBe(줄첫 + c); });
+      }
+      const 빈칸 = v.rows.flatMap((row, r) => row.map((x, c) => (x === null ? [r, c] : null)).filter(Boolean));
+      if (/바로 (아래|위) 칸/.test(q.prompt)) {
+        expect(빈칸.length, q.prompt).toBe(1);
+        const [r, c] = 빈칸[0] as number[];
+        const 첫줄 = v.rows[0].find((x) => x !== null)!;
+        const 첫줄시작 = 첫줄 - v.rows[0].indexOf(첫줄);
+        expect(첫줄시작 + r * 10 + c, q.prompt).toBe(Number(q.answer));
+        const n = Number(/배열표에서 (\d+) 바로/.exec(q.prompt)![1]);
+        expect(v.rows.flat(), q.prompt).toContain(n);
+      } else expect(빈칸.length, q.prompt).toBe(0);
+      const 색칠 = /배열표에서 ([\d, ]+)에 색칠/.exec(q.prompt);
+      if (색칠) {
+        const seq = 색칠[1].split(', ').map(Number);
+        expect(v.shaded, q.prompt).toEqual(seq);
+        for (const x of seq) expect(v.rows.flat(), q.prompt).toContain(x);
+        expect(v.rows.flat(), q.prompt).toContain(Number(q.answer));
+      }
+    }
+    expect(그림수).toBeGreaterThan(0);
+  });
+
+  it('색을 수로 나타내는 문항의 그림은 문항에 적힌 색 차례와 같습니다', () => {
+    for (const { q } of 단원(5)) {
+      const m = /^(.+) 차례로 색칠했습니다/.exec(q.prompt);
+      if (!m) continue;
+      expect(q.visual?.kind, q.prompt).toBe('pattern');
+      if (q.visual?.kind === 'pattern') expect(q.visual.items, q.prompt).toEqual(m[1].split(', '));
+    }
+  });
+});
