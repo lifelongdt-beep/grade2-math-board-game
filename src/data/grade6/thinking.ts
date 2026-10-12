@@ -451,3 +451,38 @@ export const 원생각 = (갈래들: Array<0 | 1 | 2 | 3>): G5Family => ({
     };
   },
 });
+
+/** 원기둥의 전개도: 옆면의 가로에서 거꾸로 반지름, 옆면의 넓이 */
+export const 원기둥전개도생각: G5Family = {
+  id: 'cylinder-net-think',
+  make: (seed) => {
+    const next = 고르개(seed);
+    const r = 사이(next, 2, 12);
+    const h = 사이(next, 3, 20);
+    const 가로 = 2 * r * 3140; // 천분
+    if (next(2) === 0) {
+      return {
+        prompt: `원기둥의 전개도에서 옆면의 가로가 ${소수(가로)} cm입니다. 이 원기둥의 밑면의 반지름은 몇 cm일까요? (원주율: 3.14)`,
+        answer: `${r} cm`,
+        wrongs: [2 * r, r + 1, Math.round(가로 / 1000 / 3)].filter((x, i, xs) => x !== r && xs.indexOf(x) === i).concat([r * 3]).filter((x, i, xs) => x !== r && xs.indexOf(x) === i).slice(0, 3).map((x) => `${x} cm`),
+        tag: 'measurement',
+        strategy: '옆면의 가로가 밑면의 둘레임을 이용하여 거꾸로 구하기',
+        hint: '옆면을 감으면 가로가 밑면의 둘레(원주)와 꼭 맞아요.',
+        steps: [`밑면의 원주가 ${소수(가로)} cm이므로 지름은 ${소수(가로)}÷3.14=${2 * r} cm입니다.`, `반지름은 ${2 * r}÷2=${r} cm입니다.`],
+        misconceptionTip: '원주를 3.14로 나누면 반지름이 아니라 지름이 나와요.',
+        visual: { kind: 'solid-net', label: '원기둥의 전개도', solid: 'cylinder', base: r, height: h, labels: { base: '? cm', height: `${h} cm`, width: `${소수(가로)} cm` } },
+      };
+    }
+    const 넓이 = (가로 * h);
+    return {
+      prompt: `밑면의 반지름이 ${r} cm, 높이가 ${h} cm인 원기둥의 전개도에서 옆면의 넓이는 몇 cm²일까요? (원주율: 3.14)`,
+      answer: `${소수(넓이)} cm²`,
+      wrongs: [r * 3140 * h, 2 * r * h * 1000, 가로 * h + r * r * 3140 * 2].filter((x, i, xs) => x !== 넓이 && xs.indexOf(x) === i).map((x) => `${소수(x)} cm²`),
+      tag: 'measurement',
+      strategy: '옆면을 직사각형으로 보고 넓이 구하기',
+      hint: '옆면은 가로가 밑면의 둘레, 세로가 높이인 직사각형이에요.',
+      steps: [`옆면의 가로: ${2 * r}×3.14=${소수(가로)} cm`, `옆면의 넓이: ${소수(가로)}×${h}=${소수(넓이)} cm²`],
+      visual: { kind: 'solid-net', label: '원기둥의 전개도', solid: 'cylinder', base: r, height: h, labels: { base: `${r} cm`, height: `${h} cm`, width: '? cm' } },
+    };
+  },
+};

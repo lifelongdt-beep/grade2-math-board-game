@@ -231,7 +231,7 @@ export const unit5Lesson62 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 5:
       return [넓이어림, 원생각([0, 1])];
     case 6:
-      return lv === '하' ? [넓이, 원생각([2])] : [넓이, 원생각([2, 3])];
+      return lv === '하' ? [넓이, 원생각([2]), 원생각([3])] : [넓이, 원생각([2, 3])];
     case 7:
       return lv === '하' ? [넓이, 활용, 원생각([1, 2])] : [활용, 원생각([1, 2, 3]), 넓이];
     default:

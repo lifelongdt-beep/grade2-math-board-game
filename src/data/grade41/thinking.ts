@@ -311,3 +311,54 @@ export const 몇째수: G5Family = {
     };
   },
 };
+
+/** 계산하지 않고 등호의 양쪽을 같게 만들기: 46+29=45+□, 12×6=24×□ */
+export const 등호보정 = (곱: boolean): G5Family => ({
+  id: `equal-balance-${곱 ? 'mul' : 'add'}`,
+  make: (seed) => {
+    const next = 고르개(seed);
+    if (!곱) {
+      const a = 사이(next, 21, 89);
+      const b = 사이(next, 11, 89);
+      const k = 사이(next, 1, 9);
+      const 빼기 = next(2) === 0;
+      if (빼기) {
+        // a-b=(a+k)-□ → □=b+k
+        return {
+          prompt: `계산하지 않고 □ 안에 알맞은 수를 구하면 얼마일까요? ${a}-${b}=${a + k}-□`,
+          answer: String(b + k),
+          wrongs: [b - k, b, a - b, b + 2 * k].filter((x, i, xs) => x > 0 && x !== b + k && xs.indexOf(x) === i).slice(0, 3).map(String),
+          tag: 'pattern',
+          strategy: '등호의 양쪽 크기를 같게 하는 규칙 찾기',
+          hint: `빼어지는 수가 ${k}만큼 커졌어요. 차가 그대로이려면 빼는 수도 같은 만큼 커져야 해요.`,
+          steps: [`${a}이(가) ${a + k}(으)로 ${k}만큼 커졌습니다.`, `차가 같으려면 빼는 수도 ${k}만큼 커져야 하므로 □=${b}+${k}=${b + k}입니다.`],
+          misconceptionTip: '덧셈과 달리 뺄셈에서는 두 수를 같은 쪽으로 바꾸어야 차가 같아요.',
+        };
+      }
+      // a+b=(a-k)+□ → □=b+k
+      return {
+        prompt: `계산하지 않고 □ 안에 알맞은 수를 구하면 얼마일까요? ${a}+${b}=${a - k}+□`,
+        answer: String(b + k),
+        wrongs: [b - k, b, a + b, b + 2 * k].filter((x, i, xs) => x > 0 && x !== b + k && xs.indexOf(x) === i).slice(0, 3).map(String),
+        tag: 'pattern',
+        strategy: '등호의 양쪽 크기를 같게 하는 규칙 찾기',
+        hint: `한 수가 ${k}만큼 작아졌으니, 합이 같으려면 다른 수는 ${k}만큼 커져야 해요.`,
+        steps: [`${a}이(가) ${a - k}(으)로 ${k}만큼 작아졌습니다.`, `□=${b}+${k}=${b + k}입니다.`],
+        misconceptionTip: '양쪽을 모두 계산하지 않아도, 바뀐 만큼을 생각하면 □를 찾을 수 있어요.',
+      };
+    }
+    const a = 사이(next, 2, 15);
+    const b = 사이(next, 2, 9) * 2;
+    const k = 2;
+    return {
+      prompt: `계산하지 않고 □ 안에 알맞은 수를 구하면 얼마일까요? ${a}×${b}=${a * k}×□`,
+      answer: String(b / k),
+      wrongs: [b * k, b, b - k, a].filter((x, i, xs) => x > 0 && x !== b / k && xs.indexOf(x) === i).slice(0, 3).map(String),
+      tag: 'pattern',
+      strategy: '곱의 크기가 같도록 두 수를 바꾸는 규칙 찾기',
+      hint: '한 수가 2배가 되면, 곱이 같으려면 다른 수는 반으로 줄어야 해요.',
+      steps: [`${a}이(가) ${a * k}(으)로 2배가 되었습니다.`, `□=${b}÷2=${b / k}입니다.`],
+      misconceptionTip: '곱셈에서는 더하거나 빼서 맞추지 않고, 몇 배가 되었는지 생각해요.',
+    };
+  },
+});

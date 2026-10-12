@@ -347,6 +347,38 @@ describe('생각하는 문항(3학년 덧셈·뺄셈·시간·들이·무게)', 
   });
 });
 
+describe('생각하는 문항(세 수·규칙·등호·원기둥 전개도)', () => {
+  it('답이 맞습니다', () => {
+    const 셈 = new Map<string, number>();
+    const 센다 = (k: string) => 셈.set(k, (셈.get(k) ?? 0) + 1);
+    for (const q of 모두) {
+      const p = q.prompt;
+      let m = /^(\d+)\+□\+(\d+)=(\d+)에서/.exec(p);
+      if (m) { expect(Number(m[1]) + Number(q.answer) + Number(m[2]), p).toBe(Number(m[3])); 센다('세수덧'); }
+      m = /^(\d+)-□-(\d+)=(\d+)에서/.exec(p);
+      if (m) { expect(Number(m[1]) - Number(q.answer) - Number(m[2]), p).toBe(Number(m[3])); 센다('세수뺄'); }
+      m = /^([\d, ]+)의 규칙을 바르게 말한 것은/.exec(p);
+      if (m) {
+        const xs = m[1].split(', ').map(Number); const d = xs[1] - xs[0];
+        expect(xs.every((x, i) => i === 0 || x - xs[i - 1] === d), p).toBe(true);
+        expect(q.answer, p).toBe(`${Math.abs(d)}씩 ${d > 0 ? '커집니다' : '작아집니다'}`);
+        센다('규칙말');
+      }
+      m = /^계산하지 않고 □ 안에 알맞은 수를 구하면 얼마일까요\? (\d+)([+×-])(\d+)=(\d+)([+×-])□$/.exec(p);
+      if (m) {
+        const f = (a: number, op: string, b: number) => (op === '+' ? a + b : op === '-' ? a - b : a * b);
+        expect(f(Number(m[4]), m[5], Number(q.answer)), p).toBe(f(Number(m[1]), m[2], Number(m[3])));
+        센다('등호');
+      }
+      m = /^원기둥의 전개도에서 옆면의 가로가 ([\d.]+) cm입니다. 이 원기둥의 밑면의 반지름/.exec(p);
+      if (m) { expect(Math.abs(수(q.answer) * 2 * 3.14 - Number(m[1])) < 1e-9, p).toBe(true); 센다('전개도반지름'); }
+      m = /^밑면의 반지름이 (\d+) cm, 높이가 (\d+) cm인 원기둥의 전개도에서 옆면의 넓이/.exec(p);
+      if (m) { expect(Math.abs(수(q.answer) - Number(m[1]) * 2 * 3.14 * Number(m[2])) < 1e-6, p).toBe(true); 센다('옆면넓이'); }
+    }
+    for (const k of ['세수덧', '세수뺄', '규칙말', '등호', '전개도반지름', '옆면넓이']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+  });
+});
+
 describe('생각하는 문항(자연수)', () => {
   it('거꾸로·잘못 계산·수 카드·어림·나머지·□ 범위·문장제 답이 맞습니다', () => {
     const 셈 = new Map<string, number>();

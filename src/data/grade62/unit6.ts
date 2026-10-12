@@ -2,6 +2,7 @@ import type { Difficulty, SolidFigureVisual, SolidNetVisual } from '../../types'
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
 import { 소수 } from '../grade42/unit3';
+import { 원기둥전개도생각 } from '../grade6/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 6-2 6단원 원기둥, 원뿔, 구
@@ -202,7 +203,7 @@ export const unit6Lesson62 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 2:
       return [뜻('원기둥'), 원기둥앞];
     case 3:
-      return [전개도];
+      return [전개도, 원기둥전개도생각];
     case 4:
       return [뜻('원뿔'), 원뿔길이];
     case 5:

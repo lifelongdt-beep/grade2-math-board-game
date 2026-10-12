@@ -2,7 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { eun } from '../grade5/util';
 import { 고르개, 물건들, 사이, 셈그림, 수보기 } from '../grade11/common';
-import { 빈칸셈, 합짝 } from '../grade1/thinking';
+import { 빈칸셈, 세수빈칸, 합짝 } from '../grade1/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 1-2 2단원 덧셈과 뺄셈(1)
@@ -306,13 +306,13 @@ export const unit2Lesson12 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 1:
       return [도입];
     case 2:
-      if (lv === '하') return [세수덧셈(true), 세수덧셈(false)];
-      if (lv === '중') return [세수덧셈(false), 세수문장(true)];
-      return [세수문장(true), 세수덧셈(false)];
+      if (lv === '하') return [세수덧셈(true), 세수덧셈(false), 세수빈칸('1-2-2', '+')];
+      if (lv === '중') return [세수덧셈(false), 세수문장(true), 세수빈칸('1-2-2', '+')];
+      return [세수문장(true), 세수덧셈(false), 세수빈칸('1-2-2', '+')];
     case 3:
-      if (lv === '하') return [세수뺄셈(true), 세수뺄셈(false)];
-      if (lv === '중') return [세수뺄셈(false), 세수문장(false)];
-      return [세수문장(false), 세수뺄셈(false)];
+      if (lv === '하') return [세수뺄셈(true), 세수뺄셈(false), 세수빈칸('1-2-2', '-')];
+      if (lv === '중') return [세수뺄셈(false), 세수문장(false), 세수빈칸('1-2-2', '-')];
+      return [세수문장(false), 세수뺄셈(false), 세수빈칸('1-2-2', '-')];
     case 4:
       if (lv === '하') return [십되기, 바꾸어십];
       if (lv === '중') return [십되기, 바꾸어십, 십되는식];

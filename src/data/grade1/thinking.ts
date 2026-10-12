@@ -267,3 +267,62 @@ export const 시각뒤 = (id: string, 삼십분: boolean): G5Family => ({
     };
   },
 });
+
+/** 세 수의 셈에서 □ 구하기: 4+□+3=9, 9-□-2=3 */
+export const 세수빈칸 = (id: string, 연산: '+' | '-'): G5Family => ({
+  id: `${id}-three-blank-${연산}`,
+  make: (seed) => {
+    const next = 고르개(seed);
+    const a = 사이(next, 1, 9);
+    const b = 사이(next, 1, 9);
+    const c = 사이(next, 1, 9);
+    if (연산 === '+') {
+      const s = a + b + c;
+      if (s > 19) return null;
+      return {
+        prompt: `${a}+□+${c}=${s}에서 □ 안에 알맞은 수는 얼마일까요?`,
+        answer: String(b),
+        wrongs: 수보기(b, [s - a, s - c, b + 1, b - 1, a + c], 19),
+        tag: 'addition',
+        strategy: '세 수의 덧셈에서 모르는 수 찾기',
+        hint: `먼저 ${a}과(와) ${c}을(를) 더한 다음, ${s}이(가) 되려면 얼마가 더 있어야 하는지 생각해요.`,
+        steps: [`${a}+${c}=${a + c}`, `${a + c}+□=${s}이므로 □=${b}입니다.`],
+      };
+    }
+    const 처음 = a + b + c;
+    if (처음 > 19) return null;
+    return {
+      prompt: `${처음}-□-${c}=${a}에서 □ 안에 알맞은 수는 얼마일까요?`,
+      answer: String(b),
+      wrongs: 수보기(b, [처음 - a, 처음 - c, b + 1, b - 1, a + c], 19),
+      tag: 'subtraction',
+      strategy: '세 수의 뺄셈에서 모르는 수 찾기',
+      hint: `${처음}에서 두 번 빼고 ${a}이(가) 남았어요. 모두 얼마를 뺐는지 먼저 생각해 보세요.`,
+      steps: [`모두 ${처음}-${a}=${b + c}만큼 뺐습니다.`, `${b + c}에서 ${c}을(를) 빼면 □=${b}입니다.`],
+      minusIsOperator: true,
+    };
+  },
+});
+
+/** 수 배열의 규칙을 말로 나타내기 */
+export const 규칙말하기 = (id: string, 최대: number): G5Family => ({
+  id: `${id}-rule-say`,
+  make: (seed) => {
+    const next = 고르개(seed);
+    const d = 사이(next, 2, 10);
+    const 커짐 = next(3) !== 0;
+    const 시작 = 커짐 ? 사이(next, 1, Math.max(1, 최대 - 4 * d)) : 사이(next, 4 * d + 1, 최대);
+    const 수들 = Array.from({ length: 5 }, (_, k) => 시작 + (커짐 ? d : -d) * k);
+    if (수들.some((x) => x < 0 || x > 최대)) return null;
+    const 답 = `${d}씩 ${커짐 ? '커집니다' : '작아집니다'}`;
+    return {
+      prompt: `${수들.join(', ')}의 규칙을 바르게 말한 것은 어느 것일까요?`,
+      answer: 답,
+      wrongs: [`${d}씩 ${커짐 ? '작아집니다' : '커집니다'}`, `${d + 1}씩 ${커짐 ? '커집니다' : '작아집니다'}`, `${Math.max(1, d - 1) === d ? d + 2 : d - 1}씩 ${커짐 ? '커집니다' : '작아집니다'}`],
+      tag: 'pattern',
+      strategy: '이웃한 두 수를 견주어 규칙 말하기',
+      hint: '앞의 수와 바로 뒤의 수가 얼마만큼 차이 나는지 보세요.',
+      steps: [`${수들[0]}에서 ${수들[1]}(으)로, ${수들[1]}에서 ${수들[2]}(으)로 ${d}씩 ${커짐 ? '커집' : '작아집'}니다.`],
+    };
+  },
+});
