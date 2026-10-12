@@ -1078,6 +1078,9 @@ export interface Player {
 
 export interface PlayerQuestionState {
   questionIndex: number;
+  // 이 학생이 지금까지 받은 새 문제 수입니다(되돌아온 문제는 빼고).
+  // 문제집을 한 바퀴 돌 때 자리를 한 칸 옮기는 데 씁니다.
+  served?: number;
   selected: number | null;
   correct: boolean | null;
   locked: boolean;
