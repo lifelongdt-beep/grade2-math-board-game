@@ -25,6 +25,16 @@ const 상자 = (a: number, b: number, c: number): BoxDrawingVisual => ({
   edgeLabels: { width: `${a} cm`, depth: `${b} cm`, height: `${c} cm` },
 });
 
+// 정육면체는 모서리가 모두 같으므로 한 군데에만 길이를 적습니다.
+const 정육면체 = (a: number): BoxDrawingVisual => ({
+  kind: 'box-drawing',
+  label: '정육면체',
+  width: a,
+  depth: a,
+  height: a,
+  edgeLabels: { width: `${a} cm` },
+});
+
 const 수들 = (ans: number, xs: number[], 단위: string) => [...new Set(xs)].filter((x) => x > 0 && x !== ans).slice(0, 3).map((x) => `${x} ${단위}`);
 
 const 겉넓이: G5Family = {
@@ -48,7 +58,7 @@ const 겉넓이: G5Family = {
         ? [`한 면의 넓이는 ${a}×${a}=${a * a}입니다.`, `${a * a}×6=${S}이므로 ${S} cm²입니다.`]
         : [`세 면의 넓이: ${a}×${b}=${a * b}, ${b}×${c}=${b * c}, ${a}×${c}=${a * c}`, `(${a * b}+${b * c}+${a * c})×2=${S}이므로 ${S} cm²입니다.`],
       misconceptionTip: '세 면의 넓이만 더하면 겉넓이의 절반이에요. 마주 보는 면이 하나씩 더 있어요.',
-      visual: 정 ? undefined : 상자(a, b, c),
+      visual: 정 ? 정육면체(a) : 상자(a, b, c),
     };
   },
 };
@@ -85,6 +95,7 @@ const 부피: G5Family = {
         strategy: '정육면체의 부피',
         hint: '(한 모서리)×(한 모서리)×(한 모서리)예요.',
         steps: [`${a}×${a}×${a}=${V}이므로 ${V} cm³입니다.`],
+        visual: 정육면체(a),
       };
     }
     const V = a * b * c;
@@ -96,6 +107,7 @@ const 부피: G5Family = {
       strategy: '부피에서 높이 구하기',
       hint: '(높이)=(부피)÷(가로)÷(세로)예요.',
       steps: [`${a}×${b}=${a * b}`, `${V}÷${a * b}=${c}이므로 ${c} cm입니다.`],
+      visual: { ...상자(a, b, c), edgeLabels: { width: `${a} cm`, depth: `${b} cm`, height: '? cm' } },
     };
   },
 };
@@ -163,7 +175,7 @@ const 단위: G5Family = {
       tag: 'volume',
       strategy: 'm 단위로 바꾸어 부피 구하기',
       hint: '100 cm=1 m로 바꾼 다음 곱해요.',
-      steps: [`${a * 100} cm=${a} m, ${b * 100} cm=${b} m, ${c * 100} cm=${c} m`, `${a}×${b}×${c}=${V}이므로 ${V} m³입니다.`],
+      steps: [`${a * 100} cm=${a} m, ${b * 100} cm=${b} m, ${c * 100} cm=${c} m`, `${a}×${b}×${c}=${V}이므로 ${V} m³입니다.`],      visual: 상자(a * 100, b * 100, c * 100),
     };
   },
 };

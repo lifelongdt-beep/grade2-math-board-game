@@ -1,6 +1,6 @@
 import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
-import { type Frac, frac, mixed, text } from '../grade5/fraction';
+import { type Frac, frac, gcd, mixed, text } from '../grade5/fraction';
 import { 고르개, 사이 } from '../grade11/common';
 
 // ════════════════════════════════════════════════════════════════════
@@ -80,6 +80,8 @@ const 분수나누기자연수 = (가분수: boolean): G5Family => ({
     const n = 떨어짐 ? k * 사이(next, 1, 가분수 ? 4 : 3) : 사이(next, 1, 가분수 ? d * 3 : d - 1);
     if (가분수 ? n <= d : n >= d) return null;
     if (!떨어짐 && n % k === 0) return null;
+    // 문제에 약분되지 않은 분수(4/8 같은)를 내지 않습니다.
+    if (gcd(n, d) !== 1) return null;
     const ans = frac(n, d * k);
     const 보기 = 다른값(ans, [frac(n * k, d), frac(n, d + k), frac(Math.max(1, n - k), d), frac(d, n * k), frac(n, d * (k + 1))]);
     return {

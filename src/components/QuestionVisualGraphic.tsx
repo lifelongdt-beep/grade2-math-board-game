@@ -1,6 +1,6 @@
 import { ShareScene } from './ShareScene';
 import { AngleGraphic, AngleSplitGraphic, BarGraphGraphic, GridMoveGraphic, LineGraphGraphic, NumberArrayGraphic, ParallelDistanceGraphic, ProtractorGraphic } from './Grade4Visuals';
-import { RatioGraphGraphic, StackPlanGraphic } from './Grade6Visuals';
+import { CircleRegionGraphic, RatioGraphGraphic, SolidFigureGraphic, SolidNetGraphic, StackPlanGraphic } from './Grade6Visuals';
 import { CompareGraphic, CountersGraphic, SolidsGraphic, TenFrameGraphic, TensOnesGraphic } from './Grade1Visuals';
 import type { PlaneShapeVisualItem, QuestionVisual } from '../types';
 
@@ -3129,7 +3129,11 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
         visual.kind === 'table' ? 'is-table' : '',
         // 눈금을 읽어야 하는 그림은 키를 키웁니다. 같은 키로 두면 각도기·
         // 그래프의 눈금 숫자가 읽을 수 없을 만큼 작아집니다.
-        visual.kind === 'protractor' || visual.kind === 'bar-graph' || visual.kind === 'line-graph' || (visual.kind === 'ratio-graph' && visual.shape === 'pie') ? 'is-scale' : '',
+        visual.kind === 'protractor' || visual.kind === 'bar-graph' || visual.kind === 'line-graph' || (visual.kind === 'ratio-graph' && visual.shape === 'pie') ||
+          // 입체도형과 전개도는 길이를 적은 글자를 읽어야 합니다.
+          visual.kind === 'solid-figure' || visual.kind === 'solid-net' || visual.kind === 'circle-region'
+          ? 'is-scale'
+          : '',
         className,
       ]
         .filter(Boolean)
@@ -3183,6 +3187,9 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'number-array' && <NumberArrayGraphic visual={visual} />}
       {visual.kind === 'ratio-graph' && <RatioGraphGraphic visual={visual} />}
       {visual.kind === 'stack-plan' && <StackPlanGraphic visual={visual} />}
+      {visual.kind === 'solid-figure' && <SolidFigureGraphic visual={visual} />}
+      {visual.kind === 'solid-net' && <SolidNetGraphic visual={visual} />}
+      {visual.kind === 'circle-region' && <CircleRegionGraphic visual={visual} />}
     </figure>
   );
 }

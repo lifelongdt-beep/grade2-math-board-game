@@ -220,3 +220,80 @@ describe('6-1 6단원 직육면체의 겉넓이와 부피', () => {
     }
   });
 });
+
+// ════════════════════════════════════════════════════════════════════
+// 그림과 문항이 어긋나지 않습니다
+// ────────────────────────────────────────────────────────────────────
+// 오각기둥을 묻는데 육각기둥이 그려져 있거나, 높이 7 cm라고 해 놓고 그림에
+// 8 cm라고 적혀 있으면 아이는 그림을 믿을 수 없게 됩니다.
+// ════════════════════════════════════════════════════════════════════
+const 각수 = { 삼: 3, 사: 4, 오: 5, 육: 6, 칠: 7, 팔: 8, 구: 9, 십: 10 } as Record<string, number>;
+
+describe('6-1 그림과 문항이 어긋나지 않습니다', () => {
+  it('각기둥·각뿔 겨냥도와 전개도는 문항의 입체도형과 같습니다', () => {
+    let 겨냥도수 = 0;
+    let 전개도수 = 0;
+    for (const { q } of 단원(2)) {
+      const v = q.visual;
+      if (v?.kind === 'solid-figure') {
+        겨냥도수 += 1;
+        const m = /^(.)각(기둥|뿔)의/.exec(q.prompt);
+        expect(m, q.prompt).not.toBeNull();
+        expect(v.sides, q.prompt).toBe(각수[m![1]]);
+        expect(v.solid, q.prompt).toBe(m![2] === '기둥' ? 'prism' : 'pyramid');
+      }
+      if (v?.kind === 'solid-net') {
+        전개도수 += 1;
+        const m = /(.)각기둥/.exec(q.prompt);
+        expect(v.sides, q.prompt).toBe(각수[m![1]]);
+        const 길이 = /한 변 (\d+) cm인 정.각형이고 높이가 (\d+) cm/.exec(q.prompt);
+        if (길이) {
+          expect(v.labels?.base, q.prompt).toBe(`${길이[1]} cm`);
+          expect(v.labels?.height, q.prompt).toBe(`${길이[2]} cm`);
+          expect(v.labels?.width, q.prompt).toBe('? cm');
+          expect([v.base, v.height], q.prompt).toEqual([Number(길이[1]), Number(길이[2])]);
+        } else expect(v.labels, q.prompt).toBeUndefined();
+      }
+      // 수 세기와 전개도 문항에는 그림이 있어야 합니다.
+      if (/의 (면|모서리|꼭짓점)은 몇 개/.test(q.prompt)) expect(v?.kind, q.prompt).toBe('solid-figure');
+      if (/전개도/.test(q.prompt)) expect(v?.kind, q.prompt).toBe('solid-net');
+    }
+    expect(겨냥도수).toBeGreaterThan(0);
+    expect(전개도수).toBeGreaterThan(0);
+  });
+
+  it('직육면체·정육면체 그림의 길이가 문항과 같습니다', () => {
+    for (const { q } of 단원(6)) {
+      const v = q.visual;
+      const box = /가로 (\d+) cm, 세로 (\d+) cm, 높이 (\d+) cm인 직육면체/.exec(q.prompt);
+      const cube = /한 모서리가 (\d+) cm인 정육면체/.exec(q.prompt);
+      const 높이 = /부피가 \d+ cm³인 직육면체의 가로가 (\d+) cm, 세로가 (\d+) cm/.exec(q.prompt);
+      if (box || cube || 높이) expect(v?.kind, q.prompt).toBe('box-drawing');
+      if (v?.kind !== 'box-drawing') continue;
+      if (box) {
+        expect([v.width, v.depth, v.height], q.prompt).toEqual([1, 2, 3].map((k) => Number(box[k])));
+        expect(v.edgeLabels, q.prompt).toEqual({ width: `${box[1]} cm`, depth: `${box[2]} cm`, height: `${box[3]} cm` });
+      }
+      if (cube) {
+        const a = Number(cube[1]);
+        expect([v.width, v.depth, v.height], q.prompt).toEqual([a, a, a]);
+        expect(v.edgeLabels, q.prompt).toEqual({ width: `${a} cm` });
+      }
+      if (높이) {
+        expect(v.edgeLabels, q.prompt).toEqual({ width: `${높이[1]} cm`, depth: `${높이[2]} cm`, height: '? cm' });
+        expect([v.width, v.depth], q.prompt).toEqual([Number(높이[1]), Number(높이[2])]);
+        expect(v.height, q.prompt).toBe(수(q.answer));
+      }
+    }
+  });
+
+  it('문제에 약분되지 않은 진분수·가분수가 나오지 않습니다', () => {
+    for (const { q } of 단원(1)) {
+      for (const m of q.prompt.matchAll(/(?<![\d/])(\d+)\/(\d+)(?![\d/])/g)) {
+        const [a, b] = [Number(m[1]), Number(m[2])];
+        const g = (x: number, y: number): number => (y === 0 ? x : g(y, x % y));
+        expect(g(a, b), q.prompt).toBe(1);
+      }
+    }
+  });
+});
