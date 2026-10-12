@@ -322,9 +322,9 @@ export const unit2Lesson41 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 6:
       return lv === '하' ? [합차, 직선나머지] : [합차, 직선나머지, 삼각자각, 시계각];
     case 7:
-      return lv === '하' ? [삼각형나머지, 합까닭(true)] : [삼각형나머지, 합까닭(true), 삼각자각];
+      return lv === '하' ? [삼각형나머지, 합까닭(true), 직선나머지] : [삼각형나머지, 합까닭(true), 삼각자각];
     case 8:
-      return lv === '하' ? [사각형나머지, 합까닭(false)] : [사각형나머지, 합까닭(false), 다각형각합];
+      return lv === '하' ? [사각형나머지, 합까닭(false), 직선나머지] : [사각형나머지, 합까닭(false), 다각형각합];
     default:
       return null;
   }

@@ -1,7 +1,7 @@
 import type { Difficulty, GridMoveVisual } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
-import { 몇째수 } from './thinking';
+import { 등호보정, 몇째수 } from './thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 4-1 6단원 규칙 찾기
@@ -406,9 +406,9 @@ export const unit6Lesson41 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 6:
       return [결과추측, 계산식규칙];
     case 7:
-      return [등호덧셈, 옳은식(false)];
+      return [등호덧셈, 옳은식(false), 등호보정(false)];
     case 8:
-      return [등호곱셈, 옳은식(true)];
+      return [등호곱셈, 옳은식(true), 등호보정(true)];
     default:
       return null;
   }

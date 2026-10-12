@@ -322,7 +322,7 @@ export const unit2Lesson42 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
       return [뜻, 세각분류];
     case 2:
       if (lv === '하') return [세각분류, 그림분류, 뜻];
-      return lv === '중' ? [그림분류, 두각분류, 세각분류] : [두각분류, 그림분류];
+      return lv === '중' ? [그림분류, 두각분류, 세각분류] : [두각분류, 그림분류, 세각분류];
     case 3:
       return lv === '상' ? [될수있는변, 두기준] : [될수있는변, 뜻];
     case 4:

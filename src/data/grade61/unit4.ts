@@ -268,7 +268,7 @@ export const unit4Lesson61 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 3:
       return lv === '하' ? [비쓰기] : [비쓰기, 상황비];
     case 4:
-      return [비율, 비율견주기];
+      return [비율, 비율견주기, 비쓰기];
     case 5:
       return [생활비율, 비율견주기];
     case 6:

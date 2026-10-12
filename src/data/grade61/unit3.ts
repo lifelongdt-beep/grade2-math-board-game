@@ -176,7 +176,7 @@ export const unit3Lesson61 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 6:
       return [나눗셈('몫에영', '몫의 소수 첫째 자리에 0이 있는 (소수)÷(자연수)'), 소수거꾸로('자연수'), 문장제];
     case 7:
-      return [자연수몫소수, 소수점관계('자연수로')];
+      return [자연수몫소수, 소수점관계('자연수로'), 소수거꾸로('자연수')];
     case 8:
       return [어림, 소수점관계('자연수로')];
     default:

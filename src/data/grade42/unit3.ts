@@ -298,7 +298,7 @@ export const unit3Lesson42 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 3:
       return [모아쓰기, 자리값, 읽기];
     case 4:
-      return lv === '하' ? [크기비교, 끝자리영] : [크기비교, 끝자리영, 생각.카드];
+      return [크기비교, 끝자리영, 생각.카드];
     case 5:
       return [열배, 자리값];
     case 6:

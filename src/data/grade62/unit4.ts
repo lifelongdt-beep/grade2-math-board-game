@@ -238,7 +238,7 @@ export const unit4Lesson62 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 3:
       return [간단히, 비의성질];
     case 4:
-      return lv === '하' ? [외항내항] : [외항내항, 옳은비례식];
+      return lv === '하' ? [외항내항, 비의성질] : [외항내항, 옳은비례식, 비의성질];
     case 5:
       return [비례식풀기, 비례생각];
     case 6:
