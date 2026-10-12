@@ -311,6 +311,42 @@ describe('생각하는 문항(1학년)', () => {
   });
 });
 
+describe('생각하는 문항(3학년 덧셈·뺄셈·시간·들이·무게)', () => {
+  it('답이 맞습니다', () => {
+    const 셈 = new Map<string, number>();
+    const 센다 = (k: string) => 셈.set(k, (셈.get(k) ?? 0) + 1);
+    for (const q of 모두) {
+      const p = q.prompt;
+      let m = /^어떤 수에 (\d+)(?:을|를) 더했더니 (\d+)(?:이|가) 되었습니다. 어떤 수는/.exec(p);
+      if (m) { expect(Number(q.answer) + Number(m[1]), p).toBe(Number(m[2])); 센다('덧어떤수'); }
+      m = /^어떤 수에서 (\d+)(?:을|를) 뺐더니 (\d+)(?:이|가) 되었습니다. 어떤 수는/.exec(p);
+      if (m) { expect(Number(q.answer) - Number(m[1]), p).toBe(Number(m[2])); 센다('뺄어떤수'); }
+      m = /^어떤 수에 (\d+)(?:을|를) 더해야 할 것을 잘못하여 뺐더니 (\d+)(?:이|가) /.exec(p);
+      if (m && /^\d+$/.test(q.answer)) { expect(Number(q.answer), p).toBe(Number(m[2]) + 2 * Number(m[1])); 센다('덧잘못'); }
+      m = /^어떤 수에서 (\d+)(?:을|를) 빼야 할 것을 잘못하여 더했더니 (\d+)(?:이|가) /.exec(p);
+      if (m) { expect(Number(q.answer), p).toBe(Number(m[2]) - 2 * Number(m[1])); 센다('뺄잘못'); }
+      m = /^수 카드 ([\d, ]+)(?:을|를) 한 번씩만 사용하여 세 자리 수를 만들려고 합니다. 만들 수 있는 가장 큰 수와 가장 작은 수의 (합|차)/.exec(p);
+      if (m) {
+        const 수들 = 순열(m[1].split(', ').map(Number), 3).map((x) => Number(x.join('')));
+        expect(Number(q.answer), p).toBe(m[2] === '합' ? Math.max(...수들) + Math.min(...수들) : Math.max(...수들) - Math.min(...수들));
+        센다('세자리카드');
+      }
+      m = /^어떤 일을 (\d+)시간 (\d+)분 동안 하였더니 (\d+)시 (\d+)분에 끝났습니다/.exec(p);
+      if (m) {
+        const 시작 = Number(m[3]) * 60 + Number(m[4]) - (Number(m[1]) * 60 + Number(m[2]));
+        expect(q.answer, p).toBe(`${Math.floor(시작 / 60)}시 ${시작 % 60}분`);
+        센다('시작시각');
+      }
+      m = /가 컵으로는 (\d+)번, 나 컵으로는 (\d+)번 물을 부어야/.exec(p);
+      if (m) { expect(q.answer, p).toBe(Number(m[1]) < Number(m[2]) ? '가 컵' : '나 컵'); 센다('컵'); }
+      m = /한쪽에 사과 (\d+)개, 다른 쪽에 귤 (\d+)개를 올렸더니 수평이 되었습니다. 귤 한 개의 무게가 (\d+) g/.exec(p);
+      if (m) { expect(수(q.answer) * Number(m[1]), p).toBe(Number(m[2]) * Number(m[3])); 센다('저울'); }
+    }
+    for (const k of ['덧어떤수', '뺄어떤수', '세자리카드', '시작시각', '컵', '저울']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+    expect((셈.get('덧잘못') ?? 0) + (셈.get('뺄잘못') ?? 0)).toBeGreaterThan(0);
+  });
+});
+
 describe('생각하는 문항(자연수)', () => {
   it('거꾸로·잘못 계산·수 카드·어림·나머지·□ 범위·문장제 답이 맞습니다', () => {
     const 셈 = new Map<string, number>();
