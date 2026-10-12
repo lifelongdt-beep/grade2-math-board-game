@@ -193,7 +193,7 @@ describe('4-1 2단원 각도', () => {
       if (clock) {
         const h = Number(clock[1]);
         const d = Math.min(h, 12 - h) * 30;
-        expect(q.answer, q.prompt).toBe(d < 90 ? '예각' : d === 90 ? '직각' : '둔각');
+        expect(q.answer, q.prompt).toBe(/예각, 직각, 둔각/.test(q.prompt) ? (d < 90 ? '예각' : d === 90 ? '직각' : '둔각') : `${d}°`);
       }
       if (q.visual?.kind !== 'angle') continue;
       const degs = q.visual.items.map((it) => it.deg);
@@ -204,7 +204,7 @@ describe('4-1 2단원 각도', () => {
       }
       if (q.prompt.startsWith('그림의 각은 예각')) {
         const d = degs[0];
-        expect(q.answer, q.prompt).toBe(d < 90 ? '예각' : d === 90 ? '직각' : '둔각');
+        expect(q.answer, q.prompt).toBe(/예각, 직각, 둔각/.test(q.prompt) ? (d < 90 ? '예각' : d === 90 ? '직각' : '둔각') : `${d}°`);
       }
       if (q.prompt.startsWith('그림의 각도를 어림한')) {
         const d = degs[0];

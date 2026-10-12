@@ -2,6 +2,7 @@ import type { CompareVisual, Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { eun } from '../grade5/util';
 import { 고르개 } from './common';
+import { 세가지견주기 } from '../grade1/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 1-1 4단원 비교하기
@@ -179,19 +180,19 @@ export const unit4Lesson11 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 2:
       if (lv === '하') return [그림견주기('length', 2, 'big'), 낱말(['length'])];
       if (lv === '중') return [그림견주기('length', 3, 'big'), 낱말(['tall', 'height'])];
-      return [그림견주기('length', 4, 'small'), 낱말(['tall', 'height', 'length'])];
+      return [그림견주기('length', 4, 'small'), 낱말(['tall', 'height', 'length']), 세가지견주기('1-1-4', 'length')];
     case 3:
       if (lv === '하') return [그림견주기('weight', 2, 'big'), 낱말(['weight'])];
-      if (lv === '중') return [그림견주기('weight', 2, 'big'), 시소셋];
-      return [시소셋];
+      if (lv === '중') return [그림견주기('weight', 2, 'big'), 시소셋, 세가지견주기('1-1-4', 'weight')];
+      return [시소셋, 세가지견주기('1-1-4', 'weight'), 그림견주기('weight', 2, 'big')];
     case 4:
       if (lv === '하') return [그림견주기('area', 2, 'big'), 낱말(['area'])];
       if (lv === '중') return [그림견주기('area', 3, 'big'), 낱말(['area'])];
-      return [그림견주기('area', 4, 'small')];
+      return [그림견주기('area', 4, 'small'), 세가지견주기('1-1-4', 'area'), 낱말(['area'])];
     case 5:
       if (lv === '하') return [그림견주기('capacity', 2, 'big'), 낱말(['capacity'])];
       if (lv === '중') return [그림견주기('capacity', 3, 'big'), 그림견주기('water', 3, 'big')];
-      return [그림견주기('water', 4, 'small'), 그림견주기('capacity', 4, 'small')];
+      return [그림견주기('water', 4, 'small'), 그림견주기('capacity', 4, 'small'), 세가지견주기('1-1-4', 'capacity')];
     default:
       return null;
   }

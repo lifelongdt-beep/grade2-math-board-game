@@ -2,7 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { type Frac, frac, gcd, mixed, text } from '../grade5/fraction';
 import { 고르개, 사이 } from '../grade11/common';
-import { 몫1견주기, 분수어떤수, 분수잘못계산 } from '../grade6/thinking';
+import { 몫1견주기, 몫분수거꾸로, 분수어떤수, 분수잘못계산 } from '../grade6/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 6-1 1단원 분수의 나눗셈
@@ -151,9 +151,9 @@ export const unit1Lesson61 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 1:
       return [몫분수(true), 몫분수문장제];
     case 2:
-      return lv === '하' ? [몫분수(true), 몫1견주기('자연수')] : [몫분수(true), 몫분수문장제, 몫1견주기('자연수')];
+      return lv === '하' ? [몫분수(true), 몫1견주기('자연수'), 몫분수문장제, 몫분수거꾸로(true)] : [몫분수(true), 몫분수문장제, 몫1견주기('자연수'), 몫분수거꾸로(true)];
     case 3:
-      return lv === '하' ? [몫분수(false), 몫1견주기('자연수')] : [몫분수(false), 몫분수문장제, 몫1견주기('자연수')];
+      return lv === '하' ? [몫분수(false), 몫1견주기('자연수'), 몫분수문장제, 몫분수거꾸로(false)] : [몫분수(false), 몫분수문장제, 몫1견주기('자연수'), 몫분수거꾸로(false)];
     case 4:
       if (lv === '하') return [분수나누기자연수(false), 분수어떤수('자연수')];
       return lv === '중' ? [분수나누기자연수(false), 분수나누기자연수(true), 분수어떤수('자연수'), 분수잘못계산('자연수')] : [분수나누기자연수(true), 넓이문장제, 분수어떤수('자연수'), 분수잘못계산('자연수')];
