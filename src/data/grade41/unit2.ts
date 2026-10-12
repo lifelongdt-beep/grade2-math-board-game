@@ -1,6 +1,7 @@
 import type { AngleVisual, Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
+import { 다각형각합, 삼각자각, 어림정확 } from './thinking';
 import { 네각사각형, 삼각형 } from '../grade42/geom';
 
 // ════════════════════════════════════════════════════════════════════
@@ -317,13 +318,13 @@ export const unit2Lesson41 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
       if (lv === '하') return [그림분류, 예둔고르기('예각'), 예둔고르기('둔각')];
       return [예둔고르기('예각'), 예둔고르기('둔각'), 시계각, 그림분류];
     case 5:
-      return [어림];
+      return lv === '하' ? [어림, 눈금읽기] : [어림, 어림정확, 눈금읽기];
     case 6:
-      return lv === '상' ? [직선나머지, 합차] : [합차];
+      return lv === '하' ? [합차, 직선나머지] : [합차, 직선나머지, 삼각자각, 시계각];
     case 7:
-      return lv === '하' ? [삼각형나머지, 합까닭(true)] : [삼각형나머지];
+      return lv === '하' ? [삼각형나머지, 합까닭(true)] : [삼각형나머지, 합까닭(true), 삼각자각];
     case 8:
-      return lv === '하' ? [사각형나머지, 합까닭(false)] : [사각형나머지];
+      return lv === '하' ? [사각형나머지, 합까닭(false)] : [사각형나머지, 합까닭(false), 다각형각합];
     default:
       return null;
   }
