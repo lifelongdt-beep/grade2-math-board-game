@@ -271,9 +271,9 @@ const 기호로: G5Family = {
 export const unit5Lesson12 = (lessonNo: number, lv: Difficulty): G5Family[] | null => {
   switch (lessonNo) {
     case 1:
-      return [다음것(기호, 'shape'), 다음것(색, 'color'), 되풀이부분];
+      return [다음것(기호, 'shape'), 다음것(색, 'color'), 되풀이부분, 몇째것];
     case 2:
-      if (lv === '하') return [다음것(기호, 'shape'), 다음것(색, 'color'), 되풀이부분];
+      if (lv === '하') return [다음것(기호, 'shape'), 다음것(색, 'color'), 되풀이부분, 몇째것];
       if (lv === '중') return [다음것(기호, 'shape'), 되풀이부분, 다음것(색, 'color'), 몇째것];
       return [다음것(기호, 'shape'), 되풀이부분, 몇째것];
     case 3:

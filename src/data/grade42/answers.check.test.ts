@@ -299,12 +299,16 @@ describe('4-2 5단원 꺾은선그래프', () => {
       const v = q.visual;
       const from = v.from ?? 0;
       for (const p of v.points) expect((p.value - from) % v.step, q.prompt).toBe(0);
+      // 키는 줄어들지 않고, 평균 키는 해마다 자랍니다. 무엇을 조사했는지 문제 글에 밝힙니다.
+      if (v.valueLabel.startsWith('키')) for (let k = 1; k < v.points.length; k += 1) expect(v.points[k].value, q.prompt).toBeGreaterThan(v.points[k - 1].value);
+      if (v.title?.includes('평균 키')) expect(v.points[0].value, q.prompt).toBeGreaterThanOrEqual(118);
+      if (!/물결선|그래프로 나타내/.test(q.prompt) && /키|기온|방문자/.test(q.prompt)) expect(q.prompt.includes(v.title ?? ''), q.prompt).toBe(true);
       const 값 = (name: string) => v.points.find((p) => p.name === name)!.value;
-      const read = /^([^.]+?)의 (기온|키|방문자 수)(은|는) 몇/.exec(q.prompt);
+      const read = /(?:^|\. )([^.\s]+)의 (기온|싹의 키|평균 키|방문자 수)(은|는) 몇/.exec(q.prompt);
       if (read) expect(수(q.answer), q.prompt).toBe(값(read[1]));
       const wave = /(\d학년) 때의 평균 키는/.exec(q.prompt);
       if (wave) expect(수(q.answer), q.prompt).toBe(값(wave[1]));
-      const diff = /^(.+)부터 (.+)까지/.exec(q.prompt);
+      const diff = /(?:^|\. )([^.\s]+)부터 (\S+)까지/.exec(q.prompt);
       if (diff) expect(수(q.answer), q.prompt).toBe(Math.abs(값(diff[2]) - 값(diff[1])));
       if (/변화가 가장 큰 때/.test(q.prompt)) {
         const ch = v.points.slice(1).map((p, k) => Math.abs(p.value - v.points[k].value));
@@ -313,7 +317,7 @@ describe('4-2 5단원 꺾은선그래프', () => {
         const k = ch.indexOf(big);
         expect(q.answer.startsWith(v.points[k].name) && q.answer.includes(` ${v.points[k + 1].name} 사이`), q.prompt).toBe(true);
       }
-      const mid = /^(.+) 30분의 기온은/.exec(q.prompt);
+      const mid = /(?:^|\. )(\S+) 30분의 기온은/.exec(q.prompt);
       if (mid) {
         const k = v.points.findIndex((p) => p.name === mid[1]);
         expect(수(q.answer), q.prompt).toBe((v.points[k].value + v.points[k + 1].value) / 2);

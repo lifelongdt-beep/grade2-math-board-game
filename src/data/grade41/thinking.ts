@@ -362,3 +362,301 @@ export const 등호보정 = (곱: boolean): G5Family => ({
     };
   },
 });
+
+// ── 더 넓힌 생각 문항 ────────────────────────────────────────────────
+//   · 시계 바늘이 이루는 각: 그림 없이 '숫자 몇 칸'으로 각을 견주고 재기
+//   · 조건으로 정해지는 삼각형·사각형의 각(세 각이 같다, 두 각이 같다)
+//   · 곱의 끝에 붙는 0의 개수(5×4=20처럼 0이 하나 더 생기는 경우)
+//   · 만이 되려면 얼마가 더 있어야 하는지
+
+/** 네 시각 가운데 두 바늘이 이루는 작은 쪽 각이 가장 큰(작은) 시각 */
+export const 시계각비교: G5Family = {
+  id: 'clock-angle-compare',
+  make: (seed) => {
+    const next = 고르개(seed);
+    const 칸들: number[] = [];
+    while (칸들.length < 4) {
+      const c = 사이(next, 1, 5);
+      if (!칸들.includes(c)) 칸들.push(c);
+    }
+    // 같은 칸 수라도 2시와 10시처럼 두 가지 시각이 있습니다.
+    const 시들 = 칸들.map((c) => (next(2) === 0 ? c : 12 - c));
+    const 큰 = next(2) === 0;
+    const 목표 = 큰 ? Math.max(...칸들) : Math.min(...칸들);
+    const k = 칸들.indexOf(목표);
+    return {
+      prompt: `${시들.map((h) => `${h}시`).join(', ')} 가운데 시계의 긴바늘과 짧은바늘이 이루는 작은 쪽의 각이 가장 ${큰 ? '큰' : '작은'} 시각은 언제일까요? (모두 정각입니다.)`,
+      answer: `${시들[k]}시`,
+      wrongs: 시들.filter((_, j) => j !== k).map((h) => `${h}시`),
+      tag: 'angle',
+      strategy: '두 바늘 사이의 숫자 칸 수로 각의 크기 견주기',
+      hint: '긴바늘은 12를 가리켜요. 짧은바늘이 12에서 몇 칸 떨어져 있는지 세어 보세요(가까운 쪽으로).',
+      steps: [`두 바늘 사이의 칸 수: ${시들.map((h, j) => `${h}시 ${칸들[j]}칸`).join(', ')}`, `칸 수가 가장 ${큰 ? '많은' : '적은'} ${시들[k]}시의 각이 가장 ${큰 ? '큽' : '작습'}니다.`],
+      misconceptionTip: '10시는 10칸이 아니라 반대쪽으로 2칸이에요. 작은 쪽의 각을 봐요.',
+    };
+  },
+};
+
+/** h시 정각에 두 바늘이 이루는 작은 쪽의 각도 */
+export const 시계각도: G5Family = {
+  id: 'clock-angle-degree',
+  make: (seed) => {
+    const next = 고르개(seed);
+    const h = 사이(next, 1, 11);
+    if (h === 6) return null;
+    const 칸 = Math.min(h, 12 - h);
+    const v = 칸 * 30;
+    return {
+      prompt: `${h}시 정각일 때 시계의 긴바늘과 짧은바늘이 이루는 작은 쪽의 각도는 몇 도일까요?`,
+      answer: `${v}°`,
+      wrongs: [h * 30 === v ? (12 - h) * 30 : h * 30, v + 30, v - 30 || v + 60, h * 5, 칸 * 60].filter((x, i, xs) => x > 0 && x !== v && xs.indexOf(x) === i).slice(0, 3).map((x) => `${x}°`),
+      tag: 'angle',
+      strategy: '시계의 숫자 한 칸이 30°임을 이용하기',
+      hint: '시계 한 바퀴는 360°이고 숫자가 12개 있으니 한 칸은 30°예요.',
+      steps: ['360°÷12=30°이므로 숫자 한 칸은 30°입니다.', `${h}시에는 두 바늘 사이가 작은 쪽으로 ${칸}칸입니다.`, `30°×${칸}=${v}°`],
+      misconceptionTip: '분을 세듯 5씩 세면 안 돼요. 숫자 한 칸은 30°예요.',
+      visual: { kind: 'clock', label: `${h}시`, hour: h, minute: 0 },
+    };
+  },
+};
+
+/** 조건으로 정해지는 삼각형의 각 */
+export const 삼각형조건각: G5Family = {
+  id: 'triangle-condition',
+  make: (seed) => {
+    const next = 고르개(seed);
+    const 갈래 = next(4);
+    if (갈래 === 0) {
+      return {
+        prompt: '세 각의 크기가 모두 같은 삼각형이 있습니다. 한 각의 크기는 몇 도일까요?',
+        answer: '60°',
+        wrongs: ['90°', '45°', '120°'],
+        tag: 'angle', strategy: '삼각형의 세 각의 합 180°를 똑같이 나누기',
+        hint: '삼각형의 세 각의 크기의 합은 180°예요.', steps: ['180°÷3=60°'],
+      };
+    }
+    if (갈래 === 1) {
+      return {
+        prompt: '한 각이 직각이고 나머지 두 각의 크기가 같은 삼각형이 있습니다. 크기가 같은 한 각은 몇 도일까요?',
+        answer: '45°',
+        wrongs: ['90°', '60°', '30°'],
+        tag: 'angle', strategy: '삼각형의 세 각의 합에서 직각을 빼고 똑같이 나누기',
+        hint: '180°에서 직각 90°를 빼면 남은 두 각의 합이에요.', steps: ['180°-90°=90°', '90°÷2=45°'],
+        minusIsOperator: true,
+      };
+    }
+    if (갈래 === 2) {
+      const x = 사이(next, 2, 16) * 10;
+      const v = (180 - x) / 2;
+      return {
+        prompt: `두 각의 크기가 같은 삼각형에서 나머지 한 각이 ${x}°입니다. 크기가 같은 한 각은 몇 도일까요?`,
+        answer: `${v}°`,
+        wrongs: [180 - x, x, (180 - x) / 3, v + 10].filter((y, i, xs) => Number.isInteger(y) && y > 0 && y !== v && xs.indexOf(y) === i).slice(0, 3).map((y) => `${y}°`),
+        tag: 'angle', strategy: '세 각의 합에서 아는 각을 빼고 똑같이 나누기',
+        hint: '크기가 같은 두 각의 합을 먼저 구해요.', steps: [`180°-${x}°=${180 - x}°`, `${180 - x}°÷2=${v}°`],
+        misconceptionTip: '180°에서 빼고 끝내면 두 각의 합이에요. 한 각은 2로 나누어야 해요.',
+        minusIsOperator: true,
+      };
+    }
+    const a = 사이(next, 2, 9) * 10;
+    const b = 사이(next, 2, 9) * 10;
+    if (a + b >= 170) return null;
+    const v = 180 - a - b;
+    return {
+      prompt: `삼각형 ㄱㄴㄷ에서 변 ㄴㄷ을 꼭짓점 ㄷ 쪽으로 늘였습니다. 각 ㄱㄴㄷ이 ${a}°, 각 ㄴㄱㄷ이 ${b}°일 때, 늘인 선과 변 ㄱㄷ이 이루는 바깥쪽의 각은 몇 도일까요?`,
+      answer: `${a + b}°`,
+      wrongs: [v, 180 - a, 180 - b, a + b + 10].filter((y, i, xs) => y > 0 && y !== a + b && xs.indexOf(y) === i).slice(0, 3).map((y) => `${y}°`),
+      tag: 'angle', strategy: '삼각형의 세 각의 합과 직선이 이루는 각을 함께 쓰기',
+      hint: '먼저 삼각형의 나머지 한 각을 구하고, 그 각과 바깥쪽 각을 더하면 180°예요.',
+      steps: [`나머지 한 각: 180°-${a}°-${b}°=${v}°`, `바깥쪽 각: 180°-${v}°=${a + b}°`],
+      misconceptionTip: '삼각형 안의 각과 바깥쪽 각을 헷갈리지 말아요.',
+      minusIsOperator: true,
+    };
+  },
+};
+
+/** 조건으로 정해지는 사각형의 각 */
+export const 사각형조건각: G5Family = {
+  id: 'quad-condition',
+  make: (seed) => {
+    const next = 고르개(seed);
+    if (next(2) === 0) {
+      const x = 사이(next, 3, 15) * 10;
+      const 나머지 = 360 - x;
+      if (나머지 % 3 !== 0) return null;
+      const v = 나머지 / 3;
+      if (v >= 180) return null;
+      return {
+        prompt: `사각형의 네 각 가운데 세 각의 크기가 같고, 나머지 한 각은 ${x}°입니다. 크기가 같은 한 각은 몇 도일까요?`,
+        answer: `${v}°`,
+        wrongs: [나머지, (180 - x) / 3, 나머지 / 2, v + 10].filter((y, i, xs) => Number.isInteger(y) && y > 0 && y !== v && xs.indexOf(y) === i).slice(0, 3).map((y) => `${y}°`),
+        tag: 'angle', strategy: '네 각의 합 360°에서 아는 각을 빼고 똑같이 나누기',
+        hint: '사각형의 네 각의 크기의 합은 360°예요.', steps: [`360°-${x}°=${나머지}°`, `${나머지}°÷3=${v}°`],
+        misconceptionTip: '사각형의 네 각의 합은 180°가 아니라 360°예요.',
+        minusIsOperator: true,
+      };
+    }
+    const a = 사이(next, 5, 12) * 10;
+    const b = 사이(next, 5, 12) * 10;
+    {
+      const c = 사이(next, 6, 12) * 10;
+      const v = 360 - a - b - c;
+      if (v <= 0 || v >= 180) return null;
+      return {
+        prompt: `사각형 ㄱㄴㄷㄹ에서 각 ㄱ이 ${a}°, 각 ㄴ이 ${b}°, 각 ㄷ이 ${c}°입니다. 변 ㄷㄹ을 꼭짓점 ㄹ 쪽으로 늘였을 때, 늘인 선과 변 ㄱㄹ이 이루는 바깥쪽의 각은 몇 도일까요?`,
+        answer: `${180 - v}°`,
+        wrongs: [v, 360 - v, 180 - v + 10, 180 - v - 10].filter((y, i, xs) => y > 0 && y !== 180 - v && xs.indexOf(y) === i).slice(0, 3).map((y) => `${y}°`),
+        tag: 'angle', strategy: '네 각의 합과 직선이 이루는 각을 함께 쓰기',
+        hint: '먼저 사각형의 나머지 한 각을 구해요. 그 각과 바깥쪽 각을 더하면 180°예요.',
+        steps: [`나머지 한 각: 360°-${a}°-${b}°-${c}°=${v}°`, `바깥쪽 각: 180°-${v}°=${180 - v}°`],
+        minusIsOperator: true,
+      };
+    }
+  },
+};
+
+/** 곱의 끝에 붙는 0의 개수 */
+export const 끝0개수: G5Family = {
+  id: 'trailing-zeros',
+  make: (seed) => {
+    const next = 고르개(seed);
+    // 세 자리 수×몇십: 600×50, 250×40처럼 씁니다.
+    const a = next(2) === 0 ? 사이(next, 1, 9) * 100 : (사이(next, 1, 9) * 10 + 5) * 10;
+    const b = 사이(next, 2, 9) * 10;
+    const 앞 = Number(String(a).replace(/0+$/, ''));
+    const 곱 = a * b;
+    const 영 = (String(곱).match(/0+$/) ?? [''])[0].length;
+    const 단순 = (String(a).match(/0+$/) ?? [''])[0].length + 1;
+    // 5×4, 2×5처럼 0이 하나 더 생기는 경우를 반쯤 섞습니다.
+    if (next(2) === 0 && 영 === 단순) return null;
+    return {
+      prompt: `${a}×${b}을(를) 계산하면 곱의 끝에 0이 몇 개 있을까요?`,
+      answer: `${영}개`,
+      wrongs: [단순, 영 + 1, 영 - 1, 단순 + 1].filter((x, i, xs) => x > 0 && x !== 영 && xs.indexOf(x) === i).slice(0, 3).map((x) => `${x}개`),
+      tag: 'multiplication',
+      strategy: '0을 뺀 수끼리 곱한 뒤 0의 개수 붙이기',
+      hint: `0을 뺀 ${앞}×${b / 10}을(를) 먼저 계산해 보세요. 그 곱의 끝에도 0이 생길 수 있어요.`,
+      steps: [`${a}×${b}=${곱}`, `곱의 끝에 0이 ${영}개 있습니다.`],
+      misconceptionTip: '두 수의 0의 개수만 더하면 안 돼요. 5×4=20처럼 곱에서 0이 더 생길 수 있어요.',
+    };
+  },
+};
+
+/** 만이 되려면 얼마가 더 있어야 하는지 */
+export const 만되려면: G5Family = {
+  id: 'to-ten-thousand',
+  make: (seed) => {
+    const next = 고르개(seed);
+    const 단위 = [1000, 100, 10][next(3)];
+    const 모자람 = 사이(next, 1, 9) * 단위;
+    const 있음 = 10000 - 모자람;
+    const 단위말 = { 1000: '천 원짜리 지폐', 100: '백 원짜리 동전', 10: '십 원짜리 동전' }[단위]!;
+    const v = 모자람 / 단위;
+    return {
+      prompt: `${있음}원이 있습니다. 10000원이 되려면 ${단위말}이(가) 몇 개 더 있어야 할까요?`,
+      answer: `${v}개`,
+      wrongs: [10 - v, v + 1, v * 10, v - 1].filter((x, i, xs) => x > 0 && x !== v && xs.indexOf(x) === i).slice(0, 3).map((x) => `${x}개`),
+      tag: 'placeValue',
+      strategy: '10000이 되려면 얼마가 모자라는지 생각하기',
+      hint: `${있음}에서 10000까지 얼마가 모자라는지 먼저 구해요.`,
+      steps: [`10000-${있음}=${모자람}`, `${모자람}원은 ${단위말} ${v}개입니다.`],
+      minusIsOperator: true,
+    };
+  },
+};
+
+// ── 나눗셈의 어림셈 차시 ─────────────────────────────────────────────
+//   · 몫이 몇십과 몇십 사이인지 가늠하기
+//   · 어림으로 잘못 계산한 식 찾아내기(몫이 10배 크거나 작음)
+//   · 어림으로 '충분한지' 판단하기(상자·버스의 수)
+
+/** 세 자리 수÷두 자리 수의 몫이 몇십과 몇십 사이인지 */
+export const 몫범위십: G5Family = {
+  id: 'quot-tens-range',
+  make: (seed) => {
+    const next = 고르개(seed);
+    const d = 사이(next, 12, 49);
+    const k = 사이(next, 1, Math.floor(999 / d / 10));
+    // d×10k < a < d×10(k+1)
+    const lo = d * 10 * k;
+    const hi = Math.min(999, d * 10 * (k + 1));
+    if (hi - lo < 3 || lo < 100) return null;
+    const a = 사이(next, lo + 1, hi - 1);
+    const 범위 = (x: number) => `${x * 10}과(와) ${(x + 1) * 10} 사이`;
+    return {
+      prompt: `계산하지 않고 어림해 보세요. ${a}÷${d}의 몫은 어느 범위에 있을까요?`,
+      answer: 범위(k),
+      wrongs: [범위(k + 1), k > 1 ? 범위(k - 1) : `${k}과(와) ${k + 1} 사이`, `${k * 100}과(와) ${(k + 1) * 100} 사이`].filter((w) => w !== 범위(k)),
+      tag: 'division',
+      strategy: '나누는 수에 몇십을 곱해 나누어지는 수와 견주기',
+      hint: `${d}×${k * 10}과(와) ${d}×${(k + 1) * 10}을(를) 구해 ${a}과(와) 견주어 보세요.`,
+      steps: [`${d}×${k * 10}=${d * k * 10}, ${d}×${(k + 1) * 10}=${d * (k + 1) * 10}`, `${a}은(는) 두 수 사이에 있으므로 몫은 ${범위(k)}에 있습니다.`],
+      misconceptionTip: '몫의 자리를 잘못 생각하면 몫이 10배 커지거나 작아져요.',
+    };
+  },
+};
+
+/** 어림으로 잘못 계산한 나눗셈식 찾기 */
+export const 어림확인나눗셈: G5Family = {
+  id: 'estimate-check-div',
+  make: (seed) => {
+    const next = 고르개(seed);
+    const 식들: Array<{ a: number; d: number; q: number }> = [];
+    for (let t = 0; t < 60 && 식들.length < 4; t += 1) {
+      const d = 사이(next, 12, 45);
+      const q = 사이(next, 12, 40);
+      const a = d * q;
+      if (a < 200 || a > 999 || 식들.some((x) => x.d === d || x.q === q)) continue;
+      식들.push({ a, d, q });
+    }
+    if (식들.length < 4) return null;
+    const 틀린곳 = next(4);
+    const 글 = 식들.map((x, j) => `${x.a}÷${x.d}=${j === 틀린곳 ? (x.q % 10 === 0 ? x.q / 10 : Math.floor(x.q / 10) || x.q * 10) : x.q}`);
+    const 틀린몫 = Number(글[틀린곳].split('=')[1]);
+    if (틀린몫 === 식들[틀린곳].q) return null;
+    return {
+      prompt: '계산하지 않고 어림하여 몫이 잘못된 식을 찾으면 어느 것일까요?',
+      answer: 글[틀린곳],
+      wrongs: 글.filter((_, j) => j !== 틀린곳),
+      tag: 'division',
+      strategy: '어림셈으로 몫의 크기 확인하기',
+      hint: '나누는 수를 몇십으로 어림하고, 몫이 한 자리 수인지 두 자리 수인지 먼저 따져 보세요.',
+      steps: [`${식들[틀린곳].a}÷${식들[틀린곳].d}에서 ${Math.floor(식들[틀린곳].a / 10)}이(가) ${식들[틀린곳].d}보다 크므로 몫은 두 자리 수여야 합니다.`, `실제 몫은 ${식들[틀린곳].q}입니다.`],
+      misconceptionTip: '계산이 끝나면 어림으로 몫의 크기가 알맞은지 확인해요.',
+    };
+  },
+};
+
+/** 어림으로 충분한지 판단하기 */
+export const 충분할까: G5Family = {
+  id: 'enough-estimate',
+  make: (seed) => {
+    const next = 고르개(seed);
+    const 한번 = 사이(next, 18, 48);
+    const 개수 = 사이(next, 6, 25);
+    const 차 = 사이(next, -30, 30);
+    const 전체 = 한번 * 개수 + 차;
+    if (차 === 0 || 전체 < 150 || 전체 > 999) return null;
+    const 장면 = [
+      { 물건: '사과', 그릇: '상자', 동사: '담을', 려면: '담으려면', 셈: '개' },
+      { 물건: '학생', 그릇: '버스', 동사: '태울', 려면: '태우려면', 셈: '대' },
+      { 물건: '공책', 그릇: '묶음', 동사: '묶을', 려면: '묶으려면', 셈: '개' },
+    ][next(3)];
+    const 단위 = 장면.물건 === '학생' ? '명' : '권';
+    const 단위2 = 장면.물건 === '사과' ? '개' : 단위;
+    const 됨 = 한번 * 개수 >= 전체;
+    const 필요 = Math.ceil(전체 / 한번);
+    return {
+      prompt: `${장면.그릇} 하나에 ${장면.물건} ${한번}${단위2}씩 ${장면.동사} 수 있습니다. ${장면.물건} ${전체}${단위2}을(를) 모두 ${장면.려면} ${장면.그릇} ${개수}${장면.셈}(으)로 충분할까요?`,
+      answer: 됨 ? `충분합니다(${개수}${장면.셈}면 ${한번 * 개수}${단위2}까지 됩니다)` : `모자랍니다(${필요}${장면.셈}가 있어야 합니다)`,
+      wrongs: 됨
+        ? [`모자랍니다(${개수 + 1}${장면.셈}가 있어야 합니다)`, `모자랍니다(${필요 + 2}${장면.셈}가 있어야 합니다)`, `충분합니다(${개수}${장면.셈}면 ${한번 * 개수 + 100}${단위2}까지 됩니다)`]
+        : [`충분합니다(${개수}${장면.셈}면 ${한번 * 개수}${단위2}까지 됩니다)`, `모자랍니다(${필요 + 1}${장면.셈}가 있어야 합니다)`, `모자랍니다(${Math.max(1, 필요 - 2)}${장면.셈}가 있어야 합니다)`].filter((w) => w !== `모자랍니다(${필요}${장면.셈}가 있어야 합니다)`),
+      tag: 'division',
+      strategy: '곱해 보아 충분한지 확인하고, 남는 것까지 생각해 필요한 개수 구하기',
+      hint: `${장면.그릇} ${개수}${장면.셈}면 모두 몇 ${단위2}까지 ${장면.동사} 수 있는지 곱해 보세요.`,
+      steps: [`${한번}×${개수}=${한번 * 개수}`, 됨 ? `${한번 * 개수}은(는) ${전체}보다 크거나 같으므로 충분합니다.` : `${한번 * 개수}은(는) ${전체}보다 작으므로 모자랍니다. ${전체}÷${한번}의 몫은 ${Math.floor(전체 / 한번)}, 나머지가 있으므로 ${필요}개가 있어야 합니다.`],
+      misconceptionTip: '나머지가 있으면 남는 것을 위해 하나가 더 있어야 해요.',
+    };
+  },
+};
