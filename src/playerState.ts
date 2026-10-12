@@ -43,12 +43,32 @@ const RETRY_AFTER = 3;
 // 아니라 도움말이고, 그것은 틀린 그 자리에서 이미 보여 주었습니다.
 const RETRY_LIMIT = 2;
 
+const 최대공약수 = (a: number, b: number): number => (b === 0 ? a : 최대공약수(b, a % b));
+
+// 새 문제 차례를 한 번 앞당깁니다.
+//
+// 여럿이 함께 풀면 한 학생은 사람 수만큼 건너뛰며 문제를 받습니다. 그런데
+// 사람 수와 문제 수(서른)가 공약수를 가지면 몇 자리만 맴돕니다. 여섯 명이면
+// 0, 6, 12, 18, 24, 다시 0 — 서른 문항 가운데 다섯 문항만 되풀이해서,
+// 아홉 번째 문제에서 벌써 같은 문제가 나왔습니다(2-2 길이 재기에서 실제로
+// 생긴 일입니다). 맴돌던 자리를 다 쓰면 한 칸 옆으로 옮겨 다음 줄을
+// 쓰게 해서, 문제집 전체를 다 쓰기 전에는 같은 자리로 돌아오지 않습니다.
+const 다음자리 = (index: number, served: number, playerCount: number, bankSize: number) => {
+  const step = Math.max(1, playerCount);
+  if (bankSize <= 0) return { index: index + step, served: served + 1 };
+  const 한줄 = bankSize / 최대공약수(step, bankSize);
+  const nextServed = served + 1;
+  return { index: index + step + (nextServed % 한줄 === 0 ? 1 : 0), served: nextServed };
+};
+
 // 한 문제를 끝내고 다음으로 넘어갈 때의 상태를 만듭니다.
 // wasWrong이면 방금 문제를 다시 낼 줄에 넣고, 맞혔으면 넣지 않습니다.
+// bankSize는 수준 하나의 문제집 크기입니다(수준마다 같습니다).
 export const advancePlayerState = (
   state: PlayerQuestionState,
   playerCount: number,
   wasWrong: boolean,
+  bankSize = 0,
 ): PlayerQuestionState => {
   const answered = state.answered + 1;
   const shown = state.activeRetry ?? { index: state.questionIndex, level: state.level, tries: 1 };
@@ -85,14 +105,18 @@ export const advancePlayerState = (
   const servingRetry = dueAt !== -1;
   const nextRetries = servingRetry ? queued.filter((_, at) => at !== dueAt) : queued;
 
+  // 새 문제를 하나 썼을 때만 새 문제 차례를 앞당깁니다. 방금 푼 것이
+  // 되돌아온 문제였다면 새 문제는 아직 하나도 안 썼으므로 그대로 둡니다.
+  // (다음에 낼 것이 되돌아온 문제인지와는 상관없습니다. 그걸로 판단하면
+  //  방금 푼 새 문제를 나중에 또 내게 됩니다.)
+  const served = state.served ?? 0;
+  const 차례 = state.activeRetry !== null
+    ? { index: state.questionIndex, served }
+    : 다음자리(state.questionIndex, served, playerCount, bankSize);
+
   return {
-    // 새 문제를 하나 썼을 때만 새 문제 차례를 앞당깁니다. 방금 푼 것이
-    // 되돌아온 문제였다면 새 문제는 아직 하나도 안 썼으므로 그대로 둡니다.
-    // (다음에 낼 것이 되돌아온 문제인지와는 상관없습니다. 그걸로 판단하면
-    //  방금 푼 새 문제를 나중에 또 내게 됩니다.)
-    questionIndex: state.activeRetry !== null
-      ? state.questionIndex
-      : state.questionIndex + playerCount,
+    questionIndex: 차례.index,
+    served: 차례.served,
     selected: null,
     correct: null,
     locked: false,
