@@ -1,6 +1,7 @@
 import type { Difficulty, GridMoveVisual } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
+import { 되돌아가기, 여러번돌리기 } from './thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 4-1 4단원 평면도형의 이동
@@ -266,9 +267,9 @@ export const unit4Lesson41 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 3:
       return lv === '상' ? [뒤집기, 뒤집기두번] : [뒤집기];
     case 4:
-      return lv === '상' ? [돌리기문항, 같은돌리기] : [돌리기문항];
+      return lv === '하' ? [돌리기문항, 같은돌리기] : [돌리기문항, 같은돌리기, 여러번돌리기];
     case 5:
-      return [점이동];
+      return [점이동, 되돌아가기];
     default:
       return null;
   }

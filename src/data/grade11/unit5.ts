@@ -2,6 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { eul, eun, gwa, i as 이가 } from '../grade5/util';
 import { 고르개, 물건들, 사이, 셈그림, 수보기, 우리말로, 한자어로 } from './common';
+import { 두단계수, 사이개수, 수카드몇십몇 } from '../grade1/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 1-1 5단원 50까지의 수
@@ -437,17 +438,17 @@ export const unit5Lesson11 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
       if (lv === '중') return [묶음세기('tens', 20, 50, true), 수읽기('tens-read', 20, 50, true), 몇십묶음, 몇십비교];
       return [수읽기('tens-read', 20, 50, true), 몇십비교, 몇십묶음];
     case 6:
-      if (lv === '하') return [묶음세기('tens-ones', 21, 49)];
-      if (lv === '중') return [묶음세기('tens-ones', 21, 49), 묶음말로('tens-word', 21, 49), 거꾸로묶음];
-      return [수읽기('read-50', 21, 49), 거꾸로묶음, 묶음말로('tens-word', 21, 49)];
+      if (lv === '하') return [묶음세기('tens-ones', 21, 49), 묶음말로('tens-word', 21, 49)];
+      if (lv === '중') return [묶음세기('tens-ones', 21, 49), 묶음말로('tens-word', 21, 49), 거꾸로묶음, 수카드몇십몇('1-1-5', 50)];
+      return [수읽기('read-50', 21, 49), 거꾸로묶음, 묶음말로('tens-word', 21, 49), 수카드몇십몇('1-1-5', 50)];
     case 7:
-      if (lv === '하') return [순서빈칸];
-      if (lv === '중') return [순서빈칸, 사이의수50];
-      return [순서빈칸, 사이의수50];
+      if (lv === '하') return [순서빈칸, 사이개수('1-1-5', 50)];
+      if (lv === '중') return [순서빈칸, 사이의수50, 사이개수('1-1-5', 50), 두단계수('1-1-5', 50)];
+      return [순서빈칸, 사이의수50, 두단계수('1-1-5', 50, 10), 사이개수('1-1-5', 50)];
     case 8:
-      if (lv === '하') return [더큰수];
-      if (lv === '중') return [더큰수];
-      return [가장큰수50, 더큰수];
+      if (lv === '하') return [더큰수, 수카드몇십몇('1-1-5', 50)];
+      if (lv === '중') return [더큰수, 가장큰수50, 수카드몇십몇('1-1-5', 50)];
+      return [가장큰수50, 더큰수, 수카드몇십몇('1-1-5', 50), 사이개수('1-1-5', 50)];
     default:
       return null;
   }

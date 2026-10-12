@@ -134,6 +134,148 @@ describe('6-2 3단원 공간과 입체', () => {
   });
 });
 
+// 쌓기나무 입체 그림을 화면의 점마다 다시 그려 보아, 어느 쌓기나무가
+// 보이는지 생성기와 따로 구합니다. 쌓기나무 하나가 덮는 육각형을 세 면의
+// 다각형으로 보고, 점마다 가장 가까운(x+y+z가 큰) 쌓기나무를 찾습니다.
+const 다각형안 = (px: number, py: number, pts: Array<[number, number]>) => {
+  let 안 = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i, i += 1) {
+    const [xi, yi] = pts[i];
+    const [xj, yj] = pts[j];
+    if (yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) 안 = !안;
+  }
+  return 안;
+};
+const 그려서보이는것 = (h: number[][]) => {
+  const P = (x: number, y: number, z: number): [number, number] => [(x - y) * Math.sqrt(3) / 2, (x + y) / 2 - z];
+  const cubes: Array<{ x: number; y: number; z: number }> = [];
+  h.forEach((row, y) => row.forEach((n, x) => { for (let z = 0; z < n; z += 1) cubes.push({ x, y, z }); }));
+  const 면들 = cubes.map((b) => {
+    const p = (dx: number, dy: number, dz: number) => P(b.x + dx, b.y + dy, b.z + dz);
+    return [
+      [p(0, 0, 1), p(1, 0, 1), p(1, 1, 1), p(0, 1, 1)],
+      [p(0, 1, 0), p(1, 1, 0), p(1, 1, 1), p(0, 1, 1)],
+      [p(1, 0, 0), p(1, 1, 0), p(1, 1, 1), p(1, 0, 1)],
+    ];
+  });
+  const 보임 = new Set<number>();
+  for (let u = -4; u <= 4; u += 0.037) {
+    for (let v = -4; v <= 4; v += 0.041) {
+      let best = -1;
+      cubes.forEach((b, i) => {
+        if (!면들[i].some((f) => 다각형안(u, v, f))) return;
+        if (best < 0 || b.x + b.y + b.z > cubes[best].x + cubes[best].y + cubes[best].z) best = i;
+      });
+      if (best >= 0) 보임.add(best);
+    }
+  }
+  return cubes.filter((_, i) => 보임.has(i));
+};
+
+describe('6-2 3단원 쌓기나무 입체 그림', () => {
+  it('그림을 다시 그려 보아 개수·층·모양 답을 구합니다', () => {
+    let count = 0;
+    const 층 = (xs: number[]) => xs.map((x) => `${x}층`).join(', ');
+    for (const { q } of 단원(3)) {
+      if (q.visual?.kind !== 'stack-iso') continue;
+      if (q.visual.plan && q.visual.items) {
+        // 위에서 본 모양과 똑같은 것은 답 하나뿐이고, 모든 보기는 숨은 것이 없어야 합니다.
+        const 같은것 = q.visual.items.filter((m) => JSON.stringify(m.heights) === JSON.stringify(q.visual!.kind === 'stack-iso' ? q.visual.plan : []));
+        expect(같은것.map((m) => m.name), q.prompt).toEqual([q.answer]);
+        for (const m of q.visual.items) expect(그려서보이는것(m.heights).length).toBe(m.heights.flat().reduce((s, x) => s + x, 0));
+        count += 1;
+        continue;
+      }
+      if (q.visual.items) {
+        const [a, b] = q.visual.items.map((m) => m.heights.flat().reduce((s, x) => s + x, 0));
+        for (const m of q.visual.items) expect(그려서보이는것(m.heights).length).toBe(m.heights.flat().reduce((s, x) => s + x, 0));
+        expect(q.answer, q.prompt).toBe(`${a > b ? '가' : '나'}, ${Math.abs(a - b)}개`);
+        count += 1;
+        continue;
+      }
+      const h = q.visual.heights;
+      const 전체 = h.flat().reduce((s, x) => s + x, 0);
+      const 보임 = 그려서보이는것(h);
+      if (q.prompt.includes('보이지 않는 쌓기나무는 없습니다')) expect(보임.length, q.prompt).toBe(전체);
+      if (q.prompt.includes('쌓기나무는 모두 몇 개')) expect(수(q.answer), q.prompt).toBe(전체);
+      if (q.prompt.includes('적어도 몇 개 필요')) {
+        const 높이 = new Map<string, number>();
+        for (const b of 보임) 높이.set(`${b.x},${b.y}`, Math.max(높이.get(`${b.x},${b.y}`) ?? 0, b.z + 1));
+        expect(수(q.answer), q.prompt).toBe([...높이.values()].reduce((s, x) => s + x, 0));
+      }
+      const lay = /(\d)층에 놓인 쌓기나무는 몇 개/.exec(q.prompt);
+      if (lay) expect(수(q.answer), q.prompt).toBe(h.flat().filter((x) => x >= Number(lay[1])).length);
+      if (q.prompt.includes('앞에서 본 모양을 왼쪽부터')) expect(q.answer, q.prompt).toBe(층(h[0].map((_, c) => Math.max(...h.map((row) => row[c])))));
+      if (q.prompt.includes('옆에서 본 모양을 앞쪽부터')) expect(q.answer, q.prompt).toBe(층(h.map((row) => Math.max(...row)).reverse()));
+      if (q.prompt.includes('위에서 본 모양을 그릴 때')) expect(수(q.answer), q.prompt).toBe(h.flat().filter((x) => x > 0).length);
+      if (q.prompt.includes('정육면체 모양을 만들려면')) expect(수(q.answer), q.prompt).toBe(27 - 전체);
+      count += 1;
+    }
+    expect(count).toBeGreaterThan(60);
+  });
+});
+
+describe('6-2 3단원 본 모양 그림·층별 그림·추측', () => {
+  const 앞층 = (h: number[][]) => h[0].map((_, c) => Math.max(...h.map((row) => row[c])));
+  const 옆층 = (h: number[][]) => h.map((row) => Math.max(...row)).reverse();
+  const 세움 = (xs: number[]) => {
+    const H = Math.max(...xs);
+    return Array.from({ length: H }, (_, k) => xs.map((x) => x >= H - k));
+  };
+  const 층 = (xs: number[]) => xs.map((x) => `${x}층`).join(', ');
+  it('본 모양 보기 가운데 맞는 것은 답 하나뿐입니다', () => {
+    let count = 0;
+    for (const { q } of 단원(3)) {
+      if (q.visual?.kind !== 'stack-iso' || !q.visual.views) continue;
+      const h = q.visual.heights;
+      const 방향 = /(앞|옆|위)에서 본 모양은 어느 것/.exec(q.prompt)![1];
+      const 맞음 = 방향 === '앞' ? 세움(앞층(h)) : 방향 === '옆' ? 세움(옆층(h)) : h.map((row) => row.map((x) => x > 0));
+      const 같은 = q.visual.views.filter((v) => JSON.stringify(v.cells) === JSON.stringify(맞음)).map((v) => v.name);
+      expect(같은, q.prompt).toEqual([q.answer]);
+      if (!q.visual.planOnly) expect(그려서보이는것(h).length, q.prompt).toBe(h.flat().reduce((s, x) => s + x, 0));
+      count += 1;
+    }
+    expect(count).toBeGreaterThan(30);
+  });
+  it('위·앞·옆에서 본 모양과 층별 모양으로 답을 다시 구합니다', () => {
+    let count = 0;
+    for (const { q } of 단원(3)) {
+      if (q.visual?.kind !== 'cube-views') continue;
+      const v = q.visual.views;
+      if (v[0].label === '1층') {
+        const h = v[0].cells.map((row, r) => row.map((_, c) => v.filter((one) => one.cells[r][c]).length));
+        if (q.prompt.includes('모두 몇 개')) expect(수(q.answer), q.prompt).toBe(h.flat().reduce((s, x) => s + x, 0));
+        if (q.prompt.includes('앞에서 본 모양')) expect(q.answer, q.prompt).toBe(층(앞층(h)));
+        count += 1;
+        continue;
+      }
+      const 위 = v.find((one) => one.label === '위')!.cells;
+      const 앞 = v.find((one) => one.label === '앞')!.cells;
+      const 옆 = v.find((one) => one.label === '옆')!.cells;
+      const 높이들 = (g: boolean[][]) => g[0].map((_, c) => g.filter((row) => row[c]).length);
+      const 칸들: Array<[number, number]> = [];
+      위.forEach((row, r) => row.forEach((on, c) => on && 칸들.push([r, c])));
+      const 합들: number[] = [];
+      for (let m = 0; m < 3 ** 칸들.length; m += 1) {
+        const g = 위.map((row) => row.map(() => 0));
+        let t = m;
+        칸들.forEach(([r, c]) => { g[r][c] = (t % 3) + 1; t = Math.floor(t / 3); });
+        if (층(앞층(g)) === 층(높이들(앞)) && 층(옆층(g)) === 층(높이들(옆))) 합들.push(g.flat().reduce((s, x) => s + x, 0));
+      }
+      if (q.prompt.includes('가장 적게')) expect(수(q.answer), q.prompt).toBe(Math.min(...합들));
+      if (q.prompt.includes('가장 많이')) expect(수(q.answer), q.prompt).toBe(Math.max(...합들));
+      count += 1;
+    }
+    expect(count).toBeGreaterThan(20);
+  });
+  it('뒤에서 본 모양은 앞에서 본 모양을 좌우로 뒤집은 것입니다', () => {
+    for (const { q } of 단원(3)) {
+      if (!q.prompt.includes('뒤에서 본 모양') || q.visual?.kind !== 'stack-plan') continue;
+      expect(q.answer, q.prompt).toBe(층([...앞층(q.visual.heights)].reverse()));
+    }
+  });
+});
+
 describe('6-2 4단원 비례식과 비례배분', () => {
   it('비례식과 비례배분 답이 맞습니다', () => {
     for (const { q } of 단원(4)) {

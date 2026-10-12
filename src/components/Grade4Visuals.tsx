@@ -91,7 +91,7 @@ export function BarGraphGraphic({ visual }: { visual: BarGraphVisual }) {
             </g>
           );
         })}
-        <text x={left + plotW} y={height - 4} textAnchor="end" fill="#56708a" fontSize="11" fontWeight="700">({visual.valueLabel})</text>
+        <text x={left + plotW} y={height - 4} textAnchor="end" fill="#56708a" fontSize="11" fontWeight="700">{visual.valueLabel.includes("(") ? visual.valueLabel : `(${visual.valueLabel})`}</text>
       </svg>
     );
   }
@@ -126,7 +126,7 @@ export function BarGraphGraphic({ visual }: { visual: BarGraphVisual }) {
           </g>
         );
       })}
-      <text x="10" y={top - 12} fill="#56708a" fontSize="11" fontWeight="700">({visual.valueLabel})</text>
+      <text x="10" y={top - 12} fill="#56708a" fontSize="11" fontWeight="700">{visual.valueLabel.includes("(") ? visual.valueLabel : `(${visual.valueLabel})`}</text>
     </svg>
   );
 }
@@ -170,7 +170,7 @@ export function LineGraphGraphic({ visual }: { visual: LineGraphVisual }) {
           <text x={xOf(k)} y={top + plotH + 22} textAnchor="middle" fill={글} fontSize="11" fontWeight="800">{p.name}</text>
         </g>
       ))}
-      <text x="10" y={top - 12} fill="#56708a" fontSize="11" fontWeight="700">({visual.valueLabel})</text>
+      <text x="10" y={top - 12} fill="#56708a" fontSize="11" fontWeight="700">{visual.valueLabel.includes("(") ? visual.valueLabel : `(${visual.valueLabel})`}</text>
     </svg>
   );
 }

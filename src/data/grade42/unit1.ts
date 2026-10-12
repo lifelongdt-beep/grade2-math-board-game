@@ -2,6 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { mixedText } from '../grade5/fraction';
 import { 고르개, 사이 } from '../grade11/common';
+import { 분수네모, 분수문장제, 분수어떤수, 분수잘못계산, 분수카드 } from '../thinking/fractionDecimal';
 
 // ════════════════════════════════════════════════════════════════════
 // 4-2 1단원 분수의 덧셈과 뺄셈 (분모가 같은 분수)
@@ -229,22 +230,33 @@ const 문장제: G5Family = {
   },
 };
 
+const 생각 = {
+  진어떤수: 분수어떤수('4-2-1-p', 1),
+  대어떤수: 분수어떤수('4-2-1-m', 4),
+  잘못: 분수잘못계산('4-2-1', 4),
+  카드: 분수카드('4-2-1'),
+  문장제: 분수문장제('4-2-1'),
+  네모: 분수네모('4-2-1'),
+};
+
 export const unit1Lesson42 = (lessonNo: number, lv: Difficulty): G5Family[] | null => {
+  // 계산만 되풀이하지 않게 거꾸로 구하기·잘못 계산 고치기·수 카드·□ 범위·
+  // 두 단계 문장제를 차시마다 섞습니다.
   switch (lessonNo) {
     case 1:
       return [진분수덧셈('no'), 진분수뺄셈, 가분수대분수];
     case 2:
-      return lv === '하' ? [진분수덧셈('no')] : lv === '중' ? [진분수덧셈('any'), 가분수대분수] : [진분수덧셈('yes'), 문장제];
+      return lv === '하' ? [진분수덧셈('no'), 생각.진어떤수] : lv === '중' ? [진분수덧셈('any'), 가분수대분수, 생각.진어떤수, 생각.네모] : [진분수덧셈('yes'), 문장제, 생각.진어떤수, 생각.네모];
     case 3:
-      return [대분수덧셈(false)];
+      return lv === '하' ? [대분수덧셈(false), 생각.대어떤수] : [대분수덧셈(false), 생각.대어떤수, 생각.카드];
     case 4:
-      return lv === '하' ? [대분수덧셈(true), 가분수대분수] : [대분수덧셈(true), 문장제];
+      return lv === '하' ? [대분수덧셈(true), 가분수대분수, 생각.대어떤수] : [대분수덧셈(true), 문장제, 생각.카드, 생각.잘못];
     case 5:
-      return lv === '상' ? [진분수뺄셈, 대분수뺄셈(false), 문장제] : [진분수뺄셈, 대분수뺄셈(false)];
+      return lv === '상' ? [진분수뺄셈, 대분수뺄셈(false), 문장제, 생각.잘못, 생각.네모] : [진분수뺄셈, 대분수뺄셈(false), 생각.대어떤수];
     case 6:
-      return [자연수빼기];
+      return lv === '하' ? [자연수빼기, 생각.대어떤수] : [자연수빼기, 생각.대어떤수, 생각.문장제];
     case 7:
-      return lv === '하' ? [대분수뺄셈(true)] : [대분수뺄셈(true), 문장제];
+      return lv === '하' ? [대분수뺄셈(true), 생각.문장제] : [대분수뺄셈(true), 문장제, 생각.문장제, 생각.카드, 생각.잘못];
     default:
       return null;
   }

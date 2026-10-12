@@ -1,6 +1,7 @@
 import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
+import { 몫1견주기, 소수거꾸로, 소수점관계 } from '../grade6/thinking';
 import { 소수 } from '../grade42/unit3';
 
 // ════════════════════════════════════════════════════════════════════
@@ -181,21 +182,21 @@ const 어림: G5Family = {
 export const unit2Lesson62 = (lessonNo: number, lv: Difficulty): G5Family[] | null => {
   switch (lessonNo) {
     case 1:
-      return [자연수이용];
+      return [자연수이용, 소수점관계('소수로')];
     case 2:
-      return [자연수이용];
+      return [자연수이용, 소수점관계('소수로'), 몫1견주기('소수')];
     case 3:
-      return [소수나누기(true)];
+      return [소수나누기(true), 소수거꾸로('소수'), 몫1견주기('소수')];
     case 4:
-      return [소수나누기(false)];
+      return [소수나누기(false), 소수거꾸로('소수'), 소수점관계('소수로')];
     case 5:
-      return [자연수나누기소수];
+      return [자연수나누기소수, 몫1견주기('소수'), 소수거꾸로('소수')];
     case 6:
-      return [반올림];
+      return [반올림, 소수거꾸로('소수')];
     case 7:
-      return [남는양];
+      return [남는양, 소수점관계('소수로')];
     case 8:
-      return lv === '하' ? [어림] : [어림, 소수나누기(false)];
+      return lv === '하' ? [어림, 몫1견주기('소수')] : [어림, 소수나누기(false), 몫1견주기('소수'), 소수점관계('소수로')];
     default:
       return null;
   }

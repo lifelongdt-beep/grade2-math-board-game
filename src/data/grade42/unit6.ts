@@ -1,6 +1,7 @@
 import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
+import { 같은철사, 대각선거꾸로, 둘레거꾸로, 사각형관계 } from './thinking';
 import { 고르지않은다각형, 모양조각점, 정다각형 } from './geom';
 
 // ════════════════════════════════════════════════════════════════════
@@ -215,11 +216,11 @@ export const unit6Lesson42 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 1:
       return [다각형뜻, 다각형이름];
     case 2:
-      return lv === '하' ? [다각형이름, 다각형뜻] : [다각형이름, 다각형뜻];
+      return lv === '하' ? [다각형이름, 다각형뜻, 사각형관계] : [다각형이름, 다각형뜻, 사각형관계];
     case 3:
-      return lv === '하' ? [정다각형둘레, 정다각형뜻] : [정다각형둘레, 정다각형뜻];
+      return lv === '하' ? [정다각형둘레, 정다각형뜻, 둘레거꾸로([2])] : [정다각형둘레, 정다각형뜻, 둘레거꾸로([2]), 같은철사];
     case 4:
-      return lv === '하' ? [대각선개수, 대각선성질] : [대각선개수, 대각선성질];
+      return lv === '하' ? [대각선개수, 대각선성질] : [대각선개수, 대각선성질, 대각선거꾸로];
     case 5:
       return [만들수있는, 모양조각];
     case 6:
