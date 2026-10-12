@@ -968,6 +968,8 @@ export interface NumberArrayVisual {
   kind: 'number-array';
   label: string;
   rows: Array<Array<number | null>>;
+  /** 색칠한 칸의 수입니다(1-2 수 배열표에서 규칙 찾기). */
+  shaded?: number[];
 }
 
 /**
