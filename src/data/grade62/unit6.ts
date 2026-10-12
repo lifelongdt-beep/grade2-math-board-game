@@ -1,4 +1,4 @@
-import type { Difficulty } from '../../types';
+import type { Difficulty, SolidFigureVisual, SolidNetVisual } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
 import { 소수 } from '../grade42/unit3';
@@ -14,6 +14,25 @@ import { 소수 } from '../grade42/unit3';
 //   · '회전체'라는 말은 쓰지 않습니다. 직사각형·직각삼각형·반원을 한 변
 //     (지름)을 기준으로 돌려 원기둥·원뿔·구를 만드는 활동으로만 다룹니다.
 // ════════════════════════════════════════════════════════════════════
+
+const 원기둥그림 = (r: number, h: number): SolidFigureVisual => ({
+  kind: 'solid-figure',
+  label: '원기둥',
+  solid: 'cylinder',
+  radius: r,
+  height: h,
+  labels: { radius: `${r} cm`, height: `${h} cm` },
+});
+
+// 원기둥의 전개도입니다. 묻는 길이는 '?'로 둡니다.
+const 원기둥전개도 = (r: number, h: number, 묻는: 'width' | 'height'): SolidNetVisual => ({
+  kind: 'solid-net',
+  label: '원기둥의 전개도',
+  solid: 'cylinder',
+  base: r,
+  height: h,
+  labels: { base: `${r} cm`, height: 묻는 === 'height' ? '? cm' : `${h} cm`, ...(묻는 === 'width' ? { width: '? cm' } : {}) },
+});
 
 const 뜻 = (어느: '원기둥' | '원뿔' | '구' | '모두'): G5Family => ({
   id: `meaning-${어느}`,
@@ -46,6 +65,9 @@ const 전개도: G5Family = {
     const r = 사이(next, 2, 10);
     const h = 사이(next, 3, 20);
     const kind = next(lv === '하' ? 2 : 3);
+    // 옆면이 실처럼 가늘거나 기둥처럼 길면 전개도로 알아보기 어렵습니다.
+    const 옆가로 = 2 * 3.14 * r;
+    if (kind !== 2 && (h * 4 < 옆가로 || h > 옆가로 * 1.5)) return null;
     if (kind === 0) {
       const v = 2 * r * 3140;
       return {
@@ -57,6 +79,7 @@ const 전개도: G5Family = {
         hint: '옆면의 가로는 밑면의 둘레(원주)와 같아요.',
         steps: [`밑면의 원주는 ${2 * r}×3.14=${소수(v)}이므로 ${소수(v)} cm입니다.`],
         misconceptionTip: '옆면의 가로는 밑면의 지름이 아니라 원주예요.',
+        visual: 원기둥전개도(r, h, 'width'),
       };
     }
     if (kind === 1) {
@@ -68,6 +91,7 @@ const 전개도: G5Family = {
         strategy: '원기둥 전개도의 옆면 세로',
         hint: '옆면의 세로는 원기둥의 높이와 같아요.',
         steps: [`옆면의 세로는 높이와 같으므로 ${h} cm입니다.`],
+        visual: 원기둥전개도(r, h, 'height'),
       };
     }
     return {
@@ -100,6 +124,7 @@ const 원기둥앞: G5Family = {
       hint: '앞에서 본 직사각형의 가로는 밑면의 지름, 세로는 높이예요.',
       steps: 둘레 ? [`가로는 지름 ${2 * r} cm, 세로는 높이 ${h} cm입니다.`, `(${2 * r}+${h})×2=${v}이므로 ${v} cm입니다.`] : [`가로는 밑면의 지름이므로 ${r}×2=${2 * r} cm입니다.`],
       misconceptionTip: '가로는 반지름이 아니라 지름이에요.',
+      visual: 원기둥그림(r, h),
     };
   },
 };
@@ -121,6 +146,7 @@ const 원뿔길이: G5Family = {
       tag: 'solid',
       strategy: '원뿔의 구성 요소',
       hint: '높이는 꼭짓점에서 밑면에 수직인 선분, 모선은 꼭짓점과 밑면 둘레를 이은 선분이에요.',
+      visual: { kind: 'solid-figure', label: '원뿔', solid: 'cone', radius: r, height: h, labels: { radius: `${r} cm`, height: `${h} cm`, slant: `${l} cm` } } satisfies SolidFigureVisual,
       steps: [kind === 0 ? `지름은 반지름의 2배이므로 ${r}×2=${2 * r} cm입니다.` : kind === 1 ? `원뿔의 꼭짓점에서 밑면에 수직인 선분의 길이가 높이이므로 ${h} cm입니다.` : `원뿔의 꼭짓점과 밑면의 둘레의 한 점을 이은 선분이 모선이므로 ${l} cm입니다.`],
     };
   },
@@ -155,6 +181,7 @@ const 구지름: G5Family = {
           strategy: '구의 반지름',
           hint: '구의 반지름은 지름의 절반이에요.',
           steps: [`${2 * r}÷2=${r}이므로 ${r} cm입니다.`],
+          visual: { kind: 'solid-figure', label: '구', solid: 'sphere', radius: r, labels: { diameter: `${2 * r} cm` } } satisfies SolidFigureVisual,
         }
       : {
           prompt: `반원 모양의 종이를 지름을 기준으로 한 바퀴 돌려 구를 만들었습니다. 반원의 지름이 ${2 * r} cm일 때 구의 반지름은 몇 cm일까요?`,

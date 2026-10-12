@@ -1,4 +1,4 @@
-import type { Difficulty } from '../../types';
+import type { Difficulty, SolidFigureVisual, SolidNetVisual } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
 
@@ -26,6 +26,25 @@ const 뿔 = (n: number) => `${각[n]}각뿔`;
 type 무엇 = '면' | '모서리' | '꼭짓점';
 const 기둥수 = (n: number, w: 무엇) => (w === '면' ? n + 2 : w === '모서리' ? 3 * n : 2 * n);
 const 뿔수 = (n: number, w: 무엇) => (w === '면' ? n + 1 : w === '모서리' ? 2 * n : n + 1);
+
+// 겨냥도입니다. 수 세기 문항은 그림을 보며 밑면·옆면을 세어 보게 합니다.
+const 겨냥도 = (종류: '기둥' | '뿔', n: number): SolidFigureVisual => ({
+  kind: 'solid-figure',
+  label: 종류 === '기둥' ? 기둥(n) : 뿔(n),
+  solid: 종류 === '기둥' ? 'prism' : 'pyramid',
+  sides: n,
+});
+
+// 각기둥의 전개도입니다. 길이를 주지 않는 문항은 비율만 보기 좋게 둡니다.
+const 펼친그림 = (n: number, s = 1, h = 1.6, 길이 = false): SolidNetVisual => ({
+  kind: 'solid-net',
+  label: `${기둥(n)}의 전개도`,
+  solid: 'prism',
+  sides: n,
+  base: s,
+  height: h,
+  ...(길이 ? { labels: { base: `${s} cm`, height: `${h} cm`, width: '? cm' } } : {}),
+});
 
 const 수세기 = (종류: '기둥' | '뿔'): G5Family => ({
   id: `count-${종류}`,
@@ -58,6 +77,7 @@ const 수세기 = (종류: '기둥' | '뿔'): G5Family => ({
       hint: 종류 === '기둥' ? '밑면은 2개, 옆면은 밑면의 변의 수만큼 있어요.' : '밑면은 1개, 옆면은 밑면의 변의 수만큼 있어요.',
       steps: [풀이[w]],
       misconceptionTip: 종류 === '기둥' ? '각기둥은 밑면이 2개라는 것을 잊지 마세요.' : '각뿔은 밑면이 1개뿐이에요.',
+      visual: 겨냥도(종류, n),
     };
   },
 });
@@ -142,6 +162,7 @@ const 전개도: G5Family = {
         strategy: '각기둥의 전개도 알기',
         hint: '옆면의 수는 밑면의 변의 수와 같아요.',
         steps: [`${기둥(n)}의 옆면은 ${n}개입니다.`],
+        visual: 펼친그림(n),
       };
     }
     if (kind === 1) {
@@ -153,8 +174,11 @@ const 전개도: G5Family = {
         strategy: '각기둥의 전개도 알기',
         hint: '밑면 2개와 옆면을 모두 세어요.',
         steps: [`밑면 2개, 옆면 ${n}개이므로 ${n + 2}개입니다.`],
+        visual: 펼친그림(n),
       };
     }
+    // 옆면을 이은 직사각형이 실처럼 가늘면 전개도로 알아보기 어렵습니다.
+    if (s * n > h * 5) return null;
     return {
       prompt: `밑면이 한 변 ${s} cm인 정${각[n]}각형이고 높이가 ${h} cm인 ${기둥(n)}의 전개도에서, 옆면을 모두 이은 큰 직사각형의 가로는 몇 cm일까요?`,
       answer: `${s * n} cm`,
@@ -163,6 +187,7 @@ const 전개도: G5Family = {
       strategy: '각기둥의 전개도에서 길이 구하기',
       hint: '옆면을 이은 직사각형의 가로는 밑면의 둘레와 같아요.',
       steps: [`밑면의 둘레는 ${s}×${n}=${s * n}이므로 가로는 ${s * n} cm입니다.`],
+      visual: 펼친그림(n, s, h, true),
     };
   },
 };

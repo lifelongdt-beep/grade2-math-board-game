@@ -1020,6 +1020,9 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     // 6학년 그림입니다.
     visual.kind === 'ratio-graph' ||
     visual.kind === 'stack-plan' ||
+    visual.kind === 'solid-figure' ||
+    visual.kind === 'solid-net' ||
+    visual.kind === 'circle-region' ||
     visual.kind === 'protractor' ||
     visual.kind === 'angle-split' ||
     visual.kind === 'parallel-distance' ||
