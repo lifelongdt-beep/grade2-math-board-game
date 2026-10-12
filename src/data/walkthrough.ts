@@ -405,11 +405,40 @@ const deriveTime = (prompt: string, answer: string): Walkthrough | null => {
   return null;
 };
 
+// ── 들이·무게의 덧셈과 뺄셈(3-2 5단원) ────────────────────────────
+// 'L끼리: 3+4=7', 'mL끼리: 100+400=500'으로 푼 문항입니다. 두 단위를
+// 섞어 계산하는 것이 이 차시의 오개념이라, 큰 단위와 작은 단위를 따로
+// 묶어 한 줄씩 줄여 가는 모습을 보여 줍니다.
+const unitChain = (steps: string[], answer: string): Walkthrough | null => {
+  const 큰 = steps.map((t) => /^(L|kg)끼리: (\d+)([+-])(\d+)=(\d+)$/.exec(t.trim())).find(Boolean);
+  const 작은 = steps.map((t) => /^(mL|g)끼리: (\d+)([+-])(\d+)=(\d+)$/.exec(t.trim())).find(Boolean);
+  if (!큰 || !작은 || 큰[3] !== 작은[3]) return null;
+  const [B, a1, op, b1, c1] = [큰[1], 큰[2], 큰[3], 큰[4], 큰[5]];
+  const [S, a2, , b2, c2] = [작은[1], 작은[2], 작은[3], 작은[4], 작은[5]];
+  const 더 = op === '+';
+  return {
+    kind: 'chain',
+    lines: [
+      `${a1} ${B} ${a2} ${S} ${op} ${b1} ${B} ${b2} ${S}`,
+      `(${a1} ${op} ${b1}) ${B}  (${a2} ${op} ${b2}) ${S}`,
+      // 답 앞에서 멈춥니다. 괄호 속 두 계산은 아이가 직접 합니다.
+      answer,
+    ],
+    says: [
+      '식을 씁니다.',
+      `${B}은(는) ${B}끼리, ${S}은(는) ${S}끼리 모아 따로 ${더 ? '더합니다' : '뺍니다'}.`.replace('L은(는)', 'L는').replace('kg은(는)', 'kg은').replace('mL은(는)', 'mL는').replace('g은(는)', 'g은'),
+      `${B}끼리 ${a1} ${op} ${b1} = ${c1}, ${S}끼리 ${a2} ${op} ${b2} = ${c2}이므로 ${answer}입니다.`,
+    ],
+  };
+};
+
 export const deriveWalkthrough = (prompt: string, steps: string[], semester: string, answer = '', lessonId = ''): Walkthrough | null => {
   if (semester.startsWith('5')) return deriveGrade5Walk(lessonId, steps, answer);
   if (!semester.startsWith('3')) return null;
   const 때 = semester === '3-1' ? deriveTime(prompt, answer) : null;
   if (때) return 때;
+  const 단위 = semester === '3-2' ? unitChain(steps, answer) : null;
+  if (단위) return 단위;
   if (/어림/.test(prompt) || /\d\/\d/.test(prompt) || 두단위.test(prompt) || /의 \d+\/\d+/.test(steps.join(' '))) return null;
   const 문제수 = new Set(prompt.match(/\d+/g) ?? []);
   type 셈 = Extract<Walkthrough, { kind: 'add' | 'sub' | 'mul' | 'div' }>;

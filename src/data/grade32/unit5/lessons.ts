@@ -1,4 +1,4 @@
-import type { Difficulty } from '../../../types';
+import type { BalanceVisual, BeakerVisual, Difficulty, ScaleDialVisual } from '../../../types';
 import type { G5Family } from '../../grade5/build';
 import { pick, rand } from '../../grade5/util';
 
@@ -170,6 +170,7 @@ const 오개념비교문항 = (kind: 종류): G5Family => ({
           hint: '양팔저울은 무거운 쪽이 내려갑니다. 크기가 아니라 저울을 보세요.',
           steps: ['쇠구슬 쪽이 아래로 내려갔습니다.', '그러므로 작은 쇠구슬이 더 무겁습니다.'],
           misconceptionTip: '큰 물건이 더 무거울 것이라고 생각하면 안 됩니다. 직접 재어 보아야 합니다.',
+          visual: { kind: 'balance', label: '큰 스펀지 공과 작은 쇠구슬을 올린 양팔저울', left: { name: '큰 스펀지 공', big: true }, right: { name: '작은 쇠구슬' }, tilt: 'right' } satisfies BalanceVisual,
         };
   },
 });
@@ -384,6 +385,67 @@ const 단위로재기문항 = (kind: 종류): G5Family => ({
       hint: `${한번} ${S}이(가) ${n}번이면 모두 몇 ${S}인지 먼저 구한 다음, 몇 ${B} 몇 ${S}(으)로 바꾸어 보세요.`,
       steps: [`${한번}×${n}=${합}(${S})입니다.`, `${합} ${S}=${양글(kind, 합)}입니다.`],
       misconceptionTip: `1 ${B}은(는) 100 ${S}이(가) 아니라 1000 ${S}입니다.`,
+      ...(kind === '무게'
+        ? { visual: { kind: 'balance', label: `수박과 ${한번} g짜리 추 ${n}개를 올린 양팔저울`, left: { name: '수박', big: true }, right: { name: '추', count: n, unitG: 한번 }, tilt: 'level', leftG: 합 } satisfies BalanceVisual }
+        : {}),
+    };
+  },
+});
+
+// ── 4, 8차시: 눈금 읽기 ─────────────────────────────────────────────
+// 지도서 4차시는 비커의 눈금으로, 8차시는 저울의 바늘로 재어 읽게
+// 합니다. '1 L 300 mL'와 '1300 mL'가 같은 눈금이라는 것을 그림에서
+// 확인하게 합니다. 하 수준은 한 단위로만 읽고, 그 위는 두 단위로 읽습니다.
+const 눈금읽기문항 = (kind: 종류): G5Family => ({
+  id: `read-scale-${kind}`,
+  make: (seed, lv) => {
+    const next = rand(seed + 13);
+    const 작게 = lv === '하';
+    if (kind === '들이') {
+      const max = 작게 ? 1000 : pick([2000, 3000], seed);
+      const 양 = (1 + next(max / 100 - 1)) * 100;
+      if (!작게 && (양 < 1000 || 양 % 1000 === 0)) return null;
+      if (작게 && 양 === 1000) return null;
+      const 답 = 작게 ? `${양} mL` : 양글('들이', 양);
+      const visual: BeakerVisual = { kind: 'beaker', label: '물이 담긴 비커', maxMl: max, amountMl: 양, majorMl: 작게 ? 200 : 500, minorMl: 100 };
+      return {
+        prompt: 작게 ? '비커에 담긴 물의 양은 몇 mL일까요?' : '비커에 담긴 물의 양은 몇 L 몇 mL일까요?',
+        answer: 답,
+        wrongs: 작게
+          ? [양 + 100, 양 - 100, 양 + 200, Math.round(양 / 100)].filter((v) => v > 0 && v !== 양).slice(0, 3).map((v) => `${v} mL`)
+          : [양글('들이', 양 + 100), 양글('들이', 양 - 100), `${Math.floor(양 / 1000)} L ${(양 % 1000) / 10} mL`, `${Math.round(양 / 100)} L`].filter((w) => w !== 답),
+        tag: 'measurement',
+        concept: '비커의 눈금은 아래에서부터 읽습니다. 작은 눈금 한 칸이 얼마인지 먼저 알아봅니다.',
+        strategy: '비커의 눈금 읽기',
+        hint: `작은 눈금 한 칸은 100 mL예요. 물의 윗면이 어느 눈금에 닿았는지 보세요.`,
+        steps: 작게
+          ? [`작은 눈금 한 칸은 100 mL입니다.`, `물의 윗면이 ${양} mL 눈금에 있으므로 ${양} mL입니다.`]
+          : [`작은 눈금 한 칸은 100 mL입니다.`, `물의 윗면이 ${양} mL 눈금에 있습니다.`, `${양} mL=${양글('들이', 양)}입니다.`],
+        misconceptionTip: '물의 윗면이 닿은 눈금을 읽어요. 비커 맨 위 끝을 읽으면 안 돼요.',
+        visual,
+      };
+    }
+    const max = 작게 ? 1000 : 4000;
+    const 칸 = 작게 ? 50 : 100;
+    const 양 = (1 + next(max / 칸 - 2)) * 칸;
+    if (!작게 && (양 < 1000 || 양 % 1000 === 0)) return null;
+    const 답 = 작게 ? `${양} g` : 양글('무게', 양);
+    const visual: ScaleDialVisual = { kind: 'scale-dial', label: '바늘 저울', maxG: max, amountG: 양, majorG: 작게 ? 100 : 1000, minorG: 칸 };
+    return {
+      prompt: 작게 ? '저울의 바늘이 가리키는 무게는 몇 g일까요?' : '저울의 바늘이 가리키는 무게는 몇 kg 몇 g일까요?',
+      answer: 답,
+      wrongs: 작게
+        ? [양 + 칸, 양 - 칸, 양 + 100, 양 - 100].filter((v, k, all) => v > 0 && v !== 양 && all.indexOf(v) === k).slice(0, 3).map((v) => `${v} g`)
+        : [양글('무게', 양 + 칸), 양글('무게', 양 - 칸), `${Math.floor(양 / 1000)} kg ${(양 % 1000) / 10} g`, `${Math.round(양 / 100)} kg`].filter((w) => w !== 답),
+      tag: 'measurement',
+      concept: '저울의 바늘이 가리키는 눈금을 읽습니다. 작은 눈금 한 칸이 얼마인지 먼저 알아봅니다.',
+      strategy: '저울의 눈금 읽기',
+      hint: 작게 ? '긴 눈금 사이를 작은 눈금이 몇 칸으로 나누었는지 보세요. 작은 눈금 한 칸은 50 g이에요.' : '1 kg과 2 kg 사이가 작은 눈금 10칸이에요. 작은 눈금 한 칸은 100 g이에요.',
+      steps: 작게
+        ? [`작은 눈금 한 칸은 50 g입니다.`, `바늘이 ${양} g을 가리키므로 ${양} g입니다.`]
+        : [`작은 눈금 한 칸은 100 g입니다.`, `바늘이 ${Math.floor(양 / 1000)} kg에서 작은 눈금 ${(양 % 1000) / 100}칸 더 간 곳을 가리킵니다.`, `그러므로 ${양글('무게', 양)}입니다.`],
+      misconceptionTip: '작은 눈금 한 칸이 1 g이나 10 g이 아니에요. 눈금 사이를 몇 칸으로 나누었는지 먼저 세어요.',
+      visual,
     };
   },
 });
@@ -450,14 +512,14 @@ export const unit5Lesson32 = (lessonNo: number, difficulty: Difficulty): G5Famil
   if (lessonNo === 1) return [도입문항];
   if (lessonNo === 2) return 상 ? [다른단위문항('들이'), 임의단위차이문항('들이'), 오개념비교문항('들이')] : [임의단위차이문항('들이'), 오개념비교문항('들이'), 다른단위문항('들이')];
   if (lessonNo === 3) return 하 ? [바꾸기문항('들이')] : [바꾸기문항('들이'), 단위비교문항('들이')];
-  if (lessonNo === 4) return [단위고르기문항('들이'), 가까운어림문항('들이'), 단위로재기문항('들이')];
+  if (lessonNo === 4) return [눈금읽기문항('들이'), 단위고르기문항('들이'), 가까운어림문항('들이'), 단위로재기문항('들이')];
   if (lessonNo === 5) {
     if (하) return [덧뺄문항('들이', true, false), 덧뺄문항('들이', false, false)];
     return [덧뺄문항('들이', true, true), 덧뺄문항('들이', false, true), 덧뺄문항('들이', true, false), 덧뺄문항('들이', false, false)];
   }
   if (lessonNo === 6) return 상 ? [세물건비교문항, 다른단위문항('무게'), 임의단위차이문항('무게'), 오개념비교문항('무게')] : [임의단위차이문항('무게'), 오개념비교문항('무게'), 세물건비교문항];
   if (lessonNo === 7) return 하 ? [바꾸기문항('무게'), 톤문항] : [바꾸기문항('무게'), 톤문항, 단위비교문항('무게')];
-  if (lessonNo === 8) return [단위고르기문항('무게'), 가까운어림문항('무게'), 단위로재기문항('무게')];
+  if (lessonNo === 8) return [눈금읽기문항('무게'), 단위고르기문항('무게'), 가까운어림문항('무게'), 단위로재기문항('무게')];
   if (lessonNo === 9) {
     if (하) return [덧뺄문항('무게', true, false), 덧뺄문항('무게', false, false)];
     return [덧뺄문항('무게', true, true), 덧뺄문항('무게', false, true), 덧뺄문항('무게', true, false), 덧뺄문항('무게', false, false)];

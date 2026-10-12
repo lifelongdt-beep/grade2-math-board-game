@@ -101,3 +101,45 @@ describe('3-2 5단원 들이와 무게', () => {
     }
   });
 });
+
+// ════════════════════════════════════════════════════════════════════
+// 눈금 그림이 답과 어긋나지 않습니다
+// ────────────────────────────────────────────────────────────────────
+// 비커의 물 높이·저울의 바늘·양팔저울의 추가 답과 다르면, 눈금을 바르게
+// 읽은 아이가 틀린 답을 고르게 됩니다.
+// ════════════════════════════════════════════════════════════════════
+describe('3-2 5단원 눈금 그림', () => {
+  it('비커의 물, 저울의 바늘, 양팔저울의 추가 답과 같습니다', () => {
+    let 비커 = 0;
+    let 저울 = 0;
+    let 양팔 = 0;
+    for (const q of 모두) {
+      const v = q.visual;
+      if (v?.kind === 'beaker') {
+        비커 += 1;
+        expect(v.amountMl, q.prompt).toBe(읽기(q.answer));
+        expect(v.amountMl % v.minorMl, q.prompt).toBe(0);
+        expect(v.amountMl, q.prompt).toBeLessThan(v.maxMl);
+      }
+      if (v?.kind === 'scale-dial') {
+        저울 += 1;
+        expect(v.amountG, q.prompt).toBe(읽기(q.answer));
+        expect(v.amountG % v.minorG, q.prompt).toBe(0);
+        expect(v.amountG, q.prompt).toBeLessThan(v.maxG);
+      }
+      if (v?.kind === 'balance' && v.right.unitG) {
+        양팔 += 1;
+        expect((v.right.count ?? 0) * v.right.unitG, q.prompt).toBe(읽기(q.answer));
+        expect(v.leftG, q.prompt).toBe(읽기(q.answer));
+        expect(v.tilt, q.prompt).toBe('level');
+        expect(q.prompt, q.prompt).toContain(`${v.right.unitG} g짜리 추 ${v.right.count}개`);
+      }
+      if (/양팔저울에 올렸더니 쇠구슬 쪽이 아래로/.test(q.prompt)) {
+        expect(v?.kind === 'balance' && v.tilt, q.prompt).toBe('right');
+      }
+    }
+    expect(비커).toBeGreaterThan(10);
+    expect(저울).toBeGreaterThan(10);
+    expect(양팔).toBeGreaterThan(5);
+  });
+});

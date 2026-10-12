@@ -96,3 +96,23 @@ describe('3-1 3단원 나눗셈', () => {
     }
   });
 });
+
+describe('3-1 곱셈과 나눗셈의 관계 배열 그림', () => {
+  it('배열의 한 줄 칸 수와 줄 수가 곱셈식의 두 수와 같습니다', async () => {
+    const { lessons31 } = await import('../curriculum31');
+    const { generateQuestions } = await import('../questionFactory');
+    let 본 = 0;
+    for (const lesson of lessons31.filter((l) => l.unitNo === 3 && l.lessonNo === 4)) {
+      for (const level of ['하', '중', '상'] as const) {
+        for (const q of generateQuestions(lesson, level)) {
+          const 곱 = /(\d+)×(\d+)=(\d+)/.exec(q.prompt) ?? /(\d+)×(\d+)=(\d+)/.exec(q.answer);
+          if (!곱 || q.visual?.kind !== 'array') continue;
+          본 += 1;
+          expect([q.visual.columns, q.visual.rows], q.prompt).toEqual([Number(곱[1]), Number(곱[2])]);
+          expect(q.visual.columns * q.visual.rows, q.prompt).toBe(Number(곱[3]));
+        }
+      }
+    }
+    expect(본).toBeGreaterThan(20);
+  });
+});

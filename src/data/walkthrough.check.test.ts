@@ -33,7 +33,22 @@ describe('세로셈 따라가기', () => {
     const 붙은 = 모두.filter((q) => q.walkthrough);
     expect(붙은.length).toBeGreaterThan(1500);
     const 갈래 = new Set(붙은.map((q) => q.walkthrough!.kind));
-    expect([...갈래].sort()).toEqual(['add', 'div', 'mul', 'sub', 'time']);
+    expect([...갈래].sort()).toEqual(['add', 'chain', 'div', 'mul', 'sub', 'time']);
+  });
+
+  it('들이·무게의 덧셈과 뺄셈 따라가기는 같은 단위끼리 계산해 답에 닿습니다', () => {
+    const 단위 = 모두.filter((q) => q.walkthrough?.kind === 'chain');
+    expect(단위.length).toBeGreaterThan(50);
+    for (const q of 단위) {
+      const w = q.walkthrough!;
+      if (w.kind !== 'chain') continue;
+      expect(w.lines[w.lines.length - 1], q.prompt).toBe(q.answer);
+      expect(w.lines.length, q.prompt).toBe(w.says.length);
+      const 괄호 = [...w.lines[1].matchAll(/\((\d+) ([+-]) (\d+)\)/g)].map((m) => (m[2] === '+' ? Number(m[1]) + Number(m[3]) : Number(m[1]) - Number(m[3])));
+      // 둘째 줄의 두 괄호를 계산한 값이 답의 수와 같습니다(0 L, 0 mL는 답에 쓰지 않습니다).
+      const 답수 = (q.answer.match(/\d+/g) ?? []).map(Number);
+      expect(괄호.filter((v) => v !== 0), q.prompt).toEqual(답수);
+    }
   });
 
   it('마지막 장면의 답 줄이 실제 계산 결과와 같습니다', () => {
