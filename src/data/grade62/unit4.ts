@@ -2,6 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { gcd } from '../grade5/fraction';
 import { 고르개, 사이 } from '../grade11/common';
+import { 비례배분거꾸로, 비례생각 } from '../grade6/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 6-2 4단원 비례식과 비례배분
@@ -233,17 +234,17 @@ export const unit4Lesson62 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 1:
       return [비의성질, 외항내항];
     case 2:
-      return [비의성질];
+      return [비의성질, 외항내항];
     case 3:
-      return [간단히];
+      return [간단히, 비의성질];
     case 4:
       return lv === '하' ? [외항내항] : [외항내항, 옳은비례식];
     case 5:
-      return [비례식풀기];
+      return [비례식풀기, 비례생각];
     case 6:
-      return [활용];
+      return [활용, 비례생각];
     case 7:
-      return [비례배분];
+      return [비례배분, 비례배분거꾸로, 비례생각];
     default:
       return null;
   }

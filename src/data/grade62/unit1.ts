@@ -2,6 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { type Frac, frac, mixed, text } from '../grade5/fraction';
 import { 고르개, 사이 } from '../grade11/common';
+import { 몫1견주기, 분수어떤수, 분수잘못계산, 분수카드나누기 } from '../grade6/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 6-2 1단원 분수의 나눗셈 ((분수)÷(분수), (자연수)÷(분수))
@@ -140,17 +141,17 @@ export const unit1Lesson62 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 1:
       return [같은분모(true), 문장제];
     case 2:
-      return lv === '상' ? [같은분모(true), 문장제] : [같은분모(true)];
+      return lv === '하' ? [같은분모(true), 몫1견주기('분수')] : [같은분모(true), 문장제, 몫1견주기('분수'), 분수어떤수('분수')];
     case 3:
-      return [같은분모(false)];
+      return [같은분모(false), 몫1견주기('분수'), 분수어떤수('분수')];
     case 4:
-      return [자연수나누기('단위')];
+      return [자연수나누기('단위'), 문장제, 분수어떤수('분수')];
     case 5:
-      return [자연수나누기('곱셈')];
+      return [자연수나누기('곱셈'), 분수잘못계산('분수'), 몫1견주기('분수')];
     case 6:
-      return lv === '상' ? [다른분모(false), 문장제] : [다른분모(false)];
+      return lv === '하' ? [다른분모(false), 분수어떤수('분수')] : [다른분모(false), 문장제, 분수카드나누기, 분수잘못계산('분수')];
     case 7:
-      return [다른분모(true)];
+      return lv === '하' ? [다른분모(true), 분수어떤수('분수')] : [다른분모(true), 분수카드나누기, 분수잘못계산('분수')];
     default:
       return null;
   }

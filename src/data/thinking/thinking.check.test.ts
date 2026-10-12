@@ -186,6 +186,77 @@ describe('생각하는 문항(4-2 도형)', () => {
   });
 });
 
+describe('생각하는 문항(6학년)', () => {
+  it('답이 맞습니다', () => {
+    const 값 = (t: string): number => {
+      const x = t.replace(/ ?(cm|m|km|L|개|명|원|바퀴|배)$/, '').trim();
+      let m = /^(\d+)(?:과|와) (\d+)\/(\d+)$/.exec(x);
+      if (m) return Number(m[1]) + Number(m[2]) / Number(m[3]);
+      m = /^(\d+)\/(\d+)$/.exec(x);
+      if (m) return Number(m[1]) / Number(m[2]);
+      return Number(x);
+    };
+    const 식값 = (t: string) => { const [a, b] = t.split('÷'); return 값(a) / 값(b); };
+    const 같 = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+    const 수글 = String.raw`(\d+(?:(?:과|와) \d+\/\d+)?|\d+\/\d+|\d+\.\d+)`;
+    const 셈 = new Map<string, number>();
+    const 센다 = (k: string) => 셈.set(k, (셈.get(k) ?? 0) + 1);
+    for (const q of 모두) {
+      const p = q.prompt;
+      let m = new RegExp(`^어떤 수에 ${수글}(?:을|를) 곱했더니 ${수글}(?:이|가) 되었습니다. 어떤 수는`).exec(p);
+      if (m) { expect(같(값(q.answer) * 값(m[1]), 값(m[2])), p).toBe(true); 센다('곱어떤수'); }
+      m = new RegExp(`^어떤 수를 ${수글}(?:으로|로) 나누어야 할 것을 잘못하여 곱했더니 ${수글}(?:이|가) 되었습니다`).exec(p);
+      if (m) { const b = 값(m[1]); expect(같(값(q.answer), 값(m[2]) / b / b), p).toBe(true); 센다('나눔잘못'); }
+      m = /^계산하지 않고 몫이 1보다 (큰|작은) 것을 찾으면/.exec(p);
+      if (m) {
+        const 맞나 = (t: string) => (m![1] === '큰' ? 식값(t) > 1 : 식값(t) < 1);
+        expect(맞나(q.answer), p).toBe(true);
+        for (const c of q.choices.filter((c) => c !== q.answer)) expect(맞나(c), c).toBe(false);
+        센다('몫1');
+      }
+      m = /^수 카드 ([\d, ]+) 가운데 2장을 골라 진분수를 만들려고 합니다. 만들 수 있는 가장 큰 진분수를 가장 작은 진분수로 나눈 몫/.exec(p);
+      if (m) {
+        const 카드 = m[1].split(', ').map(Number);
+        const 진 = 카드.flatMap((n) => 카드.filter((d) => n < d).map((d) => n / d));
+        expect(같(값(q.answer), Math.max(...진) / Math.min(...진)), p).toBe(true);
+        센다('카드나눔');
+      }
+      m = /^(\d+)÷(\d+)=(\d+)입니다. 이것을 이용하여 ([\d.]+)÷(\d+)의 몫/.exec(p);
+      if (m) { expect(Number(m[1]) / Number(m[2]), p).toBe(Number(m[3])); expect(같(Number(q.answer), Number(m[4]) / Number(m[5])), p).toBe(true); 센다('소수점'); }
+      if (p === '몫이 다른 하나를 찾으면 어느 것일까요?') {
+        const v = 식값(q.answer);
+        for (const c of q.choices.filter((c) => c !== q.answer)) expect(같(식값(c), v), c).toBe(false);
+        const 나머지값 = q.choices.filter((c) => c !== q.answer).map(식값);
+        expect(나머지값.every((x) => 같(x, 나머지값[0])), p).toBe(true);
+        센다('몫다름');
+      }
+      m = /가 모둠은 공을 (\d+)번 던져서 (\d+)번 넣었고, 나 모둠은 (\d+)번 던져서 (\d+)번/.exec(p);
+      if (m) { expect(q.answer, p).toBe(Number(m[2]) / Number(m[1]) > Number(m[4]) / Number(m[3]) ? '가 모둠' : '나 모둠'); 센다('비율'); }
+      m = /가운데 (\d+)%가 안경을 썼습니다. 안경을 쓴 학생이 (\d+)명이라면/.exec(p);
+      if (m) { expect(같(값(q.answer) * Number(m[1]) / 100, Number(m[2])), p).toBe(true); 센다('기준량'); }
+      m = /^(\d+)원인 옷을 (\d+)% 할인하여/.exec(p);
+      if (m) { expect(값(q.answer), p).toBe(Number(m[1]) * (100 - Number(m[2])) / 100); 센다('할인'); }
+      m = /톱니가 (\d+)개인 톱니바퀴 가와 톱니가 (\d+)개인 톱니바퀴 나가 맞물려 돌고 있습니다. 가가 (\d+)바퀴/.exec(p);
+      if (m) { expect(값(q.answer), p).toBe(Number(m[1]) * Number(m[3]) / Number(m[2])); 센다('톱니'); }
+      m = /1 : (\d+)(?:으로|로) 줄여 나타낸 지도가 있습니다. 지도에서 (\d+) cm인 거리는 실제로 몇 (km|m)/.exec(p);
+      if (m) { const cm = Number(m[1]) * Number(m[2]); expect(값(q.answer), p).toBe(m[3] === 'km' ? cm / 100000 : cm / 100); 센다('축척'); }
+      m = /가와 나의 비가 (\d+) : (\d+)이고, 나는 가보다 (\d+) 더 큽니다/.exec(p);
+      if (m) { const k = Number(m[3]) / (Number(m[2]) - Number(m[1])); expect(값(q.answer), p).toBe(Number(m[2]) * k); 센다('비차'); }
+      m = /구슬을 가와 나에게 (\d+) : (\d+)(?:으로|로) 나누어 주었더니 가가 (\d+)개를/.exec(p);
+      if (m) { expect(값(q.answer), p).toBe(Number(m[3]) / Number(m[1]) * (Number(m[1]) + Number(m[2]))); 센다('배분거꾸로'); }
+      m = /^원주가 ([\d.]+) cm인 원의 지름은/.exec(p);
+      if (m) { expect(같(값(q.answer) * 3.14, Number(m[1])), p).toBe(true); 센다('원주거꾸로'); }
+      m = /^지름이 (\d+) cm인 바퀴를 (\d+)바퀴 굴렸습니다/.exec(p);
+      if (m) { expect(같(값(q.answer), Number(m[1]) * 3.14 * Number(m[2])), p).toBe(true); 센다('바퀴'); }
+      m = /^넓이가 (\d+) cm²인 원의 반지름은 몇 cm일까요\? \(원주율: 3\)/.exec(p);
+      if (m) { expect(값(q.answer) ** 2 * 3, p).toBe(Number(m[1])); 센다('넓이거꾸로'); }
+      m = /^원의 반지름을 (\d)배로 늘리면 (원주|넓이)/.exec(p);
+      if (m) { expect(값(q.answer), p).toBe(Number(m[1]) ** (m[2] === '원주' ? 1 : 2)); 센다('배'); }
+    }
+    for (const k of ['곱어떤수', '나눔잘못', '몫1', '카드나눔', '소수점', '몫다름', '비율', '기준량', '할인', '톱니', '축척', '비차', '배분거꾸로', '원주거꾸로', '바퀴', '넓이거꾸로', '배']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+  });
+});
+
 describe('생각하는 문항(자연수)', () => {
   it('거꾸로·잘못 계산·수 카드·어림·나머지·□ 범위·문장제 답이 맞습니다', () => {
     const 셈 = new Map<string, number>();
@@ -193,13 +264,13 @@ describe('생각하는 문항(자연수)', () => {
     for (const q of 모두) {
       const p = q.prompt;
       let m = /^어떤 수에 (\d+)(?:을|를) 곱했더니 (\d+)(?:이|가) 되었습니다/.exec(p);
-      if (m) { expect(Number(q.answer) * Number(m[1]), p).toBe(Number(m[2])); 센다('어떤수×'); }
+      if (m && /^\d+$/.test(q.answer)) { expect(Number(q.answer) * Number(m[1]), p).toBe(Number(m[2])); 센다('어떤수×'); }
       m = /^어떤 수를 (\d+)(?:으로|로) 나누었더니 몫이 (\d+), 나머지가 (\d+)(?:이|가) 되었습니다/.exec(p);
       if (m) { expect(Number(m[3]) < Number(m[1]), p).toBe(true); expect(Number(q.answer), p).toBe(Number(m[1]) * Number(m[2]) + Number(m[3])); 센다('어떤수÷'); }
-      m = /^어떤 수에 (\d+)(?:을|를) 곱해야 할 것을 잘못하여 더했더니 (\d+)/.exec(p);
+      m = /^어떤 수에 (\d+)(?:을|를) 곱해야 할 것을 잘못하여 더했더니 (\d+)(?:이|가) /.exec(p);
       if (m) { expect(Number(q.answer), p).toBe((Number(m[2]) - Number(m[1])) * Number(m[1])); 센다('잘못×'); }
-      m = /^어떤 수를 (\d+)(?:으로|로) 나누어야 할 것을 잘못하여 곱했더니 (\d+)/.exec(p);
-      if (m) { const b = Number(m[1]); expect(Number(q.answer), p).toBe(Number(m[2]) / b / b); 센다('잘못÷'); }
+      m = /^어떤 수를 (\d+)(?:으로|로) 나누어야 할 것을 잘못하여 곱했더니 (\d+)(?:이|가) /.exec(p);
+      if (m && /^\d+$/.test(q.answer)) { const b = Number(m[1]); expect(Number(q.answer), p).toBe(Number(m[2]) / b / b); 센다('잘못÷'); }
       m = /^수 카드 ([\d, ]+)(?:을|를) 한 번씩만 사용하여 \((세|두|한) 자리 수\)×\((두|한) 자리 수\)를 만들려고 합니다. 곱이 가장 (클|작을)/.exec(p);
       if (m) {
         const 카드 = m[1].split(', ').map(Number);
