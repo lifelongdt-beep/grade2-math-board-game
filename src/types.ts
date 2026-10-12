@@ -996,6 +996,50 @@ export interface StackPlanVisual {
   hidden?: [number, number];
 }
 
+/**
+ * 입체도형의 겨냥도입니다(6-1 2단원 각기둥과 각뿔, 6-2 6단원 원기둥·원뿔·구).
+ * 보이지 않는 모서리는 점선으로 그립니다. 각기둥·각뿔은 sides가 밑면의
+ * 변의 수입니다. 원기둥·원뿔·구는 radius·height를 비율 그대로 그리고,
+ * labels에 적은 길이를 해당 선분 옆에 씁니다.
+ */
+export interface SolidFigureVisual {
+  kind: 'solid-figure';
+  label: string;
+  solid: 'prism' | 'pyramid' | 'cylinder' | 'cone' | 'sphere';
+  sides?: number;
+  radius?: number;
+  height?: number;
+  labels?: { radius?: string; diameter?: string; height?: string; slant?: string };
+}
+
+/**
+ * 각기둥·원기둥의 전개도입니다(6-1 2단원, 6-2 6단원). 옆면을 이은 큰
+ * 직사각형 위아래에 밑면을 붙입니다. base는 각기둥이면 밑면의 한 변,
+ * 원기둥이면 밑면의 반지름이고 height는 높이입니다. 비율 그대로 그립니다.
+ */
+export interface SolidNetVisual {
+  kind: 'solid-net';
+  label: string;
+  solid: 'prism' | 'cylinder';
+  sides?: number;
+  base: number;
+  height: number;
+  labels?: { base?: string; height?: string; width?: string };
+}
+
+/**
+ * 반원과 고리 모양입니다(6-2 5단원 원의 넓이 활용). 넓이를 구할 부분을
+ * 색칠하고 반지름을 적습니다. outer·inner는 반지름이고 비율 그대로 그립니다.
+ */
+export interface CircleRegionVisual {
+  kind: 'circle-region';
+  label: string;
+  shape: 'semicircle' | 'ring';
+  outer: number;
+  inner?: number;
+  labels: { outer: string; inner?: string };
+}
+
 export interface GridMoveVisual {
   kind: 'grid-move';
   label: string;
@@ -1057,6 +1101,9 @@ export type QuestionVisual =
   | GridMoveVisual
   | RatioGraphVisual
   | StackPlanVisual
+  | SolidFigureVisual
+  | SolidNetVisual
+  | CircleRegionVisual
   | ProtractorVisual
   | AngleSplitVisual
   | ParallelDistanceVisual
