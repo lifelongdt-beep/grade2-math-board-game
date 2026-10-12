@@ -1,4 +1,4 @@
-import type { Difficulty } from '../../types';
+import type { Difficulty, NumberArrayVisual } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이, 수보기 } from '../grade11/common';
 
@@ -161,6 +161,19 @@ const 몇씩: G5Family = {
 };
 
 // ── 수 배열표 ───────────────────────────────────────────────────────
+// 1부터 100까지의 수 배열표에서 몇 줄만 잘라 그립니다. 한 줄에 10칸입니다.
+// 모르는 칸(hole)은 '?'로 둡니다.
+const 배열그림 = (첫줄: number, 줄수: number, hole?: number, shaded?: number[]): NumberArrayVisual => ({
+  kind: 'number-array',
+  label: '수 배열표',
+  rows: Array.from({ length: 줄수 }, (_, r) => Array.from({ length: 10 }, (_, c) => {
+    const v = (첫줄 + r) * 10 + c + 1;
+    return v === hole ? null : v;
+  })),
+  ...(shaded ? { shaded } : {}),
+});
+const 줄 = (n: number) => Math.floor((n - 1) / 10);
+
 const 배열표: G5Family = {
   id: 'hundred-chart',
   make: (seed) => {
@@ -177,6 +190,7 @@ const 배열표: G5Family = {
         strategy: '수 배열표의 세로 규칙',
         hint: '수 배열표는 한 줄에 10개씩 놓여 있어요.',
         steps: ['한 줄에 10개씩 놓여 있으므로 아래로 한 칸 가면 10만큼 커집니다.'],
+        visual: 배열그림(0, 3),
       };
     }
     if (kind === 1) {
@@ -188,6 +202,7 @@ const 배열표: G5Family = {
         strategy: '수 배열표에서 아래 칸 찾기',
         hint: '아래로 한 칸 가면 10만큼 커져요.',
         steps: [`아래로 한 칸 가면 10씩 커지므로 ${n}+10=${n + 10}입니다.`],
+        visual: 배열그림(줄(n), 2, n + 10),
       };
     }
     if (kind === 2) {
@@ -200,6 +215,7 @@ const 배열표: G5Family = {
         hint: '위로 한 칸 가면 10만큼 작아져요.',
         steps: [`위로 한 칸 가면 10씩 작아지므로 ${n}-10=${n - 10}입니다.`],
         minusIsOperator: true,
+        visual: 배열그림(줄(n) - 1, 2, n - 10),
       };
     }
     const step = [2, 3, 5][next(3)];
@@ -214,6 +230,9 @@ const 배열표: G5Family = {
       strategy: '색칠한 수의 규칙',
       hint: '색칠한 수가 몇씩 커지는지 보세요.',
       steps: [`${step}씩 커지는 규칙입니다.`, `${seq[3]}+${step}=${ans}입니다.`],
+      // 색칠한 칸만 칠하고 다음 칸은 표시하지 않습니다. 표시하면 규칙을
+      // 찾지 않고 그 칸을 읽기만 합니다.
+      visual: 배열그림(줄(start), 줄(ans) - 줄(start) + 1, undefined, seq),
     };
   },
 };
@@ -242,6 +261,8 @@ const 기호로: G5Family = {
       strategy: '규칙을 수로 나타내기',
       hint: '색 하나하나를 정한 수로 바꾸어 차례로 써 보세요.',
       steps: [`${종류.map((c, k) => `${c}은(는) ${k + 1}`).join(', ')}입니다.`, `차례로 바꾸면 ${답}입니다.`],
+      // 1학년은 글보다 색을 먼저 봅니다. 색칠한 차례를 그대로 보여 줍니다.
+      visual: { kind: 'pattern', label: '색칠한 차례', items: 줄 },
     };
   },
 };

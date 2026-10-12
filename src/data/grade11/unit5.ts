@@ -299,21 +299,26 @@ const 사이의수50: G5Family = {
 };
 
 // ── 크기 비교 ───────────────────────────────────────────────────────
-const 더큰수: G5Family = {
-  id: 'cmp-two',
+// 십몇 차시(3차시)에서는 19까지의 수만 견줍니다. 아직 배우지 않은
+// 43, 45 같은 수가 나오면 안 됩니다.
+const 더큰수만들기 = (hi: number): G5Family => ({
+  id: hi <= 19 ? 'cmp-two-teen' : 'cmp-two',
   make: (seed, lv) => {
     const next = 고르개(seed);
-    const sameTens = lv !== '하' && next(2) === 0;
-    const a = 사이(next, 11, 49);
-    let b = sameTens ? Math.floor(a / 10) * 10 + 사이(next, 0, 9) : 사이(next, 11, 50);
-    if (b === a || b > 50) b = a === 11 ? 12 : a - 1;
+    const sameTens = hi > 19 && lv !== '하' && next(2) === 0;
+    const a = 사이(next, 11, hi - 1);
+    let b = sameTens ? Math.floor(a / 10) * 10 + 사이(next, 0, 9) : 사이(next, 11, hi);
+    if (b === a || b > hi) b = a === 11 ? 12 : a - 1;
     const bigger = next(2) === 0;
     const ans = bigger ? Math.max(a, b) : Math.min(a, b);
     const other = ans === a ? b : a;
     return {
       prompt: `${gwa(String(a))} ${b} 가운데 더 ${bigger ? '큰' : '작은'} 수는 무엇일까요?`,
       answer: String(ans),
-      wrongs: [String(other), '두 수가 같습니다', String(bigger ? ans + 10 <= 50 ? ans + 10 : ans - 10 : Math.max(1, other - 10 === ans ? ans + 1 : other - 10))],
+      wrongs:
+        hi <= 19
+          ? [String(other), '두 수가 같습니다', String(bigger ? (Math.min(a, b) - 1 >= 10 ? Math.min(a, b) - 1 : Math.max(a, b) + 1 <= 19 ? Math.max(a, b) + 1 : 10) : Math.max(a, b) + 1 <= 19 ? Math.max(a, b) + 1 : Math.min(a, b) - 1)].filter((t) => t !== String(ans))
+          : [String(other), '두 수가 같습니다', String(bigger ? ans + 10 <= 50 ? ans + 10 : ans - 10 : Math.max(1, other - 10 === ans ? ans + 1 : other - 10))],
       tag: 'number',
       strategy: '10개씩 묶음 먼저, 같으면 낱개 견주기',
       hint: '10개씩 묶음의 수를 먼저 견주고, 같으면 낱개의 수를 견주어 보세요.',
@@ -323,7 +328,9 @@ const 더큰수: G5Family = {
       misconceptionTip: '낱개의 수부터 견주면 안 돼요. 10개씩 묶음의 수를 먼저 봐요.',
     };
   },
-};
+});
+const 더큰수 = 더큰수만들기(50);
+const 십몇비교 = 더큰수만들기(19);
 
 const 가장큰수50: G5Family = {
   id: 'cmp-three',
@@ -421,7 +428,7 @@ export const unit5Lesson11 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 3:
       if (lv === '하') return [묶음세기('teen', 11, 19), 묶음말로('teen-word', 11, 19)];
       if (lv === '중') return [묶음세기('teen', 11, 19), 묶음말로('teen-word', 11, 19), 수읽기('teen-read', 11, 19)];
-      return [수읽기('teen-read', 11, 19), 더큰수];
+      return [수읽기('teen-read', 11, 19), 십몇비교];
     case 4:
       if (lv === '하') return [큰모으기];
       return [큰모으기, 큰가르기];

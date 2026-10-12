@@ -247,7 +247,7 @@ const 덧셈 = (picture: boolean): G5Family => ({
     return {
       prompt: `${a}+${eun(String(b))} 얼마일까요?`,
       answer: String(sum),
-      wrongs: 수보기(sum, [sum + 1, sum - 1, Math.abs(a - b), sum + 2], 0, 10),
+      wrongs: 수보기(sum, [sum + 1, sum - 1, Math.abs(a - b), sum + 2, sum - 2], 0, 9),
       tag: 'addition',
       strategy: '이어 세어 더하기',
       hint: `${a}에서 ${b}만큼 이어 세어 보세요.`,
@@ -257,6 +257,29 @@ const 덧셈 = (picture: boolean): G5Family => ({
     };
   },
 });
+
+// 물건에 어울리는 말입니다. 새를 '친구에게 주었다'거나 '접시에 놓았다'고
+// 하면 1학년 아이는 장면을 떠올리지 못합니다.
+const 받침말 = (n: number, 단위: string, 조사: 'eul' | 'i') => {
+  const t = `${n}${단위}`;
+  return 조사 === 'eul' ? eul(t) : 이가(t);
+};
+const 더생김 = (p: { 이름: string; 단위: string }, b: number) =>
+  p.이름 === '새'
+    ? `${받침말(b, p.단위, 'i')} 더 날아왔습니다`
+    : p.이름 === '물고기'
+      ? `${받침말(b, p.단위, 'eul')} 어항에 더 넣었습니다`
+      : `${받침말(b, p.단위, 'eul')} 더 받았습니다`;
+const 덜어냄 = (p: { 이름: string; 단위: string }, b: number) =>
+  p.이름 === '새'
+    ? `${받침말(b, p.단위, 'i')} 날아갔습니다`
+    : p.이름 === '사과'
+      ? `${받침말(b, p.단위, 'eul')} 먹었습니다`
+      : p.이름 === '물고기'
+        ? `${받침말(b, p.단위, 'eul')} 다른 어항으로 옮겼습니다`
+        : `${받침말(b, p.단위, 'eul')} 친구에게 주었습니다`;
+// 0이 있는 상황에서 물건을 담는 곳입니다.
+const 담는곳: Record<string, string> = { 사과: '접시', 별: '상자', 꽃: '꽃병', 물고기: '어항', 공: '바구니', 자동차: '상자', 새: '나뭇가지' };
 
 const 덧셈문장: G5Family = {
   id: 'add-word',
@@ -268,12 +291,12 @@ const 덧셈문장: G5Family = {
     const [x, y] = 물건둘(next);
     const prompt = 합병
       ? `빨간 ${p.이름} ${a}${p.단위}와 파란 ${p.이름} ${b}${p.단위}${이가(`${b}${p.단위}`).slice(`${b}${p.단위}`.length)} 있습니다. ${eun(p.이름)} 모두 몇 ${p.단위}일까요?`
-      : `${p.이름} ${a}${p.단위}${이가(`${a}${p.단위}`).slice(`${a}${p.단위}`.length)} 있었는데 ${b}${p.단위}${eul(`${b}${p.단위}`).slice(`${b}${p.단위}`.length)} 더 받았습니다. ${eun(p.이름)} 모두 몇 ${p.단위}일까요?`;
+      : `${p.이름} ${a}${p.단위}${이가(`${a}${p.단위}`).slice(`${a}${p.단위}`.length)} 있었는데 ${더생김(p, b)}. ${eun(p.이름)} 모두 몇 ${p.단위}일까요?`;
     void x; void y;
     return {
       prompt,
       answer: `${sum}${p.단위}`,
-      wrongs: [sum + 1, sum - 1, Math.abs(a - b), a].filter((v) => v > 0 && v !== sum).map((v) => `${v}${p.단위}`),
+      wrongs: [...new Set([sum + 1, sum - 1, Math.abs(a - b), a, sum - 2])].filter((v) => v > 0 && v !== sum && v <= 9).map((v) => `${v}${p.단위}`),
       tag: 'addition',
       strategy: 합병 ? '합쳐서 모두 몇인지 구하기' : '더 생겨서 모두 몇인지 구하기',
       hint: '‘모두 몇’을 물으면 더해요.',
@@ -399,16 +422,17 @@ const 뺄셈문장: G5Family = {
     const 비교 = next(2) === 0;
     const prompt = 비교
       ? `${p.이름}${이가(p.이름).slice(p.이름.length)} ${total}${p.단위}, ${q.이름}${이가(q.이름).slice(q.이름.length)} ${b}${q.단위} 있습니다. ${eun(p.이름)} ${q.이름}보다 몇 ${p.단위} 더 많을까요?`
-      : `${p.이름} ${total}${p.단위} 중에서 ${b}${p.단위}${eul(`${b}${p.단위}`).slice(`${b}${p.단위}`.length)} 친구에게 주었습니다. 남은 ${eun(p.이름)} 몇 ${p.단위}일까요?`;
+      : `${p.이름} ${total}${p.단위} 중에서 ${덜어냄(p, b)}. 남은 ${eun(p.이름)} 몇 ${p.단위}일까요?`;
     // 비교 상황에서 단위가 다르면 '몇 개 더 많은지'가 어색합니다.
     if (비교 && p.단위 !== q.단위) return null;
     return {
       prompt,
       answer: `${left}${p.단위}`,
-      wrongs: [left + 1, total + b, b, total].filter((v) => v >= 0 && v !== left).map((v) => `${v}${p.단위}`),
+      // 9까지의 수 단원이라 더해 버린 값(total+b)이 10을 넘으면 보기에 넣지 않습니다.
+      wrongs: [...new Set([left + 1, total + b, b, total, left - 1])].filter((v) => v >= 0 && v !== left && v <= 9).map((v) => `${v}${p.단위}`),
       tag: 'subtraction',
       strategy: 비교 ? '몇 개 더 많은지 구하기' : '남은 것 구하기',
-      hint: 비교 ? '하나씩 짝지으면 몇 개가 남는지 생각해 보세요.' : '처음 수에서 준 것을 빼요.',
+      hint: 비교 ? '하나씩 짝지으면 몇 개가 남는지 생각해 보세요.' : '처음 수에서 줄어든 만큼 빼요.',
       steps: [`뺄셈식 ${total}-${b}을(를) 씁니다.`, `${total}-${b}=${left}이므로 ${left}${p.단위}입니다.`],
       misconceptionTip: 비교 ? '‘더 많다’라는 말이 있어도 더하는 것이 아니에요. 차이를 구해요.' : '남은 것을 물었으니 빼요.',
     };
@@ -433,7 +457,7 @@ const 영셈: G5Family = {
     return {
       prompt: `${eun(식)} 얼마일까요?`,
       answer: String(ans),
-      wrongs: 수보기(ans, kind === 3 ? [n, 1, n + n, n - 1] : [0, n + 1, n - 1, 1], 0, 18),
+      wrongs: 수보기(ans, kind === 3 ? [n, 1, n + n, n - 1, 2, 3] : [0, n + 1, n - 1, 1, n - 2, n + 2], 0, 9),
       tag: kind < 2 ? 'addition' : 'subtraction',
       strategy: '0이 있는 덧셈과 뺄셈',
       hint: kind === 3 ? '모두 덜어 내면 몇 개가 남을까요?' : '0은 아무것도 없는 것이에요.',
@@ -451,16 +475,23 @@ const 영문장: G5Family = {
     const thing = 물건들[next(물건들.length)];
     const n = 사이(next, 2, 9);
     const all = next(2) === 0;
+    const 곳 = 담는곳[thing.이름] ?? '접시';
+    const 새 = thing.이름 === '새';
+    const 몇개 = `${n}${thing.단위}`;
     return {
       prompt: all
-        ? `접시에 ${thing.이름} ${n}${thing.단위}${이가(`${n}${thing.단위}`).slice(`${n}${thing.단위}`.length)} 있었는데 모두 가져갔습니다. 접시에 남은 ${eun(thing.이름)} 몇 ${thing.단위}일까요?`
-        : `빈 접시에 ${thing.이름} ${n}${thing.단위}${eul(`${n}${thing.단위}`).slice(`${n}${thing.단위}`.length)} 놓았습니다. 접시에 있는 ${eun(thing.이름)} 몇 ${thing.단위}일까요?`,
+        ? 새
+          ? `${곳}에 ${thing.이름} ${몇개}${이가(몇개).slice(몇개.length)} 앉아 있었는데 모두 날아갔습니다. ${곳}에 남은 ${eun(thing.이름)} 몇 ${thing.단위}일까요?`
+          : `${곳}에 ${thing.이름} ${몇개}${이가(몇개).slice(몇개.length)} 있었는데 모두 꺼냈습니다. ${곳}에 남은 ${eun(thing.이름)} 몇 ${thing.단위}일까요?`
+        : 새
+          ? `빈 ${곳}에 ${thing.이름} ${몇개}${이가(몇개).slice(몇개.length)} 날아와 앉았습니다. ${곳}에 있는 ${eun(thing.이름)} 몇 ${thing.단위}일까요?`
+          : `빈 ${곳}에 ${thing.이름} ${몇개}${eul(몇개).slice(몇개.length)} 넣었습니다. ${곳}에 있는 ${eun(thing.이름)} 몇 ${thing.단위}일까요?`,
       answer: `${all ? 0 : n}${thing.단위}`,
-      wrongs: (all ? [n, 1, n + n] : [0, n + 1, n - 1]).map((v) => `${v}${thing.단위}`),
+      wrongs: (all ? [n, 1, n - 1 > 1 ? n - 1 : n + 1] : [0, n + 1 <= 9 ? n + 1 : n - 2, n - 1]).map((v) => `${v}${thing.단위}`),
       tag: all ? 'subtraction' : 'addition',
       strategy: '0이 있는 상황을 식으로 풀기',
-      hint: all ? '모두 가져가면 남는 것이 있나요?' : '빈 접시에는 처음에 몇 개 있었을까요?',
-      steps: all ? [`${n}-${n}=0입니다.`, `남은 ${eun(thing.이름)} 0${thing.단위}입니다.`] : [`빈 접시에는 0${thing.단위} 있었습니다.`, `0+${n}=${n}이므로 ${n}${thing.단위}입니다.`],
+      hint: all ? `모두 ${새 ? '날아가면' : '꺼내면'} 남는 것이 있나요?` : `빈 ${곳}에는 처음에 몇 ${thing.단위} 있었을까요?`,
+      steps: all ? [`${n}-${n}=0입니다.`, `남은 ${eun(thing.이름)} 0${thing.단위}입니다.`] : [`빈 ${곳}에는 0${thing.단위} 있었습니다.`, `0+${n}=${n}이므로 ${n}${thing.단위}입니다.`],
     };
   },
 };
