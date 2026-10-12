@@ -1,0 +1,248 @@
+import { describe, expect, it } from 'vitest';
+import { lessons as lessons2 } from '../curriculum';
+import { curriculum11 } from '../curriculum11';
+import { curriculum12 } from '../curriculum12';
+import { curriculum31 } from '../curriculum31';
+import { curriculum32 } from '../curriculum32';
+import { curriculum41 } from '../curriculum41';
+import { curriculum42 } from '../curriculum42';
+import { curriculum51 } from '../curriculum51';
+import { curriculum5 } from '../curriculum5';
+import { curriculum61 } from '../curriculum61';
+import { curriculum62 } from '../curriculum62';
+import { generateQuestions } from '../questionFactory';
+import type { Difficulty, Question } from '../../types';
+
+// ════════════════════════════════════════════════════════════════════
+// '생각하는 문항'(thinking/)을 학년과 상관없이 처음부터 다시 풉니다.
+// 문항의 글만 읽고 답을 따로 구해, 생성기가 낸 답과 견줍니다.
+// ════════════════════════════════════════════════════════════════════
+
+const 모든차시 = [...curriculum11, ...curriculum12].flatMap((u) => u.lessons)
+  .concat(lessons2)
+  .concat([...curriculum31, ...curriculum32, ...curriculum41, ...curriculum42, ...curriculum51, ...curriculum5, ...curriculum61, ...curriculum62].flatMap((u) => u.lessons));
+const 모두: Question[] = [];
+for (const l of 모든차시) for (const lv of ['하', '중', '상'] as Difficulty[]) 모두.push(...generateQuestions(l, lv));
+const 수 = (t: string) => Number(t.replace(/[^\d.]/g, ''));
+const 순열 = (xs: number[], k: number): number[][] => (k === 0 ? [[]] : xs.flatMap((x, i) => 순열([...xs.slice(0, i), ...xs.slice(i + 1)], k - 1).map((r) => [x, ...r])));
+
+// '1과 3/5', '3/5', '2' → 분자/분모 값
+const 분수값 = (t: string): number => {
+  const s = t.replace(/ (m|L|cm)$/, '').trim();
+  let m = /^(\d+)(?:과|와) (\d+)\/(\d+)$/.exec(s);
+  if (m) return Number(m[1]) + Number(m[2]) / Number(m[3]);
+  m = /^(\d+)\/(\d+)$/.exec(s);
+  if (m) return Number(m[1]) / Number(m[2]);
+  return Number(s);
+};
+const 같다 = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+const 수식 = String.raw`(\d+(?:(?:과|와) \d+\/\d+)?|\d+\/\d+|\d+\.\d+)`;
+
+describe('생각하는 문항(분수·소수)', () => {
+  it('거꾸로·잘못 계산·수 카드·문장제·□ 범위 답이 맞습니다', () => {
+    const 셈 = new Map<string, number>();
+    const 센다 = (k: string) => 셈.set(k, (셈.get(k) ?? 0) + 1);
+    for (const q of 모두) {
+      const p = q.prompt;
+      let m = new RegExp(`^어떤 수에(서)? ${수식}(?:을|를) (더했|뺐)더니 ${수식}(?:이|가) 되었습니다. 어떤 수는`).exec(p);
+      if (m) {
+        const a = 분수값(m[2]); const r = 분수값(m[4]);
+        expect(같다(분수값(q.answer), m[3] === '더했' ? r - a : r + a), p).toBe(true);
+        센다(m[2].includes('.') ? '소수어떤수' : '분수어떤수');
+      }
+      m = new RegExp(`^어떤 수에 ${수식}(?:을|를) 더해야 할 것을 잘못하여 뺐더니 ${수식}(?:이|가)`).exec(p);
+      if (m) { const a = 분수값(m[1]); expect(같다(분수값(q.answer), 분수값(m[2]) + 2 * a), p).toBe(true); 센다(m[1].includes('.') ? '소수잘못' : '분수잘못'); }
+      m = /^수 카드 ([\d, ]+) 가운데 2장을 골라 분모가 (\d+)인 대분수를 만들려고 합니다. 만들 수 있는 가장 큰 대분수와 가장 작은 대분수의 (합|차)/.exec(p);
+      if (m) {
+        const 카드 = m[1].split(', ').map(Number); const d = Number(m[2]);
+        const 값 = 카드.flatMap((w) => 카드.filter((n) => n !== w && n < d).map((n) => w + n / d));
+        const v = m[3] === '합' ? Math.max(...값) + Math.min(...값) : Math.max(...값) - Math.min(...값);
+        expect(같다(분수값(q.answer), v), p).toBe(true);
+        센다('분수카드');
+      }
+      m = /^수 카드 ([\d, ]+)(?:을|를) 한 번씩만 사용하여 소수 두 자리 수를 만들려고 합니다. 만들 수 있는 가장 큰 수와 가장 작은 수의 (합|차)/.exec(p);
+      if (m) {
+        const 카드 = m[1].split(', ').map(Number);
+        const 값 = 순열(카드, 3).map((x) => x[0] + x[1] / 10 + x[2] / 100);
+        const v = m[2] === '합' ? Math.max(...값) + Math.min(...값) : Math.max(...값) - Math.min(...값);
+        expect(Math.abs(Number(q.answer) - v) < 1e-9, p).toBe(true);
+        센다('소수카드');
+      }
+      m = new RegExp(`^끈 ${수식} m 가운데 상자를 묶는 데 ${수식} m, 리본을 만드는 데 ${수식} m를 썼습니다`).exec(p);
+      if (m) { expect(같다(분수값(q.answer), 분수값(m[1]) - 분수값(m[2]) - 분수값(m[3])), p).toBe(true); 센다('분수문장제'); }
+      m = /^□\/(\d+)\+(\d+)\/\1<(.+?)에서 □ 안에 들어갈 수 있는 자연수 가운데 가장 큰 수/.exec(p);
+      if (m) {
+        const d = Number(m[1]); const a = Number(m[2]); const X = 분수값(m[3]);
+        const 맞는 = Array.from({ length: 100 }, (_, i) => i + 1).filter((x) => x / d + a / d < X - 1e-12);
+        expect(Number(q.answer), p).toBe(Math.max(...맞는));
+        센다('분수네모');
+      }
+      m = /^물병에 물이 ([\d.]+) L 있었습니다. 그중에서 ([\d.]+) L를 마시고 ([\d.]+) L를 더 부었습니다/.exec(p);
+      if (m) { expect(Math.abs(분수값(q.answer) - (Number(m[1]) - Number(m[2]) + Number(m[3]))) < 1e-9, p).toBe(true); 센다('소수문장제'); }
+    }
+    for (const k of ['분수어떤수', '소수어떤수', '분수잘못', '소수잘못', '분수카드', '소수카드', '분수문장제', '분수네모', '소수문장제']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+  });
+});
+
+// '3045만 72' → 30450072
+const 만값 = (t: string) => t.split(' ').reduce((s, g) => {
+  const m = /^(\d+)(조|억|만)?$/.exec(g)!;
+  return s + Number(m[1]) * ({ 조: 1e12, 억: 1e8, 만: 1e4 } as Record<string, number>)[m[2] ?? ''] || s + Number(m[1]);
+}, 0);
+
+describe('생각하는 문항(4-1 큰 수·각도·이동·규칙)', () => {
+  it('답이 맞습니다', () => {
+    const 셈 = new Map<string, number>();
+    const 센다 = (k: string) => 셈.set(k, (셈.get(k) ?? 0) + 1);
+    for (const q of 모두) {
+      const p = q.prompt;
+      let m = /^어떤 수에서 (.+?)씩 (\d+)번 뛰어 세었더니 (.+?)(?:이|가) 되었습니다/.exec(p);
+      if (m) { expect(만값(q.answer), p).toBe(만값(m[3]) - Number(m[2]) * 만값(m[1])); 센다('뛰어거꾸로'); }
+      m = /^(.+?)에서 (.+?)씩 몇 번 뛰어 세면 (.+?)(?:이|가) 될까요/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe((만값(m[3]) - 만값(m[1])) / 만값(m[2])); 센다('몇번'); }
+      m = /^수 카드 ([\d, ]+)(?:을|를) 한 번씩 모두 사용하여 .+ 자리 수를 만들려고 합니다. (가장 큰|둘째로 큰|가장 작은) 수/.exec(p);
+      if (m) {
+        const 카드 = m[1].split(', ').map(Number);
+        const 수들 = 순열(카드, 카드.length).filter((x) => x[0] !== 0).map((x) => Number(x.join(''))).sort((a, b) => b - a);
+        const 답 = m[2] === '가장 큰' ? 수들[0] : m[2] === '둘째로 큰' ? 수들[1] : 수들[수들.length - 1];
+        expect(Number(q.answer), p).toBe(답);
+        센다('큰수카드');
+      }
+      m = /^(\d*□\d*)([<>])(\d+)에서 □ 안에 들어갈 수 있는 숫자는 모두 몇 개/.exec(p);
+      if (m) {
+        const n = Array.from({ length: 10 }, (_, d) => Number(m![1].replace('□', String(d)))).filter((x) => (m![2] === '>' ? x > Number(m![3]) : x < Number(m![3]))).length;
+        expect(수(q.answer), p).toBe(n);
+        센다('네모숫자');
+      }
+      m = /^(\d+)에서 앞쪽의 숫자 (\d)(?:이|가) 나타내는 값은 뒤쪽의 숫자 \2(?:이|가) 나타내는 값의 몇 배/.exec(p);
+      if (m) {
+        const ds = m[1].split('');
+        const i = ds.indexOf(m[2]); const j = ds.lastIndexOf(m[2]);
+        expect(ds.filter((d) => d === m![2]).length, p).toBe(2);
+        expect(수(q.answer), p).toBe(10 ** (j - i));
+        센다('자릿값배');
+      }
+      if (p.startsWith('30°, 60°, 90°인 삼각자와 45°, 45°, 90°인 삼각자')) {
+        const 된다 = new Set<number>();
+        for (const a of [30, 60, 90]) for (const b of [45, 90]) { 된다.add(a + b); 된다.add(Math.abs(a - b)); }
+        expect(된다.has(수(q.answer)), p).toBe(false);
+        for (const c of q.choices.filter((c) => c !== q.answer)) expect(된다.has(수(c)), c).toBe(true);
+        센다('삼각자');
+      }
+      m = /^(.)각형을 한 꼭짓점에서 그은 대각선으로/.exec(p);
+      if (m) { const n = { 오: 5, 육: 6, 칠: 7, 팔: 8 }[m[1] as '오']!; expect(수(q.answer), p).toBe((n - 2) * 180); 센다('다각형'); }
+      m = /^각도기로 잰 각도는 (\d+)°입니다. 가 모둠은 약 (\d+)°, 나 모둠은 약 (\d+)°/.exec(p);
+      if (m) { const r = Number(m[1]); expect(q.answer, p).toBe(Math.abs(r - Number(m[2])) < Math.abs(r - Number(m[3])) ? '가 모둠' : '나 모둠'); 센다('어림'); }
+      m = /^점을 (오른쪽|왼쪽)으로 (\d+)칸, (위쪽|아래쪽)으로 (\d+)칸 이동했습니다. 이동한 점을 처음 자리로/.exec(p);
+      if (m) {
+        const 반 = { 오른쪽: '왼쪽', 왼쪽: '오른쪽', 위쪽: '아래쪽', 아래쪽: '위쪽' } as Record<string, string>;
+        expect(q.answer, p).toBe(`${반[m[1]]}으로 ${m[2]}칸, ${반[m[3]]}으로 ${m[4]}칸`);
+        센다('되돌기');
+      }
+      m = /^도형을 시계 방향으로 90°만큼 (\d+)번 돌린 도형은 시계 방향으로 몇 도/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe((90 * Number(m[1])) % 360); 센다('여러번'); }
+      m = /^도형을 시계 방향으로 (\d+)°만큼 돌린 도형은 시계 반대 방향으로 몇 도/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe(360 - Number(m[1])); 센다('반대'); }
+      m = /^(\d+), (\d+), (\d+), (\d+), …와 같은 규칙으로 수를 늘어놓을 때 (\d+)째 수/.exec(p);
+      if (m) { const a = Number(m[1]); const d = Number(m[2]) - a; expect(Number(m[4]) - Number(m[3]), p).toBe(d); expect(Number(q.answer), p).toBe(a + (Number(m[5]) - 1) * d); 센다('몇째'); }
+    }
+    for (const k of ['뛰어거꾸로', '몇번', '큰수카드', '네모숫자', '자릿값배', '삼각자', '다각형', '어림', '되돌기', '여러번', '반대', '몇째']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+  });
+});
+
+describe('생각하는 문항(4-2 도형)', () => {
+  it('답이 맞습니다', () => {
+    const 각수 = { 삼: 3, 사: 4, 오: 5, 육: 6, 칠: 7, 팔: 8, 구: 9, 십: 10 } as Record<string, number>;
+    const 참 = new Set(['정사각형은 직사각형', '정사각형은 마름모', '마름모는 평행사변형', '직사각형은 평행사변형', '평행사변형은 사다리꼴', '정사각형은 사다리꼴']);
+    const 셈 = new Map<string, number>();
+    const 센다 = (k: string) => 셈.set(k, (셈.get(k) ?? 0) + 1);
+    for (const q of 모두) {
+      const p = q.prompt;
+      if (p.startsWith('사각형 사이의 관계를 바르게 생각하여')) {
+        const 옳은 = p.includes('옳은 것을');
+        const 판단 = (t: string) => 참.has(t.replace('이라고 할 수 있습니다.', '').replace('라고 할 수 있습니다.', ''));
+        expect(판단(q.answer), q.answer).toBe(옳은);
+        for (const c of q.choices.filter((c) => c !== q.answer)) expect(판단(c), c).toBe(!옳은);
+        센다('관계');
+      }
+      let m = /^네 변의 길이의 합이 (\d+) cm인 평행사변형이 있습니다. 한 변이 (\d+) cm일 때/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe(Number(m[1]) / 2 - Number(m[2])); 센다('평행사변형'); }
+      m = /^네 변의 길이의 합이 (\d+) cm인 마름모의 한 변/.exec(p);
+      if (m) { expect(수(q.answer) * 4, p).toBe(Number(m[1])); 센다('마름모'); }
+      m = /^모든 변의 길이의 합이 (\d+) cm인 정(.)각형의 한 변/.exec(p);
+      if (m) { expect(수(q.answer) * 각수[m[2]], p).toBe(Number(m[1])); 센다('정다각형'); }
+      m = /^길이가 (\d+) cm인 철사를 .+ 정(.)각형을 하나 만들었고, 같은 길이의 철사로 정(.)각형도/.exec(p);
+      if (m) { const L = Number(m[1]); expect(수(q.answer), p).toBe(Math.abs(L / 각수[m[2]] - L / 각수[m[3]])); 센다('철사'); }
+      m = /^대각선이 모두 (\d+)개인 다각형의 이름/.exec(p);
+      if (m) { const n = 각수[q.answer[0]]; expect((n * (n - 3)) / 2, p).toBe(Number(m[1])); 센다('대각선'); }
+      m = /^서로 평행한 직선 가, 나, 다가 차례로 있습니다. 가와 나 사이의 거리는 (\d+) cm, 나와 다 사이의 거리는 (\d+) cm/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe(Number(m[1]) + Number(m[2])); 센다('평행선합'); }
+      m = /가와 다 사이의 거리는 (\d+) cm이고, 나는 가와 다 사이에 있으며 가와 나 사이의 거리는 (\d+) cm/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe(Number(m[1]) - Number(m[2])); 센다('평행선차'); }
+      m = /^한 변이 (\d+) cm인 정삼각형 (\d+)개를 변끼리 맞닿게 한 줄로/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe((Number(m[2]) + 2) * Number(m[1])); 센다('이어붙인'); }
+    }
+    for (const k of ['관계', '평행사변형', '마름모', '정다각형', '철사', '대각선', '평행선합', '평행선차', '이어붙인']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+  });
+});
+
+describe('생각하는 문항(자연수)', () => {
+  it('거꾸로·잘못 계산·수 카드·어림·나머지·□ 범위·문장제 답이 맞습니다', () => {
+    const 셈 = new Map<string, number>();
+    const 센다 = (k: string) => 셈.set(k, (셈.get(k) ?? 0) + 1);
+    for (const q of 모두) {
+      const p = q.prompt;
+      let m = /^어떤 수에 (\d+)(?:을|를) 곱했더니 (\d+)(?:이|가) 되었습니다/.exec(p);
+      if (m) { expect(Number(q.answer) * Number(m[1]), p).toBe(Number(m[2])); 센다('어떤수×'); }
+      m = /^어떤 수를 (\d+)(?:으로|로) 나누었더니 몫이 (\d+), 나머지가 (\d+)(?:이|가) 되었습니다/.exec(p);
+      if (m) { expect(Number(m[3]) < Number(m[1]), p).toBe(true); expect(Number(q.answer), p).toBe(Number(m[1]) * Number(m[2]) + Number(m[3])); 센다('어떤수÷'); }
+      m = /^어떤 수에 (\d+)(?:을|를) 곱해야 할 것을 잘못하여 더했더니 (\d+)/.exec(p);
+      if (m) { expect(Number(q.answer), p).toBe((Number(m[2]) - Number(m[1])) * Number(m[1])); 센다('잘못×'); }
+      m = /^어떤 수를 (\d+)(?:으로|로) 나누어야 할 것을 잘못하여 곱했더니 (\d+)/.exec(p);
+      if (m) { const b = Number(m[1]); expect(Number(q.answer), p).toBe(Number(m[2]) / b / b); 센다('잘못÷'); }
+      m = /^수 카드 ([\d, ]+)(?:을|를) 한 번씩만 사용하여 \((세|두|한) 자리 수\)×\((두|한) 자리 수\)를 만들려고 합니다. 곱이 가장 (클|작을)/.exec(p);
+      if (m) {
+        const 카드 = m[1].split(', ').map(Number);
+        const k = { 세: 3, 두: 2, 한: 1 }[m[2] as '세']!;
+        const 값 = 순열(카드, 카드.length).map((x) => Number(x.slice(0, k).join('')) * Number(x.slice(k).join('')));
+        expect(Number(q.answer), p).toBe(m[4] === '클' ? Math.max(...값) : Math.min(...값));
+        센다('수카드');
+      }
+      if (/^계산하지 않고 어림하여 계산 결과가 가장 (큰|작은)/.test(p)) {
+        const 큰 = p.includes('가장 큰');
+        const 값 = (t: string) => { const [a, op, b] = /^(\d+)([×÷+-])(\d+)$/.exec(t)!.slice(1); const x = Number(a); const y = Number(b); return op === '×' ? x * y : op === '÷' ? x / y : op === '+' ? x + y : x - y; };
+        const 모든값 = q.choices.map(값);
+        expect(값(q.answer), p).toBe(큰 ? Math.max(...모든값) : Math.min(...모든값));
+        expect(모든값.filter((v) => v === 값(q.answer)).length, p).toBe(1);
+        센다('어림견주기');
+      }
+      m = /^학생 (\d+)명이 한 대에 (\d+)명씩 탈 수 있는 차에 모두 타려고/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe(Math.ceil(Number(m[1]) / Number(m[2]))); 센다('올림'); }
+      m = /^사탕 (\d+)개를 (\d+)명에게 남김없이 똑같이 나누어 주려면 사탕이 적어도 몇 개 더/.exec(p);
+      if (m) { const a = Number(m[1]); const d = Number(m[2]); expect(수(q.answer), p).toBe((d - (a % d)) % d); 센다('더필요'); }
+      m = /^어떤 수를 (\d+)(?:으로|로) 나누었을 때 나머지가 될 수 있는 수 가운데 가장 큰 수/.exec(p);
+      if (m) { expect(Number(q.answer), p).toBe(Number(m[1]) - 1); 센다('큰나머지'); }
+      m = /^□×(\d+)([<>])(\d+)에서 □ 안에 들어갈 수 있는 자연수 가운데 가장 (큰|작은) 수/.exec(p);
+      if (m) {
+        const b = Number(m[1]); const N = Number(m[3]);
+        const 맞는 = Array.from({ length: 2000 }, (_, i) => i + 1).filter((x) => (m![2] === '<' ? x * b < N : x * b > N));
+        expect(Number(q.answer), p).toBe(m[4] === '큰' ? Math.max(...맞는) : Math.min(...맞는));
+        센다('네모');
+      }
+      m = /^한 상자에 귤이 (\d+)개씩 들어 있습니다. (\d+)상자 가운데 귤 (\d+)개를 팔았다면/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe(Number(m[1]) * Number(m[2]) - Number(m[3])); 센다('문장제1'); }
+      m = /^한 개에 (\d+)원인 공책을 (\d+)권 사고 (\d+)원을 냈습니다/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe(Number(m[3]) - Number(m[1]) * Number(m[2])); 센다('문장제2'); }
+      m = /^가 가게에서는 구슬을 (\d+)개씩 (\d+)봉지, 나 가게에서는 (\d+)개씩 (\d+)봉지/.exec(p);
+      if (m) {
+        const 가 = Number(m[1]) * Number(m[2]); const 나 = Number(m[3]) * Number(m[4]);
+        expect(q.answer, p).toBe(`${가 > 나 ? '가 가게' : '나 가게'}, ${Math.abs(가 - 나)}개`);
+        센다('문장제3');
+      }
+    }
+    // 각 갈래가 실제로 나오는지도 봅니다(글이 바뀌어 검사를 빠져나가지 않게).
+    for (const k of ['어떤수×', '어떤수÷', '잘못×', '잘못÷', '수카드', '어림견주기', '올림', '더필요', '큰나머지', '네모', '문장제1', '문장제2', '문장제3']) {
+      expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+    }
+  });
+});

@@ -1,6 +1,7 @@
 import type { Difficulty, FigureSetVisual } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
+import { 정삼각형생각 } from './thinking';
 import { 삼각형 } from './geom';
 
 // ════════════════════════════════════════════════════════════════════
@@ -327,7 +328,7 @@ export const unit2Lesson42 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 4:
       return lv === '하' ? [이등변각, 이등변둘레] : [이등변각, 이등변둘레, 두기준];
     case 5:
-      return [정삼각형];
+      return [정삼각형, 정삼각형생각];
     default:
       return null;
   }

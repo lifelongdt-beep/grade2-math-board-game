@@ -1,6 +1,7 @@
 import type { Difficulty, GridMoveVisual } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
+import { 몇째수 } from './thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 4-1 6단원 규칙 찾기
@@ -393,21 +394,21 @@ const 옳은식 = (곱: boolean): G5Family => ({
 export const unit6Lesson41 = (lessonNo: number, lv: Difficulty): G5Family[] | null => {
   switch (lessonNo) {
     case 1:
-      return [수배열];
+      return [수배열, 배열표];
     case 2:
-      return lv === '하' ? [수배열] : [수배열, 배열표];
+      return lv === '하' ? [수배열, 몇째수] : [수배열, 배열표, 몇째수];
     case 3:
       return lv === '하' ? [늘어나는수, 모양수] : [모양수, 늘어나는수];
     case 4:
       return lv === '하' ? [모양식, 늘어나는수] : [모양식, 모양수];
     case 5:
-      return [계산식규칙];
+      return [계산식규칙, 결과추측];
     case 6:
-      return lv === '하' ? [계산식규칙] : [결과추측];
+      return [결과추측, 계산식규칙];
     case 7:
-      return lv === '하' ? [등호덧셈] : [등호덧셈, 옳은식(false)];
+      return [등호덧셈, 옳은식(false)];
     case 8:
-      return lv === '하' ? [등호곱셈] : [등호곱셈, 옳은식(true)];
+      return [등호곱셈, 옳은식(true)];
     default:
       return null;
   }
