@@ -11,6 +11,7 @@ import { ChanceLab, 가능성보는차례, 가능성이름, 무엇을해볼까_�
 import { FractionLab, 분수보는차례, 분수이름, 무엇을겹쳐볼까 } from './FractionLab';
 import { playTapSound } from '../sound';
 import { 무엇을해볼까_3학년 } from './Grade3Labs';
+import { 무엇을해볼까_2학년 } from './Grade2Labs';
 
 interface InteractiveHintModalProps {
   visual?: QuestionVisual;
@@ -441,7 +442,7 @@ function EnlargedVisual({ visual }: { visual: QuestionVisual }) {
 }
 
 const widgetTitleFor = (visual: QuestionVisual, prompt: string) => {
-  const 삼학년 = 무엇을해볼까_3학년(visual);
+  const 삼학년 = 무엇을해볼까_3학년(visual) ?? 무엇을해볼까_2학년(visual);
   if (삼학년) return 삼학년.제목;
   const 실험 = 분수이름(visual) ?? 가능성이름(visual, prompt) ?? 접기이름(visual, prompt) ?? 자르기이름(visual) ?? 실험이름(visual, prompt);
   if (실험) return 실험;
@@ -459,7 +460,8 @@ function VisualHint({ visual, prompt }: { visual: QuestionVisual; prompt: string
   if (visual.kind === 'share') return <ShareLab visual={visual} />;
   // 3학년 그림(들이·무게, 분수 조각, 묶음, 원, 그림그래프, 직각)은 손으로
   // 해 보는 실험실이 따로 있습니다.
-  const 삼학년 = 무엇을해볼까_3학년(visual);
+  // 2학년 그림(막대, 자, 규칙, 곱셈표, 달력, 표)도 같은 자리에서 해 봅니다.
+  const 삼학년 = 무엇을해볼까_3학년(visual) ?? 무엇을해볼까_2학년(visual);
   if (삼학년) {
     return (
       <>
