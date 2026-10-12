@@ -1,7 +1,7 @@
 import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
-import { 끝0개수 } from './thinking';
+import { 끝0개수, 몫범위십, 어림확인나눗셈, 충분할까 } from './thinking';
 import { 나머지생각, 네모범위, 두단계문장제, 수카드곱, 어떤수, 어림견주기, 잘못계산 } from '../thinking/integer';
 
 // ════════════════════════════════════════════════════════════════════
@@ -298,7 +298,9 @@ export const unit3Lesson41 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 8:
       return lv === '하' ? [몫두자리(true), 확인식, 생각.세자리나머지] : [몫두자리(true), 확인식, 몫자리수, 생각.몫한자리잘못, 생각.세자리나머지];
     case 9:
-      return [나눗셈어림, 생각.나눔어림견주기];
+      return lv === '하'
+        ? [나눗셈어림, 몫범위십, 생각.나눔어림견주기, 충분할까]
+        : [나눗셈어림, 몫범위십, 어림확인나눗셈, 충분할까, 생각.나눔어림견주기, 몫자리수];
     default:
       return null;
   }

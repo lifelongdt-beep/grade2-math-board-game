@@ -171,8 +171,25 @@ describe('생각하는 문항(4-1 큰 수·각도·이동·규칙)', () => {
       if (m) { const 곱 = String(Number(m[1]) * Number(m[2])); expect(수(q.answer), p).toBe(곱.length - 곱.replace(/0+$/, '').length); 센다('끝0'); }
       m = /^(\d+)원이 있습니다. 10000원이 되려면 (천|백|십) 원짜리 \S+ 몇 개 더/.exec(p);
       if (m) { const 단위 = { 천: 1000, 백: 100, 십: 10 }[m[2]]!; expect(수(q.answer), p).toBe((10000 - Number(m[1])) / 단위); 센다('만되려면'); }
+      m = /^계산하지 않고 어림해 보세요. (\d+)÷(\d+)의 몫은 어느 범위/.exec(p);
+      if (m) {
+        const v = Number(m[1]) / Number(m[2]);
+        for (const c of q.choices) { const t = /^(\d+)(?:과|와) (\d+) 사이$/.exec(c)!; expect(Number(t[1]) < v && v < Number(t[2]), `${p} ${c}`).toBe(c === q.answer); }
+        센다('몫범위십');
+      }
+      if (/^계산하지 않고 어림하여 몫이 잘못된 식을/.test(p)) {
+        for (const c of q.choices) { const t = /^(\d+)÷(\d+)=(\d+)$/.exec(c)!; expect(Number(t[1]) / Number(t[2]) === Number(t[3]), c).toBe(c !== q.answer); }
+        센다('어림확인');
+      }
+      m = /^\S+ 하나에 \S+ (\d+)\S+씩 \S+ 수 있습니다. \S+ (\d+)\S+ 모두 \S+ \S+ (\d+)(?:개|대)로 충분할까요/.exec(p);
+      if (m) {
+        const [한번, 전체, 개수] = [1, 2, 3].map((k) => Number(m![k]));
+        expect(q.answer.startsWith(한번 * 개수 >= 전체 ? '충분' : '모자'), p).toBe(true);
+        if (한번 * 개수 < 전체) expect(q.answer, p).toMatch(new RegExp(`\\(${Math.ceil(전체 / 한번)}(개|대)가`));
+        센다('충분');
+      }
     }
-    for (const k of ['뛰어거꾸로', '몇번', '큰수카드', '네모숫자', '자릿값배', '삼각자', '다각형', '어림', '되돌기', '여러번', '반대', '몇째', '시계비교', '시계각도', '삼각조건', '사각조건', '끝0', '만되려면']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+    for (const k of ['몫범위십', '어림확인', '충분', '뛰어거꾸로', '몇번', '큰수카드', '네모숫자', '자릿값배', '삼각자', '다각형', '어림', '되돌기', '여러번', '반대', '몇째', '시계비교', '시계각도', '삼각조건', '사각조건', '끝0', '만되려면']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
   });
 });
 
@@ -293,8 +310,14 @@ describe('생각하는 문항(6학년)', () => {
         for (const c of q.choices.filter((c) => c !== q.answer)) { const t = /^([\d.]+)(?:과|와) ([\d.]+) 사이$/.exec(c)!; expect(Number(t[1]) < v && v < Number(t[2]), c).toBe(false); }
         센다('몫사이');
       }
+      if (/^계산하지 않고 어림하여 소수점을 잘못 찍은 식을/.test(p)) {
+        for (const c of q.choices) { const t = /^([\d.]+)÷(\d+)=([\d.]+)$/.exec(c)!; expect(같다(Number(t[1]) / Number(t[2]), Number(t[3])), c).toBe(c !== q.answer); }
+        센다('소수어림확인');
+      }
+      m = /([\d.]+) (m|L|kg)(?:를|을|으로) (?:\S+ )?(\d+)(?:명에게|개에|개를)/.exec(p);
+      if (m && /약 몇/.test(p)) { expect(수(q.answer), p).toBe(Math.round(Number(m[1]) / Number(m[3]))); 센다('소수어림문장'); }
     }
-    for (const k of ['몫분수거꾸로', '몫사이', '곱어떤수', '나눔잘못', '몫1', '카드나눔', '소수점', '몫다름', '비율', '기준량', '할인', '톱니', '축척', '비차', '배분거꾸로', '원주거꾸로', '바퀴', '넓이거꾸로', '배']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+    for (const k of ['소수어림확인', '소수어림문장', '몫분수거꾸로', '몫사이', '곱어떤수', '나눔잘못', '몫1', '카드나눔', '소수점', '몫다름', '비율', '기준량', '할인', '톱니', '축척', '비차', '배분거꾸로', '원주거꾸로', '바퀴', '넓이거꾸로', '배']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
   });
 });
 
