@@ -1,7 +1,7 @@
 import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
-import { 몫사이, 소수거꾸로, 소수점관계 } from '../grade6/thinking';
+import { 몫사이, 소수거꾸로, 소수점관계, 어림문장제소수, 어림확인소수 } from '../grade6/thinking';
 import { 소수 } from '../grade42/unit3';
 
 // ════════════════════════════════════════════════════════════════════
@@ -178,7 +178,9 @@ export const unit3Lesson61 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 7:
       return [자연수몫소수, 소수점관계('자연수로'), 소수거꾸로('자연수')];
     case 8:
-      return [어림, 소수점관계('자연수로'), 몫사이('자연수')];
+      return lv === '하'
+        ? [어림, 몫사이('자연수'), 어림문장제소수, 소수점관계('자연수로')]
+        : [어림, 몫사이('자연수'), 어림확인소수, 어림문장제소수, 소수점관계('자연수로')];
     default:
       return null;
   }
