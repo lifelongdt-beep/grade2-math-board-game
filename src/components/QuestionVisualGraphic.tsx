@@ -2,6 +2,7 @@ import { ShareScene } from './ShareScene';
 import { AngleGraphic, AngleSplitGraphic, BarGraphGraphic, GridMoveGraphic, LineGraphGraphic, NumberArrayGraphic, ParallelDistanceGraphic, ProtractorGraphic } from './Grade4Visuals';
 import { BalanceGraphic, BeakerGraphic, ScaleDialGraphic } from './Grade3Visuals';
 import { CircleRegionGraphic, RatioGraphGraphic, SolidFigureGraphic, SolidNetGraphic, StackPlanGraphic } from './Grade6Visuals';
+import { StackIsoGraphic } from './StackIso';
 import { CompareGraphic, CountersGraphic, SolidsGraphic, TenFrameGraphic, TensOnesGraphic } from './Grade1Visuals';
 import type { PlaneShapeVisualItem, QuestionVisual } from '../types';
 
@@ -289,7 +290,7 @@ const renderCubeView = (
   index: number,
   total: number,
 ) => {
-  const labelText = view.label === '보임' ? '보이는 것' : `${view.label}에서`;
+  const labelText = view.label === '보임' ? '보이는 것' : view.label.endsWith('층') ? view.label : `${view.label}에서`;
   const panelWidth = total === 1 ? 150 : total === 2 ? 132 : 104;
   const gap = total === 1 ? 0 : 12;
   const startX = (376 - (panelWidth * total + gap * (total - 1))) / 2;
@@ -3138,9 +3139,15 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
           // 입체도형과 전개도는 길이를 적은 글자를 읽어야 합니다.
           visual.kind === 'solid-figure' || visual.kind === 'solid-net' || visual.kind === 'circle-region' ||
           // 눈금을 읽는 그림입니다.
-          visual.kind === 'beaker' || visual.kind === 'scale-dial' || visual.kind === 'balance'
+          visual.kind === 'beaker' || visual.kind === 'scale-dial' || visual.kind === 'balance' ||
+          // 쌓기나무는 칸 하나하나를 세어야 합니다.
+          (visual.kind === 'stack-iso' && !visual.items && !visual.views && !visual.plan) ||
+          // 직육면체 겨냥도는 모서리에 적은 길이를 읽어야 합니다.
+          visual.kind === 'box-drawing'
           ? 'is-scale'
           : '',
+        // 쌓은 모양 여러 개나 보기 그림을 함께 그리는 문항은 넓게 펼칩니다.
+        (visual.kind === 'stack-iso' && (visual.items || visual.views || visual.plan)) || visual.kind === 'cube-views' ? 'is-wide' : '',
         className,
       ]
         .filter(Boolean)
@@ -3194,6 +3201,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'number-array' && <NumberArrayGraphic visual={visual} />}
       {visual.kind === 'ratio-graph' && <RatioGraphGraphic visual={visual} />}
       {visual.kind === 'stack-plan' && <StackPlanGraphic visual={visual} />}
+      {visual.kind === 'stack-iso' && <StackIsoGraphic visual={visual} />}
       {visual.kind === 'solid-figure' && <SolidFigureGraphic visual={visual} />}
       {visual.kind === 'solid-net' && <SolidNetGraphic visual={visual} />}
       {visual.kind === 'circle-region' && <CircleRegionGraphic visual={visual} />}

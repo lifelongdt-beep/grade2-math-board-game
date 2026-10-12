@@ -7312,3 +7312,47 @@ body::before {
   font-weight: 700;
   text-align: center;
 }
+
+/* 1학년 실험실 움직임 */
+@keyframes g1-pop {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes g1-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes g1-roll-sphere {
+  0% { transform: none; }
+  50% { transform: translateX(28px) rotate(220deg); }
+  100% { transform: none; }
+}
+@keyframes g1-roll-cylinder {
+  0% { transform: none; }
+  35% { transform: translate(0, -21px) rotate(90deg); }
+  100% { transform: translate(-24px, -21px) rotate(90deg); }
+}
+@keyframes g1-roll-box {
+  0%, 100% { transform: none; }
+  20% { transform: rotate(-6deg); }
+  40% { transform: rotate(5deg); }
+  60% { transform: rotate(-3deg); }
+}
+@keyframes g1-drop {
+  0% { opacity: 0; transform: translateY(-40px); }
+  20% { opacity: 1; }
+  60%, 100% { opacity: 1; transform: none; }
+}
+@keyframes g1-fall {
+  0% { opacity: 0; transform: translateY(-40px); }
+  20% { opacity: 1; }
+  45% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translate(42px, 46px) rotate(80deg); }
+}
+
+/* 쌓기나무 여러 모양·보기 그림처럼 가로로 넓은 그림입니다. */
+.question-visual-figure.is-wide,
+.game-layout .question-visual-figure.is-wide {
+  width: min(100%, 760px);
+  height: calc(var(--visual-height) * 1.9);
+}

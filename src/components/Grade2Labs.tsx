@@ -25,11 +25,11 @@ const 진청 = '#0f7175';
 const 주황 = '#ef6c00';
 const 막대색 = ['#4fc3f7', '#ffb74d', '#aed581', '#f48fb1', '#b39ddb', '#90a4ae'];
 
-function 읽기({ children }: { children: ReactNode }) {
+export function 읽기({ children }: { children: ReactNode }) {
   return <p className="g3-lab-readout">{children}</p>;
 }
 
-function 단추({ onClick, children, disabled, on }: { onClick: () => void; children: ReactNode; disabled?: boolean; on?: boolean }) {
+export function 단추({ onClick, children, disabled, on }: { onClick: () => void; children: ReactNode; disabled?: boolean; on?: boolean }) {
   return (
     <button type="button" className="g3-lab-button" aria-pressed={on} disabled={disabled} onClick={() => { playTapSound(); onClick(); }}>
       {children}
