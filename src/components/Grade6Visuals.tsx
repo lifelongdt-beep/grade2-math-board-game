@@ -1,3 +1,4 @@
+import { 다면체그림 } from './Polyhedra';
 import type { ReactNode } from 'react';
 import type { CircleRegionVisual, RatioGraphVisual, SolidFigureVisual, SolidNetVisual, StackPlanVisual } from '../types';
 
@@ -162,6 +163,25 @@ export function SolidFigureGraphic({ visual }: { visual: SolidFigureVisual }) {
     </svg>
   );
 
+  // 여러 입체도형을 늘어놓은 그림입니다.
+  if (visual.items?.length) {
+    const 칸 = 150;
+    const 넓이 = visual.items.length * 칸 + 12;
+    return (
+      <svg viewBox={`0 0 ${넓이} 190`} role="img" aria-label={visual.label}>
+        <rect x="2" y="2" width={넓이 - 4} height="186" rx="12" {...판} />
+        {visual.items.map((it, k) => (
+          <g key={k}>
+            {다면체그림({ 종류: it.solid, n: it.sides, 눕힘: it.lying, x: 6 + k * 칸, y: 8, w: 칸, h: 146 })}
+            <text x={6 + k * 칸 + 칸 / 2} y="178" textAnchor="middle" fill="#24364a" fontSize="18" fontWeight="900">{it.name}</text>
+          </g>
+        ))}
+      </svg>
+    );
+  }
+  if (visual.solid === 'frustum' || visual.lying || visual.shade || visual.edgeLabels) {
+    return 판그림(다면체그림({ 종류: visual.solid as 'prism' | 'pyramid' | 'frustum', n: Math.max(3, visual.sides ?? 3), 눕힘: visual.lying, 칠: visual.shade, 길이: visual.edgeLabels, 비율: visual.edgeRatio, x: 6, y: 6, w: W - 12, h: H - 12 }));
+  }
   if (visual.solid === 'prism' || visual.solid === 'pyramid') {
     const n = Math.max(3, visual.sides ?? 3);
     const 높이 = visual.solid === 'prism' ? 1.5 : 1.7;

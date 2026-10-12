@@ -99,7 +99,7 @@ describe('6-1 2단원 각기둥과 각뿔', () => {
         expect(q.answer.endsWith(faces[2]), q.prompt).toBe(true);
         expect(각[q.answer[0]] + (faces[2] === '기둥' ? 2 : 1), q.prompt).toBe(Number(faces[1]));
       }
-      const net = /한 변 (\d+) cm인 정(.)각형이고 높이가 \d+ cm/.exec(q.prompt);
+      const net = /한 변 (\d+) cm인 정(.)각형이고 높이가 \d+ cm인 .각기둥의 전개도/.exec(q.prompt);
       if (net) expect(수(q.answer), q.prompt).toBe(Number(net[1]) * 각[net[2]]);
     }
   });
@@ -237,15 +237,16 @@ describe('6-1 그림과 문항이 어긋나지 않습니다', () => {
       const v = q.visual;
       if (v?.kind === 'solid-figure') {
         겨냥도수 += 1;
-        const m = /^(.)각(기둥|뿔)의/.exec(q.prompt);
-        expect(m, q.prompt).not.toBeNull();
-        expect(v.sides, q.prompt).toBe(각수[m![1]]);
-        expect(v.solid, q.prompt).toBe(m![2] === '기둥' ? 'prism' : 'pyramid');
+        const m = /(.)각(기둥|뿔)(의|입니다|에서)/.exec(q.prompt);
+        if (m) {
+          expect(v.sides, q.prompt).toBe(각수[m[1]]);
+          expect(v.solid, q.prompt).toBe(m[2] === '기둥' ? 'prism' : 'pyramid');
+        }
       }
       if (v?.kind === 'solid-net') {
         전개도수 += 1;
         const m = /(.)각기둥/.exec(q.prompt);
-        expect(v.sides, q.prompt).toBe(각수[m![1]]);
+        if (m) expect(v.sides, q.prompt).toBe(각수[m[1]]);
         const 길이 = /한 변 (\d+) cm인 정.각형이고 높이가 (\d+) cm/.exec(q.prompt);
         if (길이) {
           expect(v.labels?.base, q.prompt).toBe(`${길이[1]} cm`);
@@ -255,11 +256,98 @@ describe('6-1 그림과 문항이 어긋나지 않습니다', () => {
         } else expect(v.labels, q.prompt).toBeUndefined();
       }
       // 수 세기와 전개도 문항에는 그림이 있어야 합니다.
-      if (/의 (면|모서리|꼭짓점)은 몇 개/.test(q.prompt)) expect(v?.kind, q.prompt).toBe('solid-figure');
-      if (/전개도/.test(q.prompt)) expect(v?.kind, q.prompt).toBe('solid-net');
+      if (/의 (면|모서리|꼭짓점)은 몇 개/.test(q.prompt) && !/이 각(기둥|뿔)의/.test(q.prompt)) expect(v?.kind, q.prompt).toBe('solid-figure');
+      if (/전개도/.test(q.prompt) && !/설명|늘 같은/.test(q.prompt)) expect(v?.kind, q.prompt).toBe('solid-net');
     }
     expect(겨냥도수).toBeGreaterThan(0);
     expect(전개도수).toBeGreaterThan(0);
+  });
+
+  it('그림을 보고 푸는 각기둥·각뿔 문항을 따로 풉니다', () => {
+    const 이름 = (solid: string, n: number) => `${'   삼사오육칠팔구십'[n]}각${solid === 'prism' ? '기둥' : '뿔'}`;
+    const 기 = { 면: (n: number) => n + 2, 모서리: (n: number) => 3 * n, 꼭짓점: (n: number) => 2 * n } as Record<string, (n: number) => number>;
+    const 뿔 = { 면: (n: number) => n + 1, 모서리: (n: number) => 2 * n, 꼭짓점: (n: number) => n + 1 } as Record<string, (n: number) => number>;
+    let count = 0;
+    for (const { q } of 단원(2)) {
+      const v = q.visual;
+      if (q.prompt === '그림과 같은 입체도형의 이름은 무엇일까요?' && v?.kind === 'solid-figure') expect(q.answer).toBe(이름(v.solid, v.sides!));
+      if (/색칠한 면은 무엇/.test(q.prompt) && v?.kind === 'solid-figure') expect(q.answer).toBe(v.shade === 'base' ? '밑면' : '옆면');
+      if (/^(각기둥|각뿔)은 모두 몇 개/.test(q.prompt) && v?.kind === 'solid-figure') {
+        const 찾는 = q.prompt.startsWith('각기둥') ? 'prism' : 'pyramid';
+        expect(수(q.answer), q.prompt).toBe(v.items!.filter((it) => it.solid === 찾는).length);
+      }
+      const 합 = /한 변 (\d+) cm인 정(.)각형이고 (?:높이가|옆면의 모서리가 모두) (\d+) cm인 .각(기둥|뿔)입니다. 모든 모서리의 길이의 합/.exec(q.prompt);
+      if (합) {
+        const [a, n, l] = [Number(합[1]), 각수[합[2]], Number(합[3])];
+        expect(수(q.answer), q.prompt).toBe(합[4] === '기둥' ? a * 2 * n + l * n : a * n + l * n);
+        expect(v?.kind === 'solid-figure' && v.edgeLabels, q.prompt).toEqual({ base: `${a} cm`, lateral: `${l} cm` });
+      }
+      const 거 = /^(면|모서리|꼭짓점)(?:이|가) (\d+)개인 (각기둥|각뿔)이 있습니다. 이 .+의 (면|모서리|꼭짓점)(?:은|는) 몇 개/.exec(q.prompt);
+      if (/개인 각(기둥|뿔)이 있습니다/.test(q.prompt)) expect(거, q.prompt).not.toBeNull();
+      if (거) {
+        const 표 = 거[3] === '각기둥' ? 기 : 뿔;
+        const ns = [3, 4, 5, 6, 7, 8, 9, 10].filter((n) => 표[거[1]](n) === Number(거[2]));
+        expect(ns.length, q.prompt).toBe(1);
+        expect(수(q.answer), q.prompt).toBe(표[거[4]](ns[0]));
+      }
+      const 세합 = /모두 더하면 (\d+)인 (각기둥|각뿔)의 이름/.exec(q.prompt);
+      if (세합) {
+        const 표 = 세합[2] === '각기둥' ? 기 : 뿔;
+        const ns = [3, 4, 5, 6, 7, 8, 9, 10].filter((n) => 표.면(n) + 표.모서리(n) + 표.꼭짓점(n) === Number(세합[1]));
+        expect([q.answer], q.prompt).toEqual(ns.map((n) => 이름(세합[2] === '각기둥' ? 'prism' : 'pyramid', n)));
+      }
+      if (/에 대한 설명으로 옳은 것은/.test(q.prompt)) {
+        const 맞나 = (t: string) => {
+          const m = /^(.)각(기둥|뿔)의 (면|모서리|꼭짓점)(?:은|는) (\d+)개입니다\.$/.exec(t)!;
+          return (m[2] === '기둥' ? 기 : 뿔)[m[3]](각수[m[1]]) === Number(m[4]);
+        };
+        expect(맞나(q.answer), q.answer).toBe(true);
+        for (const c of q.choices.filter((c) => c !== q.answer)) expect(맞나(c), c).toBe(false);
+      }
+      if (/전개도를 접었을 때 만들어지는/.test(q.prompt) && v?.kind === 'solid-net') expect(q.answer).toBe(이름('prism', v.sides!));
+      count += 1;
+    }
+    expect(count).toBeGreaterThan(100);
+  });
+
+  it('6단원 그림·사고력 문항을 따로 풉니다', () => {
+    const 크기 = (h: number[][]) => [h[0].length, h.length, h[0][0]] as const;
+    const 부피 = (h: number[][]) => h.flat().reduce((t, x) => t + x, 0);
+    const 겉 = (h: number[][]) => { const [a, b, c] = 크기(h); return 2 * (a * b + b * c + a * c); };
+    let count = 0;
+    for (const { q } of 단원(6)) {
+      const v = q.visual;
+      if (v?.kind === 'stack-iso') {
+        // 직육면체로 빈틈없이 쌓았는지 봅니다.
+        for (const h of [v.heights, ...(v.items ?? []).map((it) => it.heights)]) expect(new Set(h.flat()).size, q.prompt).toBe(1);
+        if (q.prompt.includes('이 직육면체의 부피는')) expect(수(q.answer), q.prompt).toBe(부피(v.heights));
+        if (v.items) {
+          const [가, 나] = v.items.map((it) => it.heights);
+          if (q.prompt.includes('부피가 더 큰 것은')) expect(q.answer, q.prompt).toBe(부피(가) === 부피(나) ? '부피가 같습니다' : 부피(가) > 부피(나) ? '가' : '나');
+          if (q.prompt.includes('몇 cm³ 더 클까요')) expect(q.answer, q.prompt).toBe(`${부피(가) > 부피(나) ? '가' : '나'}, ${Math.abs(부피(가) - 부피(나))} cm³`);
+          if (q.prompt.includes('겉넓이가 더 넓은')) {
+            expect(부피(가), q.prompt).toBe(부피(나));
+            expect(q.answer, q.prompt).toBe(겉(가) > 겉(나) ? '가' : '나');
+          }
+        }
+        count += 1;
+      }
+      let m = /^겉넓이가 (\d+) cm²인 정육면체의 한 모서리/.exec(q.prompt);
+      if (m) expect(수(q.answer) ** 2 * 6, q.prompt).toBe(Number(m[1]));
+      m = /^부피가 (\d+) cm³인 정육면체의 한 모서리/.exec(q.prompt);
+      if (m) expect(수(q.answer) ** 3, q.prompt).toBe(Number(m[1]));
+      m = /각각 (\d)배로 늘리면 (부피|겉넓이)/.exec(q.prompt);
+      if (m) expect(수(q.answer), q.prompt).toBe(Number(m[1]) ** (m[2] === '부피' ? 3 : 2));
+      m = /가로 (\d+) cm, 세로 (\d+) cm인 직육면체 모양의 수조.+높이가 (\d+) cm 높아졌습니다/.exec(q.prompt);
+      if (m) expect(수(q.answer), q.prompt).toBe(Number(m[1]) * Number(m[2]) * Number(m[3]));
+      m = /가로 (\d+) cm, 세로 (\d+) cm, 높이 (\d+) cm인 직육면체에서 색칠한 두 면을 밑면으로 볼 때, 네 옆면/.exec(q.prompt);
+      if (m) expect(수(q.answer), q.prompt).toBe(2 * (Number(m[1]) + Number(m[2])) * Number(m[3]));
+      m = /가로 (\d+) cm, 세로 (\d+) cm, 높이 (\d+) cm인 직육면체의 겉넓이를 \(한 밑면/.exec(q.prompt);
+      if (m) { const [a, b, c] = [1, 2, 3].map((k) => Number(m![k])); expect(수(q.answer), q.prompt).toBe(2 * (a * b + b * c + a * c)); }
+      m = /가로 (\d+) m, 세로 (\d+) cm, 높이 (\d+) m인 직육면체의 부피는 몇 m³/.exec(q.prompt);
+      if (m) expect(Math.abs(수(q.answer) - Number(m[1]) * (Number(m[2]) / 100) * Number(m[3])) < 1e-9, q.prompt).toBe(true);
+    }
+    expect(count).toBeGreaterThan(40);
   });
 
   it('직육면체·정육면체 그림의 길이가 문항과 같습니다', () => {
