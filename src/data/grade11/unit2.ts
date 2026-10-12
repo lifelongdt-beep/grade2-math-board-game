@@ -296,7 +296,7 @@ export const unit2Lesson11 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
       if (lv === '중') return [특징고르기, 일부보기, 수수께끼];
       return [두특징, 특징고르기];
     case 4:
-      if (lv === '하') return [모양세기(true)];
+      if (lv === '하') return [모양세기(true), 가장많은모양];
       if (lv === '중') return [모양세기(true), 가장많은모양];
       return [가장많은모양, 모양세기(true)];
     case 5:

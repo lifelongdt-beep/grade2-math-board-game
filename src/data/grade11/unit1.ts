@@ -2,7 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { eul, eun, gwa, i as 이가 } from '../grade5/util';
 import { 고르개, 관형, 물건둘, 물건들, 사이, 셈그림, 수보기, 수준범위, 우리말, 째, 한자어 } from './common';
-import { 두단계수, 사이개수 } from '../grade1/thinking';
+import { 거꾸로순서, 두단계수, 사이개수 } from '../grade1/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 1-1 1단원 9까지의 수
@@ -478,11 +478,11 @@ export const unit1Lesson11 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
       if (lv === '중') return [몇째('right'), 몇째('left'), 앞에몇개];
       return [앞에몇개, 몇째와몇개, 몇째('right')];
     case 5:
-      if (lv === '하') return [빈칸순서(false), 사이개수('1-1-1', 9)];
+      if (lv === '하') return [빈칸순서(false), 사이개수('1-1-1', 9), 거꾸로순서('1-1-1', 9)];
       if (lv === '중') return [빈칸순서(true), 빈칸순서(false), 사이개수('1-1-1', 9)];
-      return [사이의수, 빈칸순서(true), 사이개수('1-1-1', 9)];
+      return [사이의수, 빈칸순서(true), 거꾸로순서('1-1-1', 9), 사이개수('1-1-1', 9), 두단계수('1-1-1', 9)];
     case 6:
-      if (lv === '하') return [하나큰작은(true), 하나큰작은(false)];
+      if (lv === '하') return [하나큰작은(true), 하나큰작은(false), 어떤수, 거꾸로순서('1-1-1', 9)];
       if (lv === '중') return [하나큰작은(false), 하나큰작은(true), 어떤수, 두단계수('1-1-1', 9)];
       return [어떤수, 두번, 두단계수('1-1-1', 9)];
     case 7:

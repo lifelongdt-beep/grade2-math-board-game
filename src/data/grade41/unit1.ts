@@ -2,7 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { eun, i as 이가 } from '../grade5/util';
 import { 고르개, 사이 } from '../grade11/common';
-import { 네모숫자, 뛰어세기거꾸로, 자릿값배, 큰수카드 } from './thinking';
+import { 네모숫자, 뛰어세기거꾸로, 만되려면, 자릿값배, 큰수카드 } from './thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 4-1 1단원 큰 수
@@ -359,7 +359,7 @@ const 가장큰수: G5Family = {
 export const unit1Lesson41 = (lessonNo: number, lv: Difficulty): G5Family[] | null => {
   switch (lessonNo) {
     case 1:
-      return [지폐];
+      return [지폐, 만되려면];
     case 2:
       return lv === '하' ? [만알기, 지폐, 천의몇개] : [만알기, 천의몇개, 지폐];
     case 3:

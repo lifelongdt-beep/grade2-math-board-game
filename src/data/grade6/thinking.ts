@@ -486,3 +486,61 @@ export const 원기둥전개도생각: G5Family = {
     };
   },
 };
+
+// ── 더 넓힌 생각 문항 ────────────────────────────────────────────────
+//   · 나눗셈의 몫을 분수로: 한 번 나눈 결과로 처음 수를 찾고 다시 나누기
+//   · 어림으로 몫이 어느 두 자연수 사이에 있는지 가늠하기(소수점 위치 판단)
+
+/** 어떤 수를 b로 나눈 몫이 a/b — 어떤 수를 c로 나눈 몫 */
+export const 몫분수거꾸로 = (작은몫: boolean): G5Family => ({
+  id: `quot-frac-back-${작은몫 ? 'lt1' : 'gt1'}`,
+  make: (seed) => {
+    const next = 고르개(seed);
+    const b = 사이(next, 3, 9);
+    const a = 작은몫 ? 사이(next, 1, b - 1) : 사이(next, b + 1, 2 * b + 5);
+    const c = 사이(next, 2, 9);
+    if (b === c || frac(a, b).d !== b) return null;
+    if (작은몫 ? a >= c : a <= c) return null;
+    const v = frac(a, c);
+    return {
+      prompt: `어떤 자연수를 ${b}(으)로 나눈 몫을 분수로 나타내면 ${분수글(frac(a, b))}입니다. 어떤 수를 ${c}(으)로 나눈 몫을 분수로 나타내면 얼마일까요?`,
+      answer: text(v),
+      wrongs: 다른분수(v, [frac(a, b * c), frac(c, a), frac(a * c, b), frac(b, c), frac(a + 1, c)]).slice(0, 3),
+      tag: 'fractionDiv',
+      strategy: '몫에서 거꾸로 처음 수를 찾고 다시 나누기',
+      hint: `□÷${b}=${분수글(frac(a, b))}에서 □는 몫 분수의 분자와 같아요.`,
+      steps: [`□÷${b}=${a}/${b}이므로 어떤 수는 ${a}입니다.`, `${a}÷${c}=${a}/${c}${text(v) === `${a}/${c}` ? '' : `=${text(v)}`}`],
+      misconceptionTip: '몫 분수를 그대로 다시 나누면 안 돼요. 먼저 어떤 수를 찾아요.',
+    };
+  },
+});
+
+/** 계산하지 않고 몫이 어느 두 자연수 사이에 있는지 */
+export const 몫사이 = (나누는: '자연수' | '소수'): G5Family => ({
+  id: `quot-between-${나누는}`,
+  make: (seed) => {
+    const next = 고르개(seed);
+    // 나누는 수: 자연수 2~9 또는 소수 한 자리 0.3~2.5(열 배 정수 E)
+    const E = 나누는 === '자연수' ? 사이(next, 2, 9) * 10 : 사이(next, 3, 25);
+    if (E % 10 === 0 && 나누는 === '소수') return null;
+    const k = 사이(next, 2, 나누는 === '자연수' ? 9 : 15);
+    // 나누어지는 수의 열 배 N: E*k < N < E*(k+1)
+    const N = E * k + 사이(next, 1, E - 1);
+    if (N % E === 0) return null;
+    const 나뉨 = 소수(N * 100);
+    const 나눔 = 소수(E * 100);
+    const 범위 = (x: number) => `${x}과(와) ${x + 1} 사이`;
+    const 열배 = (x: number) => `${x * 10}과(와) ${(x + 1) * 10} 사이`;
+    const 십분 = (x: number) => `${소수(x * 100)}과(와) ${소수((x + 1) * 100)} 사이`;
+    return {
+      prompt: `계산하지 않고 어림해 보세요. ${나뉨}÷${나눔}의 몫은 어느 범위에 있을까요?`,
+      answer: 범위(k),
+      wrongs: [범위(k + 1), 범위(k - 1), 열배(k), 십분(k)].filter((w, i, xs) => w !== 범위(k) && xs.indexOf(w) === i).slice(0, 3),
+      tag: 'decimalDiv',
+      strategy: '나누는 수에 자연수를 곱해 나누어지는 수와 견주기',
+      hint: `${나눔}×${k}과(와) ${나눔}×${k + 1}을(를) 어림해 ${나뉨}과(와) 견주어 보세요.`,
+      steps: [`${나눔}×${k}=${소수(E * k * 100)}, ${나눔}×${k + 1}=${소수(E * (k + 1) * 100)}`, `${나뉨}은(는) 두 수 사이에 있으므로 몫은 ${k}과(와) ${k + 1} 사이입니다.`],
+      misconceptionTip: '소수점의 자리를 잘못 생각하면 몫이 10배나 1/10배가 돼요. 어림으로 확인해요.',
+    };
+  },
+});

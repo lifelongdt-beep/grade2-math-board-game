@@ -2,7 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { eul, eun } from '../grade5/util';
 import { 고르개, 사이, 수보기, 우리말로, 한자어로 } from '../grade11/common';
-import { 두단계수, 사이개수, 수카드몇십몇, 짝홀사이 } from '../grade1/thinking';
+import { 두단계수, 봉지담기, 사이개수, 수카드몇십몇, 숫자넣기비교, 짝홀사이 } from '../grade1/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 1-2 1단원 100까지의 수
@@ -340,7 +340,7 @@ export const unit1Lesson12 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 1:
       return [그림수('intro', 21, 50), 묶음으로('intro-word', 21, 50)];
     case 2:
-      if (lv === '하') return [그림수('tens', 60, 90, true), 묶음으로('tens-word', 60, 90, true)];
+      if (lv === '하') return [그림수('tens', 60, 90, true), 묶음으로('tens-word', 60, 90, true), 봉지담기('1-2-1', 90, false, 6)];
       if (lv === '중') return [그림수('tens', 60, 90, true), 읽기('tens-read', 60, 90, true), 묶음으로('tens-word', 60, 90, true)];
       return [읽기('tens-read', 60, 90, true), 묶음으로('tens-word', 60, 90, true)];
     case 3:
@@ -354,10 +354,10 @@ export const unit1Lesson12 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
       if (lv === '중') return [순서카드('order-up', false), 하나큰작은, 백, 사이개수('1-2-1', 99), 두단계수('1-2-1', 99)];
       return [순서카드('order-down', true), 백, 하나큰작은, 두단계수('1-2-1', 99, 10), 사이개수('1-2-1', 99)];
     case 6:
-      if (lv === '하') return [부등호, 수카드몇십몇('1-2-1', 99)];
-      return [부등호, 가장큰수, 수카드몇십몇('1-2-1', 99)];
+      if (lv === '하') return [부등호, 수카드몇십몇('1-2-1', 99), 숫자넣기비교('1-2-1')];
+      return [부등호, 가장큰수, 숫자넣기비교('1-2-1'), 수카드몇십몇('1-2-1', 99)];
     case 7:
-      if (lv === '하') return [짝짓기그림, 짝수고르기('짝수')];
+      if (lv === '하') return [짝짓기그림, 짝수고르기('짝수'), 짝홀사이('1-2-1')];
       return [짝수고르기('짝수'), 짝수고르기('홀수'), 짝짓기그림, 짝홀사이('1-2-1')];
     default:
       return null;
