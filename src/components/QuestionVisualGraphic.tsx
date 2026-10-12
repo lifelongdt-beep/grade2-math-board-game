@@ -3086,6 +3086,10 @@ function GridTableGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
   );
 }
 
+// 색 이름으로 늘어놓은 규칙은 그 색으로 칠합니다. '노랑'이라는 글자만
+// 보여 주면 색의 규칙이 아니라 글자 읽기 문제가 됩니다.
+const 색칠 = { 빨강: '#ef5350', 파랑: '#42a5f5', 노랑: '#ffe14d', 초록: '#66bb6a', 주황: '#ffa726', 보라: '#ab47bc', 분홍: '#f48fb1' } as Record<string, string>;
+
 function PatternGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'pattern' }> }) {
   const items = visual.items.slice(0, 9);
   // 칸을 28px로 못박아 두었더니 ○△□ 말고는 다 넘쳤습니다 — '초록',
@@ -3105,7 +3109,7 @@ function PatternGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'p
         const x = edge + index * (cell + gap);
         return (
           <g key={`${item}-${index}`}>
-            <rect x={x} y="14" width={cell} height="34" rx="8" fill={isMissing ? '#fff4bd' : '#dffafa'} stroke="#0f9f9f" strokeWidth="2" />
+            <rect x={x} y="14" width={cell} height="34" rx="8" fill={isMissing ? '#fff4bd' : 색칠[item] ?? '#dffafa'} stroke="#0f9f9f" strokeWidth="2" />
             <text x={x + cell / 2} y="38" textAnchor="middle" fill="#182433" fontSize="19" fontWeight="900">
               {isMissing ? '?' : item}
             </text>

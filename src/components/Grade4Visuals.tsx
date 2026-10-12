@@ -318,8 +318,10 @@ export function ParallelDistanceGraphic({ visual }: { visual: ParallelDistanceVi
 export function NumberArrayGraphic({ visual }: { visual: NumberArrayVisual }) {
   const rows = visual.rows;
   const cols = Math.max(...rows.map((r) => r.length));
-  const w = 70;
-  const h = 34;
+  // 1부터 100까지의 수 배열표(한 줄 10칸)는 칸을 좁고 높게 해서 글자를 키웁니다.
+  const 넓은표 = cols >= 8;
+  const w = 넓은표 ? 46 : 70;
+  const h = 넓은표 ? 42 : 34;
   const width = cols * w + 20;
   const height = rows.length * h + 20;
   return (
@@ -328,8 +330,8 @@ export function NumberArrayGraphic({ visual }: { visual: NumberArrayVisual }) {
       {rows.map((row, r) =>
         row.map((v, c) => (
           <g key={`${r}-${c}`}>
-            <rect x={10 + c * w} y={10 + r * h} width={w} height={h} fill={v === null ? '#fff3e0' : '#ffffff'} stroke="#90a4ae" />
-            <text x={10 + c * w + w / 2} y={10 + r * h + h / 2 + 5} textAnchor="middle" fill={v === null ? '#bf360c' : 글} fontSize="14" fontWeight="900">{v === null ? '?' : v}</text>
+            <rect x={10 + c * w} y={10 + r * h} width={w} height={h} fill={v === null ? '#fff3e0' : v !== null && visual.shaded?.includes(v) ? '#ffe082' : '#ffffff'} stroke="#90a4ae" />
+            <text x={10 + c * w + w / 2} y={10 + r * h + h / 2 + 5} textAnchor="middle" fill={v === null ? '#bf360c' : 글} fontSize={넓은표 ? 19 : 14} fontWeight="900">{v === null ? '?' : v}</text>
           </g>
         )),
       )}
