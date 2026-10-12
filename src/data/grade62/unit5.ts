@@ -1,4 +1,4 @@
-import type { CircleVisual, Difficulty } from '../../types';
+import type { CircleRegionVisual, CircleVisual, Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
 import { 소수 } from '../grade42/unit3';
@@ -108,6 +108,7 @@ const 원주: G5Family = {
       strategy: '원주로 지름 구하기',
       hint: '(지름)=(원주)÷(원주율)이에요.',
       steps: [`${소수(c)}÷3.14=${d}이므로 ${d} cm입니다.`],
+      visual: 원그림('? cm', true),
     };
   },
 };
@@ -181,6 +182,7 @@ const 활용: G5Family = {
         strategy: '반원의 넓이',
         hint: '원의 넓이의 절반이에요.',
         steps: [`${r}×${r}×3.14÷2=${소수(v)}이므로 ${소수(v)} cm²입니다.`],
+        visual: { kind: 'circle-region', label: '반원', shape: 'semicircle', outer: r, labels: { outer: `${r} cm` } } satisfies CircleRegionVisual,
       };
     }
     if (kind === 1) {
@@ -196,6 +198,7 @@ const 활용: G5Family = {
         steps: [`${R}×${R}×3.14=${소수(곱(R * R, 3140))}`, `${r}×${r}×3.14=${소수(곱(r * r, 3140))}`, `${소수(곱(R * R, 3140))}-${소수(곱(r * r, 3140))}=${소수(v)}`],
         misconceptionTip: '반지름의 차로 원의 넓이를 구하면 안 돼요.',
         minusIsOperator: true,
+        visual: { kind: 'circle-region', label: '고리 모양', shape: 'ring', outer: R, inner: r, labels: { outer: `${R} cm`, inner: `${r} cm` } } satisfies CircleRegionVisual,
       };
     }
     const 바퀴 = 사이(next, 2, 9);
@@ -209,6 +212,7 @@ const 활용: G5Family = {
       strategy: '원주를 이용한 문장제',
       hint: '바퀴가 한 바퀴 굴러간 거리는 원주와 같아요.',
       steps: [`원주는 ${d}×3.14=${소수(곱(d, 3140))} cm입니다.`, `${소수(곱(d, 3140))}×${바퀴}=${소수(v)}이므로 ${소수(v)} cm입니다.`],
+      visual: { ...원그림(`${d} cm`, true), label: '바퀴' },
     };
   },
 };

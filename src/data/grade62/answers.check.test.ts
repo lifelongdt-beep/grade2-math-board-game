@@ -208,3 +208,95 @@ describe('6-2 6단원 원기둥, 원뿔, 구', () => {
     }
   });
 });
+
+// ════════════════════════════════════════════════════════════════════
+// 그림과 문항이 어긋나지 않습니다
+// ════════════════════════════════════════════════════════════════════
+describe('6-2 그림과 문항이 어긋나지 않습니다', () => {
+  it('원의 넓이 활용 그림의 반지름·지름이 문항과 같습니다', () => {
+    for (const { q } of 단원(5)) {
+      const v = q.visual;
+      const 반원 = /반지름이 (\d+) cm인 반원/.exec(q.prompt);
+      if (반원) {
+        expect(v?.kind, q.prompt).toBe('circle-region');
+        if (v?.kind === 'circle-region') {
+          expect(v.shape, q.prompt).toBe('semicircle');
+          expect(v.labels.outer, q.prompt).toBe(`${반원[1]} cm`);
+          expect(v.outer, q.prompt).toBe(Number(반원[1]));
+        }
+      }
+      const 고리 = /반지름이 (\d+) cm인 원에서 같은 중심을 가진 반지름 (\d+) cm인 원/.exec(q.prompt);
+      if (고리) {
+        expect(v?.kind, q.prompt).toBe('circle-region');
+        if (v?.kind === 'circle-region') {
+          expect(v.shape, q.prompt).toBe('ring');
+          expect([v.outer, v.inner], q.prompt).toEqual([Number(고리[1]), Number(고리[2])]);
+          expect(v.labels, q.prompt).toEqual({ outer: `${고리[1]} cm`, inner: `${고리[2]} cm` });
+        }
+      }
+      const 바퀴 = /지름이 (\d+) cm인 바퀴/.exec(q.prompt);
+      if (바퀴) {
+        expect(v?.kind, q.prompt).toBe('circles');
+        if (v?.kind === 'circles') expect(v.segments?.[0].name, q.prompt).toBe(`${바퀴[1]} cm`);
+      }
+      if (/^원주가 [\d.]+ cm인 원의 지름/.test(q.prompt)) {
+        expect(v?.kind, q.prompt).toBe('circles');
+        if (v?.kind === 'circles') {
+          expect(v.segments?.[0].name, q.prompt).toBe('? cm');
+          // 지름 선이어야 합니다(반지름 선이면 아이가 반지름을 구합니다).
+          expect(v.segments?.[0].from, q.prompt).toEqual([-1, 0]);
+        }
+      }
+    }
+  });
+
+  it('원기둥·원뿔·구 그림의 길이가 문항과 같습니다', () => {
+    let 그림수 = 0;
+    for (const { q } of 단원(6)) {
+      const v = q.visual;
+      const 원기둥 = /밑면의 반지름이 (\d+) cm, 높이가 (\d+) cm인 원기둥/.exec(q.prompt);
+      if (원기둥) {
+        const [r, h] = [Number(원기둥[1]), Number(원기둥[2])];
+        if (/전개도/.test(q.prompt)) {
+          expect(v?.kind, q.prompt).toBe('solid-net');
+          if (v?.kind === 'solid-net') {
+            expect([v.solid, v.base, v.height], q.prompt).toEqual(['cylinder', r, h]);
+            expect(v.labels?.base, q.prompt).toBe(`${r} cm`);
+            const 묻는세로 = /세로/.test(q.prompt);
+            expect(v.labels?.height, q.prompt).toBe(묻는세로 ? '? cm' : `${h} cm`);
+            expect(v.labels?.width, q.prompt).toBe(묻는세로 ? undefined : '? cm');
+          }
+        } else {
+          expect(v?.kind, q.prompt).toBe('solid-figure');
+          if (v?.kind === 'solid-figure') {
+            expect([v.solid, v.radius, v.height], q.prompt).toEqual(['cylinder', r, h]);
+            expect(v.labels, q.prompt).toEqual({ radius: `${r} cm`, height: `${h} cm` });
+          }
+        }
+        그림수 += 1;
+      }
+      const 원뿔 = /선분은 (\d+) cm, 원뿔의 꼭짓점에서 밑면에 수직인 선분은 (\d+) cm, 밑면의 반지름은 (\d+) cm/.exec(q.prompt);
+      if (원뿔) {
+        const [l, h, r] = [1, 2, 3].map((k) => Number(원뿔[k]));
+        expect(r * r + h * h, q.prompt).toBe(l * l);
+        expect(v?.kind, q.prompt).toBe('solid-figure');
+        if (v?.kind === 'solid-figure') {
+          expect([v.solid, v.radius, v.height], q.prompt).toEqual(['cone', r, h]);
+          expect(v.labels, q.prompt).toEqual({ radius: `${r} cm`, height: `${h} cm`, slant: `${l} cm` });
+        }
+        그림수 += 1;
+      }
+      const 구 = /^지름이 (\d+) cm인 구/.exec(q.prompt);
+      if (구) {
+        expect(v?.kind, q.prompt).toBe('solid-figure');
+        if (v?.kind === 'solid-figure') {
+          expect(v.solid, q.prompt).toBe('sphere');
+          expect((v.radius ?? 0) * 2, q.prompt).toBe(Number(구[1]));
+          expect(v.labels, q.prompt).toEqual({ diameter: `${구[1]} cm` });
+        }
+        그림수 += 1;
+      }
+    }
+    expect(그림수).toBeGreaterThan(20);
+  });
+});
