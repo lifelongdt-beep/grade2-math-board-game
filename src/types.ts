@@ -1042,6 +1042,46 @@ export interface CircleRegionVisual {
   labels: { outer: string; inner?: string };
 }
 
+/**
+ * 눈금이 있는 비커입니다(3-2 5단원 들이 재기). amountMl만큼 물이 담겨
+ * 있습니다. minorMl마다 작은 눈금, majorMl마다 긴 눈금과 수를 씁니다.
+ */
+export interface BeakerVisual {
+  kind: 'beaker';
+  label: string;
+  maxMl: number;
+  amountMl: number;
+  majorMl: number;
+  minorMl: number;
+}
+
+/**
+ * 바늘이 도는 저울입니다(3-2 5단원 무게 재기). 0이 맨 위이고 시계 방향으로
+ * maxG까지 한 바퀴입니다.
+ */
+export interface ScaleDialVisual {
+  kind: 'scale-dial';
+  label: string;
+  maxG: number;
+  amountG: number;
+  majorG: number;
+  minorG: number;
+}
+
+/**
+ * 양팔저울입니다(3-2 5단원 무게 비교). tilt는 무거운 쪽입니다.
+ * right.count·unitG가 있으면 오른쪽에 그 무게의 추를 그 개수만큼 올립니다.
+ * leftG는 왼쪽 물건의 무게입니다(자세히 보기에서 추를 올려 수평을 맞출 때 씁니다).
+ */
+export interface BalanceVisual {
+  kind: 'balance';
+  label: string;
+  left: { name: string; big?: boolean };
+  right: { name: string; big?: boolean; count?: number; unitG?: number };
+  tilt: 'left' | 'right' | 'level';
+  leftG?: number;
+}
+
 export interface GridMoveVisual {
   kind: 'grid-move';
   label: string;
@@ -1105,6 +1145,9 @@ export type QuestionVisual =
   | StackPlanVisual
   | SolidFigureVisual
   | SolidNetVisual
+  | BeakerVisual
+  | ScaleDialVisual
+  | BalanceVisual
   | CircleRegionVisual
   | ProtractorVisual
   | AngleSplitVisual

@@ -1,5 +1,6 @@
 import { ShareScene } from './ShareScene';
 import { AngleGraphic, AngleSplitGraphic, BarGraphGraphic, GridMoveGraphic, LineGraphGraphic, NumberArrayGraphic, ParallelDistanceGraphic, ProtractorGraphic } from './Grade4Visuals';
+import { BalanceGraphic, BeakerGraphic, ScaleDialGraphic } from './Grade3Visuals';
 import { CircleRegionGraphic, RatioGraphGraphic, SolidFigureGraphic, SolidNetGraphic, StackPlanGraphic } from './Grade6Visuals';
 import { CompareGraphic, CountersGraphic, SolidsGraphic, TenFrameGraphic, TensOnesGraphic } from './Grade1Visuals';
 import type { PlaneShapeVisualItem, QuestionVisual } from '../types';
@@ -3135,7 +3136,9 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
         // 그래프의 눈금 숫자가 읽을 수 없을 만큼 작아집니다.
         visual.kind === 'protractor' || visual.kind === 'bar-graph' || visual.kind === 'line-graph' || (visual.kind === 'ratio-graph' && visual.shape === 'pie') ||
           // 입체도형과 전개도는 길이를 적은 글자를 읽어야 합니다.
-          visual.kind === 'solid-figure' || visual.kind === 'solid-net' || visual.kind === 'circle-region'
+          visual.kind === 'solid-figure' || visual.kind === 'solid-net' || visual.kind === 'circle-region' ||
+          // 눈금을 읽는 그림입니다.
+          visual.kind === 'beaker' || visual.kind === 'scale-dial' || visual.kind === 'balance'
           ? 'is-scale'
           : '',
         className,
@@ -3194,6 +3197,9 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'solid-figure' && <SolidFigureGraphic visual={visual} />}
       {visual.kind === 'solid-net' && <SolidNetGraphic visual={visual} />}
       {visual.kind === 'circle-region' && <CircleRegionGraphic visual={visual} />}
+      {visual.kind === 'beaker' && <BeakerGraphic visual={visual} />}
+      {visual.kind === 'scale-dial' && <ScaleDialGraphic visual={visual} />}
+      {visual.kind === 'balance' && <BalanceGraphic visual={visual} />}
     </figure>
   );
 }

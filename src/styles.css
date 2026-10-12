@@ -7241,3 +7241,74 @@ body::before {
   .expr-hl, .chain-new, .dec-hop { animation: none; opacity: 1; }
   .dec-point { transition: none; }
 }
+
+/* ── 3학년 자세히 보기 실험실(Grade3Labs.tsx) ───────────────────────
+   그림이 주인공입니다. 단추는 그림 아래에 크게 두어 손가락으로 쉽게
+   누르게 하고, 읽은 값은 그 아래 한 줄로 씁니다. */
+.g3-lab {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.g3-lab-stage {
+  width: 100%;
+  max-width: 520px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #f6fcff;
+  padding: 6px;
+  user-select: none;
+}
+
+.g3-lab-stage svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 46vh;
+}
+
+.g3-lab-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.g3-lab-button {
+  min-height: 44px;
+  border: 2px solid var(--teal);
+  border-radius: 999px;
+  background: #f1fcfc;
+  padding: 6px 16px;
+  color: var(--teal-dark);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.g3-lab-button:disabled {
+  opacity: 0.45;
+}
+
+.g3-lab-readout {
+  margin: 0;
+  max-width: 560px;
+  text-align: center;
+  color: #24364a;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.g3-lab-readout strong {
+  color: var(--teal-dark);
+  font-size: 19px;
+}
+
+.g3-lab-tip {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}

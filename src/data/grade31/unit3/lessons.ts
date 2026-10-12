@@ -279,6 +279,11 @@ const 묶음그림문항: G5Family = {
 };
 
 // ── 4차시: 곱셈과 나눗셈의 관계 ─────────────────────────────────────
+// 지도서는 같은 배열 그림 하나를 곱셈식 하나와 나눗셈식 둘로 읽게 합니다.
+// ●×▲ 배열은 ▲줄로 보면 ■÷●=▲, ●칸으로 보면 ■÷▲=●입니다. 식만 주면
+// 세 수의 자리를 외워서 바꾸게 되므로 배열을 함께 보여 줍니다.
+const 관계배열 = (b: number, q: number): ArrayVisual => ({ kind: 'array', label: `${b}개씩 ${q}줄`, rows: q, columns: b, hideCaption: true });
+
 const 곱셈에서나눗셈문항: G5Family = {
   id: 'mul-to-div',
   make: (seed, lv) => {
@@ -302,6 +307,7 @@ const 곱셈에서나눗셈문항: G5Family = {
         `그러므로 ${d.a}÷${d.b}=${d.q}, ${d.a}÷${d.q}=${d.b}입니다.`,
       ],
       misconceptionTip: '곱하는 두 수를 나누면 안 됩니다. 곱이 나누어지는 수가 됩니다.',
+      visual: 관계배열(d.b, d.q),
     };
   },
 };
@@ -323,6 +329,7 @@ const 나눗셈에서곱셈문항: G5Family = {
       hint: '나누는 수와 몫을 곱하면 무엇이 되어야 할까요?',
       steps: [`나누는 수 ${gwa(String(d.b))} 몫 ${eul(String(d.q))} 곱하면 나누어지는 수 ${d.a}입니다.`, `그러므로 곱셈식은 ${answer}입니다.`],
       misconceptionTip: '나누어지는 수에 나누는 수를 곱하면 안 됩니다.',
+      visual: 관계배열(d.b, d.q),
     };
   },
 };
@@ -346,6 +353,7 @@ const 같은상황문항: G5Family = {
       steps: [`전체 ${eul(`${d.a}${thing.단위}`)} ${d.b}${thing.단위}씩 묶으면 ${d.q}묶음입니다.`, `그러므로 나눗셈식은 ${식(d)}입니다.`],
       misconceptionTip: '나눗셈식의 맨 앞에는 전체의 수를 씁니다. 묶음의 수를 구할 때는 한 묶음의 수로 나눕니다.',
       selfCheck: '나눗셈식의 몫이 묻는 것(묶음의 수)과 같은가요?',
+      visual: 관계배열(d.b, d.q),
     };
   },
 };
