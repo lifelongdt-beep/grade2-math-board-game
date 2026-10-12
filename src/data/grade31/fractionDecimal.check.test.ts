@@ -213,3 +213,26 @@ describe('3-1 6단원 분수와 소수', () => {
     }
   });
 });
+
+// ════════════════════════════════════════════════════════════════════
+// 소수 띠 그림이 문항의 수와 같습니다
+// ════════════════════════════════════════════════════════════════════
+describe('3-1 소수 띠 그림', () => {
+  it('칠한 칸의 수가 0.1의 개수와 같습니다', () => {
+    let 본 = 0;
+    for (const q of 문항들) {
+      const v = q.visual;
+      const 열의 = /^(\d+)\/10을\(를\)|^(\d+)\/10[을를] 소수로/.exec(q.prompt);
+      const 소수 = /^(\d+)\.(\d)[은는을를]/.exec(q.prompt) ?? /^0\.1이 (\d+)개인 수/.exec(q.prompt);
+      let 기대: number | null = null;
+      if (열의) 기대 = Number(열의[1] ?? 열의[2]);
+      else if (소수 && 소수.length === 3) 기대 = Number(소수[1]) * 10 + Number(소수[2]);
+      else if (소수) 기대 = Number(소수[1]);
+      if (기대 === null || v?.kind !== 'partition' || !v.figures.every((f) => f.shape === 'bar' && f.parts === 10)) continue;
+      본 += 1;
+      expect(v.figures.reduce((s, f) => s + f.shaded.length, 0), q.prompt).toBe(기대);
+      expect(v.figures.length, q.prompt).toBe(Math.ceil(기대 / 10));
+    }
+    expect(본).toBeGreaterThan(20);
+  });
+});
