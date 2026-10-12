@@ -17310,6 +17310,52 @@ const questionsFor = (
 // 고르지 않았거나 모두 고르면 2~9단이 전부 나옵니다.
 export const ALL_CASTLE_DEFENSE_DANS = [2, 3, 4, 5, 6, 7, 8, 9];
 
+// 3-1 3단원 나눗셈의 마지막 차시는 같은 게임을 나눗셈으로 합니다.
+// 단원 수준 그대로 곱셈구구 안에서 나누어떨어지는 나눗셈만 냅니다:
+// 나누는 수 2~9(학생이 고름), 몫 1~9, 나누어지는 수 81 이하, 나머지 없음,
+// 0 없음. 나누는 수를 고르는 단추는 구구단 단추를 그대로 씁니다.
+export const CASTLE_MULTIPLY_TITLE = '구구단, 몬스터를 막아라!';
+export const CASTLE_DIVIDE_TITLE = '나눗셈, 몬스터를 막아라!';
+export const isCastleLesson = (title: string) => title === CASTLE_MULTIPLY_TITLE || title === CASTLE_DIVIDE_TITLE;
+
+const generateCastleDivisionQuestions = (lesson: Lesson, difficulty: Difficulty, divisors: number[]): Question[] => {
+  const combos: Array<[number, number]> = [];
+  for (const b of divisors) {
+    for (let q = 1; q <= 9; q += 1) combos.push([b * q, b]);
+  }
+  const seed = lesson.unitNo * 101 + lesson.lessonNo * 17 + difficultyIndex[difficulty] * 13 + 7;
+  const picks = pickSome(combos, seed, Math.min(30, combos.length));
+
+  return picks.map(([a, b], slot) => {
+    const answer = a / b;
+    const question = makeQuestion(
+      lesson, difficulty, slot,
+      `${a} ÷ ${b} = 얼마일까요?`,
+      answer,
+      // 보기도 몫의 범위(1~9) 안에서 고릅니다. 나누는 수를 몫으로 착각하는 보기를 하나 둡니다.
+      [answer - 1, answer + 1, b, answer - 2, answer + 2, answer + 3, answer - 3].filter((x, i, xs) => x >= 1 && x <= 9 && x !== answer && xs.indexOf(x) === i).slice(0, 3),
+      `${b} × ${answer} = ${a}이므로 ${a} ÷ ${b} = ${answer}입니다.`,
+      'division', '곱셈구구로 나눗셈의 몫 빠르게 구하기',
+    );
+    // 난이도별 보기 손질(tuneWrongsForDifficulty)이 10 이상의 수를 끼워 넣지
+    // 않도록, 보기 네 개를 1~9 안에서 직접 정해 차례만 돌립니다.
+    const 틀린 = [answer - 1, answer + 1, b, answer - 2, answer + 2, answer + 3, answer - 3]
+      .filter((x, i, xs) => x >= 1 && x <= 9 && x !== answer && xs.indexOf(x) === i)
+      .slice(0, 3);
+    const 보기 = [answer, ...틀린].sort((x, y) => x - y).map(String);
+    const 돌림 = (slot * 3 + a) % 보기.length;
+    const choices = [...보기.slice(돌림), ...보기.slice(0, 돌림)];
+    return {
+      ...question,
+      choices,
+      answerIndex: choices.indexOf(String(answer)),
+      answer: String(answer),
+      id: `${lesson.id}-${difficulty}-${slot}`,
+      basePrompt: question.prompt,
+    };
+  });
+};
+
 export interface GenerateQuestionsOptions {
   castleDans?: number[];
 }
@@ -17375,6 +17421,10 @@ export const generateQuestions = (
   difficulty: Difficulty,
   options?: GenerateQuestionsOptions,
 ): Question[] => {
+  if (lesson.title === CASTLE_DIVIDE_TITLE) {
+    const divisors = options?.castleDans?.length ? options.castleDans : ALL_CASTLE_DEFENSE_DANS;
+    return generateCastleDivisionQuestions(lesson, difficulty, divisors);
+  }
   // 5학년 차시는 자기 길로 갑니다. 아래의 생성기들은 모두 2학년 차시
   // 제목에 맞추어 갈래를 정하므로, 5학년 차시가 여기까지 내려오면
   // 어느 것도 맞지 않아 맨 끝의 기본 문항으로 떨어집니다. 그러면 5학년

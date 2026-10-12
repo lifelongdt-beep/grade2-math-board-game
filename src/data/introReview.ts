@@ -112,7 +112,7 @@ const 모든단원 = [...curriculum11, ...curriculum12, ...curriculum, ...curric
 /** 단원 도입 차시인지(2-2 2단원은 1차시가 구구단 놀이라 2차시가 도입입니다) */
 export const 도입차시인가 = (lesson: Lesson) => lesson.title === '단원 도입';
 
-const 놀이차시 = new Set(['구구단, 몬스터를 막아라!']);
+const 놀이차시 = new Set(['구구단, 몬스터를 막아라!', '나눗셈, 몬스터를 막아라!']);
 
 /** 단원 도입 차시가 복습할 앞 단원의 차시들. 표에 없으면 null입니다. */
 export const 도입복습차시 = (lesson: Lesson): Lesson[] | null => {
