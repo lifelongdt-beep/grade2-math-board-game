@@ -209,7 +209,7 @@ export interface CubePatternVisual {
 }
 
 export interface CubeViewPattern {
-  label: '앞' | '옆' | '위' | '보임';
+  label: '앞' | '옆' | '위' | '보임' | '1층' | '2층' | '3층';
   cells: boolean[][];
 }
 
@@ -999,6 +999,26 @@ export interface StackPlanVisual {
 }
 
 /**
+ * 쌓기나무로 쌓은 모양을 앞쪽 오른쪽 위에서 비스듬히 내려다본 그림입니다
+ * (6-2 3단원). heights[줄][열]은 stack-plan과 같습니다 — 줄은 뒤에서 앞으로,
+ * 열은 왼쪽에서 오른쪽으로. 앞면이 왼쪽 아래, 옆면이 오른쪽 아래로 보이고
+ * 그림 밑에 '앞', '옆'을 적습니다.
+ */
+export interface StackIsoVisual {
+  kind: 'stack-iso';
+  label: string;
+  heights: number[][];
+  /** 여러 모양을 가, 나, 다 … 이름을 붙여 나란히 그립니다. 있으면 heights 대신 씁니다. */
+  items?: Array<{ name: string; heights: number[][] }>;
+  /** 위에서 본 모양에 수를 쓴 것을 맨 왼쪽에 함께 그립니다. */
+  plan?: number[][];
+  /** 쌓은 모양 대신 위에서 본 모양(plan)만 그립니다. */
+  planOnly?: boolean;
+  /** 보기로 고를 '본 모양'들입니다(가, 나, 다, 라). cells[줄][칸], 위쪽 줄부터. */
+  views?: Array<{ name: string; cells: boolean[][] }>;
+}
+
+/**
  * 입체도형의 겨냥도입니다(6-1 2단원 각기둥과 각뿔, 6-2 6단원 원기둥·원뿔·구).
  * 보이지 않는 모서리는 점선으로 그립니다. 각기둥·각뿔은 sides가 밑면의
  * 변의 수입니다. 원기둥·원뿔·구는 radius·height를 비율 그대로 그리고,
@@ -1007,11 +1027,21 @@ export interface StackPlanVisual {
 export interface SolidFigureVisual {
   kind: 'solid-figure';
   label: string;
-  solid: 'prism' | 'pyramid' | 'cylinder' | 'cone' | 'sphere';
+  solid: 'prism' | 'pyramid' | 'frustum' | 'cylinder' | 'cone' | 'sphere';
   sides?: number;
   radius?: number;
   height?: number;
   labels?: { radius?: string; diameter?: string; height?: string; slant?: string };
+  /** 각기둥을 옆으로 눕혀 그립니다(밑면이 왼쪽과 오른쪽). */
+  lying?: boolean;
+  /** 보이는 밑면(base)이나 옆면(side) 하나를 색칠합니다. */
+  shade?: 'base' | 'side';
+  /** 각기둥·각뿔의 모서리 길이입니다. base는 밑면의 한 변, lateral은 옆 모서리. */
+  edgeLabels?: { base?: string; lateral?: string };
+  /** 옆 모서리 ÷ 밑면의 한 변. 길이를 적은 그림이 그 길이의 비율대로 그려지게 합니다. */
+  edgeRatio?: number;
+  /** 여러 입체도형을 가, 나, 다 … 이름을 붙여 늘어놓습니다. */
+  items?: Array<{ name: string; solid: 'prism' | 'pyramid' | 'frustum'; sides: number; lying?: boolean }>;
 }
 
 /**
@@ -1143,6 +1173,7 @@ export type QuestionVisual =
   | GridMoveVisual
   | RatioGraphVisual
   | StackPlanVisual
+  | StackIsoVisual
   | SolidFigureVisual
   | SolidNetVisual
   | BeakerVisual

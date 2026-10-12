@@ -1,6 +1,7 @@
 import type { Difficulty, NumberArrayVisual } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이, 수보기 } from '../grade11/common';
+import { 규칙말하기 } from '../grade1/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 1-2 5단원 규칙 찾기
@@ -270,21 +271,21 @@ const 기호로: G5Family = {
 export const unit5Lesson12 = (lessonNo: number, lv: Difficulty): G5Family[] | null => {
   switch (lessonNo) {
     case 1:
-      return [다음것(기호, 'shape')];
+      return [다음것(기호, 'shape'), 다음것(색, 'color'), 되풀이부분];
     case 2:
-      if (lv === '하') return [다음것(기호, 'shape'), 다음것(색, 'color')];
-      if (lv === '중') return [다음것(기호, 'shape'), 되풀이부분, 다음것(색, 'color')];
-      return [다음것(기호, 'shape'), 되풀이부분];
+      if (lv === '하') return [다음것(기호, 'shape'), 다음것(색, 'color'), 되풀이부분];
+      if (lv === '중') return [다음것(기호, 'shape'), 되풀이부분, 다음것(색, 'color'), 몇째것];
+      return [다음것(기호, 'shape'), 되풀이부분, 몇째것];
     case 3:
-      if (lv === '하') return [되풀이부분, 다음것(['○', '●', '◎', '◇'], 'stone')];
+      if (lv === '하') return [되풀이부분, 다음것(['○', '●', '◎', '◇'], 'stone'), 몇째것];
       return [몇째것, 되풀이부분];
     case 4:
-      if (lv === '하') return [다음것(색, 'color')];
-      return [다음것(색, 'color'), 다음것(기호, 'shape')];
+      if (lv === '하') return [다음것(색, 'color'), 되풀이부분, 몇째것];
+      return [다음것(색, 'color'), 다음것(기호, 'shape'), 되풀이부분, 몇째것];
     case 5:
-      if (lv === '하') return [수배열(false), 몇씩];
-      if (lv === '중') return [수배열(false), 몇씩, 수배열(true)];
-      return [수배열(true), 몇씩];
+      if (lv === '하') return [수배열(false), 몇씩, 규칙말하기('1-2-5', 100)];
+      if (lv === '중') return [수배열(false), 몇씩, 수배열(true), 규칙말하기('1-2-5', 100)];
+      return [수배열(true), 몇씩, 규칙말하기('1-2-5', 100)];
     case 6:
       return [배열표];
     case 7:

@@ -2,6 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { eun, i as 이가 } from '../grade5/util';
 import { 고르개, 사이 } from '../grade11/common';
+import { 네모숫자, 뛰어세기거꾸로, 자릿값배, 큰수카드 } from './thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 4-1 1단원 큰 수
@@ -363,17 +364,17 @@ export const unit1Lesson41 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
       return lv === '하' ? [만알기, 지폐, 천의몇개] : [만알기, 천의몇개, 지폐];
     case 3:
       if (lv === '하') return [자리모아쓰기(5), 숫자의값(5)];
-      return [자리모아쓰기(5), 읽기고르기(5), 숫자의값(5)];
+      return [자리모아쓰기(5), 읽기고르기(5), 숫자의값(5), 자릿값배];
     case 4:
       if (lv === '하') return [숫자의값(7), 자리모아쓰기(6)];
-      return [읽기고르기(8), 숫자의값(8), 자리모아쓰기(7)];
+      return [읽기고르기(8), 숫자의값(8), 자리모아쓰기(7), 자릿값배];
     case 5:
       if (lv === '하') return [억몇배, 억조쓰기];
       return [억조쓰기, 읽기고르기(11), 숫자의값(12)];
     case 6:
-      return lv === '상' ? [뛰어세기(true), 뛰어세기(false)] : [뛰어세기(false)];
+      return lv === '하' ? [뛰어세기(false), 뛰어세기거꾸로] : [뛰어세기(true), 뛰어세기(false), 뛰어세기거꾸로];
     case 7:
-      return lv === '상' ? [가장큰수, 크기비교] : [크기비교];
+      return lv === '하' ? [크기비교, 큰수카드] : [가장큰수, 크기비교, 네모숫자, 큰수카드];
     default:
       return null;
   }

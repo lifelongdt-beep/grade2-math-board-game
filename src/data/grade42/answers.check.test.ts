@@ -65,6 +65,8 @@ describe('4-2 1단원 분수의 덧셈과 뺄셈', () => {
   it('계산이 맞고, 분모는 그대로이며 약분하지 않고, 가분수는 대분수로 씁니다', () => {
     let count = 0;
     for (const { q } of 단원(1)) {
+      // 생각하는 문항(thinking/)은 따로 검사합니다.
+      if (/□|어떤 수|수 카드|끈 /.test(q.prompt)) continue;
       const m = /^(.+?)([+-])(.+?)(은|는) 얼마일까요/.exec(q.prompt);
       const story = /(?:이|가) (.+?) L 있었는데 (.+?) L를 (더 부었습니다|마셨습니다)/.exec(q.prompt);
       const parts = m ? [m[1], m[2], m[3]] : story ? [story[1], story[3].startsWith('더') ? '+' : '-', story[2]] : null;
@@ -87,7 +89,8 @@ describe('4-2 1단원 분수의 덧셈과 뺄셈', () => {
       else expect(ans, q.prompt).toMatch(new RegExp(`^${Math.floor(want / d)}(과|와) ${want % d}/${d}$`));
       count += 1;
     }
-    expect(count).toBeGreaterThan(300);
+    // 생각하는 문항이 섞여 계산 문항 수는 줄었습니다. 그쪽은 thinking/에서 검사합니다.
+    expect(count).toBeGreaterThan(220);
   });
 
   it('가분수를 대분수로 바꾸는 답이 맞습니다', () => {

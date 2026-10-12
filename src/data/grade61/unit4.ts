@@ -2,6 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { frac, text } from '../grade5/fraction';
 import { 고르개, 사이 } from '../grade11/common';
+import { 백분율거꾸로, 비율견주기 } from '../grade6/thinking';
 import { 소수 } from '../grade42/unit3';
 
 // ════════════════════════════════════════════════════════════════════
@@ -263,17 +264,17 @@ export const unit4Lesson61 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 1:
       return [차와배, 비쓰기];
     case 2:
-      return [차와배];
+      return [차와배, 비쓰기];
     case 3:
       return lv === '하' ? [비쓰기] : [비쓰기, 상황비];
     case 4:
-      return [비율];
+      return [비율, 비율견주기, 비쓰기];
     case 5:
-      return [생활비율];
+      return [생활비율, 비율견주기];
     case 6:
-      return [백분율];
+      return [백분율, 비율견주기];
     case 7:
-      return [생활백분율];
+      return [생활백분율, 백분율거꾸로, 비율견주기];
     default:
       return null;
   }

@@ -2,6 +2,7 @@ import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { eul, eun } from '../grade5/util';
 import { 고르개, 사이, 수보기, 우리말로, 한자어로 } from '../grade11/common';
+import { 두단계수, 사이개수, 수카드몇십몇, 짝홀사이 } from '../grade1/thinking';
 
 // ════════════════════════════════════════════════════════════════════
 // 1-2 1단원 100까지의 수
@@ -349,15 +350,15 @@ export const unit1Lesson12 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 4:
       return lv === '하' ? [장면읽기, 읽기('99-read', 51, 99)] : [장면읽기];
     case 5:
-      if (lv === '하') return [순서카드('order-up', false), 하나큰작은];
-      if (lv === '중') return [순서카드('order-up', false), 하나큰작은, 백];
-      return [순서카드('order-down', true), 백, 하나큰작은];
+      if (lv === '하') return [순서카드('order-up', false), 하나큰작은, 사이개수('1-2-1', 99)];
+      if (lv === '중') return [순서카드('order-up', false), 하나큰작은, 백, 사이개수('1-2-1', 99), 두단계수('1-2-1', 99)];
+      return [순서카드('order-down', true), 백, 하나큰작은, 두단계수('1-2-1', 99, 10), 사이개수('1-2-1', 99)];
     case 6:
-      if (lv === '하') return [부등호];
-      return [부등호, 가장큰수];
+      if (lv === '하') return [부등호, 수카드몇십몇('1-2-1', 99)];
+      return [부등호, 가장큰수, 수카드몇십몇('1-2-1', 99)];
     case 7:
-      if (lv === '하') return [짝짓기그림];
-      return [짝수고르기('짝수'), 짝수고르기('홀수'), 짝짓기그림];
+      if (lv === '하') return [짝짓기그림, 짝수고르기('짝수')];
+      return [짝수고르기('짝수'), 짝수고르기('홀수'), 짝짓기그림, 짝홀사이('1-2-1')];
     default:
       return null;
   }
