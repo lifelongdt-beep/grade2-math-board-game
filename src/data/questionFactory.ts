@@ -31,6 +31,7 @@ import {
 } from './lifeContexts';
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, PlaneShapeKind, PlaneShapeVisualItem, Question, QuestionVisual } from '../types';
 import { questionBank } from './questionBank';
+import { 도입복습차시 } from './introReview';
 import { generateGrade5Questions } from './grade5';
 import { generateGrade51Questions } from './grade51';
 import { generateGrade31Questions } from './grade31';
@@ -17336,6 +17337,39 @@ const generateCastleDefenseQuestions = (lesson: Lesson, difficulty: Difficulty, 
   });
 };
 
+// 수업에서 실제로 내는 문항입니다. 단원 도입 차시는 이 단원으로 이어지는
+// 앞 학기·앞 학년 단원을 고루 섞어 복습합니다(introReview.ts). 앞 단원
+// 차시마다 돌아가며 한 문항씩 가져오고, 같은 문항은 거릅니다. 앞 단원이
+// 없는 도입 차시와 다른 차시는 generateQuestions 그대로입니다.
+// 가져온 문항은 저마다 자기 차시의 검사(generateQuestions)를 이미 거친
+// 문항입니다.
+export const generateClassQuestions = (
+  lesson: Lesson,
+  difficulty: Difficulty,
+  options?: GenerateQuestionsOptions,
+): Question[] => {
+  const 자기것 = generateQuestions(lesson, difficulty, options);
+  const 앞차시들 = 도입복습차시(lesson);
+  if (!앞차시들) return 자기것;
+  const 줄들 = 앞차시들.map((l) => generateQuestions(l, difficulty)).filter((qs) => qs.length > 0);
+  if (줄들.length === 0) return 자기것;
+  const 목표 = Math.max(자기것.length, 20);
+  const 본 = new Set<string>();
+  const 모음: Question[] = [];
+  for (let 차례 = 0; 모음.length < 목표 && 줄들.some((qs) => 차례 < qs.length); 차례 += 1) {
+    for (const qs of 줄들) {
+      const q = qs[차례];
+      if (!q || 모음.length >= 목표) continue;
+      const 열쇠 = `${q.basePrompt ?? q.prompt}|${q.answer}|${q.lessonId}`;
+      if (본.has(열쇠)) continue;
+      본.add(열쇠);
+      모음.push({ ...q, id: `${lesson.id}-${difficulty}-review-${모음.length + 1}`, lessonId: lesson.id, difficulty });
+    }
+  }
+  return 모음;
+};
+
+/** 한 차시의 문항입니다. 차시마다의 검사는 모두 이것을 봅니다. */
 export const generateQuestions = (
   lesson: Lesson,
   difficulty: Difficulty,
