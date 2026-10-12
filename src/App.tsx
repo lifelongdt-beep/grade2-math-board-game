@@ -74,7 +74,7 @@ import { curriculum42 } from './data/curriculum42';
 import { curriculum61 } from './data/curriculum61';
 import { curriculum62 } from './data/curriculum62';
 import { curriculum32 } from './data/curriculum32';
-import { generateQuestions, ALL_CASTLE_DEFENSE_DANS } from './data/questionFactory';
+import { generateClassQuestions, ALL_CASTLE_DEFENSE_DANS, CASTLE_DIVIDE_TITLE, isCastleLesson } from './data/questionFactory';
 import type { AnswerRecord, ConceptTag, Difficulty, Lesson, Player, PlayerQuestionState, Question, SessionDuration, Unit } from './types';
 
 // 자리 색은 빨강·주황·노랑·초록·파랑 순서입니다. 아이들이 "나는 노랑" 하고
@@ -366,8 +366,9 @@ const buildScopedQuestions = (
   castleDans: number[],
 ): Question[] => {
   // castleDans는 '구구단, 몬스터를 막아라!'만 읽습니다. 다른 차시는
-  // generateQuestions 안에서 조용히 무시합니다.
-  const questions = lessons.flatMap((sourceLesson) => generateQuestions(sourceLesson, difficulty, { castleDans }));
+  // generateQuestions 안에서 조용히 무시합니다. 단원 도입 차시는 앞 단원
+  // 종합 문제로 바뀝니다(generateClassQuestions).
+  const questions = lessons.flatMap((sourceLesson) => generateClassQuestions(sourceLesson, difficulty, { castleDans }));
 
   // 한 차시를 고른 경우에도 순서를 섞습니다. 섞지 않으면 수업을 다시 해도
   // 늘 같은 순서로 나와 학생이 순서를 외워 버립니다.
@@ -934,7 +935,9 @@ function App() {
   const accuracy = sessionRecords.length === 0 ? 0 : Math.round((correctCount / sessionRecords.length) * 100);
   // '구구단, 몬스터를 막아라!'만 문제 자리를 성벽·몬스터 그림으로 바꿉니다.
   // 정답을 고르고 다음 문제로 넘어가는 방식은 다른 차시와 똑같습니다.
-  const isCastleDefense = lesson.title === '구구단, 몬스터를 막아라!';
+  // 3-1 '나눗셈, 몬스터를 막아라!'도 같은 그림을 씁니다(단추는 나누는 수).
+  const isCastleDefense = isCastleLesson(lesson.title);
+  const isCastleDivide = lesson.title === CASTLE_DIVIDE_TITLE;
   const CASTLE_HEARTS_MAX = 8;
 
   // 한 단계는 아이 한 명당 여섯 문제입니다.
@@ -1528,7 +1531,7 @@ function App() {
         </section>
         {isCastleDefense && (
           <section>
-            <h3>출제할 구구단</h3>
+            <h3>{isCastleDivide ? '출제할 나누는 수' : '출제할 구구단'}</h3>
             <div className="big-segmented castle-dan-options">
               {ALL_CASTLE_DEFENSE_DANS.map((dan) => (
                 <button
@@ -1538,7 +1541,7 @@ function App() {
                   onClick={() => toggleCastleDan(dan)}
                   aria-pressed={castleDans.includes(dan)}
                 >
-                  {dan}단
+                  {isCastleDivide ? `÷${dan}` : `${dan}단`}
                 </button>
               ))}
               <button

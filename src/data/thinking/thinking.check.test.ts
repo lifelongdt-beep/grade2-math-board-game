@@ -145,8 +145,51 @@ describe('생각하는 문항(4-1 큰 수·각도·이동·규칙)', () => {
       if (m) { expect(수(q.answer), p).toBe(360 - Number(m[1])); 센다('반대'); }
       m = /^(\d+), (\d+), (\d+), (\d+), …와 같은 규칙으로 수를 늘어놓을 때 (\d+)째 수/.exec(p);
       if (m) { const a = Number(m[1]); const d = Number(m[2]) - a; expect(Number(m[4]) - Number(m[3]), p).toBe(d); expect(Number(q.answer), p).toBe(a + (Number(m[5]) - 1) * d); 센다('몇째'); }
+      const 칸 = (h: number) => Math.min(h, 12 - h);
+      m = /^([\d시, ]+) 가운데 시계의 긴바늘과 짧은바늘이 이루는 작은 쪽의 각이 가장 (큰|작은) 시각/.exec(p);
+      if (m) {
+        const 시들 = m[1].split(', ').map((t) => Number(t.replace('시', '')));
+        const 칸들 = 시들.map(칸);
+        expect(new Set(칸들).size, p).toBe(4);
+        const 목표 = m[2] === '큰' ? Math.max(...칸들) : Math.min(...칸들);
+        expect(q.answer, p).toBe(`${시들[칸들.indexOf(목표)]}시`);
+        센다('시계비교');
+      }
+      m = /^(\d+)시 정각일 때 시계의 긴바늘과 짧은바늘이 이루는 작은 쪽의 각도는 몇 도/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe(칸(Number(m[1])) * 30); 센다('시계각도'); }
+      if (/^세 각의 크기가 모두 같은 삼각형/.test(p)) { expect(q.answer).toBe('60°'); 센다('삼각조건'); }
+      if (/^한 각이 직각이고 나머지 두 각의 크기가 같은 삼각형/.test(p)) { expect(q.answer).toBe('45°'); 센다('삼각조건'); }
+      m = /^두 각의 크기가 같은 삼각형에서 나머지 한 각이 (\d+)°/.exec(p);
+      if (m) { expect(수(q.answer) * 2 + Number(m[1]), p).toBe(180); 센다('삼각조건'); }
+      m = /^삼각형 ㄱㄴㄷ에서 변 ㄴㄷ을 꼭짓점 ㄷ 쪽으로 늘였습니다. 각 ㄱㄴㄷ이 (\d+)°, 각 ㄴㄱㄷ이 (\d+)°/.exec(p);
+      if (m) { const ㄷ = 180 - Number(m[1]) - Number(m[2]); expect(수(q.answer), p).toBe(180 - ㄷ); 센다('삼각조건'); }
+      m = /^사각형의 네 각 가운데 세 각의 크기가 같고, 나머지 한 각은 (\d+)°/.exec(p);
+      if (m) { expect(수(q.answer) * 3 + Number(m[1]), p).toBe(360); 센다('사각조건'); }
+      m = /^사각형 ㄱㄴㄷㄹ에서 각 ㄱ이 (\d+)°, 각 ㄴ이 (\d+)°, 각 ㄷ이 (\d+)°입니다. 변 ㄷㄹ을/.exec(p);
+      if (m) { const ㄹ = 360 - Number(m[1]) - Number(m[2]) - Number(m[3]); expect(수(q.answer), p).toBe(180 - ㄹ); 센다('사각조건'); }
+      m = /^(\d+)×(\d+)(?:을|를) 계산하면 곱의 끝에 0이 몇 개/.exec(p);
+      if (m) { const 곱 = String(Number(m[1]) * Number(m[2])); expect(수(q.answer), p).toBe(곱.length - 곱.replace(/0+$/, '').length); 센다('끝0'); }
+      m = /^(\d+)원이 있습니다. 10000원이 되려면 (천|백|십) 원짜리 \S+ 몇 개 더/.exec(p);
+      if (m) { const 단위 = { 천: 1000, 백: 100, 십: 10 }[m[2]]!; expect(수(q.answer), p).toBe((10000 - Number(m[1])) / 단위); 센다('만되려면'); }
+      m = /^계산하지 않고 어림해 보세요. (\d+)÷(\d+)의 몫은 어느 범위/.exec(p);
+      if (m) {
+        const v = Number(m[1]) / Number(m[2]);
+        for (const c of q.choices) { const t = /^(\d+)(?:과|와) (\d+) 사이$/.exec(c)!; expect(Number(t[1]) < v && v < Number(t[2]), `${p} ${c}`).toBe(c === q.answer); }
+        센다('몫범위십');
+      }
+      if (/^계산하지 않고 어림하여 몫이 잘못된 식을/.test(p)) {
+        for (const c of q.choices) { const t = /^(\d+)÷(\d+)=(\d+)$/.exec(c)!; expect(Number(t[1]) / Number(t[2]) === Number(t[3]), c).toBe(c !== q.answer); }
+        센다('어림확인');
+      }
+      m = /^\S+ 하나에 \S+ (\d+)\S+씩 \S+ 수 있습니다. \S+ (\d+)\S+ 모두 \S+ \S+ (\d+)(?:개|대)로 충분할까요/.exec(p);
+      if (m) {
+        const [한번, 전체, 개수] = [1, 2, 3].map((k) => Number(m![k]));
+        expect(q.answer.startsWith(한번 * 개수 >= 전체 ? '충분' : '모자'), p).toBe(true);
+        if (한번 * 개수 < 전체) expect(q.answer, p).toMatch(new RegExp(`\\(${Math.ceil(전체 / 한번)}(개|대)가`));
+        센다('충분');
+      }
     }
-    for (const k of ['뛰어거꾸로', '몇번', '큰수카드', '네모숫자', '자릿값배', '삼각자', '다각형', '어림', '되돌기', '여러번', '반대', '몇째']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+    for (const k of ['몫범위십', '어림확인', '충분', '뛰어거꾸로', '몇번', '큰수카드', '네모숫자', '자릿값배', '삼각자', '다각형', '어림', '되돌기', '여러번', '반대', '몇째', '시계비교', '시계각도', '삼각조건', '사각조건', '끝0', '만되려면']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
   });
 });
 
@@ -252,8 +295,29 @@ describe('생각하는 문항(6학년)', () => {
       if (m) { expect(값(q.answer) ** 2 * 3, p).toBe(Number(m[1])); 센다('넓이거꾸로'); }
       m = /^원의 반지름을 (\d)배로 늘리면 (원주|넓이)/.exec(p);
       if (m) { expect(값(q.answer), p).toBe(Number(m[1]) ** (m[2] === '원주' ? 1 : 2)); 센다('배'); }
+      m = /^어떤 자연수를 (\d+)(?:으로|로) 나눈 몫을 분수로 나타내면 (\d+)\/(\d+)입니다. 어떤 수를 (\d+)(?:으로|로) 나눈 몫/.exec(p);
+      if (m) {
+        const 어떤 = Number(m[2]) / Number(m[3]) * Number(m[1]);
+        expect(같다(분수값(q.answer), 어떤 / Number(m[4])), p).toBe(true);
+        for (const c of q.choices.filter((c) => c !== q.answer)) expect(같다(분수값(c), 어떤 / Number(m[4])), c).toBe(false);
+        센다('몫분수거꾸로');
+      }
+      m = /^계산하지 않고 어림해 보세요. ([\d.]+)÷([\d.]+)의 몫은 어느 범위/.exec(p);
+      if (m) {
+        const v = Number(m[1]) / Number(m[2]);
+        const r = /^([\d.]+)(?:과|와) ([\d.]+) 사이$/.exec(q.answer)!;
+        expect(Number(r[1]) < v && v < Number(r[2]), p).toBe(true);
+        for (const c of q.choices.filter((c) => c !== q.answer)) { const t = /^([\d.]+)(?:과|와) ([\d.]+) 사이$/.exec(c)!; expect(Number(t[1]) < v && v < Number(t[2]), c).toBe(false); }
+        센다('몫사이');
+      }
+      if (/^계산하지 않고 어림하여 소수점을 잘못 찍은 식을/.test(p)) {
+        for (const c of q.choices) { const t = /^([\d.]+)÷(\d+)=([\d.]+)$/.exec(c)!; expect(같다(Number(t[1]) / Number(t[2]), Number(t[3])), c).toBe(c !== q.answer); }
+        센다('소수어림확인');
+      }
+      m = /([\d.]+) (m|L|kg)(?:를|을|으로) (?:\S+ )?(\d+)(?:명에게|개에|개를)/.exec(p);
+      if (m && /약 몇/.test(p)) { expect(수(q.answer), p).toBe(Math.round(Number(m[1]) / Number(m[3]))); 센다('소수어림문장'); }
     }
-    for (const k of ['곱어떤수', '나눔잘못', '몫1', '카드나눔', '소수점', '몫다름', '비율', '기준량', '할인', '톱니', '축척', '비차', '배분거꾸로', '원주거꾸로', '바퀴', '넓이거꾸로', '배']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+    for (const k of ['소수어림확인', '소수어림문장', '몫분수거꾸로', '몫사이', '곱어떤수', '나눔잘못', '몫1', '카드나눔', '소수점', '몫다름', '비율', '기준량', '할인', '톱니', '축척', '비차', '배분거꾸로', '원주거꾸로', '바퀴', '넓이거꾸로', '배']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
   });
 });
 
@@ -306,8 +370,65 @@ describe('생각하는 문항(1학년)', () => {
       }
       m = /^지금 시각은 (\d+)시( 30분)?입니다. 긴바늘이 (\d)바퀴 돌면/.exec(p);
       if (m) { const h = ((Number(m[1]) + Number(m[3]) - 1) % 12) + 1; expect(q.answer, p).toBe(`${h}시${m[2] ?? ''}`); 센다('시각'); }
+      m = /^수를 거꾸로 세었습니다. \(([\d?, ]+)\) \?에 알맞은 수/.exec(p);
+      if (m) {
+        const xs = m[1].split(', ');
+        const k = xs.indexOf('?');
+        expect(Number(q.answer), p).toBe(Number(xs[k - 1]) - 1);
+        expect(Number(xs[k + 1]), p).toBe(Number(q.answer) - 1);
+        센다('거꾸로');
+      }
+      m = /^10과 어떤 수를 모으면 (\d+)입니다/.exec(p);
+      if (m) { expect(Number(q.answer), p).toBe(Number(m[1]) - 10); 센다('십과몇'); }
+      m = /^\S+ (\d+)개를 한 봉지에 10개씩 (담으려고|담았습니다)/.exec(p);
+      if (m) {
+        const n = Number(m[1]);
+        expect(q.answer, p).toBe(m[2] === '담으려고' ? `${n / 10}개` : `${Math.floor(n / 10)}봉지, ${n % 10}개`);
+        센다('봉지');
+      }
+      m = /^10개씩 묶음 (\d+)개와 낱개 (\d+)개가 있습니다. 모두 몇 개/.exec(p);
+      if (m) { expect(수(q.answer), p).toBe(Number(m[1]) * 10 + Number(m[2])); 센다('낱개넘침'); }
+      m = /^\S+ 가, 나, 다의 .+?(?:을|를) 견주었습니다. (.)(?:은|는) (.)보다 (.+?)\. (.)(?:은|는) (.)보다 (.+?)\. 가장 (.+?) 것은/.exec(p);
+      if (m) {
+        const 큰말 = ['깁니다', '무겁습니다', '넓습니다', '많이 담깁니다'];
+        const 위: Record<string, number> = { 가: 0, 나: 0, 다: 0 };
+        // 'X는 Y보다 큰말'이면 X가 Y 위, 작은말이면 Y가 X 위
+        for (const [x, y, w] of [[m[1], m[2], m[3]], [m[4], m[5], m[6]]]) {
+          if (큰말.includes(w)) 위[x] += 1; else 위[y] += 1;
+        }
+        // 위에 두 번 올라선 것은 없고, 한 번도 안 내려간 것이 가장 큰 것
+        const 아래: Record<string, number> = { 가: 0, 나: 0, 다: 0 };
+        for (const [x, y, w] of [[m[1], m[2], m[3]], [m[4], m[5], m[6]]]) {
+          if (큰말.includes(w)) 아래[y] += 1; else 아래[x] += 1;
+        }
+        const 큰쪽 = /^(긴|무거운|넓은|많이 담기는)$/.test(m[7]);
+        const 이름들 = ['가', '나', '다'];
+        const 답 = 큰쪽 ? 이름들.find((n) => 아래[n] === 0 && 위[n] > 0) : 이름들.find((n) => 위[n] === 0 && 아래[n] > 0);
+        expect(q.answer, p).toBe(답);
+        센다('세가지');
+      }
+      m = /^(\d)□(?:은|는) (\d+)보다 (큽니다|작습니다)/.exec(p);
+      if (m) {
+        const n = Array.from({ length: 10 }, (_, d) => Number(m![1]) * 10 + d).filter((x) => (m![3] === '큽니다' ? x > Number(m![2]) : x < Number(m![2]))).length;
+        expect(수(q.answer), p).toBe(n);
+        센다('숫자넣기');
+      }
+      m = /^지우가 오후에 한 일입니다. (.+)\. 가장 (먼저|나중에) 한 일은/.exec(p);
+      if (m) {
+        const 일 = m[1].split(', ').map((t) => { const r = /^(.+): (\d+)시( 30분)?$/.exec(t)!; return { w: r[1], x: Number(r[2]) * 60 + (r[3] ? 30 : 0) }; });
+        const 정렬 = [...일].sort((a, b) => a.x - b.x);
+        expect(q.answer, p).toBe(m[2] === '먼저' ? 정렬[0].w : 정렬[정렬.length - 1].w);
+        센다('시각순서');
+      }
+      m = /^두 수를 더해서 (\d+)(?:이|가) 되는 것은/.exec(p);
+      if (m) {
+        const 합 = (t: string) => t.split(/과 |와 /).map(Number).reduce((s, x) => s + x, 0);
+        expect(합(q.answer), p).toBe(Number(m[1]));
+        for (const c of q.choices.filter((c) => c !== q.answer)) expect(합(c) === Number(m![1]), c).toBe(false);
+        센다('합짝고정');
+      }
     }
-    for (const k of ['빈칸', '합짝', '사이', '두단계', '식관계', '카드', '이야기', '짝홀', '시각']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+    for (const k of ['빈칸', '합짝', '사이', '두단계', '식관계', '카드', '이야기', '짝홀', '시각', '거꾸로', '십과몇', '봉지', '낱개넘침', '세가지', '숫자넣기', '시각순서', '합짝고정']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
   });
 });
 
@@ -341,8 +462,43 @@ describe('생각하는 문항(3학년 덧셈·뺄셈·시간·들이·무게)', 
       if (m) { expect(q.answer, p).toBe(Number(m[1]) < Number(m[2]) ? '가 컵' : '나 컵'); 센다('컵'); }
       m = /한쪽에 사과 (\d+)개, 다른 쪽에 귤 (\d+)개를 올렸더니 수평이 되었습니다. 귤 한 개의 무게가 (\d+) g/.exec(p);
       if (m) { expect(수(q.answer) * Number(m[1]), p).toBe(Number(m[2]) * Number(m[3])); 센다('저울'); }
+      m = /^(?:길이|걸린 시간|들이|무게)(?:을|를) 나타낸 것입니다. (.+)\. (가장 \S+|들이가 가장 \S+) (?:것은 어느 것|사람은 누구)일까요/.exec(p);
+      if (m) {
+        // '2 L 50 mL', '2500 mL', '1시간 15분', '75분' 같은 양을 작은 단위로 바꿉니다.
+        const 배: Record<string, number> = { cm: 10, m: 100, 시간: 60, 분: 60, L: 1000, kg: 1000 };
+        const 작은단위 = new Set(['mm', 'cm', '분', '초', 'mL', 'g']);
+        const 바꿈 = (t: string) => {
+          const 조각 = [...t.matchAll(/(\d+) ?(mm|mL|cm|m|시간|분|초|L|kg|g)/g)];
+          if (조각.length === 2) return Number(조각[0][1]) * 배[조각[0][2]] + Number(조각[1][1]);
+          const [, n, u] = 조각[0];
+          // 한 단위만 쓴 것: 견주는 네 양에서 작은 단위인지 큰 단위인지 가립니다.
+          const 작다 = u === 'cm' ? !/\d mm/.test(p) : u === '분' ? /시간/.test(p) : 작은단위.has(u);
+          return 작다 ? Number(n) : Number(n) * 배[u];
+        };
+        const 줄 = m[1].split(', ').map((t) => { const r = /^(\S+) (.+)$/.exec(t)!; return { 이름: r[1], 값: 바꿈(r[2]) }; });
+        const 큰쪽 = /(긴|오래|많은|무거운)$/.test(m[2]) || m[2].includes('많은');
+        const 값들 = 줄.map((x) => x.값);
+        expect(new Set(값들).size, p).toBe(값들.length);
+        const 답 = 줄.find((x) => x.값 === (큰쪽 ? Math.max(...값들) : Math.min(...값들)))!.이름;
+        expect(q.answer, p).toBe(답);
+        센다('단위견주기');
+      }
+      m = /^줄넘기를 (\d+)시 (\d+)분 (\d+)초에 시작하여 (\d+)시 (\d+)분 (\d+)초에 마쳤습니다/.exec(p);
+      if (m) {
+        const [a, b, c, d, e, f] = [1, 2, 3, 4, 5, 6].map((k) => Number(m![k]));
+        const 초 = d * 3600 + e * 60 + f - (a * 3600 + b * 60 + c);
+        expect(q.answer, p).toBe(`${Math.floor(초 / 60)}분 ${초 % 60}초`);
+        센다('걸린시간');
+      }
+      m = /물 (\d+) L (\d+) mL을\(?를?\)? ?더 부었더니 (\d+) L (\d+) mL/.exec(p) ?? /물 (\d+) L (\d+) mL(?:을|를) 더 부었더니 (\d+) L (\d+) mL/.exec(p);
+      if (m) { const 처음 = Number(m[3]) * 1000 + Number(m[4]) - (Number(m[1]) * 1000 + Number(m[2])); expect(q.answer, p).toBe(`${Math.floor(처음 / 1000)} L ${처음 % 1000} mL`); 센다('처음양'); }
+      m = /무게가 (\d+) kg (\d+) g(?:이|가) 되었습니다. 담은 귤의 무게가 (\d+) kg (\d+) g/.exec(p);
+      if (m) { const 처음 = Number(m[1]) * 1000 + Number(m[2]) - (Number(m[3]) * 1000 + Number(m[4])); expect(q.answer, p).toBe(`${Math.floor(처음 / 1000)} kg ${처음 % 1000} g`); 센다('처음양'); }
+      if (/긴바늘과 짧은바늘이 직각을 이루는 시각/.test(p)) { expect(['3시', '9시'].includes(q.answer), p).toBe(true); for (const c of q.choices.filter((c) => c !== q.answer)) expect(['3시', '9시'].includes(c), c).toBe(false); 센다('직각시각'); }
+      m = /^직사각형의 네 변의 길이의 합이 (\d+) cm입니다. 가로가 (\d+) cm라면/.exec(p);
+      if (m) { expect(수(q.answer) * 2 + Number(m[2]) * 2, p).toBe(Number(m[1])); 센다('직사각형'); }
     }
-    for (const k of ['덧어떤수', '뺄어떤수', '세자리카드', '시작시각', '컵', '저울']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+    for (const k of ['덧어떤수', '뺄어떤수', '세자리카드', '시작시각', '컵', '저울', '단위견주기', '걸린시간', '처음양', '직각시각', '직사각형']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
     expect((셈.get('덧잘못') ?? 0) + (셈.get('뺄잘못') ?? 0)).toBeGreaterThan(0);
   });
 });

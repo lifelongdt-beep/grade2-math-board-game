@@ -1,7 +1,7 @@
 import type { AngleVisual, Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
-import { 다각형각합, 삼각자각, 어림정확 } from './thinking';
+import { 다각형각합, 사각형조건각, 삼각자각, 삼각형조건각, 시계각도, 시계각비교, 어림정확 } from './thinking';
 import { 네각사각형, 삼각형 } from '../grade42/geom';
 
 // ════════════════════════════════════════════════════════════════════
@@ -311,20 +311,20 @@ export const unit2Lesson41 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 1:
       return [가장큰각(40), 일도];
     case 2:
-      return lv === '상' ? [가장큰각(15)] : [가장큰각(lv === '하' ? 40 : 25)];
+      return lv === '상' ? [가장큰각(15), 시계각비교] : [가장큰각(lv === '하' ? 40 : 25), 시계각비교];
     case 3:
       return lv === '하' ? [일도, 눈금읽기] : [눈금읽기, 일도];
     case 4:
-      if (lv === '하') return [그림분류, 예둔고르기('예각'), 예둔고르기('둔각')];
+      if (lv === '하') return [그림분류, 예둔고르기('예각'), 예둔고르기('둔각'), 시계각];
       return [예둔고르기('예각'), 예둔고르기('둔각'), 시계각, 그림분류];
     case 5:
-      return lv === '하' ? [어림, 눈금읽기] : [어림, 어림정확, 눈금읽기];
+      return lv === '하' ? [어림, 눈금읽기, 시계각도] : [어림, 어림정확, 눈금읽기, 시계각도];
     case 6:
-      return lv === '하' ? [합차, 직선나머지] : [합차, 직선나머지, 삼각자각, 시계각];
+      return lv === '하' ? [합차, 직선나머지, 삼각자각] : [합차, 직선나머지, 삼각자각, 시계각도];
     case 7:
-      return lv === '하' ? [삼각형나머지, 합까닭(true), 직선나머지] : [삼각형나머지, 합까닭(true), 삼각자각];
+      return lv === '하' ? [삼각형나머지, 합까닭(true), 직선나머지, 삼각형조건각] : [삼각형나머지, 삼각형조건각, 합까닭(true), 삼각자각];
     case 8:
-      return lv === '하' ? [사각형나머지, 합까닭(false), 직선나머지] : [사각형나머지, 합까닭(false), 다각형각합];
+      return lv === '하' ? [사각형나머지, 합까닭(false), 직선나머지, 사각형조건각] : [사각형나머지, 사각형조건각, 합까닭(false), 다각형각합];
     default:
       return null;
   }

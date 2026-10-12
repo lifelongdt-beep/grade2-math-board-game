@@ -20,11 +20,14 @@ import { gwa } from '../grade5/util';
 // 점의 값은 언제나 눈금 한 칸의 배수로 두어 그림에서 정확히 읽게 합니다.
 // ════════════════════════════════════════════════════════════════════
 
+// 시작: 첫 값이 아래에서 눈금 몇 칸 위인지, 늘: 한 번에 눈금 몇 칸 변하는지.
+// 키는 줄지 않고(늘 1칸 이상), 평균 키는 실제처럼 1학년 약 120 cm에서
+// 해마다 4~6 cm씩 자랍니다.
 const 주제들 = [
-  { 제목: '교실의 기온', 이름: ['9시', '10시', '11시', '12시', '1시', '2시'], 단위: '°C', 눈금: '기온(°C)', 무엇: '기온', 아래: 0, 위: 30 },
-  { 제목: '강낭콩 싹의 키', 이름: ['1일', '3일', '5일', '7일', '9일', '11일'], 단위: ' cm', 눈금: '키(cm)', 무엇: '키', 아래: 0, 위: 20 },
-  { 제목: '연도별 우리 반 학생의 평균 키', 이름: ['1학년', '2학년', '3학년', '4학년', '5학년'], 단위: ' cm', 눈금: '키(cm)', 무엇: '키', 아래: 110, 위: 150 },
-  { 제목: '월별 도서관 방문자 수', 이름: ['3월', '4월', '5월', '6월', '7월'], 단위: '명', 눈금: '방문자 수(명)', 무엇: '방문자 수', 아래: 0, 위: 100 },
+  { 제목: '교실의 기온', 이름: ['9시', '10시', '11시', '12시', '1시', '2시'], 단위: '°C', 눈금: '기온(°C)', 무엇: '기온', 아래: 0, 위: 30, 시작: [14, 20], 늘: [0, 4] },
+  { 제목: '강낭콩 싹의 키', 이름: ['1일', '3일', '5일', '7일', '9일', '11일'], 단위: ' cm', 눈금: '키(cm)', 무엇: '싹의 키', 아래: 0, 위: 20, 시작: [1, 3], 늘: [1, 3] },
+  { 제목: '연도별 우리 반 학생의 평균 키', 이름: ['1학년', '2학년', '3학년', '4학년', '5학년'], 단위: ' cm', 눈금: '키(cm)', 무엇: '평균 키', 아래: 110, 위: 150, 시작: [5, 7], 늘: [2, 4] },
+  { 제목: '월별 도서관 방문자 수', 이름: ['3월', '4월', '5월', '6월', '7월'], 단위: '명', 눈금: '방문자 수(명)', 무엇: '방문자 수', 아래: 0, 위: 100, 시작: [1, 3], 늘: [0, 4] },
 ];
 
 type 자료 = { 주제: (typeof 주제들)[number]; step: number; from: number; max: number; pts: Array<{ name: string; value: number }> };
@@ -32,12 +35,14 @@ type 자료 = { 주제: (typeof 주제들)[number]; step: number; from: number; 
 /** 이웃한 변화의 크기가 서로 다른 자료를 만듭니다(가장 크게 변한 때가 하나뿐이게). */
 const 자료만들기 = (next: (b: number) => number, 줄이기 = false): 자료 | null => {
   const 주제 = 주제들[줄이기 ? 2 : next(주제들.length)];
-  const step = 주제.위 - 주제.아래 >= 80 ? 10 : 주제.아래 > 0 ? 2 : [1, 2][next(2)];
+  const step = 주제.위 - 주제.아래 >= 80 ? 10 : 주제.아래 > 0 || 주제.무엇 === '기온' ? 2 : [1, 2][next(2)];
   const n = Math.min(주제.이름.length, 5);
-  let v = 주제.아래 + step * 사이(next, 1, 3);
+  // 기온의 시작은 칸이 아니라 °C(14~20°C)로 잡고 눈금 칸으로 바꿉니다.
+  const 시작칸 = 주제.무엇 === '기온' ? Math.round(사이(next, 주제.시작[0], 주제.시작[1]) / step) : 사이(next, 주제.시작[0], 주제.시작[1]);
+  let v = 주제.아래 + step * 시작칸;
   const values = [v];
   for (let k = 1; k < n; k += 1) {
-    v += step * (사이(next, 0, 4) - (주제.무엇 === '기온' && k >= 3 ? 2 : 0));
+    v += step * (사이(next, 주제.늘[0], 주제.늘[1]) - (주제.무엇 === '기온' && k >= 3 ? 2 : 0));
     if (v <= 주제.아래) v = 주제.아래 + step;
     values.push(v);
   }
@@ -60,6 +65,9 @@ const 그림 = (d: 자료, hidden?: string): LineGraphVisual => ({
   points: d.pts.map((p) => (p.name === hidden ? { ...p, hidden: true } : p)),
 });
 
+// 무엇을 조사한 그래프인지 문제 글에 먼저 밝힙니다('7일의 키'만으로는 누구의 키인지 모릅니다).
+const 머리말 = (d: 자료) => `${d.주제.제목}을(를) 조사하여 꺾은선그래프로 나타냈습니다.`;
+
 const 수들 = (answer: number, xs: number[]) => [...new Set(xs)].filter((x) => x >= 0 && x !== answer);
 
 const 값읽기: G5Family = {
@@ -71,7 +79,7 @@ const 값읽기: G5Family = {
     const p = d.pts[next(d.pts.length)];
     const 칸 = (p.value - d.from) / d.step;
     return {
-      prompt: `${p.name}의 ${d.주제.무엇}은(는) 몇 ${d.주제.단위.trim()}일까요?`,
+      prompt: `${머리말(d)} ${p.name}의 ${d.주제.무엇}은(는) 몇 ${d.주제.단위.trim()}일까요?`,
       answer: `${p.value}${d.주제.단위}`,
       wrongs: 수들(p.value, [칸 === p.value ? p.value + 2 * d.step : 칸, p.value + d.step, p.value - d.step, p.value + 2 * d.step]).slice(0, 3).map((x) => `${x}${d.주제.단위}`),
       tag: 'data',
@@ -93,7 +101,7 @@ const 가장큰변화: G5Family = {
     const 큰 = 변화.reduce((m, x) => (x.크기 > m.크기 ? x : m));
     const 해결 = (t: string) => t;
     return {
-      prompt: `${d.주제.무엇}의 변화가 가장 큰 때는 언제일까요?`,
+      prompt: `${머리말(d)} ${d.주제.무엇}의 변화가 가장 큰 때는 언제일까요?`,
       answer: 해결(큰.구간),
       wrongs: 변화.filter((x) => x !== 큰).map((x) => 해결(x.구간)).slice(0, 3),
       tag: 'data',
@@ -118,9 +126,9 @@ const 차이: G5Family = {
     if (a.value === b.value) return null;
     const 오름 = b.value > a.value;
     const v = Math.abs(b.value - a.value);
-    const 말 = d.주제.무엇 === '방문자 수' ? (오름 ? '늘었을까요' : '줄었을까요') : d.주제.무엇 === '키' ? (오름 ? '커졌을까요' : '작아졌을까요') : 오름 ? '높아졌을까요' : '낮아졌을까요';
+    const 말 = d.주제.무엇 === '방문자 수' ? (오름 ? '늘었을까요' : '줄었을까요') : d.주제.무엇.endsWith('키') ? (오름 ? '자랐을까요' : '작아졌을까요') : 오름 ? '높아졌을까요' : '낮아졌을까요';
     return {
-      prompt: `${a.name}부터 ${b.name}까지 ${d.주제.무엇}은(는) 몇 ${d.주제.단위.trim()} ${말}?`,
+      prompt: `${머리말(d)} ${a.name}부터 ${b.name}까지 ${d.주제.무엇}은(는) 몇 ${d.주제.단위.trim()} ${말}?`,
       answer: `${v}${d.주제.단위}`,
       wrongs: 수들(v, [a.value + b.value, v + d.step, v > d.step ? v - d.step : v + 2 * d.step, b.value]).slice(0, 3).map((x) => `${x}${d.주제.단위}`),
       tag: 'data',
@@ -146,7 +154,7 @@ const 사이값: G5Family = {
     const mid = (a + b) / 2;
     const 시 = d.pts[k].name;
     return {
-      prompt: `${시} 30분의 기온은 약 몇 °C였을까요?`,
+      prompt: `${머리말(d)} ${시} 30분의 기온은 약 몇 °C였을까요?`,
       answer: `약 ${mid}°C`,
       wrongs: 수들(mid, [a + b, Math.min(a, b) - d.step * 2, Math.max(a, b) + d.step * 2]).map((x) => `약 ${x}°C`),
       tag: 'data',
@@ -223,7 +231,7 @@ const 물결선그래프: G5Family = {
     if (!d) return null;
     const p = d.pts[next(d.pts.length)];
     return {
-      prompt: `물결선을 넣은 꺾은선그래프입니다. ${p.name} 때의 평균 키는 몇 cm일까요?`,
+      prompt: `${d.주제.제목}을(를) 물결선을 넣은 꺾은선그래프로 나타냈습니다. ${p.name} 때의 평균 키는 몇 cm일까요?`,
       answer: `${p.value} cm`,
       wrongs: 수들(p.value, [p.value - d.from, p.value + d.step, p.value - d.step, p.value + 2 * d.step]).slice(0, 3).map((x) => `${x} cm`),
       tag: 'data',

@@ -1,6 +1,7 @@
 import type { Difficulty } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
+import { 끝0개수, 몫범위십, 어림확인나눗셈, 충분할까 } from './thinking';
 import { 나머지생각, 네모범위, 두단계문장제, 수카드곱, 어떤수, 어림견주기, 잘못계산 } from '../thinking/integer';
 
 // ════════════════════════════════════════════════════════════════════
@@ -283,7 +284,7 @@ export const unit3Lesson41 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 1:
       return [복습];
     case 2:
-      return lv === '하' ? [곱몇십, 생각.곱몇십어떤수] : [곱몇십, 생각.곱몇십어떤수, 생각.곱어림견주기, 생각.곱네모];
+      return lv === '하' ? [곱몇십, 생각.곱몇십어떤수, 끝0개수] : [곱몇십, 생각.곱몇십어떤수, 끝0개수, 생각.곱어림견주기, 생각.곱네모];
     case 3:
       return lv === '하' ? [곱몇십몇, 곱몇십, 생각.곱어떤수, 생각.곱문장제] : [곱몇십몇, 생각.곱카드, 생각.곱잘못, 생각.곱문장제, 생각.곱어떤수];
     case 4:
@@ -295,9 +296,11 @@ export const unit3Lesson41 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
     case 7:
       return lv === '상' ? [몫두자리(false), 확인식, 생각.몫두자리어떤수, 생각.세자리나머지] : [몫두자리(false), 생각.몫두자리어떤수, 확인식];
     case 8:
-      return lv === '하' ? [몫두자리(true), 확인식] : [몫두자리(true), 확인식, 몫자리수, 생각.몫한자리잘못, 생각.세자리나머지];
+      return lv === '하' ? [몫두자리(true), 확인식, 생각.세자리나머지] : [몫두자리(true), 확인식, 몫자리수, 생각.몫한자리잘못, 생각.세자리나머지];
     case 9:
-      return [나눗셈어림, 생각.나눔어림견주기];
+      return lv === '하'
+        ? [나눗셈어림, 몫범위십, 생각.나눔어림견주기, 충분할까]
+        : [나눗셈어림, 몫범위십, 어림확인나눗셈, 충분할까, 생각.나눔어림견주기, 몫자리수];
     default:
       return null;
   }
