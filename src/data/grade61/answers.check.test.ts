@@ -237,7 +237,7 @@ describe('6-1 그림과 문항이 어긋나지 않습니다', () => {
       const v = q.visual;
       if (v?.kind === 'solid-figure') {
         겨냥도수 += 1;
-        const m = /(.)각(기둥|뿔)(의|입니다|에서)/.exec(q.prompt);
+        const m = /(삼|사|오|육|칠|팔|구|십)각(기둥|뿔)(의|입니다|에서)/.exec(q.prompt);
         if (m) {
           expect(v.sides, q.prompt).toBe(각수[m[1]]);
           expect(v.solid, q.prompt).toBe(m[2] === '기둥' ? 'prism' : 'pyramid');
