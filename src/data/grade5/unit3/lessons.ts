@@ -335,6 +335,8 @@ const 삼각형대응각 = (which: number): G5Family => ({
     if (각3 <= 15 || 각3 >= 140) return null;
     const 자리 = next(3);
     const 각 = [각1, 각2, 각3];
+    // 답이 80°이면 힌트의 '180°' 안에 답이 그대로 보입니다.
+    if (각[자리] === 80) return null;
     return {
       prompt: `두 삼각형은 서로 합동입니다. 삼각형 ${first.join('')}의 두 각의 크기가 ${각.filter((_, index) => index !== 자리).map((one) => `${one}°`).join(', ')}일 때, 삼각형 ${second.join('')}에서 그 나머지 한 각의 대응각의 크기는 몇 도일까요?`,
       answer: `${각[자리]}°`,
@@ -680,8 +682,10 @@ const 축인지판단 = (which: number): G5Family => ({
     const next = rand(seed + which * 41);
     const 후보 = FIGURE_FACTS.filter((one) => one.shape !== '원' && one.vertexCount > 0);
     const 도형 = 후보[next(후보.length)];
-    const 방향: AxisKind[] = ['vertical', 'horizontal', 'diagonal', 'anti-diagonal'];
-    const 고른축 = 방향[next(4)];
+    // 하(0)는 가로·세로로 그은 선을, 상(1)은 대각선 방향으로 그은 선을 봅니다.
+    // 대각선을 대칭축으로 잘못 보는 것(오개념 ③)이 더 어려운 판단입니다.
+    const 방향: AxisKind[] = which === 0 ? ['vertical', 'horizontal'] : ['diagonal', 'anti-diagonal'];
+    const 고른축 = 방향[next(2)];
     const 맞나 = 도형.drawableAxes.includes(고른축);
     const 방향이름: Record<AxisKind, string> = {
       vertical: '세로로 그은 선',

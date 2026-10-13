@@ -17,6 +17,7 @@ import { playTapSound } from '../sound';
 import { 가장적은모양, 블록들 } from '../data/stackIso';
 import { resolveParticles } from '../data/grade5/util';
 import { GridMoveGraphic } from './Grade4Visuals';
+import { SymmetryDrawLab } from './SymmetryDraw';
 import { 단추, 읽기 } from './Grade2Labs';
 import { 먼것부터, 쌓기그림틀잡기, 쌓기나무하나, 앞옆표시, 화살촉 } from './StackIso';
 
@@ -786,6 +787,16 @@ export type 고학년실험 = { 제목: string; 화면: ReactNode; 차례: strin
 export const 무엇을해볼까_고학년 = (visual: QuestionVisual | undefined, prompt = ''): 고학년실험 | null => {
   if (!visual) return null;
   switch (visual.kind) {
+    case 'symmetry-draw':
+      return {
+        제목: visual.mode === 'copy' ? '똑같이 옮겨 그려 보세요' : visual.mode === 'line' ? '대칭축을 따라 그려 보세요' : '대칭의 중심을 지나 그려 보세요',
+        화면: <SymmetryDrawLab visual={visual} />,
+        차례: visual.mode === 'copy'
+          ? ['한 꼭짓점을 옮긴 칸 수를 세어요.', '다른 꼭짓점도 같은 방향으로 같은 칸 수만큼 옮겨요.', '찍은 점을 차례로 이어요.']
+          : visual.mode === 'line'
+            ? ['각 꼭짓점에서 대칭축에 수직인 선을 그어요.', '대칭축까지와 같은 칸 수만큼 반대쪽에 점을 찍어요.', '찍은 점을 차례로 이어요.']
+            : ['각 꼭짓점에서 대칭의 중심을 지나는 선을 그어요.', '중심까지와 같은 거리만큼 반대쪽에 점을 찍어요.', '찍은 점을 차례로 이어요.'],
+      };
     case 'grid-move': {
       const 종류 = 이동종류(visual, prompt);
       if (!종류) return null;

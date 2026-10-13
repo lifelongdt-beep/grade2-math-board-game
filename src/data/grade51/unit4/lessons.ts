@@ -316,7 +316,7 @@ export const unit4Lesson3 = (difficulty: '하' | '중' | '상'): G5Family[] => {
       if (!공약수.length) return null;
       const k = pick(공약수, seed);
       return {
-        prompt: `${분수글(n, d)}의 분모와 분자를 각각 ${k}로 나누어 크기가 같은 분수를 만들면 얼마일까요?`,
+        prompt: `${분수글(n, d)}의 분모와 분자를 각각 ${euro(String(k))} 나누어 크기가 같은 분수를 만들면 얼마일까요?`,
         answer: 분수글(n / k, d / k),
         wrongs: [분수글(n / k, d), 분수글(n, d / k), 분수글(n - k, d - k), 분수글(n / k, d / k + 1)],
         tag: 'fractionCompare',
@@ -409,7 +409,7 @@ export const unit4Lesson4 = (difficulty: '하' | '중' | '상'): G5Family[] => {
       if (!공약수.length) return null;
       const k = pick(공약수, seed);
       return {
-        prompt: `${분수글(n, d)}${particleOf(분수글(n, d), '을')} ${k}로 약분하면 얼마일까요?`,
+        prompt: `${분수글(n, d)}${particleOf(분수글(n, d), '을')} ${euro(String(k))} 약분하면 얼마일까요?`,
         answer: 분수글(n / k, d / k),
         wrongs: [분수글(n, d / k), 분수글(n / k, d), 분수글(n - k, d - k), 분수글(n / k + 1, d / k)],
         tag: 'fractionCompare',

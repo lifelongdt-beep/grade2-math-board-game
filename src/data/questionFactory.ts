@@ -1034,7 +1034,8 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'parallel-distance' ||
     visual.kind === 'number-array' ||
     visual.kind === 'body-measure' ||
-    visual.kind === 'minute-bar'
+    visual.kind === 'minute-bar' ||
+    visual.kind === 'symmetry-draw'
   ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };
   }
