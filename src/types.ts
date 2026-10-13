@@ -1153,7 +1153,32 @@ export interface GridMoveVisual {
   }>;
 }
 
+export interface SymmetryDrawVisual {
+  kind: 'symmetry-draw';
+  label: string;
+  /** line 선대칭, point 점대칭, copy 합동인 도형 옮겨 그리기 */
+  mode: 'line' | 'point' | 'copy';
+  cols: number;
+  rows: number;
+  /** 주어진 도형(모눈 점 좌표). line·point는 반쪽 꺾은선, copy는 닫힌 도형입니다. */
+  shape: Array<[number, number]>;
+  names: string[];
+  /** line: 세로 대칭축의 x */
+  axisX?: number;
+  /** point: 대칭의 중심 */
+  center?: [number, number];
+  /** 꼭짓점에서 축(중심)으로 그은 보조선을 보입니다. */
+  guides?: boolean;
+  /** 아이가 찍은 점(이름이 붙습니다) */
+  drawn?: Array<{ at: [number, number]; name: string }>;
+  /** 찍은 점을 이은 꺾은선 */
+  drawnPath?: Array<[number, number]>;
+  /** 고를 자리(가, 나, 다, 라) */
+  candidates?: Array<{ at: [number, number]; name: string }>;
+}
+
 export type QuestionVisual =
+  | SymmetryDrawVisual
   | MinuteBarVisual
   | BodyMeasureVisual
   | PlaneShapesVisual
