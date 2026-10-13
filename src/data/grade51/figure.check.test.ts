@@ -61,6 +61,16 @@ const 그림글 = (question: Question) => {
   return out;
 };
 
+// 적힌 길이: '3/8 m', '2와 1/4 m', '7 cm' 모두 값으로 읽습니다.
+const 길이값 = (t: string): number => {
+  let m = /(\d+)(?:과|와) (\d+)\/(\d+)/.exec(t);
+  if (m) return Number(m[1]) + Number(m[2]) / Number(m[3]);
+  m = /(\d+)\/(\d+)/.exec(t);
+  if (m) return Number(m[1]) / Number(m[2]);
+  m = /\d+(?:\.\d+)?/.exec(t);
+  return m ? Number(m[0]) : NaN;
+};
+
 describe('도형 그림', () => {
   const 문항들 = 그림문항들();
 
@@ -139,7 +149,7 @@ describe('도형 그림', () => {
           return Math.hypot(x2 - x1, y2 - y1);
         };
         const 잰것 = item.edgeLabels
-          .map((edge) => ({ 적힌: 수들(edge.text)[0], 잰: 잰길이(edge.from, edge.to), text: edge.text }))
+          .map((edge) => ({ 적힌: 길이값(edge.text), 잰: 잰길이(edge.from, edge.to), text: edge.text }))
           .filter((one) => Number.isFinite(one.적힌));
         if (잰것.length < 2) continue;
         // 그림은 줄여서 그리므로 길이 자체가 아니라 비를 봅니다.

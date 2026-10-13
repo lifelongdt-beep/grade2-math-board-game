@@ -90,10 +90,28 @@ export function StackPlanGraphic({ visual }: { visual: StackPlanVisual }) {
   const rows = visual.heights.length;
   const cols = Math.max(...visual.heights.map((r) => r.length));
   const cell = 40;
+  const 앞수 = visual.frontView;
+  const 옆수 = visual.sideView;
   const left = 30;
   const top = 18;
-  const width = left + cols * cell + 60;
-  const height = top + rows * cell + 40;
+  const gridR = left + cols * cell;
+  const gridB = top + rows * cell;
+  // 본 모양의 수를 적을 때는 화살표와 수가 들어갈 자리를 더 둡니다.
+  const width = gridR + (옆수 ? 118 : 60);
+  const height = gridB + (앞수 ? 104 : 40);
+  const 화살색 = '#c2410c';
+  const 위화살 = (x: number, y1: number, y2: number) => (
+    <g>
+      <line x1={x} y1={y1} x2={x} y2={y2 + 8} stroke={화살색} strokeWidth="2.6" />
+      <path d={`M ${x - 6} ${y2 + 10} L ${x} ${y2} L ${x + 6} ${y2 + 10} Z`} fill={화살색} />
+    </g>
+  );
+  const 왼화살 = (y: number, x1: number, x2: number) => (
+    <g>
+      <line x1={x1} y1={y} x2={x2 + 8} y2={y} stroke={화살색} strokeWidth="2.6" />
+      <path d={`M ${x2 + 10} ${y - 6} L ${x2} ${y} L ${x2 + 10} ${y + 6} Z`} fill={화살색} />
+    </g>
+  );
   return (
     <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={visual.label}>
       <rect x="2" y="2" width={width - 4} height={height - 4} rx="12" {...판} />
@@ -111,8 +129,38 @@ export function StackPlanGraphic({ visual }: { visual: StackPlanVisual }) {
           ) : null,
         ),
       )}
-      <text x={left + (cols * cell) / 2} y={top + rows * cell + 26} textAnchor="middle" fill="#0f7175" fontSize="15" fontWeight="900">앞</text>
-      <text x={left + cols * cell + 30} y={top + (rows * cell) / 2 + 5} textAnchor="middle" fill="#0f7175" fontSize="15" fontWeight="900">옆</text>
+      {앞수 ? (
+        <g>
+          {앞수.map((n, c) => (
+            <g key={`f${c}`}>
+              {위화살(left + c * cell + cell / 2, gridB + 40, gridB + 6)}
+              <text x={left + c * cell + cell / 2} y={gridB + 62} textAnchor="middle" fill={화살색} fontSize="20" fontWeight="900">{n}</text>
+            </g>
+          ))}
+          <text x={left + (cols * cell) / 2} y={gridB + 90} textAnchor="middle" fill="#0f7175" fontSize="14" fontWeight="900">앞에서 본 수</text>
+        </g>
+      ) : (
+        <text x={left + (cols * cell) / 2} y={gridB + 26} textAnchor="middle" fill="#0f7175" fontSize="15" fontWeight="900">앞</text>
+      )}
+      {옆수 ? (
+        <g>
+          {옆수.map((n, k) => {
+            // 옆에서 본 수는 앞쪽(아래) 가로줄부터 적혀 있습니다.
+            const r = rows - 1 - k;
+            const y = top + r * cell + cell / 2;
+            return (
+              <g key={`s${k}`}>
+                {왼화살(y, gridR + 44, gridR + 6)}
+                <text x={gridR + 60} y={y + 7} textAnchor="middle" fill={화살색} fontSize="20" fontWeight="900">{n}</text>
+              </g>
+            );
+          })}
+          <text x={gridR + 60} y={top - 2 > 12 ? top - 2 : 14} textAnchor="middle" fill="#0f7175" fontSize="12" fontWeight="900">옆</text>
+          <text x={gridR + 60} y={gridB + 22} textAnchor="middle" fill="#0f7175" fontSize="12" fontWeight="900">옆에서 본 수</text>
+        </g>
+      ) : (
+        <text x={left + cols * cell + 30} y={top + (rows * cell) / 2 + 5} textAnchor="middle" fill="#0f7175" fontSize="15" fontWeight="900">옆</text>
+      )}
     </svg>
   );
 }
@@ -172,7 +220,14 @@ export function SolidFigureGraphic({ visual }: { visual: SolidFigureVisual }) {
         <rect x="2" y="2" width={넓이 - 4} height="186" rx="12" {...판} />
         {visual.items.map((it, k) => (
           <g key={k}>
-            {다면체그림({ 종류: it.solid, n: it.sides, 눕힘: it.lying, x: 6 + k * 칸, y: 8, w: 칸, h: 146 })}
+            {it.solid === 'cylinder' || it.solid === 'cone' || it.solid === 'sphere' ? (
+              // 원기둥·원뿔·구는 한 개짜리 그림을 칸 안에 그대로 넣습니다.
+              <svg x={6 + k * 칸} y={8} width={칸} height={146}>
+                <SolidFigureGraphic visual={{ kind: 'solid-figure', label: it.name, solid: it.solid, radius: 1, height: it.solid === 'sphere' ? 2 : 2.2 }} />
+              </svg>
+            ) : (
+              다면체그림({ 종류: it.solid, n: it.sides ?? 5, 눕힘: it.lying, x: 6 + k * 칸, y: 8, w: 칸, h: 146 })
+            )}
             <text x={6 + k * 칸 + 칸 / 2} y="178" textAnchor="middle" fill="#24364a" fontSize="18" fontWeight="900">{it.name}</text>
           </g>
         ))}

@@ -996,6 +996,10 @@ export interface StackPlanVisual {
   heights: number[][];
   numbers?: boolean;
   hidden?: [number, number];
+  /** 앞에서 본 모양의 층수(왼쪽 세로줄부터). 있으면 각 세로줄 아래에 위쪽 화살표와 함께 적습니다. */
+  frontView?: number[];
+  /** 옆에서 본 모양의 층수(앞쪽 가로줄부터). 있으면 각 가로줄 오른쪽에 왼쪽 화살표와 함께 적습니다. */
+  sideView?: number[];
 }
 
 /**
@@ -1041,7 +1045,7 @@ export interface SolidFigureVisual {
   /** 옆 모서리 ÷ 밑면의 한 변. 길이를 적은 그림이 그 길이의 비율대로 그려지게 합니다. */
   edgeRatio?: number;
   /** 여러 입체도형을 가, 나, 다 … 이름을 붙여 늘어놓습니다. */
-  items?: Array<{ name: string; solid: 'prism' | 'pyramid' | 'frustum'; sides: number; lying?: boolean }>;
+  items?: Array<{ name: string; solid: 'prism' | 'pyramid' | 'frustum' | 'cylinder' | 'cone' | 'sphere'; sides?: number; lying?: boolean }>;
 }
 
 /**

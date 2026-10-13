@@ -535,16 +535,25 @@ function 겨냥도돌리기({ 그림 }: { 그림: 겨냥도 }) {
     <div className="symmetry-lab">
       <svg viewBox={`0 0 ${판너비} ${판높이}`} role="img" aria-label="겨냥도를 돌려 보는 그림">
         <rect x="2" y="2" width={판너비 - 4} height={판높이 - 4} rx="14" fill="#f6fcff" stroke="#d7edf2" />
-        {그릴면.map((f) => (
-          <polygon
-            key={f.이름}
-            points={폴리(f.pts)}
-            fill={면색(f.shade)}
-            stroke="#41607a"
-            strokeWidth="2.5"
-            strokeLinejoin="round"
-          />
-        ))}
+        {/* 반투명으로 그려 뒤쪽 면도 비쳐 보이게 합니다. 파란 면과 주황 면을
+            한꺼번에 보아야 두 면이 평행한지(마주 보는지) 알 수 있습니다.
+            뒤쪽 절반의 면은 테두리를 점선으로 그립니다. */}
+        {그릴면.map((f, k) => {
+          const 뒤쪽 = k < 그릴면.length / 2;
+          return (
+            <polygon
+              key={f.이름}
+              points={폴리(f.pts)}
+              fill={면색(f.shade)}
+              fillOpacity={f.shade ? 0.55 : 0.18}
+              stroke="#41607a"
+              strokeWidth={뒤쪽 ? 1.8 : 2.5}
+              strokeDasharray={뒤쪽 ? '6 5' : undefined}
+              strokeOpacity={뒤쪽 ? 0.75 : 1}
+              strokeLinejoin="round"
+            />
+          );
+        })}
         {그림.labelVertices &&
           꼭짓점차례.map((이름) => {
             const 찍힌 = 찍개(자리[이름]);
