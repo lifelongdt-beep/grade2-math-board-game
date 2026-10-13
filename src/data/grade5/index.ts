@@ -1,4 +1,5 @@
 import type { Difficulty, Lesson, Question } from '../../types';
+import { 그리기선대칭, 그리기점대칭, 그리기합동 } from './unit3/drawing';
 import { buildGrade5Questions, type G5Family } from './build';
 import { lesson1Easy, lesson1Hard, lesson1Middle } from './unit1/lesson1';
 import { lesson23Easy, lesson23Hard, lesson23Middle } from './unit1/lesson23';
@@ -108,17 +109,18 @@ const unit3Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
   // 수준마다 다른 뭉치를 줍니다. 차례만 돌리면 서른 자리를 채우고 나서
   // 남는 것이 수준마다 같습니다 — 6차시는 중과 상이 스물하나를 똑같이
   // 내고 있었습니다. lessons.ts의 '수준 나누기에 쓰는 뭉치'를 보세요.
+  // 3·5·7차시에는 모눈 위에서 그리는 과정을 직접 해 보는 문항(drawing.ts)을 더합니다.
   if (lessonNo === 1) return 도입수준(difficulty);
   if (lessonNo === 2) return 합동수준(difficulty);
   if (lessonNo === 3) {
-    if (difficulty === '하') return 합동성질Easy;
-    if (difficulty === '중') return [...합동성질Easy.slice(1), ...합동성질Hard.slice(1)];
-    return 합동성질Hard;
+    if (difficulty === '하') return [...합동성질Easy, ...그리기합동(difficulty)];
+    if (difficulty === '중') return [...합동성질Easy.slice(1), ...합동성질Hard.slice(1), ...그리기합동(difficulty)];
+    return [...합동성질Hard, ...그리기합동(difficulty)];
   }
   if (lessonNo === 4) return 도형수준(true, difficulty);
-  if (lessonNo === 5) return 대칭수준(true, difficulty);
+  if (lessonNo === 5) return [...대칭수준(true, difficulty), ...그리기선대칭(difficulty)];
   if (lessonNo === 6) return 도형수준(false, difficulty);
-  if (lessonNo === 7) return 대칭수준(false, difficulty);
+  if (lessonNo === 7) return [...대칭수준(false, difficulty), ...그리기점대칭(difficulty)];
   return null;
 };
 
