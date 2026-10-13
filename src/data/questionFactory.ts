@@ -32,6 +32,7 @@ import {
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, PlaneShapeKind, PlaneShapeVisualItem, Question, QuestionVisual } from '../types';
 import { questionBank } from './questionBank';
 import { 도입복습차시 } from './introReview';
+import { 그림추론 } from './autoFigure';
 import { generateGrade5Questions } from './grade5';
 import { generateGrade51Questions } from './grade51';
 import { generateGrade31Questions } from './grade31';
@@ -17416,7 +17417,19 @@ export const generateClassQuestions = (
 };
 
 /** 한 차시의 문항입니다. 차시마다의 검사는 모두 이것을 봅니다. */
+// 도형 문항인데 그림이 없으면 문제 글에 적힌 수만으로 그림을 붙입니다(autoFigure.ts).
 export const generateQuestions = (
+  lesson: Lesson,
+  difficulty: Difficulty,
+  options?: GenerateQuestionsOptions,
+): Question[] =>
+  차시원문항(lesson, difficulty, options).map((q) => {
+    if (q.visual || q.choiceVisuals) return q;
+    const visual = 그림추론(q.prompt);
+    return visual ? { ...q, visual } : q;
+  });
+
+const 차시원문항 = (
   lesson: Lesson,
   difficulty: Difficulty,
   options?: GenerateQuestionsOptions,

@@ -74,6 +74,7 @@ import { curriculum42 } from './data/curriculum42';
 import { curriculum61 } from './data/curriculum61';
 import { curriculum62 } from './data/curriculum62';
 import { curriculum32 } from './data/curriculum32';
+import { 도입차시인가 } from './data/introReview';
 import { generateClassQuestions, ALL_CASTLE_DEFENSE_DANS, CASTLE_DIVIDE_TITLE, isCastleLesson } from './data/questionFactory';
 import type { AnswerRecord, ConceptTag, Difficulty, Lesson, Player, PlayerQuestionState, Question, SessionDuration, Unit } from './types';
 
@@ -622,8 +623,11 @@ function App() {
   const selectedLesson = selectedUnit.lessons.find((item) => item.id === lessonId) ?? selectedUnit.lessons[0];
   const scopedLessons = useMemo(
     () => {
-      if (reviewScope === 'semester') return semesterUnits.flatMap((unit) => unit.lessons);
-      if (reviewScope === 'unit') return selectedUnit.lessons;
+      // 단원·학기 종합은 그 단원 차시의 내용만 냅니다. 단원 도입 차시는 앞
+      // 학기·앞 학년 단원을 복습하므로(introReview.ts) 종합에서는 뺍니다.
+      const 이단원차시 = (unit: (typeof semesterUnits)[number]) => unit.lessons.filter((item) => !도입차시인가(item));
+      if (reviewScope === 'semester') return semesterUnits.flatMap(이단원차시);
+      if (reviewScope === 'unit') return 이단원차시(selectedUnit);
       return [selectedLesson];
     },
     [reviewScope, selectedLesson, selectedUnit, semesterUnits],
