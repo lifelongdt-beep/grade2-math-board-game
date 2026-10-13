@@ -127,7 +127,8 @@ const 부분곱문항 = (kind: Kind): G5Family => ({
       return {
         prompt: `${식(one)}을(를) 세로로 계산했더니 ${a * (b % 10)}과(와) ${a * t}이(가) 나왔습니다. ${a * t}은(는) 어떤 곱셈을 계산한 값일까요?`,
         answer: `${a}×${t}`,
-        wrongs: [`${a}×${t / 10}`, `${a}×${b % 10}`, `${t}×${b % 10}`, `${a}×${b}`].filter((w) => w !== `${a}×${t}`),
+        // 곱이 같은 식(5×90과 90×5)이 보기에 함께 있으면 답이 둘이 됩니다.
+        wrongs: [`${a}×${t / 10}`, `${a}×${b % 10}`, `${t}×${b % 10}`, `${a}×${b}`].filter((w) => w !== `${a}×${t}` && w.split('×').map(Number).reduce((x, y) => x * y, 1) !== a * t),
         tag: 'multiplication',
         concept: '곱하는 수를 몇십과 몇으로 나누어 곱합니다. 몇십을 곱한 값은 일의 자리가 0입니다.',
         strategy: '세로 셈의 부분 곱 알기',
@@ -141,7 +142,7 @@ const 부분곱문항 = (kind: Kind): G5Family => ({
       return {
         prompt: `${식(one)}을(를) 세로로 계산할 때 두 번째 줄에 쓰는 ${a * t}은(는) 어떤 곱셈을 계산한 값일까요?`,
         answer: `${a}×${t}`,
-        wrongs: [`${a}×${t / 10}`, `${a}×${b % 10}`, `${Math.floor(a / 10) * 10}×${t}`, `${a % 10}×${t}`].filter((w) => w !== `${a}×${t}`),
+        wrongs: [`${a}×${t / 10}`, `${a}×${b % 10}`, `${Math.floor(a / 10) * 10}×${t}`, `${a % 10}×${t}`].filter((w) => w !== `${a}×${t}` && w.split('×').map(Number).reduce((x, y) => x * y, 1) !== a * t),
         tag: 'multiplication',
         concept: '(두 자리 수)×(두 자리 수)의 세로 셈에서 첫째 줄은 곱하는 수의 일의 자리를, 둘째 줄은 몇십을 곱한 값입니다.',
         strategy: '세로 셈의 두 줄이 나타내는 것 알기',
@@ -318,7 +319,11 @@ const 까닭문항 = (kind: Kind): G5Family => ({
       .filter((one2) => !ms.some((m) => m.까닭 === one2))
       // (한 자리 수)×(두 자리 수), (두 자리 수)×(두 자리 수)에서 몇십을 곱한 값을
       // 자리에 맞추지 않은 것은 '0을 붙이지 않은 것'과 같은 실수라서 오답 보기로 두지 않습니다.
-      .filter((one2) => !(one2 === '곱하는 수의 0을 붙이지 않았습니다.' && (kind === 'od' || kind === 'd1' || kind === 'd2')));
+      .filter((one2) => !(one2 === '곱하는 수의 0을 붙이지 않았습니다.' && (kind === 'od' || kind === 'd1' || kind === 'd2')))
+      // 그 까닭으로도 같은 값이 나오면 답이 둘이 됩니다(330×3=99는 백의 자리를
+      // 자리에 맞추지 않은 것이지만, 0을 붙이지 않아도 99가 됩니다).
+      .filter((one2) => !(one2 === '곱하는 수의 0을 붙이지 않았습니다.' && (one.a * one.b) / 10 === mistake.value))
+      .filter((one2) => !(one2 === '0을 하나 더 붙였습니다.' && one.a * one.b * 10 === mistake.value));
     return {
       prompt: `${who}은(는) ${식(one)}=${mistake.value}(이)라고 계산했습니다. 잘못 계산한 까닭으로 알맞은 것은 어느 것일까요?`,
       answer: mistake.까닭,

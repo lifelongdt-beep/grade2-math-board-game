@@ -2,6 +2,7 @@ import type { ConceptTag, Difficulty, LearningSupport, Lesson, Question, Questio
 import { parse as parseFraction } from './fraction';
 import { rand, resolveParticles } from './util';
 import { deriveWalkthrough } from '../walkthrough';
+import { 난도점수, 뭉치선호, 사고단계, 수번거로움, 후보고르기 } from './levelPick';
 import {
   g5CoreConcept,
   g5Misconception,
@@ -283,6 +284,13 @@ const shapeOfPrompt = (prompt: string) => prompt.replace(/[\d.]+/g, '#').replace
 
 export const SLOTS_PER_LESSON = 30;
 
+// 점수가 같은 후보 가운데 하나를 고를 때 쓰는 가벼운 해시입니다.
+const 글해시 = (text: string) => {
+  let h = 2166136261;
+  for (let at = 0; at < text.length; at += 1) h = Math.imul(h ^ text.charCodeAt(at), 16777619) >>> 0;
+  return h;
+};
+
 export const buildGrade5Questions = (
   lesson: Lesson,
   difficulty: Difficulty,
@@ -304,35 +312,82 @@ export const buildGrade5Questions = (
 
   const salt = difficultyIndex[difficulty] * 1009 + lesson.unitNo * 101 + lesson.lessonNo * 17;
 
-  for (let round = 0; round < 200 && made.length < SLOTS_PER_LESSON; round += 1) {
-    for (const family of families) {
-      if (made.length >= SLOTS_PER_LESSON) break;
-      const spec = family.make(salt + round * 37 + family.id.length, difficulty);
+  // ── 수준에 맞게 고르기(levelPick.ts) ────────────────────────────────
+  // 1) 뭉치마다 몇 문항을 미리 만들어 보아 이 차시 안에서 쉬운 차례를
+  //    매깁니다. 하는 쉬운 뭉치에, 상은 어려운 뭉치에 자리를 더 줍니다.
+  // 2) 한 자리마다 씨앗이 다른 후보를 여럿 만들어, 하는 지식형(수가 쉬운
+  //    것), 중은 적용형, 상은 사고형 문항을 고릅니다. 상이라고 수를 크게
+  //    하지는 않습니다 — 어려운 것은 생각의 결이어야 합니다.
+  // 문항 하나하나는 그대로이므로 답과 풀이는 바뀌지 않습니다.
+  const 미리점수 = families.map((family) => {
+    let 합 = 0;
+    let 수 = 0;
+    for (let k = 0; k < 6; k += 1) {
+      const spec = family.make(salt + 7001 + k * 131 + family.id.length, difficulty);
       if (!spec) continue;
-      // 같은 문제인지는 글만으로 보면 안 됩니다. '그림이 나타내는 수의
-      // 범위는?'처럼 수가 그림에만 있는 문항은 글이 늘 똑같아서, 글로만
-      // 견주면 한 차시에 한 문항밖에 남지 않습니다.
-      // 보기가 넷이 되지 않는 문항은 내보내지 않습니다. 셋만 나오면
-      // 아이가 답을 몰라도 찍을 확률이 달라지고, 무엇보다 이 문항이
-      // 겨누던 오개념 하나가 보기에서 빠졌다는 뜻입니다.
-      const wrongs = usableWrongs(spec);
-      if (wrongs.length < 3) continue;
-      // 실제로 화면에 나가는 보기로 견줍니다. 후보 목록으로 견주면
-      // 후보는 달라도 쓰이는 셋이 같은 두 문항이 함께 나갑니다.
-      //
-      // 그림도 함께 봅니다. '그림의 두 도형은 서로 합동일까요?'처럼
-      // 수가 그림에만 있는 문항은 글과 보기가 늘 같아서, 글로만 견주면
-      // 한 차시에 두 문항밖에 남지 않습니다.
-      const key = `${spec.prompt}||${spec.answer}||${[...wrongs].sort().join('|')}||${JSON.stringify(spec.visual ?? null)}`;
-      if (seenPrompt.has(key)) continue;
-      if ((familyCount.get(family.id) ?? 0) >= mostPerFamily) continue;
-      const shape = shapeOfPrompt(spec.prompt);
-      if ((shapeCount.get(shape) ?? 0) >= mostPerShape) continue;
+      합 += 난도점수(spec);
+      수 += 1;
+    }
+    return 수 ? 합 / 수 : 0;
+  });
+  const 쉬운차례 = families.map((_, at) => at).sort((a, b) => 미리점수[a] - 미리점수[b]);
+  const 선호 = new Map<G5Family, number>();
+  쉬운차례.forEach((at, rank) => {
+    const t = families.length > 1 ? rank / (families.length - 1) : 0.5;
+    선호.set(families[at], 뭉치선호(difficulty, t));
+  });
+  // 바라는 뭉치부터 돌고, 덜 바라는 뭉치는 몫을 줄입니다. 그래도 서른
+  // 자리를 못 채우면 둘째 바퀴에서 원래 몫으로 마저 채웁니다.
+  const 도는차례 = [...families].sort((a, b) => 선호.get(b)! - 선호.get(a)!);
+  // 뭉치가 넉넉하면(다섯 넘게) 가장 덜 바라는 뭉치는 첫 바퀴에서 한 문항만
+  // 냅니다 — 하에 '어떤 수'가, 상에 '바로 계산'이 몰리지 않게.
+  const 몫 = (family: G5Family, 바퀴: number) => {
+    // 셋째 바퀴는 낼 수 있는 문항이 적은 뭉치들 때문에 서른 자리가 모자랄 때만 돕니다.
+    if (바퀴 === 2) return mostPerFamily + 5;
+    if (바퀴 > 0 || families.length <= 2) return mostPerFamily;
+    const p = 선호.get(family)!;
+    if (families.length >= 5 && p < 0.2) return 1;
+    return Math.max(1, Math.round(mostPerFamily * (0.2 + 1.3 * p)));
+  };
 
-      seenPrompt.add(key);
-      familyCount.set(family.id, (familyCount.get(family.id) ?? 0) + 1);
-      shapeCount.set(shape, (shapeCount.get(shape) ?? 0) + 1);
-      made.push(toQuestion(lesson, difficulty, made.length, spec));
+  for (let 바퀴 = 0; 바퀴 < 3 && made.length < SLOTS_PER_LESSON; 바퀴 += 1) {
+    for (let round = 0; round < 200 && made.length < SLOTS_PER_LESSON; round += 1) {
+      for (const family of 도는차례) {
+        if (made.length >= SLOTS_PER_LESSON) break;
+        if ((familyCount.get(family.id) ?? 0) >= 몫(family, 바퀴)) continue;
+        const 후보: Array<{ 단계: 0 | 1 | 2; 수: number; 값: { spec: G5Spec; key: string; 보이는것: string; shape: string } }> = [];
+        for (let k = 0; k < 6; k += 1) {
+          const spec = family.make(salt + round * 37 + family.id.length + 바퀴 * 50021 + k * 7919, difficulty);
+          if (!spec) continue;
+          // 같은 문제인지는 글만으로 보면 안 됩니다. '그림이 나타내는 수의
+          // 범위는?'처럼 수가 그림에만 있는 문항은 글이 늘 똑같아서, 글로만
+          // 견주면 한 차시에 한 문항밖에 남지 않습니다.
+          // 보기가 넷이 되지 않는 문항은 내보내지 않습니다. 셋만 나오면
+          // 아이가 답을 몰라도 찍을 확률이 달라지고, 무엇보다 이 문항이
+          // 겨누던 오개념 하나가 보기에서 빠졌다는 뜻입니다.
+          const wrongs = usableWrongs(spec);
+          if (wrongs.length < 3) continue;
+          // 실제로 화면에 나가는 보기와 그림까지 함께 견줍니다.
+          const key = `${spec.prompt}||${spec.answer}||${[...wrongs].sort().join('|')}||${JSON.stringify(spec.visual ?? null)}`;
+          // 글과 그림이 같으면 보기가 달라도 아이에게는 같은 문제입니다.
+          // (그림이 없는 '다음 중 옳은 것은?'은 보기가 곧 문제라 보기까지 봅니다.)
+          const 보이는것 = spec.visual ? `${spec.prompt}||${JSON.stringify(spec.visual)}` : key;
+          if (seenPrompt.has(key) || seenPrompt.has(보이는것) || 후보.some((one) => one.값.key === key || one.값.보이는것 === 보이는것)) continue;
+          const shape = shapeOfPrompt(spec.prompt);
+          if ((shapeCount.get(shape) ?? 0) >= mostPerShape) continue;
+          후보.push({ 단계: 사고단계(spec), 수: 수번거로움(spec), 값: { spec, key, 보이는것, shape } });
+        }
+        // 점수가 같은 후보끼리는 수준마다 다른 것을 고릅니다. 글만 있는 문항은
+        // 점수가 모두 같아, 그대로 두면 하와 상이 같은 첫 후보를 냅니다.
+        후보.forEach((one) => { one.수 += (글해시(`${difficulty}|${one.값.key}`) % 1000) * 1e-6; });
+        const 고른 = 후보고르기(후보, difficulty);
+        if (!고른) continue;
+        seenPrompt.add(고른.key);
+        seenPrompt.add(고른.보이는것);
+        familyCount.set(family.id, (familyCount.get(family.id) ?? 0) + 1);
+        shapeCount.set(고른.shape, (shapeCount.get(고른.shape) ?? 0) + 1);
+        made.push(toQuestion(lesson, difficulty, made.length, 고른.spec));
+      }
     }
   }
 

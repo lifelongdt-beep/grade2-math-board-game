@@ -217,12 +217,24 @@ const unit6Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | n
   if (lessonNo === 1) return unit6Lesson1For(difficulty);
   if (lessonNo === 2) return unit6Lesson2For(difficulty);
 
-  const 차시별: Record<number, G5Family[]> = {
-    3: unit6Lesson3,
-    4: unit6Lesson4,
-  };
-  const 뭉치 = 차시별[lessonNo];
-  return 뭉치 ? 수준대로(뭉치) : null;
+  // 3·4차시도 차례만 돌리면 세 수준이 같은 뭉치를 냅니다. 수준마다
+  // 하는 일을 나눕니다 — 하는 방법과 바로 구하기, 중은 합·문장 상황,
+  // 상은 거꾸로(합에서 개수, 평균에서 빈칸, '적어도').
+  const 고름 = (뭉치: G5Family[], 하: string[], 중: string[], 상: string[]) =>
+    (difficulty === '하' ? 하 : difficulty === '중' ? 중 : 상)
+      .map((id) => 뭉치.find((one) => one.id === id))
+      .filter((one): one is G5Family => Boolean(one));
+  if (lessonNo === 3) return 고름(unit6Lesson3, ['how-to', 'find-average', 'find-total'], ['find-average', 'find-total', 'find-count'], ['find-total', 'find-count', 'how-to', 'find-average']);
+  if (lessonNo === 4) {
+    return 고름(
+      unit6Lesson4,
+      ['include-zero', 'misread-average', 'compare-groups', 'missing-value'],
+      ['compare-groups', 'include-zero', 'missing-value', 'misread-average'],
+      ['missing-value', 'at-least', 'compare-groups', 'misread-average'],
+    );
+  }
+  void 수준대로;
+  return null;
 };
 
 export const grade5FamiliesFor = (lesson: Lesson, difficulty: Difficulty): G5Family[] | null => {

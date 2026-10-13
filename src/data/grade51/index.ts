@@ -118,7 +118,11 @@ const unit5Kinds: Record<number, Unit5Kind> = {
 };
 
 const unit5Families = (lessonNo: number, difficulty: Difficulty): G5Family[] | null => {
-  if (lessonNo === 1) return unit5Lesson1;
+  if (lessonNo === 1) {
+    // 도입 차시도 수준마다 다른 뭉치를 냅니다(같은 뭉치면 하와 상이 같은 문제를 냅니다).
+    const 고른 = difficulty === '하' ? ['same-denominator-add', 'same-denominator-sub'] : difficulty === '중' ? ['same-denominator-add', 'same-denominator-sub', 'common-denominator-recall'] : ['common-denominator-recall', 'same-denominator-sub'];
+    return unit5Lesson1.filter((one) => 고른.includes(one.id));
+  }
   const kind = unit5Kinds[lessonNo];
   if (!kind) return null;
   if (difficulty === '하') return unit5Easy(kind);

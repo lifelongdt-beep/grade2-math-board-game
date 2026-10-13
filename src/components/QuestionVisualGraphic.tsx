@@ -1788,7 +1788,17 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
               );
             })}
 
-            {item.angleLabels?.map((angle, at) => {
+            {(() => {
+              // 이미 적은 각도 글자의 자리입니다. 한 변이 짧은 도형에서는 이웃한
+              // 두 꼭짓점의 각도 글자가 겹쳐 '86°'와 '?'를 읽을 수 없었습니다.
+              // 꼭짓점 이름도 피합니다(꼭짓점 이름과 같은 자리 셈으로 미리 넣어 둡니다).
+              const 놓인각글자: Array<{ x: number; y: number; n: number }> = (item.vertexLabels ?? []).map((label, at) => {
+                const [vx, vy] = drawn[at] ?? [cx, centerY];
+                const [밖x, 밖y] = 꼭짓점에서옮기기(vx, vy, 16);
+                const [ox, oy] = 가두기(밖x, 밖y + 5);
+                return { x: ox, y: oy, n: Math.max(2, label.length) };
+              });
+              return item.angleLabels?.map((angle, at) => {
               const [x, y] = drawn[angle.at] ?? [cx, centerY];
               // 숫자만 적어 두면 어느 각의 크기인지 그림에서 알 수 없습니다.
               // "각 ㄷㄹㄱ이 115°"라고 물으면서 115°만 덩그러니 놓여 있었습니다.
@@ -1823,9 +1833,17 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
               const 적은각 = /^(\d+)°$/.exec(angle.text);
               const 직각 = 적은각 ? 적은각[1] === '90' : Math.abs(u1x * u2x + u1y * u2y) < 0.03;
               const 일직선 = Math.hypot(bx, by) < 0.001;
-              const [안쪽x, 안쪽y] = 일직선
+              let [안쪽x, 안쪽y] = 일직선
                 ? 꼭짓점에서옮기기(x, y, -Math.min(20, Math.hypot(x - cx, y - centerY) * 0.45))
                 : [x + bx * 글자거리, y + by * 글자거리];
+              // 글자는 y+4에 적으므로 같은 자리 셈으로 견줍니다.
+              const 부딪힘 = (px: number, py: number) =>
+                놓인각글자.some((o) => Math.abs(o.x - px) < (o.n + angle.text.length) * 4 && Math.abs(o.y - (py + 4)) < 16);
+              // 겹치면 이등분선을 따라 더 안쪽으로 비켜 놓습니다.
+              for (let 번 = 1; 번 <= 6 && !일직선 && 부딪힘(안쪽x, 안쪽y); 번 += 1) {
+                [안쪽x, 안쪽y] = 가두기(x + bx * (글자거리 + 6 * 번), y + by * (글자거리 + 6 * 번));
+              }
+              놓인각글자.push({ x: 안쪽x, y: 안쪽y + 4, n: angle.text.length });
               const 시작 = [x + u1x * r, y + u1y * r];
               const 끝 = [x + u2x * r, y + u2y * r];
               // 화면 좌표는 아래로 갈수록 y가 커지므로, 외적이 양수이면 시계 방향입니다.
@@ -1861,7 +1879,8 @@ function FigureSetGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
                   </text>
                 </g>
               );
-            })}
+              });
+            })()}
 
             {item.name && (
               <text x={cx} y={height - 12} textAnchor="middle" fill="#24364a" fontSize="17" fontWeight="900">
