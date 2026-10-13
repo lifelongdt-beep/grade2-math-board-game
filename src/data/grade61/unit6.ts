@@ -116,8 +116,9 @@ const 부피비교: G5Family = {
   id: 'compare',
   make: (seed) => {
     const next = 고르개(seed);
-    const p = [사이(next, 2, 6), 사이(next, 2, 6), 사이(next, 2, 6)];
-    const q = [사이(next, 2, 6), 사이(next, 2, 6), 사이(next, 2, 6)];
+    // 그림으로 셀 수 있게 4개(층)까지만 씁니다.
+    const p = [사이(next, 2, 4), 사이(next, 2, 4), 사이(next, 1, 4)];
+    const q = [사이(next, 2, 4), 사이(next, 2, 4), 사이(next, 1, 4)];
     const vp = p[0] * p[1] * p[2];
     const vq = q[0] * q[1] * q[2];
     if (vp === vq) return null;
@@ -131,9 +132,13 @@ const 부피비교: G5Family = {
       hint: '쌓기나무의 개수를 각각 세어 보세요.',
       steps: [`가는 ${p[0]}×${p[1]}×${p[2]}=${vp}개, 나는 ${q[0]}×${q[1]}×${q[2]}=${vq}개입니다.`, `그러므로 ${큰}입니다.`],
       misconceptionTip: '가로, 세로, 높이 가운데 하나만 보고 비교하면 안 돼요.',
+      visual: { kind: 'stack-iso', label: '쌓기나무로 쌓은 두 직육면체', heights: 쌓은직육면체(p[0], p[1], p[2]), items: [{ name: '가', heights: 쌓은직육면체(p[0], p[1], p[2]) }, { name: '나', heights: 쌓은직육면체(q[0], q[1], q[2]) }] } satisfies StackIsoVisual,
     };
   },
 };
+
+// 1 m³인 정육면체입니다. 한 모서리가 1 m=100 cm임을 그림에 적어 둡니다.
+const 일세제곱미터 = (모서리글: string): BoxDrawingVisual => ({ kind: 'box-drawing', label: '한 모서리가 1 m인 정육면체', width: 1, depth: 1, height: 1, edgeLabels: { width: 모서리글, depth: 모서리글, height: 모서리글 } });
 
 const 단위: G5Family = {
   id: 'unit',
@@ -151,6 +156,7 @@ const 단위: G5Family = {
         hint: '1 m³=1000000 cm³예요.',
         steps: [`1 m³=100 cm×100 cm×100 cm=1000000 cm³입니다.`, `${n} m³=${n * 1000000} cm³`],
         misconceptionTip: '1 m=100 cm이지만 1 m³는 100 cm³가 아니에요. 100을 세 번 곱해요.',
+        visual: 일세제곱미터('1 m(100 cm)'),
       };
     }
     if (kind === 1) {
@@ -162,6 +168,7 @@ const 단위: G5Family = {
         strategy: '부피 단위 1 m³',
         hint: '한 모서리가 1 cm인 정육면체의 부피가 1 cm³예요.',
         steps: ['한 모서리가 1 m인 정육면체의 부피를 1 m³라 쓰고 1 세제곱미터라고 읽습니다.'],
+        visual: 일세제곱미터('1 m'),
       };
     }
     const a = 사이(next, 1, 5);
@@ -188,8 +195,16 @@ const 뜻: G5Family = {
       { p: '한 모서리의 길이가 1 cm인 정육면체의 부피를 무엇이라고 쓸까요?', a: '1 cm³', w: ['1 cm²', '1 cm', '1 m³'], s: '한 모서리가 1 cm인 정육면체의 부피를 1 cm³라 쓰고 1 세제곱센티미터라고 읽습니다.' },
       { p: '직육면체의 겉넓이를 구하는 방법으로 알맞은 것은 어느 것일까요?', a: '(한 밑면의 넓이)×2+(옆면의 넓이)', w: ['(가로)×(세로)×(높이)', '(한 밑면의 넓이)+(옆면의 넓이)', '(세 면의 넓이의 합)'], s: '두 밑면과 네 옆면의 넓이를 모두 더합니다.' },
     ];
-    const q = qs[seed % qs.length];
-    return { prompt: q.p, answer: q.a, wrongs: q.w, tag: 'volume', strategy: '겉넓이와 부피의 뜻', hint: '겉넓이는 넓이, 부피는 공간의 크기예요.', steps: [q.s] };
+    const k = seed % qs.length;
+    const q = qs[k];
+    // 겉넓이는 여섯 면을 칠해 보이고, 1 cm³는 한 모서리 1 cm인 정육면체를,
+    // 겉넓이 구하는 방법은 두 밑면(파랑)과 옆면(주황)을 나누어 칠합니다.
+    const 그림: BoxDrawingVisual = k === 0
+      ? { kind: 'box-drawing', label: '여섯 면을 칠한 직육면체', width: 5, depth: 3, height: 3, shaded: ['top', 'bottom', 'front', 'back', 'left', 'right'] }
+      : k === 1
+        ? { kind: 'box-drawing', label: '한 모서리가 1 cm인 정육면체', width: 1, depth: 1, height: 1, edgeLabels: { width: '1 cm', depth: '1 cm', height: '1 cm' } }
+        : { kind: 'box-drawing', label: '밑면과 옆면을 칠한 직육면체', width: 5, depth: 3, height: 3, shaded: ['top', 'bottom'], shaded2: ['front', 'back', 'left', 'right'] };
+    return { prompt: q.p, answer: q.a, wrongs: q.w, tag: 'volume', strategy: '겉넓이와 부피의 뜻', hint: '겉넓이는 넓이, 부피는 공간의 크기예요.', steps: [q.s], visual: 그림 };
   },
 };
 
@@ -343,6 +358,8 @@ const 늘린배: G5Family = {
         ? [`부피는 세 길이를 곱하므로 ${k}×${k}×${k}=${v}배가 됩니다.`]
         : [`한 면의 넓이는 두 길이를 곱하므로 ${k}×${k}=${k * k}배가 되고, 여섯 면이 모두 그렇게 되므로 겉넓이도 ${v}배입니다.`],
       misconceptionTip: `길이가 ${k}배라고 ${무엇}도 ${k}배가 되는 것은 아니에요.`,
+      // 쌓기나무 하나(처음)와 가로·세로·높이를 각각 k배 한 모양을 나란히 그립니다.
+      visual: { kind: 'stack-iso', label: `처음 직육면체와 ${k}배로 늘린 직육면체`, heights: 쌓은직육면체(k, k, k), items: [{ name: '처음', heights: [[1]] }, { name: `${k}배`, heights: 쌓은직육면체(k, k, k) }] } satisfies StackIsoVisual,
     };
   },
 };
@@ -414,6 +431,7 @@ const 혼합단위: G5Family = {
       hint: '먼저 세 길이를 모두 m로 나타내요.',
       steps: [`${b50} cm=${b50 / 100} m입니다.`, `${a}×${b50 / 100}×${c}=${V}이므로 ${V} m³입니다.`],
       misconceptionTip: '단위가 다른 길이를 그대로 곱하면 안 돼요.',
+      visual: { kind: 'box-drawing', label: '직육면체', width: a * 100, depth: b50, height: c * 100, edgeLabels: { width: `${a} m`, depth: `${b50} cm`, height: `${c} m` } },
     };
   },
 };
