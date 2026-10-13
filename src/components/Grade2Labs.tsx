@@ -1,3 +1,4 @@
+import { 분칸그림 } from './MinuteBar';
 import { useState, type ReactNode } from 'react';
 import type { BarModelVisual, CalendarVisual, GridTableVisual, PatternVisual, QuestionVisual, RulerVisual, TableVisual } from '../types';
 import { playTapSound } from '../sound';
@@ -460,12 +461,37 @@ function TableLab({ visual }: { visual: TableVisual }) {
   );
 }
 
+// ── 분을 60분씩 묶기(2-2 4단원) ────────────────────────────────────
+function MinuteLab({ total, label }: { total: number; label: string }) {
+  const [묶음, set묶음] = useState(false);
+  const [세기, set세기] = useState(false);
+  const 시간 = Math.floor(total / 60);
+  return (
+    <div className="g3-lab">
+      <div className="g3-lab-stage"><분칸그림 total={total} label={label} 묶음={묶음} 세기={세기} /></div>
+      <div className="g3-lab-buttons">
+        <단추 on={묶음} onClick={() => set묶음((v) => !v)}>⏱️ 60분씩 묶기</단추>
+        <단추 on={세기} disabled={!묶음} onClick={() => set세기((v) => !v)}>남은 칸 10칸씩 세기</단추>
+      </div>
+      <읽기>
+        {!묶음
+          ? <>{total}분을 한 칸에 1분씩 늘어놓았어요. 60칸 한 줄이 1시간이에요.</>
+          : !세기
+            ? <>60칸 묶음이 {시간}줄이니 <strong>{시간}시간</strong>이에요. 남은 칸은 몇 분일까요?</>
+            : <>남은 칸을 10칸씩 세어 보세요. {시간}시간과 남은 분을 합하면 답이에요.</>}
+      </읽기>
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════
 export type 이학년실험 = { 제목: string; 화면: ReactNode; 차례: string[] };
 
 export const 무엇을해볼까_2학년 = (visual: QuestionVisual | undefined): 이학년실험 | null => {
   if (!visual) return null;
   switch (visual.kind) {
+    case 'minute-bar':
+      return { 제목: '60분씩 묶어 보세요', 화면: <MinuteLab total={visual.total} label={visual.label} />, 차례: ['60분은 1시간이에요. 60칸 한 줄을 1시간으로 묶어요.', '묶고 남은 칸을 10칸씩 세어 몇 분인지 알아요.'] };
     case 'bar-model': {
       const bars = visual.bars.filter((b) => b.value > 0);
       if (bars.length < 2) return null;

@@ -369,6 +369,9 @@ const 길이재기 = (p: string): QuestionVisual | null => {
   if (m) return { kind: 'bar-model', label: '이어 붙일 두 리본', bars: [{ label: '리본 1', value: Number(m[1]), text: `${m[1]}cm` }, { label: '리본 2', value: Number(m[2]), text: `${m[2]}cm` }] };
   m = /(\S+)의 키는 (\d+)m (\d+)cm이고 (\S+)(?:는|은) \S+보다 (\d+)cm 더 큽니다/.exec(p);
   if (m) return { kind: 'bar-model', label: '두 사람의 키', bars: [{ label: m[1], value: 엠씨(m[2], m[3]), text: `${m[2]}m ${m[3]}cm` }, { label: m[4], value: 엠씨(m[2], m[3]) + Number(m[5]), text: '?' }] };
+  // 시간과 분(2-2 4단원): '93분은 몇 시간 몇 분'은 분을 60칸씩 늘어놓은 그림으로 봅니다.
+  m = /(\d+)분'? 동안 [^.?]*\. '?(?:몇|1)시간 몇 분/.exec(p) ?? /(\d+)분(?:은|는|이) 몇 시간 몇 분/.exec(p);
+  if (m && Number(m[1]) > 60 && Number(m[1]) <= 240) return { kind: 'minute-bar', label: `${m[1]}분`, total: Number(m[1]) };
   return null;
 };
 
