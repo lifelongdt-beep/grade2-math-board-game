@@ -1,5 +1,6 @@
 import type { G5Family, G5Spec } from '../grade5/build';
 import { 고르개 } from '../grade11/common';
+import { resolveParticles } from '../grade5/util';
 
 // 수준 문항이 함께 쓰는 도구입니다.
 
@@ -15,10 +16,27 @@ export const 섞기 = <T,>(items: T[], next: (n: number) => number): T[] => {
 export const 사람 = ['민준', '서연', '도윤', '하은', '지호', '수아'];
 export const 기호 = ['㉠', '㉡', '㉢', '㉣'];
 
+// '을(를)', '과(와)', '(으)로' 같은 괄호 꼴을 앞말의 소리에 맞추어 고릅니다.
+// 5학년 문항은 만드는 곳(build.ts)에서 고르지 않으므로 여기서 고릅니다.
+// 조심할 점·확인 질문·핵심을 적지 않으면 갈래(tag)의 기본 문구가 붙는데,
+// 그 문구에는 그 차시에서 아직 배우지 않은 말(통분, m² 등)이 들어 있기도
+// 합니다. 그래서 문항 스스로의 문구로 채웁니다.
+const 조사고르기 = (spec: G5Spec): G5Spec => ({
+  ...spec,
+  selfCheck: spec.selfCheck ?? '구한 답이 문제의 조건에 모두 맞는지 확인했나요?',
+  prompt: resolveParticles(spec.prompt),
+  concept: resolveParticles(spec.concept ?? spec.strategy),
+  misconceptionTip: resolveParticles(spec.misconceptionTip ?? '답을 고르기 전에 문제의 조건을 하나씩 다시 읽어 보세요.'),
+  answer: resolveParticles(spec.answer),
+  wrongs: spec.wrongs.map(resolveParticles),
+  hint: resolveParticles(spec.hint),
+  steps: spec.steps.map(resolveParticles),
+});
+
 /** 고차적인 사고(과정·까닭, 거꾸로, 용어, 생활 응용)를 묻는 문항입니다. */
-export const 사고 = (spec: Omit<G5Spec, '결'>): G5Spec => ({ ...spec, 결: 2 });
+export const 사고 = (spec: Omit<G5Spec, '결'>): G5Spec => 조사고르기({ ...spec, 결: 2 });
 /** 단순한 지식(뜻, 이름, 바로 계산)을 묻는 문항입니다. */
-export const 지식 = (spec: Omit<G5Spec, '결'>): G5Spec => ({ ...spec, 결: 0 });
+export const 지식 = (spec: Omit<G5Spec, '결'>): G5Spec => 조사고르기({ ...spec, 결: 0 });
 
 /** 바른 말 하나와 틀린 말 셋으로 '바르게 말한 사람'을 묻습니다(수학 용어를 바르게 쓰는지 봅니다). */
 export const 바르게말한 = (
@@ -40,7 +58,7 @@ export const 바르게말한 = (
     const 놓인 = 섞기([맞는말, ...틀린말], next);
     const 답 = 누구[놓인.indexOf(맞는말)];
     return 사고({
-      prompt: `${주제}에 대해 바르게 말한 사람은 누구일까요? ${놓인.map((말, k) => `${누구[k]}: ${말}`).join(' ')}`,
+      prompt: `${놓인.map((말, k) => `${누구[k]}: ${말}`).join(' ')} ${주제}에 대해 바르게 말한 사람은 누구일까요?`,
       answer: 답,
       wrongs: 누구.filter((one) => one !== 답),
       tag,

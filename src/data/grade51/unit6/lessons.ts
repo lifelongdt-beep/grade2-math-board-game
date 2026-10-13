@@ -1405,7 +1405,7 @@ const 거꾸로넓이 = (kind: AreaKind, 수준: 수준): G5Family => ({
         ? `넓이가 ${dims.넓이} cm²이고 한 대각선의 길이가 ${dims.밑변} cm인 마름모가 있습니다. 다른 대각선의 길이는 몇 cm일까요?`
         : kind === 'trapezoid'
           ? `넓이가 ${dims.넓이} cm²이고 윗변의 길이가 ${dims.윗변} cm, 아랫변의 길이가 ${dims.밑변} cm인 사다리꼴이 있습니다. 높이는 몇 cm일까요?`
-          : `넓이가 ${dims.넓이} cm²이고 밑변의 길이가 ${dims.밑변} cm인 ${areaName[kind]}이 있습니다. 높이는 몇 cm일까요?`,
+          : `넓이가 ${dims.넓이} cm²이고 밑변의 길이가 ${dims.밑변} cm인 ${areaName[kind]}${particleOf(areaName[kind], '이')} 있습니다. 높이는 몇 cm일까요?`,
       answer: `${dims.높이} cm`,
       wrongs: [
         `${dims.넓이 - dims.밑변} cm`,
@@ -1442,7 +1442,7 @@ const 같은넓이 = (kind: AreaKind, 수준: 수준): G5Family => ({
     for (let attempt = 0; attempt < 40 && !dims; attempt += 1) dims = dimsFor(kind, next, false, 수준, false);
     if (!dims) return null;
     return {
-      prompt: `밑변의 길이가 ${dims.밑변} cm, 높이가 ${dims.높이} cm인 ${areaName[kind]}이 여러 개 있습니다. 이 ${areaName[kind]}들의 넓이에 대해 바르게 말한 것은 어느 것일까요?`,
+      prompt: `밑변의 길이가 ${dims.밑변} cm, 높이가 ${dims.높이} cm인 ${areaName[kind]}${particleOf(areaName[kind], '이')} 여러 개 있습니다. 이 ${areaName[kind]}들의 넓이에 대해 바르게 말한 것은 어느 것일까요?`,
       answer: `모양이 달라도 넓이는 모두 ${dims.넓이} cm²로 같습니다.`,
       wrongs: [
         '더 비스듬하게 기울어진 것이 넓이가 더 넓습니다.',
@@ -1574,7 +1574,8 @@ const 넓이견주기 = (kind: AreaKind, 수준: 수준): G5Family => ({
           ? `윗변의 길이가 ${dims.윗변} cm, 아랫변의 길이가 ${dims.밑변} cm, 높이가 ${dims.높이} cm인 사다리꼴`
           : `밑변의 길이가 ${dims.밑변} cm, 높이가 ${dims.높이} cm인 ${areaName[kind]}`;
     return {
-      prompt: `㉠ ${적기(가)}과 ㉡ ${적기(나)}이 있습니다. 넓이가 더 넓은 것은 어느 것일까요?`,
+      // 사다리꼴·마름모는 받침이 없어 '과', '이'가 맞지 않습니다('마름모과').
+      prompt: `㉠ ${적기(가)}${particleOf(적기(가), '과')} ㉡ ${적기(나)}${particleOf(적기(나), '이')} 있습니다. 넓이가 더 넓은 것은 어느 것일까요?`,
       answer: 가가큰가 ? '㉠' : '㉡',
       wrongs: [가가큰가 ? '㉡' : '㉠', '두 도형의 넓이가 같습니다.', '넓이를 견줄 수 없습니다.'],
       tag: 'area',

@@ -227,7 +227,7 @@ const 예각시각모두: G5Family = {
       시들.map((_, k) => 기호[k]).filter((x) => !답.includes(x)).join(', '),
     ].filter((w, k, all) => w && w !== 답 && all.indexOf(w) === k);
     return 사고({
-      prompt: `시계의 긴바늘과 짧은바늘이 이루는 작은 쪽의 각이 ${종류}인 시각을 모두 고른 것은 어느 것일까요? ${시들.map((시, k) => `${기호[k]} ${시}시`).join(' ')}`,
+      prompt: `${시들.map((시, k) => `${기호[k]} ${시}시`).join(' ')} 가운데 시계의 긴바늘과 짧은바늘이 이루는 작은 쪽의 각이 ${종류}인 시각을 모두 고른 것은 어느 것일까요?`,
       answer: 답,
       wrongs: 다른,
       tag: 'angle',
