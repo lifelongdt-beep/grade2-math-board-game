@@ -348,6 +348,30 @@ const 더평면 = (p: string): QuestionVisual | null => {
   return null;
 };
 
+// ── 길이 재기(2-2 3단원) ───────────────────────────────────────────
+// 몸의 부분으로 어림하기, 이어 붙인 길이, 키 견주기를 그립니다.
+const 몸단위 = (물건: string): '뼘' | '걸음' | '양팔' =>
+  /복도|운동장|교실|담장|뒷벽/.test(물건) ? '걸음' : /칠판|교실 문|창틀/.test(물건) ? '양팔' : '뼘';
+const 엠씨 = (m: string, cm: string) => Number(m) * 100 + Number(cm);
+const 길이재기 = (p: string): QuestionVisual | null => {
+  let m = /^(.+?)(?:을|를) (?:몸으로 어림할 때|어림해 말할 때)/.exec(p);
+  if (m) return { kind: 'body-measure', label: '몸으로 어림하기', object: m[1], unit: 몸단위(m[1]) };
+  m = /내 걸음으로 (\d+)걸음이 약 (\d+)m입니다\. (.+?) 끝까지 (\d+)걸음/.exec(p);
+  if (m) return { kind: 'body-measure', label: '걸음으로 어림하기', object: m[3], unit: '걸음', count: Number(m[4]) };
+  m = /한 걸음은 약 (\d+)cm입니다\. \S+ (.+?)(?:을|를) 따라 (\d+)걸음/.exec(p);
+  if (m) return { kind: 'body-measure', label: '걸음으로 어림하기', object: m[2], unit: '걸음', count: Number(m[3]) };
+  if (/자 없이 어림하려고/.test(p)) return { kind: 'body-measure', label: '몸으로 어림하기', object: '교실의 긴 쪽', unit: '걸음' };
+  m = /(\S+)(?:는|은) (\d+)m (\d+)cm, (\S+)(?:는|은) (\d+)m (\d+)cm인 색 테이프/.exec(p);
+  if (m) return { kind: 'bar-model', label: '이어 붙일 두 색 테이프', bars: [{ label: m[1], value: 엠씨(m[2], m[3]), text: `${m[2]}m ${m[3]}cm` }, { label: m[4], value: 엠씨(m[5], m[6]), text: `${m[5]}m ${m[6]}cm` }] };
+  m = /빨간 철사는 (\d+)m (\d+)cm이고 파란 철사는 (\d+)m (\d+)cm/.exec(p);
+  if (m) return { kind: 'bar-model', label: '이어 붙일 두 철사', bars: [{ label: '빨간 철사', value: 엠씨(m[1], m[2]), text: `${m[1]}m ${m[2]}cm` }, { label: '파란 철사', value: 엠씨(m[3], m[4]), text: `${m[3]}m ${m[4]}cm` }] };
+  m = /리본 (\d+)cm와 (\d+)cm를 겹치지 않게/.exec(p) ?? /리본 (\d+)cm(?:와|과) (\d+)cm(?:를|을) 겹치지 않게/.exec(p);
+  if (m) return { kind: 'bar-model', label: '이어 붙일 두 리본', bars: [{ label: '리본 1', value: Number(m[1]), text: `${m[1]}cm` }, { label: '리본 2', value: Number(m[2]), text: `${m[2]}cm` }] };
+  m = /(\S+)의 키는 (\d+)m (\d+)cm이고 (\S+)(?:는|은) \S+보다 (\d+)cm 더 큽니다/.exec(p);
+  if (m) return { kind: 'bar-model', label: '두 사람의 키', bars: [{ label: m[1], value: 엠씨(m[2], m[3]), text: `${m[2]}m ${m[3]}cm` }, { label: m[4], value: 엠씨(m[2], m[3]) + Number(m[5]), text: '?' }] };
+  return null;
+};
+
 /** 문제 글로 그림을 정합니다. 그릴 수 없으면 null입니다. */
 export const 그림추론 = (p: string): QuestionVisual | null => {
   let m: RegExpExecArray | null;
@@ -415,5 +439,5 @@ export const 그림추론 = (p: string): QuestionVisual | null => {
     if (/^원주는 지름의|^원의 지름에 대한 원주의|^원주율|원의 크기가 커지면 원주율/.test(p)) return 원그림('지름', true);
   }
 
-  return 더평면(p) ?? 사각형그림(p) ?? 입체그림(p) ?? 상자그림(p);
+  return 길이재기(p) ?? 더평면(p) ?? 사각형그림(p) ?? 입체그림(p) ?? 상자그림(p);
 };
