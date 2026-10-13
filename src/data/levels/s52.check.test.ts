@@ -39,10 +39,21 @@ describe('5-2 수준 문항', () => {
       if (/^직육면체에서 한 면과 (수직|평행)인 면/.test(p)) { expect(q.answer.startsWith(p.includes('수직') ? '4개' : '1개'), p).toBe(true); 센다('면관계'); }
       m = /^모둠 친구 (\d+)명이 읽은 책 수의 평균은 (\d+)권입니다. 새로 온 친구가 (\d+)권을 읽었다면/.exec(p);
       if (m) { expect(수(q.answer), p).toBe((+m[1] * +m[2] + +m[3]) / (+m[1] + 1)); 센다('새평균'); }
+      m = /^주사위를 한 번 굴려 (\S+?)[은는] (.+?)의 눈이 나오면 이기고, (\S+?)[은는] (.+?)의 눈이 나오면 이기기로/.exec(p);
+      if (m) {
+        const 눈수 = (c: string) => [1, 2, 3, 4, 5, 6].filter((x) =>
+          c === '짝수' ? x % 2 === 0 : c === '홀수' ? x % 2 === 1 : c === '3의 배수' ? x % 3 === 0
+            : /이상/.test(c) ? x >= 수(c) : /이하/.test(c) ? x <= 수(c) : x === 수(c)).length;
+        const [a, b] = [눈수(m[2]), 눈수(m[4])];
+        expect(a, p).not.toBe(b);
+        expect(q.answer, p).toBe(a > b ? m[1] : m[3]); 센다('주사위유리');
+      }
+      m = /^일이 일어날 가능성이 '(\S+)'일 때 이 가능성을 수로/.exec(p);
+      if (m) { expect(q.answer, p).toBe({ 불가능하다: '0', 반반이다: '1/2', 확실하다: '1' }[m[1]]); 센다('가능성말'); }
       if (/에 대해 바르게 말한 사람은 누구일까요\?/.test(p)) { expect(q.choices).toContain(q.answer); 센다('바르게'); }
     }
   });
   it('새 문항이 모두 쓰입니다', () => {
-    for (const k of ['소수점', '작아지는', '리본', '비료', '모서리합', '주사위', '면관계', '새평균', '바르게']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
+    for (const k of ['소수점', '작아지는', '리본', '비료', '모서리합', '주사위', '면관계', '새평균', '바르게', '주사위유리', '가능성말']) expect(셈.get(k) ?? 0, k).toBeGreaterThan(0);
   });
 });

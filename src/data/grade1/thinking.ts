@@ -257,7 +257,7 @@ export const 시각뒤 = (id: string, 삼십분: boolean): G5Family => ({
     const 글 = (x: number) => `${((x - 1) % 12) + 1}시${삼십분 ? ' 30분' : ''}`;
     const v = 글(h + k);
     return {
-      prompt: `지금 시각은 ${글(h)}입니다. 긴바늘이 ${k}바퀴 돌면 몇 시${삼십분 ? ' 몇 분' : ''}이 될까요?`,
+      prompt: `지금 시각은 ${글(h)}입니다. 긴바늘이 ${k}바퀴 돌면 몇 시${삼십분 ? ' 몇 분이' : '가'} 될까요?`,
       answer: v,
       wrongs: [글(h + k + 1), 글(h), 글(h + k + 2 > 12 ? h + k - 1 : h + k + 2)].filter((w, i, xs) => w !== v && xs.indexOf(w) === i).concat([글(h + 5)]).filter((w, i, xs) => w !== v && xs.indexOf(w) === i).slice(0, 3),
       tag: 'time',
