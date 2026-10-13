@@ -237,6 +237,19 @@ export interface UnitMeasureVisual {
 // 곱셈표·덧셈표입니다. 규칙 찾기 단원에서 '표를 보고 규칙을 말하는' 문제에
 // 씁니다. 표 자체가 학습 자료이므로 값을 채워서 보여 주고, 계산해서 답을
 // 내야 하는 칸만 비워 둡니다.
+/**
+ * 몸의 부분으로 길이를 어림하는 그림입니다(2-2 3단원). 물건을 긴 막대로
+ * 그리고, 그 밑에 뼘·걸음·양팔을 이어 놓습니다. count가 없으면 몇 번인지
+ * 정하지 않고 '…'로 이어지게만 그립니다.
+ */
+export interface BodyMeasureVisual {
+  kind: 'body-measure';
+  label: string;
+  object: string;
+  unit: '뼘' | '걸음' | '양팔';
+  count?: number;
+}
+
 export interface GridTableVisual {
   kind: 'grid-table';
   label: string;
@@ -1134,6 +1147,7 @@ export interface GridMoveVisual {
 }
 
 export type QuestionVisual =
+  | BodyMeasureVisual
   | PlaneShapesVisual
   | CubeStackVisual
   | CubePatternVisual

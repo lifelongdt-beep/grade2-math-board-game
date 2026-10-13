@@ -193,6 +193,58 @@ function CubePatternGraphic({ visual }: { visual: Extract<QuestionVisual, { kind
 
 // 연필 하나를 그리고, 그 길이에 딱 맞게 클립을 이어 놓습니다.
 // 자는 그리지 않습니다. 이 차시는 자를 배우기 전이기 때문입니다.
+// 몸의 부분으로 어림하기(2-2 3단원): 물건 막대 밑에 뼘·걸음·양팔을 이어 놓습니다.
+function BodyMeasureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'body-measure' }> }) {
+  // 12번이 넘으면 앞의 12번만 그리고 '…'로 이어지게 합니다. 적는 수는 언제나 문제의 수입니다.
+  const 정한수 = visual.count && visual.count > 0 ? visual.count : undefined;
+  const 다그림 = 정한수 !== undefined && 정한수 <= 12;
+  const n = 정한수 ? Math.min(12, 정한수) : visual.unit === '양팔' ? 2 : 4;
+  const left = 24;
+  const width = 328;
+  const w = width / (다그림 ? n : n + 0.6);
+  const 색 = '#0f7175';
+  // 한 뼘: 엄지와 새끼손가락을 벌린 손을 그리고, 그 아래에 한 뼘의 길이를 괄호로 묶습니다.
+  const 뼘 = (x: number) => (
+    <g>
+      <text x={x + w / 2} y="92" textAnchor="middle" fontSize={Math.min(30, w * 0.8)}>🖐️</text>
+      <path d={`M${x + 3} 98 v6 h${w - 6} v-6`} fill="none" stroke={색} strokeWidth="2" />
+    </g>
+  );
+  const 걸음 = (x: number, k: number) => (
+    <g>
+      <ellipse cx={x + w / 2} cy={k % 2 === 0 ? 82 : 94} rx={w * 0.32} ry="7" fill="#ffe2c4" stroke="#b9812a" strokeWidth="2" />
+      <circle cx={x + w * 0.85} cy={k % 2 === 0 ? 82 : 94} r="3" fill="#ffe2c4" stroke="#b9812a" strokeWidth="1.5" />
+    </g>
+  );
+  const 양팔 = (x: number) => {
+    const cx = x + w / 2;
+    return (
+      <g stroke="#b9812a" strokeWidth="2.6" strokeLinecap="round" fill="none">
+        <circle cx={cx} cy="72" r="6" fill="#ffe2c4" />
+        <line x1={cx} y1="78" x2={cx} y2="98" />
+        <line x1={x + 4} y1="84" x2={x + w - 4} y2="84" />
+        <line x1={cx} y1="98" x2={cx - 6} y2="110" />
+        <line x1={cx} y1="98" x2={cx + 6} y2="110" />
+      </g>
+    );
+  };
+  return (
+    <svg viewBox="0 0 376 132" role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width="368" height="124" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      <text x={left} y="24" fill={색} fontSize="15" fontWeight="900">{visual.object}</text>
+      <rect x={left} y="32" width={width} height="22" rx="6" fill="#ffe7a8" stroke="#b9812a" strokeWidth="2.4" />
+      {Array.from({ length: n }, (_, k) => (
+        <g key={k}>
+          {k > 0 && <line x1={left + k * w} y1="60" x2={left + k * w} y2="112" stroke="#9fc9cc" strokeDasharray="3 3" />}
+          {visual.unit === '뼘' ? 뼘(left + k * w) : visual.unit === '걸음' ? 걸음(left + k * w, k) : 양팔(left + k * w)}
+        </g>
+      ))}
+      {!다그림 && <text x={left + n * w + 4} y="98" fill={색} fontSize="20" fontWeight="900">…</text>}
+      <text x={left + width} y="124" textAnchor="end" fill={색} fontSize="13" fontWeight="800">{정한수 ? `${정한수}${visual.unit === '양팔' ? '번' : visual.unit === '뼘' ? '뼘' : '걸음'}` : `${visual.unit}(으)로 재어 보기`.replace('뼘(으)로', '뼘으로').replace('걸음(으)로', '걸음으로').replace('양팔(으)로', '양팔로')}</text>
+    </svg>
+  );
+}
+
 function UnitMeasureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'unit-measure' }> }) {
   const count = Math.max(1, Math.min(12, visual.count));
   const left = 30;
@@ -3212,6 +3264,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'number-array' && <NumberArrayGraphic visual={visual} />}
       {visual.kind === 'ratio-graph' && <RatioGraphGraphic visual={visual} />}
       {visual.kind === 'stack-plan' && <StackPlanGraphic visual={visual} />}
+      {visual.kind === 'body-measure' && <BodyMeasureGraphic visual={visual} />}
       {visual.kind === 'stack-iso' && <StackIsoGraphic visual={visual} />}
       {visual.kind === 'solid-figure' && <SolidFigureGraphic visual={visual} />}
       {visual.kind === 'solid-net' && <SolidNetGraphic visual={visual} />}
