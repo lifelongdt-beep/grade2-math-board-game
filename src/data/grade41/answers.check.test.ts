@@ -348,7 +348,8 @@ describe('4-1 5단원 막대그래프', () => {
       if (read) expect(수(q.answer), q.prompt).toBe(값(read[1]));
       const diff = /^(.+)(은|는) (.+)보다 몇 .+ 더 많을까요/.exec(q.prompt);
       if (diff) expect(수(q.answer), q.prompt).toBe(값(diff[1]) - 값(diff[3]));
-      if (/가장 (많은|적은)/.test(q.prompt)) {
+      // 답이 항목 이름인 문항만 여기서 봅니다(몇 배·알 수 없는 것 문항은 levels/s41.check.test.ts가 봅니다).
+      if (/가장 (많은|적은)/.test(q.prompt) && v.bars.some((b) => b.name === q.answer)) {
         const vals = v.bars.map((b) => b.value);
         const want = q.prompt.includes('많은') ? Math.max(...vals) : Math.min(...vals);
         expect(vals.filter((x) => x === want).length, q.prompt).toBe(1);

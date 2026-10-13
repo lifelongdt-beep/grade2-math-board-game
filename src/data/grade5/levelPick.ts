@@ -24,7 +24,8 @@ const 문장수 = (글: string) => 글.split(/[.?!]\s/).filter((one) => one.trim
 const 수개수 = (글: string) => (글.match(/\d+(?:\.\d+)?(?:\/\d+)?/g) ?? []).length;
 
 /** 문항이 묻는 생각의 결입니다. 0 지식, 1 적용, 2 사고. */
-export const 사고단계 = (spec: Pick<G5Spec, 'prompt' | 'strategy'>): 사고단계 => {
+export const 사고단계 = (spec: Pick<G5Spec, 'prompt' | 'strategy'> & { 결?: 사고단계 }): 사고단계 => {
+  if (spec.결 !== undefined) return spec.결;
   const 글 = spec.prompt;
   const 갈래 = spec.strategy ?? '';
   // 사고: 과정·까닭 따지기, 잘못 찾기, 거꾸로, 용어를 바르게 쓴 말, 여러 조건 견주기
@@ -32,6 +33,8 @@ export const 사고단계 = (spec: Pick<G5Spec, 'prompt' | 'strategy'>): 사고�
   if (/옳은 것을 모두|옳지 않은 것을 모두|모두 고른|반드시 맞는/.test(글)) return 2;
   if (/어떤 수|거꾸로|처음에 있던|들어갈 수 있는|될 수 없는|적어도|최대|최소|몇 가지/.test(글)) return 2;
   if (/수 카드|가장 큰 .*만들|가장 작은 .*만들/.test(글)) return 2;
+  // 가장 많이·적게 쓰는 경우를 따지기, 비나 차에서 거꾸로 구하기
+  if (/가장 (많이|적게) (사용|쓴|쓰)|비가 [\d.]+ : [\d.]+이고, .+보다 [\d.]+ 더/.test(글)) return 2;
   if (/거꾸로|잘못|까닭|판단|추론|견주어 고르기/.test(갈래)) return 2;
   // 생활 속 응용: 조건이 여럿인 긴 상황 문장
   if (문장수(글) >= 3 && 수개수(글) >= 3 && !/과정입니다/.test(글)) return 2;
