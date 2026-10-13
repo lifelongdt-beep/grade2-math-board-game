@@ -3,6 +3,7 @@ import { parse as parseFraction } from './fraction';
 import { rand, resolveParticles } from './util';
 import { deriveWalkthrough } from '../walkthrough';
 import { 난도점수, 뭉치선호, 사고단계, 수번거로움, 후보고르기 } from './levelPick';
+import { 수준뭉치 } from '../levels';
 import {
   g5CoreConcept,
   g5Misconception,
@@ -87,6 +88,9 @@ export type G5Spec = {
   // 수이지만 기약분수는 3/4 하나뿐이고, '크기가 같지 않은 분수는?'에서는
   // 보기 셋이 모두 같은 값인 것이 문항의 뜻입니다. 이런 자리에만 켭니다.
   sameValueOk?: boolean;
+  // 이 문항이 묻는 생각의 결을 밝혀 둡니다(0 지식, 1 적용, 2 사고).
+  // 적지 않으면 글의 모양으로 어림합니다(levelPick.ts의 사고단계).
+  결?: 0 | 1 | 2;
   // 보기가 뺄셈식('475-328')인 문항입니다. 이 값이 없으면 '-' 뒤에
   // 숫자가 오는 보기를 음수로 보고 거릅니다.
   minusIsOperator?: boolean;
@@ -273,6 +277,7 @@ const toQuestion = (
     misconception: 도움.label[spec.tag] ?? '개념 확인',
     type: spec.tag,
     strategy,
+    thinkingLevel: 사고단계(spec),
     support,
     ...(spec.visual ? { visual: spec.visual } : {}),
     ...(walk ? { walkthrough: walk } : {}),
@@ -297,6 +302,9 @@ export const buildGrade5Questions = (
   families: G5Family[],
 ): Question[] => {
   if (!families.length) return [];
+  // 수준마다 덧붙이는 문항 뭉치(levels/)입니다. 상에는 사고력 문항을,
+  // 하에는 단순한 지식 문항을 더합니다.
+  families = [...families, ...수준뭉치(lesson, difficulty)];
 
   const made: Question[] = [];
   const seenPrompt = new Set<string>();
@@ -347,7 +355,8 @@ export const buildGrade5Questions = (
     if (바퀴 > 0 || families.length <= 2) return mostPerFamily;
     const p = 선호.get(family)!;
     if (families.length >= 5 && p < 0.2) return 1;
-    return Math.max(1, Math.round(mostPerFamily * (0.2 + 1.3 * p)));
+    // 바라는 뭉치라도 원래 몫을 넘기지 않습니다. 한 뭉치가 수준을 다 차지하면 같은 꼴이 되풀이됩니다.
+    return Math.max(1, Math.round(mostPerFamily * (0.25 + 0.75 * p)));
   };
 
   for (let 바퀴 = 0; 바퀴 < 3 && made.length < SLOTS_PER_LESSON; 바퀴 += 1) {
