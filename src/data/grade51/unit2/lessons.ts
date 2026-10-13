@@ -287,7 +287,7 @@ export const unit2Lesson2 = (difficulty: '하' | '중' | '상'): G5Family[] => {
         strategy: '약수와 배수의 관계 알기',
         hint: '곱해서 나온 큰 수가 배수이고, 곱한 두 수가 약수입니다. 어느 쪽이 큰지부터 보세요.',
         steps: [
-          `${a}×${b}=${product}이므로 ${product}${particleOf(String(product), '은')} ${a}${particleOf(String(a), '과')} ${b}로 나누어떨어집니다.`,
+          `${a}×${b}=${product}이므로 ${product}${particleOf(String(product), '은')} ${a}${particleOf(String(a), '과')} ${euro(String(b))} 나누어떨어집니다.`,
           `그러므로 ${a}${particleOf(String(a), '과')} ${b}${particleOf(String(b), '은')} ${product}의 약수이고, ${product}${particleOf(String(product), '은')} ${a}${particleOf(String(a), '과')} ${b}의 배수입니다.`,
         ],
         misconceptionTip: '약수는 그 수보다 작거나 같고, 배수는 그 수보다 크거나 같습니다. 방향을 바꾸어 말하지 마세요.',

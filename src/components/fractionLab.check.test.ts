@@ -72,7 +72,8 @@ describe('분수의 곱셈 그림', () => {
       if (!무엇을겹쳐볼까(visual)) continue;
       if (문제의곱(문제) !== null) 읽은것 += 1;
     }
-    expect(읽은것).toBeGreaterThan(80);
+    // 수준마다 문항을 고르게 되면서(levelPick.ts) 그림 붙은 곱셈 문항의 수가 조금 줄었습니다.
+    expect(읽은것).toBeGreaterThan(60);
   });
 
   it('겹친 자리가 문제가 묻는 곱과 같다', () => {

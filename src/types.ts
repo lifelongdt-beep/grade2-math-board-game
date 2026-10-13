@@ -116,6 +116,8 @@ export interface Question {
   // 그러면 글자는 달라도 학생에게는 같은 문제라, 겹치는지 보려면 붙이기
   // 전의 문장이 필요합니다.
   basePrompt?: string;
+  // 이 문항이 묻는 생각의 결입니다(0 지식, 1 적용, 2 사고). 하·중·상을 가르는 잣대입니다.
+  thinkingLevel?: 0 | 1 | 2;
   choices: string[];
   // 보기가 그림일 때 씁니다. 도형을 고르거나 그래프를 고르는 문항은
   // 글로는 물을 수가 없습니다 — '삼각형'이라고 적어 놓고 고르게 하면
@@ -1153,7 +1155,32 @@ export interface GridMoveVisual {
   }>;
 }
 
+export interface SymmetryDrawVisual {
+  kind: 'symmetry-draw';
+  label: string;
+  /** line 선대칭, point 점대칭, copy 합동인 도형 옮겨 그리기 */
+  mode: 'line' | 'point' | 'copy';
+  cols: number;
+  rows: number;
+  /** 주어진 도형(모눈 점 좌표). line·point는 반쪽 꺾은선, copy는 닫힌 도형입니다. */
+  shape: Array<[number, number]>;
+  names: string[];
+  /** line: 세로 대칭축의 x */
+  axisX?: number;
+  /** point: 대칭의 중심 */
+  center?: [number, number];
+  /** 꼭짓점에서 축(중심)으로 그은 보조선을 보입니다. */
+  guides?: boolean;
+  /** 아이가 찍은 점(이름이 붙습니다) */
+  drawn?: Array<{ at: [number, number]; name: string }>;
+  /** 찍은 점을 이은 꺾은선 */
+  drawnPath?: Array<[number, number]>;
+  /** 고를 자리(가, 나, 다, 라) */
+  candidates?: Array<{ at: [number, number]; name: string }>;
+}
+
 export type QuestionVisual =
+  | SymmetryDrawVisual
   | MinuteBarVisual
   | BodyMeasureVisual
   | PlaneShapesVisual
