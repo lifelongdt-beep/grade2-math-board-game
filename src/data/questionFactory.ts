@@ -1033,7 +1033,8 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'angle-split' ||
     visual.kind === 'parallel-distance' ||
     visual.kind === 'number-array' ||
-    visual.kind === 'body-measure'
+    visual.kind === 'body-measure' ||
+    visual.kind === 'minute-bar'
   ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };
   }

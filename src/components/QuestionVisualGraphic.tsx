@@ -1,3 +1,4 @@
+import { 분칸그림 } from './MinuteBar';
 import { ShareScene } from './ShareScene';
 import { AngleGraphic, AngleSplitGraphic, BarGraphGraphic, GridMoveGraphic, LineGraphGraphic, NumberArrayGraphic, ParallelDistanceGraphic, ProtractorGraphic } from './Grade4Visuals';
 import { BalanceGraphic, BeakerGraphic, ScaleDialGraphic } from './Grade3Visuals';
@@ -3265,6 +3266,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'ratio-graph' && <RatioGraphGraphic visual={visual} />}
       {visual.kind === 'stack-plan' && <StackPlanGraphic visual={visual} />}
       {visual.kind === 'body-measure' && <BodyMeasureGraphic visual={visual} />}
+      {visual.kind === 'minute-bar' && <분칸그림 total={visual.total} label={visual.label} />}
       {visual.kind === 'stack-iso' && <StackIsoGraphic visual={visual} />}
       {visual.kind === 'solid-figure' && <SolidFigureGraphic visual={visual} />}
       {visual.kind === 'solid-net' && <SolidNetGraphic visual={visual} />}

@@ -250,6 +250,13 @@ export interface BodyMeasureVisual {
   count?: number;
 }
 
+/** 분을 한 칸씩, 한 줄에 60칸(=1시간)씩 늘어놓은 그림입니다(2-2 4단원). */
+export interface MinuteBarVisual {
+  kind: 'minute-bar';
+  label: string;
+  total: number;
+}
+
 export interface GridTableVisual {
   kind: 'grid-table';
   label: string;
@@ -1147,6 +1154,7 @@ export interface GridMoveVisual {
 }
 
 export type QuestionVisual =
+  | MinuteBarVisual
   | BodyMeasureVisual
   | PlaneShapesVisual
   | CubeStackVisual
