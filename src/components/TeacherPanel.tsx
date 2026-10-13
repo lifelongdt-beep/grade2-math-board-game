@@ -387,6 +387,30 @@ const buildAnalysisWorkbook = (
   return workbook;
 };
 
+/**
+ * 교사용 분석 엑셀 파일을 만들어 내려받습니다. 교사용 분석 창의 단추와,
+ * 학습이 끝났을 때 자동으로 내려받기(설정에서 고름)가 함께 씁니다.
+ */
+export const downloadAnalysisFile = (lesson: Lesson, records: AnswerRecord[], players: Player[], goalStep: number) => {
+  const analytics = useAnalytics(records, players);
+  const wrongRecords = records.filter((record) => !record.correct);
+  const totalCorrect = records.filter((record) => record.correct).length;
+  const accuracy = records.length === 0 ? 0 : Math.round((totalCorrect / records.length) * 100);
+  const averageTime = average(records.map((record) => record.responseMs));
+  const shares = contributionsFor(records, goalStep);
+  const workbook = buildAnalysisWorkbook(lesson, records, wrongRecords, analytics, accuracy, averageTime, shares, goalStep);
+  const blob = new Blob([workbook], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = safeFileName(`${lesson.semester}-${lesson.unitTitle}-${lessonFileLabel(lesson)}-교사용분석.xls`);
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  // 바로 지우면 브라우저가 파일 이름을 받기 전에 링크가 사라질 수 있어 조금 뒤에 지웁니다.
+  window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+};
+
 export function TeacherPanel({ isOpen, onClose, records, players, lesson, currentQuestion, goalStep }: TeacherPanelProps) {
   const [wrongRecordFilter, setWrongRecordFilter] = useState<number | 'all'>('all');
   const [excelStatus, setExcelStatus] = useState('');
@@ -420,18 +444,7 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
   const averageTime = average(records.map((record) => record.responseMs));
 
   const downloadAnalysisExcel = () => {
-    const workbook = buildAnalysisWorkbook(lesson, records, wrongRecords, analytics, accuracy, averageTime, shares, goalStep);
-    const blob = new Blob([workbook], {
-      type: 'application/vnd.ms-excel;charset=utf-8;',
-    });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = safeFileName(`${lesson.semester}-${lesson.unitTitle}-${lessonFileLabel(lesson)}-교사용분석.xls`);
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    downloadAnalysisFile(lesson, records, players, goalStep);
     setExcelStatus('분석 엑셀 파일을 만들었습니다.');
   };
 
