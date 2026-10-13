@@ -1367,7 +1367,7 @@ export const unit5Lesson1For = (수준: 수준): G5Family[] => {
   if (수준 === '중') {
     return 골라내기(모두, ['word-from-meaning', 'shape-family', 'box-around-us', 'parallel-pairs', 'pick-shape']);
   }
-  return 골라내기(모두, ['angle-back', 'side-back']);
+  return 골라내기(모두, ['angle-back', 'side-back', 'parallel-pairs']);
 };
 
 export const unit5Lesson4For = (수준: 수준): G5Family[] => {
