@@ -62,7 +62,7 @@ import { InteractiveHintModal } from './components/InteractiveHintModal';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
-import { TeacherPanel } from './components/TeacherPanel';
+import { TeacherPanel, downloadAnalysisFile } from './components/TeacherPanel';
 import { curriculum as curriculum2 } from './data/curriculum';
 import { curriculum5 } from './data/curriculum5';
 import { curriculum51 } from './data/curriculum51';
@@ -721,6 +721,23 @@ function App() {
   // 판에서 떠난 물음의 대답은 버립니다(지운 기록이 되살아나지 않게).
   const remoteEpochRef = useRef(0);
   const [teacherOpen, setTeacherOpen] = useState(false);
+  // 학습이 끝나면 교사용 분석 파일을 자동으로 내려받을지 고릅니다. 이 컴퓨터에서
+  // 고른 것을 기억해 두어 수업마다 다시 고르지 않아도 됩니다.
+  const [autoDownloadAnalysis, setAutoDownloadAnalysis] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem('autoDownloadAnalysis') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleAutoDownloadAnalysis = (next: boolean) => {
+    setAutoDownloadAnalysis(next);
+    try {
+      window.localStorage.setItem('autoDownloadAnalysis', next ? '1' : '0');
+    } catch {
+      // 저장할 수 없는 환경(사생활 보호 창 등)이면 이번 수업에만 적용됩니다.
+    }
+  };
   const [mobileJoinOpen, setMobileJoinOpen] = useState(false);
   const [mobileUrlCopied, setMobileUrlCopied] = useState(false);
   const [mobileJoinOrigin, setMobileJoinOrigin] = useState('');
@@ -949,6 +966,21 @@ function App() {
   // 넷이었을 때는 한 칸이 너무 빨리 찼습니다. 한 명이 두 문제씩 더
   // 맞혀야 한 칸이 차도록 여섯으로 둡니다.
   const goalStep = Math.max(6, playerCount * 6);
+
+  // 시간이 다 되어 학습이 끝나면, 고른 경우에 교사용 분석 파일을 한 번 내려받습니다.
+  // 푼 문항이 하나도 없으면 빈 파일이므로 내려받지 않습니다.
+  const autoDownloadedRef = useRef(false);
+  useEffect(() => {
+    if (mode !== 'finished') {
+      autoDownloadedRef.current = false;
+      return;
+    }
+    if (!autoDownloadAnalysis || isMobileEntry || autoDownloadedRef.current) return;
+    const 모든기록 = [...records, ...remoteRecords];
+    if (모든기록.length === 0) return;
+    autoDownloadedRef.current = true;
+    downloadAnalysisFile(lesson, 모든기록, [...players, ...remotePlayers], goalStep);
+  }, [mode, autoDownloadAnalysis, isMobileEntry, records, remoteRecords, lesson, players, remotePlayers, goalStep]);
   const goalStage = Math.floor(correctCount / goalStep) + 1;
   const goalTarget = goalStage * goalStep;
   const goalPercent = Math.round(((correctCount % goalStep) / goalStep) * 100);
@@ -1532,6 +1564,16 @@ function App() {
               </button>
             ))}
           </div>
+          {!isMobileEntry && (
+            <label className="auto-download-option">
+              <input
+                type="checkbox"
+                checked={autoDownloadAnalysis}
+                onChange={(event) => toggleAutoDownloadAnalysis(event.target.checked)}
+              />
+              <span>학습이 끝나면 교사용 분석 파일 자동 다운로드</span>
+            </label>
+          )}
         </section>
         {isCastleDefense && (
           <section>

@@ -1,3 +1,4 @@
+import { 분칸그림 } from './MinuteBar';
 import { ShareScene } from './ShareScene';
 import { AngleGraphic, AngleSplitGraphic, BarGraphGraphic, GridMoveGraphic, LineGraphGraphic, NumberArrayGraphic, ParallelDistanceGraphic, ProtractorGraphic } from './Grade4Visuals';
 import { BalanceGraphic, BeakerGraphic, ScaleDialGraphic } from './Grade3Visuals';
@@ -193,6 +194,58 @@ function CubePatternGraphic({ visual }: { visual: Extract<QuestionVisual, { kind
 
 // 연필 하나를 그리고, 그 길이에 딱 맞게 클립을 이어 놓습니다.
 // 자는 그리지 않습니다. 이 차시는 자를 배우기 전이기 때문입니다.
+// 몸의 부분으로 어림하기(2-2 3단원): 물건 막대 밑에 뼘·걸음·양팔을 이어 놓습니다.
+function BodyMeasureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'body-measure' }> }) {
+  // 12번이 넘으면 앞의 12번만 그리고 '…'로 이어지게 합니다. 적는 수는 언제나 문제의 수입니다.
+  const 정한수 = visual.count && visual.count > 0 ? visual.count : undefined;
+  const 다그림 = 정한수 !== undefined && 정한수 <= 12;
+  const n = 정한수 ? Math.min(12, 정한수) : visual.unit === '양팔' ? 2 : 4;
+  const left = 24;
+  const width = 328;
+  const w = width / (다그림 ? n : n + 0.6);
+  const 색 = '#0f7175';
+  // 한 뼘: 엄지와 새끼손가락을 벌린 손을 그리고, 그 아래에 한 뼘의 길이를 괄호로 묶습니다.
+  const 뼘 = (x: number) => (
+    <g>
+      <text x={x + w / 2} y="92" textAnchor="middle" fontSize={Math.min(30, w * 0.8)}>🖐️</text>
+      <path d={`M${x + 3} 98 v6 h${w - 6} v-6`} fill="none" stroke={색} strokeWidth="2" />
+    </g>
+  );
+  const 걸음 = (x: number, k: number) => (
+    <g>
+      <ellipse cx={x + w / 2} cy={k % 2 === 0 ? 82 : 94} rx={w * 0.32} ry="7" fill="#ffe2c4" stroke="#b9812a" strokeWidth="2" />
+      <circle cx={x + w * 0.85} cy={k % 2 === 0 ? 82 : 94} r="3" fill="#ffe2c4" stroke="#b9812a" strokeWidth="1.5" />
+    </g>
+  );
+  const 양팔 = (x: number) => {
+    const cx = x + w / 2;
+    return (
+      <g stroke="#b9812a" strokeWidth="2.6" strokeLinecap="round" fill="none">
+        <circle cx={cx} cy="72" r="6" fill="#ffe2c4" />
+        <line x1={cx} y1="78" x2={cx} y2="98" />
+        <line x1={x + 4} y1="84" x2={x + w - 4} y2="84" />
+        <line x1={cx} y1="98" x2={cx - 6} y2="110" />
+        <line x1={cx} y1="98" x2={cx + 6} y2="110" />
+      </g>
+    );
+  };
+  return (
+    <svg viewBox="0 0 376 132" role="img" aria-label={visual.label}>
+      <rect x="4" y="4" width="368" height="124" rx="14" fill="#f6fcff" stroke="#d7edf2" />
+      <text x={left} y="24" fill={색} fontSize="15" fontWeight="900">{visual.object}</text>
+      <rect x={left} y="32" width={width} height="22" rx="6" fill="#ffe7a8" stroke="#b9812a" strokeWidth="2.4" />
+      {Array.from({ length: n }, (_, k) => (
+        <g key={k}>
+          {k > 0 && <line x1={left + k * w} y1="60" x2={left + k * w} y2="112" stroke="#9fc9cc" strokeDasharray="3 3" />}
+          {visual.unit === '뼘' ? 뼘(left + k * w) : visual.unit === '걸음' ? 걸음(left + k * w, k) : 양팔(left + k * w)}
+        </g>
+      ))}
+      {!다그림 && <text x={left + n * w + 4} y="98" fill={색} fontSize="20" fontWeight="900">…</text>}
+      <text x={left + width} y="124" textAnchor="end" fill={색} fontSize="13" fontWeight="800">{정한수 ? `${정한수}${visual.unit === '양팔' ? '번' : visual.unit === '뼘' ? '뼘' : '걸음'}` : `${visual.unit}(으)로 재어 보기`.replace('뼘(으)로', '뼘으로').replace('걸음(으)로', '걸음으로').replace('양팔(으)로', '양팔로')}</text>
+    </svg>
+  );
+}
+
 function UnitMeasureGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'unit-measure' }> }) {
   const count = Math.max(1, Math.min(12, visual.count));
   const left = 30;
@@ -2383,8 +2436,23 @@ const RULER_LABEL_STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200];
 
 function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'ruler' }> }) {
   const range = Math.max(1, visual.end - visual.start);
-  const toX = (value: number) => 30 + ((value - visual.start) / range) * RULER_TRACK_WIDTH;
-  const pixelsPerUnit = RULER_TRACK_WIDTH / range;
+  // 긴 길이(231cm 등)는 0부터 다 그릴 수 없어 가운데를 끊습니다. 왼쪽에 눈금 0을
+  // 남기고, 세로 물결로 끊은 다음, 재는 끝 쪽 눈금을 그립니다. 물건은 0에서
+  // 시작해 물결을 건너 끝까지 이어져 보여야 길이가 이어진다는 것이 보입니다.
+  const elided = Boolean(visual.elided);
+  const zeroX = 38;
+  const breakX = 58;
+  const trackLeft = elided ? 80 : 30;
+  const trackWidth = elided ? RULER_TRACK_WIDTH - 50 : RULER_TRACK_WIDTH;
+  const toX = (value: number) => trackLeft + ((value - visual.start) / range) * trackWidth;
+  const pixelsPerUnit = trackWidth / range;
+  const objectStartX = elided ? zeroX : toX(visual.highlightStart);
+  // 세로 물결 한 줄(위에서 아래로)
+  const 세로물결 = (x: number) => {
+    let d = `M${x} 20`;
+    for (let y = 20; y < 100; y += 10) d += ` q${y % 20 === 0 ? 5 : -5} 5 0 10`;
+    return d;
+  };
 
   // 눈금 수는 자의 길이에 따라 달라집니다. 간격을 정해 두지 않으면
   // 긴 자에서 숫자가 서로 겹쳐 읽을 수 없습니다.
@@ -2403,29 +2471,14 @@ function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'rul
     <svg viewBox="0 0 376 132" role="img" aria-label={visual.label}>
       <rect x="4" y="6" width="368" height="120" rx="14" fill="#f6fcff" stroke="#d7edf2" />
       <rect x="26" y="48" width="324" height="46" rx="8" fill="#fff4bd" stroke="#d4a62f" />
-      {/* 앞쪽을 생략했다는 물결 표시입니다. 231cm를 0부터 다 그리면
-          눈금이 뭉개져 읽을 수 없으므로, 왼쪽을 끊고 재는 끝만
-          제대로 보여 줍니다. */}
-      {visual.elided && (
-        <g>
-          <rect x="26" y="48" width="22" height="46" fill="#f6fcff" />
-          <path
-            d="M30 56 q5 -6 10 0 q5 6 10 0 M30 71 q5 -6 10 0 q5 6 10 0 M30 86 q5 -6 10 0 q5 6 10 0"
-            fill="none"
-            stroke="#d4a62f"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
-        </g>
-      )}
-      <rect x={toX(visual.highlightStart)} y="50" width={toX(visual.highlightEnd) - toX(visual.highlightStart)} height="42" rx="6" fill="#dffafa" opacity="0.9" />
+      <rect x={objectStartX} y="50" width={toX(visual.highlightEnd) - objectStartX} height="42" rx="6" fill="#dffafa" opacity="0.9" />
       {/* 재는 물건입니다. 자 위에 얹어 두어야 어느 눈금에서 시작해
           어느 눈금에서 끝났는지가 눈에 보입니다. 눈금 0에서 시작하지
           않은 자를 다루는 문항은 이 그림이 없으면 읽을 수 없습니다. */}
       <rect
-        x={toX(visual.highlightStart)}
+        x={objectStartX}
         y="26"
-        width={Math.max(6, toX(visual.highlightEnd) - toX(visual.highlightStart))}
+        width={Math.max(6, toX(visual.highlightEnd) - objectStartX)}
         height="16"
         rx="8"
         fill="#7fd4ff"
@@ -2433,12 +2486,12 @@ function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'rul
         strokeWidth="2"
       />
       {/* 물건의 양 끝이 어느 눈금에 놓였는지 점선으로 내려 짚어 줍니다. */}
-      {[visual.highlightStart, visual.highlightEnd].map((mark) => (
+      {[objectStartX, toX(visual.highlightEnd)].map((x) => (
         <line
-          key={`edge-${mark}`}
-          x1={toX(mark)}
+          key={`edge-${x}`}
+          x1={x}
           y1="26"
-          x2={toX(mark)}
+          x2={x}
           y2="96"
           stroke="#2b7fa8"
           strokeWidth="2"
@@ -2465,6 +2518,17 @@ function RulerGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'rul
           </g>
         );
       })}
+      {elided && (
+        <g>
+          {/* 왼쪽 끝의 눈금 0 */}
+          <line x1={zeroX} y1="48" x2={zeroX} y2="78" stroke="#7b6233" strokeWidth="3" />
+          <text x={zeroX} y="113" textAnchor="middle" fill="#24364a" fontSize="13" fontWeight="800">0</text>
+          {/* 가운데를 끊은 세로 물결: 자와 물건을 함께 끊습니다. */}
+          <rect x={breakX - 6} y="20" width="12" height="80" fill="#f6fcff" />
+          <path d={세로물결(breakX - 6)} fill="none" stroke="#d4a62f" strokeWidth="2.5" strokeLinecap="round" />
+          <path d={세로물결(breakX + 6)} fill="none" stroke="#d4a62f" strokeWidth="2.5" strokeLinecap="round" />
+        </g>
+      )}
     </svg>
   );
 }
@@ -3201,6 +3265,8 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'number-array' && <NumberArrayGraphic visual={visual} />}
       {visual.kind === 'ratio-graph' && <RatioGraphGraphic visual={visual} />}
       {visual.kind === 'stack-plan' && <StackPlanGraphic visual={visual} />}
+      {visual.kind === 'body-measure' && <BodyMeasureGraphic visual={visual} />}
+      {visual.kind === 'minute-bar' && <분칸그림 total={visual.total} label={visual.label} />}
       {visual.kind === 'stack-iso' && <StackIsoGraphic visual={visual} />}
       {visual.kind === 'solid-figure' && <SolidFigureGraphic visual={visual} />}
       {visual.kind === 'solid-net' && <SolidNetGraphic visual={visual} />}
