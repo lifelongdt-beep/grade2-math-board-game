@@ -1,6 +1,6 @@
 import type { G5Family, G5Spec } from '../../grade5/build';
 import type { QuestionVisual } from '../../../types';
-import { gwa, particleOf, pick, rand } from '../../grade5/util';
+import { euro, gwa, particleOf, pick, rand } from '../../grade5/util';
 
 // ════════════════════════════════════════════════════════════════════
 // 3단원 대응 관계 — 1~5차시
@@ -56,7 +56,7 @@ const 말로 = (relation: Relation): string => {
   if (relation.kind === '×') return `${relation.rightName}${particleOf(relation.rightName, '은')} ${relation.leftName}의 ${relation.by}배입니다.`;
   if (relation.kind === '+') return `${relation.rightName}${particleOf(relation.rightName, '은')} ${relation.leftName}보다 ${relation.by} 더 많습니다.`;
   if (relation.kind === '-') return `${relation.rightName}${particleOf(relation.rightName, '은')} ${relation.leftName}보다 ${relation.by} 더 적습니다.`;
-  return `${relation.rightName}${particleOf(relation.rightName, '은')} ${relation.leftName}${particleOf(relation.leftName, '을')} ${relation.by}로 나눈 수입니다.`;
+  return `${relation.rightName}${particleOf(relation.rightName, '은')} ${relation.leftName}${particleOf(relation.leftName, '을')} ${euro(String(relation.by))} 나눈 수입니다.`;
 };
 
 // 말로 적은 다른 관계들입니다. 오답으로 씁니다 — 아이가 실제로
@@ -77,7 +77,7 @@ const 다른말 = (relation: Relation): string[] => {
   out.push(`${오른}${은} ${왼}보다 ${relation.by} 더 많습니다.`);
   out.push(`${오른}${은} ${왼}보다 ${relation.by} 더 적습니다.`);
   out.push(`${오른}${은} ${왼}보다 ${relation.by + 1} 더 많습니다.`);
-  out.push(`${오른}${은} ${왼}${particleOf(왼, '을')} ${relation.by + 1}로 나눈 수입니다.`);
+  out.push(`${오른}${은} ${왼}${particleOf(왼, '을')} ${euro(String(relation.by + 1))} 나눈 수입니다.`);
 
   // 참인 말은 오답이 될 수 없습니다. 표의 모든 칸에서 맞는지 실제로
   // 넣어 보고 걸러 냅니다 — 사람이 눈으로 읽어 걸러서는 언젠가 놓칩니다.
@@ -86,7 +86,7 @@ const 다른말 = (relation: Relation): string[] => {
     const 배 = /의 (\d+)배입니다/.exec(말);
     const 더많 = /보다 (\d+) 더 많습니다/.exec(말);
     const 더적 = /보다 (\d+) 더 적습니다/.exec(말);
-    const 나눈 = /(\d+)로 나눈 수입니다/.exec(말);
+    const 나눈 = /(\d+)(?:으로|로) 나눈 수입니다/.exec(말);
     const 뒤집힘 = 말.startsWith(왼);
     return 칸.every((left) => {
       const right = apply(relation, left);
