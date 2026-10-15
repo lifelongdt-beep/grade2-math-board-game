@@ -97,7 +97,9 @@ const laneStyleFor = (playerId: number) => {
 // 골랐습니다 — 이름을 대며 "나는 여우"라고 말할 수 있어야 합니다.
 const avatarChoices = ['🦊', '🐰', '🐶', '🐱', '🐼', '🐯', '🐸', '🐧', '🦁', '🐢'] as const;
 let successSoundUrl: string | null = null;
-const durations: SessionDuration[] = [30, 60, 120];
+const durations: SessionDuration[] = [30, 60, 120, 180, 240, 300];
+// 1분이 넘는 시간은 '2분'처럼 분으로 읽습니다.
+const durationLabel = (seconds: number) => (seconds < 60 ? `${seconds}초` : `${seconds / 60}분`);
 // 한 문제를 맞힐 때마다 붙는 시간입니다.
 const BONUS_SECONDS = 2;
 // 서른까지만 두었더니 번호가 더 큰 반에서는 그 아이들이 자기 번호를
@@ -1441,7 +1443,7 @@ function App() {
         </div>
         <div className="setup-summary">
           <span><Users size={18} /> {isMobileEntry ? '모바일 1명' : `${playerCount}명`}</span>
-          <span><Timer size={18} /> {sessionDuration}초</span>
+          <span><Timer size={18} /> {durationLabel(sessionDuration)}</span>
           {/* 모바일 QR로 들어오면 학생마다 다른 문항을 받습니다. 같은 이야기를
               두 칸에 나눠 쓰면 따로따로 읽히므로 한 칸으로 합쳤습니다. */}
           {isMobileEntry ? (
@@ -1560,7 +1562,7 @@ function App() {
                 key={duration}
                 onClick={() => setSessionDuration(duration)}
               >
-                {duration}초
+                {durationLabel(duration)}
               </button>
             ))}
           </div>
@@ -1908,7 +1910,7 @@ function App() {
         <div className="command-status">
           <span>풀이 기록 {records.length}개</span>
           {round > 1 && <span>{round}판째 · 기록 이어짐</span>}
-          <span>{sessionDuration}초 수업</span>
+          <span>{durationLabel(sessionDuration)} 수업</span>
           <span>{mode === 'finished' ? '시간 종료' : '진행 중'}</span>
         </div>
 
