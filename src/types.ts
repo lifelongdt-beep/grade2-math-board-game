@@ -1,6 +1,6 @@
 export type Difficulty = '하' | '중' | '상';
 
-export type SessionDuration = 30 | 60 | 120;
+export type SessionDuration = 30 | 60 | 120 | 180 | 240 | 300;
 
 // 어느 학기인지입니다. 2학년 1·2학기로 시작했고, 5학년 2학기가 뒤에
 // 붙었습니다. 5학년은 차시도 문항도 따로 만들기 때문에(grade5 폴더),
