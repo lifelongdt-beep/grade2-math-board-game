@@ -1278,6 +1278,14 @@ describe('상 수준의 고차 문항', () => {
     }
     expect(빈).toEqual([]);
   });
+  it('비와 비율, 띠그래프·원그래프, 비례식 차시의 친구 실수는 그 차시의 오개념입니다', () => {
+    const 차시들 = 모든차시.filter((l) => (l.semester === '6-1' && (l.unitNo === 4 || l.unitNo === 5)) || (l.semester === '6-2' && l.unitNo === 4));
+    for (const l of 차시들) {
+      for (const q of 조작문항들(l, '상', 6).filter((x) => x.manipulate!.friend && x.manipulate!.kind === 'tap-fill')) {
+        expect(q.support.steps[0], `${l.semester} ${l.unitNo}-${l.lessonNo} ${q.prompt}`).not.toMatch(/하나를 (더|덜) 세어|알맞지 않은 자리/);
+      }
+    }
+  });
   it('상 문항의 대부분은 고차 문항(틀린 곳 고치기·조건에 맞는 답 찾기)입니다', () => {
     const 고차 = 상.filter((q) => q.manipulate!.friend || (q.manipulate!.kind === 'number-line' && q.manipulate!.targets));
     const 남은종류 = [...new Set(상.filter((q) => !고차.includes(q)).map((q) => q.manipulate!.kind))];
