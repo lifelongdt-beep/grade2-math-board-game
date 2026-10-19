@@ -248,6 +248,19 @@ export type Manipulation =
   //   base  — 밑면 하나가 붙어 있고, 다른 밑면을 붙일 자리를 누릅니다.
   //   sides — 두 밑면이 붙어 있고, 빈 칸을 눌러 옆면을 채웁니다.
   //   meet  — 접었을 때 점 ask와 만나는 점을 누릅니다.
+  // 원기둥의 전개도(6-2 6단원).
+  //   base — 옆면(직사각형)의 위·아래 자리 가운데 다른 밑면(원)을 붙일 자리를 누릅니다.
+  //   size — 옆면의 가로(밑면의 둘레)와 세로(높이)를 끌어 맞춥니다. 가로 = 2 × 반지름 × 원주율.
+  | {
+      kind: 'cylinder-net';
+      mode: 'base' | 'size';
+      r: number;
+      h: number;
+      pi: number;
+      slots: number;
+      bases: { pos: number; side: 'top' | 'bottom' }[];
+      step: number;
+    }
   | {
       kind: 'prism-net';
       n: number;
