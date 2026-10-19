@@ -42,7 +42,38 @@ const 붙잡기 = (e: ReactPointerEvent) => {
 };
 
 // ── 순서대로 놓기 ─────────────────────────────────────────────────
-export function 순서놓기({ m, s, set, locked, 바른, 도움 }: 판<'order'>) {
+export function 순서놓기(props: 판<'order'>) {
+  return props.m.expr ? <계산순서 {...props} /> : <크기순서 {...props} />;
+}
+
+/** 식의 기호를 계산하는 차례대로 누릅니다. 누른 차례가 기호 위에 붙습니다. */
+function 계산순서({ m, s, set, locked, 바른, 도움 }: 판<'order'>) {
+  const 기호칸 = new Map(m.items.map((it, i) => [it.at!, i]));
+  return (
+    <div className="manip-order">
+      <div className="manip-expr">
+        {m.expr!.map((t, k) => {
+          const i = 기호칸.get(k);
+          if (i === undefined) return <span key={k} className="manip-expr-num">{t}</span>;
+          const 차례 = s.seq.indexOf(i);
+          const 바른차례 = 바른 ? 바른.seq.indexOf(i) : -1;
+          return (
+            <button key={k} type="button" disabled={locked} className={`manip-expr-op ${차례 >= 0 ? 'picked' : ''}`}
+              onClick={() => set({ ...s, seq: 차례 >= 0 ? s.seq.filter((x) => x !== i) : [...s.seq, i] })}>
+              {차례 >= 0 && <small className="manip-expr-badge">{차례 + 1}</small>}
+              {바른 && 바른차례 !== 차례 && <small className="manip-expr-badge ok">{바른차례 + 1}</small>}
+              {t}
+            </button>
+          );
+        })}
+      </div>
+      {바른 && <p className="manip-help-line ok">바른 차례: {바른.seq.map((i) => m.items[i].label).join(' → ')}</p>}
+      {도움 && <p className="manip-help-line">괄호 안 → 곱셈·나눗셈 → 덧셈·뺄셈, 같은 차례끼리는 왼쪽부터예요. 누른 기호를 다시 누르면 빠져요.</p>}
+    </div>
+  );
+}
+
+function 크기순서({ m, s, set, locked, 바른, 도움 }: 판<'order'>) {
   const 길이 = m.items.some((it) => it.len !== undefined);
   const 기호 = m.dir === 'asc' ? '<' : '>';
   const 칩 = (i: number, 놓임: boolean) => {

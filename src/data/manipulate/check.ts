@@ -445,7 +445,9 @@ const 채점하기 = (m: Manipulation, s: ManipState): ManipResult => {
     return {
       ok: false,
       said,
-      tip: v !== null && m.step > 1 && v === m.values[i] * m.step ? `눈금 한 칸은 ${m.step}${m.unitLabel}이에요. 칸 수가 아니라 눈금의 값을 읽어 보세요.` : `'${m.labels[i]}'의 ${m.style === 'line' ? '점' : '막대'}이(가) 맞지 않아요. 표의 수를 다시 보세요.`,
+      tip: m.start
+        ? `'${m.labels[i]}'의 막대가 평균 높이가 아니에요. 모두 더한 수를 사람 수로 나누면 평균이에요. 높은 막대에서 덜어 낮은 막대에 채운다고 생각해 보세요.`
+        : v !== null && m.step > 1 && v === m.values[i] * m.step ? `눈금 한 칸은 ${m.step}${m.unitLabel}이에요. 칸 수가 아니라 눈금의 값을 읽어 보세요.` : `'${m.labels[i]}'의 ${m.style === 'line' ? '점' : '막대'}이(가) 맞지 않아요. 표의 수를 다시 보세요.`,
     };
   }
   if (m.kind === 'angle' && s.kind === 'angle') {
@@ -511,7 +513,9 @@ const 쌓기채점 = (m: Extract<Manipulation, { kind: 'stack-build' }>, h: numb
     return {
       ok: false,
       said,
-      tip: m.show === 'layers'
+      tip: m.show === 'none'
+        ? `가로, 세로, 높이에 쌓기나무가 몇 개씩 놓여야 하는지 다시 세어 보세요. 지금은 ${n}개예요.`
+        : m.show === 'layers'
         ? '1층, 2층, 3층 그림을 차례로 보고, 칸마다 몇 층까지 색칠되어 있는지 세어 그만큼 쌓아요.'
         : 적음 ? `쌓기나무가 모자라요(${다른곳}곳이 달라요). 앞에 있는 쌓기나무에 가려진 뒤쪽 칸도 아래층부터 받쳐 주어야 해요.` : `${다른곳}곳의 층수가 달라요. 그림에서 칸마다 가장 위에 보이는 쌓기나무가 몇 층에 있는지 세어 보세요.`,
     };
@@ -573,7 +577,7 @@ export const 처음상태 = (m: Manipulation): ManipState => {
     case 'shape-move': return { kind: m.kind, cells: 칸바로놓기(m.cells), offset: m.start };
     case 'number-line': return { kind: m.kind, at: null };
     case 'tap-fill': return { kind: m.kind, on: [] };
-    case 'bars': return { kind: m.kind, vals: m.values.map((v, i) => (m.pre.includes(i) ? v : null)) };
+    case 'bars': return { kind: m.kind, vals: m.start ? [...m.start] : m.values.map((v, i) => (m.pre.includes(i) ? v : null)) };
     // 처음에는 왼쪽으로 펼쳐 둡니다(180°는 어떤 문제의 답도 아닙니다).
     case 'angle': return { kind: m.kind, deg: 180 };
     case 'sort-bins': return { kind: m.kind, placed: m.items.map(() => null) };
