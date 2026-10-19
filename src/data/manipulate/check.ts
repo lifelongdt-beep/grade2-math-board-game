@@ -26,6 +26,7 @@ export type ManipState =
   | { kind: 'sort-bins'; placed: (number | null)[] }
   | { kind: 'stack-build'; h: number[][] }
   | { kind: 'cube-net'; cells: GridPoint[]; picked: GridPoint | null }
+  | { kind: 'cylinder-net'; bases: { pos: number; side: 'top' | 'bottom' }[]; w: number; hh: number }
   | { kind: 'prism-net'; strip: number[]; bases: { col: number; side: 'top' | 'bottom' }[]; picked: string | null };
 
 export interface ManipResult {
@@ -427,6 +428,7 @@ const 채점하기 = (m: Manipulation, s: ManipState): ManipResult => {
   if (m.kind === 'stack-build' && s.kind === 'stack-build') return 쌓기채점(m, s.h);
   if (m.kind === 'cube-net' && s.kind === 'cube-net') return 전개도채점(m, s);
   if (m.kind === 'prism-net' && s.kind === 'prism-net') return 각기둥채점(m, s);
+  if (m.kind === 'cylinder-net' && s.kind === 'cylinder-net') return 원기둥채점(m, s);
   return { ok: false, said: '알 수 없는 조작' };
 };
 
@@ -520,6 +522,7 @@ export const 처음상태 = (m: Manipulation): ManipState => {
     case 'stack-build': return { kind: m.kind, h: m.target.map((row) => row.map(() => 0)) };
     case 'cube-net': return { kind: m.kind, cells: [...m.given], picked: null };
     case 'prism-net': return { kind: m.kind, strip: [...m.strip], bases: [...m.bases], picked: null };
+    case 'cylinder-net': return { kind: m.kind, bases: [...m.bases], w: 5, hh: 2 };
     default: return { kind: 'grid-point', pt: null };
   }
 };
@@ -556,6 +559,7 @@ export const 정답모습 = (m: Manipulation): ManipState => {
     case 'angle': return { kind: m.kind, deg: m.target ?? Math.round((m.range![0] + m.range![1]) / 10) * 5 };
     case 'sort-bins': return { kind: m.kind, placed: m.items.map((it) => it.bin) };
     case 'stack-build': return { kind: m.kind, h: 쌓기본보기(m) };
+    case 'cylinder-net': return m.mode === 'base' ? { kind: m.kind, bases: [...m.bases, { pos: 0, side: m.bases[0].side === 'top' ? 'bottom' : 'top' }], w: 옆면가로(m), hh: m.h } : { kind: m.kind, bases: [...m.bases], w: 옆면가로(m), hh: m.h };
     case 'prism-net': return m.mode === 'meet' ? { kind: m.kind, strip: [...m.strip], bases: [...m.bases], picked: 만나는점(m) } : { kind: m.kind, strip: [...m.example.strip], bases: [...m.example.bases], picked: null };
     case 'cube-net': return m.mode === 'pick' ? { kind: m.kind, cells: [...m.given], picked: 마주보는칸(m.given, m.star!) } : { kind: m.kind, cells: [...m.example], picked: null };
     default: return 처음상태(m);
@@ -694,4 +698,32 @@ const 각기둥채점 = (m: Extract<Manipulation, { kind: 'prism-net' }>, s: Ext
   if (s.bases.some((b) => !띠.includes(b.col))) return { ok: false, said, tip: '밑면은 옆면의 변에 붙어 있어야 접을 수 있어요.' };
   if (s.bases[0].side === s.bases[1].side) return { ok: false, said, tip: '두 밑면이 옆면의 같은 쪽에 붙으면 접었을 때 겹쳐요. 하나는 위쪽, 하나는 아래쪽에 붙여요.' };
   return { ok: true, said: `${이름}의 전개도를 바르게 만듦` };
+};
+
+// ── 원기둥의 전개도 ───────────────────────────────────────────────
+/** 옆면의 가로 = 밑면의 둘레 = 2 × 반지름 × 원주율(소수 둘째 자리에서 맞춥니다) */
+export const 옆면가로 = (m: Extract<Manipulation, { kind: 'cylinder-net' }>) => Math.round(2 * m.r * m.pi * 100) / 100;
+
+const 원기둥채점 = (m: Extract<Manipulation, { kind: 'cylinder-net' }>, s: Extract<ManipState, { kind: 'cylinder-net' }>): ManipResult => {
+  if (m.mode === 'base') {
+    const said = `밑면 ${s.bases.length}개를 붙임`;
+    if (s.bases.length !== 2) return { ok: false, said, tip: s.bases.length < 2 ? '원기둥의 밑면은 2개예요. 하나를 더 붙여요.' : '원기둥의 밑면은 2개예요.' };
+    if (s.bases[0].side === s.bases[1].side) return { ok: false, said, tip: '두 밑면이 옆면의 같은 쪽에 붙으면 접었을 때 겹쳐요. 하나는 위쪽, 하나는 아래쪽에 붙여요.' };
+    return { ok: true, said: '원기둥의 전개도를 바르게 만듦' };
+  }
+  const 가로 = 옆면가로(m);
+  const said = `옆면을 가로 ${s.w} cm, 세로 ${s.hh} cm로 만듦`;
+  const 가로맞음 = Math.abs(s.w - 가로) < 1e-6;
+  const 세로맞음 = s.hh === m.h;
+  if (가로맞음 && 세로맞음) return { ok: true, said };
+  if (!가로맞음) {
+    const 지름 = 2 * m.r;
+    const tip = Math.abs(s.w - 지름) < 1e-6
+      ? `옆면의 가로를 지름(${지름} cm)과 같게 했어요. 옆면은 밑면의 둘레를 감싸므로 가로는 원주(지름×원주율)와 같아요.`
+      : Math.abs(s.w - m.r * m.pi) < 1e-6
+        ? '반지름에 원주율을 곱했어요. 원주는 지름×원주율이에요.'
+        : '옆면의 가로는 밑면의 둘레(원주)와 같아요. 원주 = 지름 × 원주율로 구해 보세요.';
+    return { ok: false, said, tip };
+  }
+  return { ok: false, said, tip: '옆면의 세로는 원기둥의 높이와 같아요.' };
 };
