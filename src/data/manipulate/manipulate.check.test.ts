@@ -64,6 +64,32 @@ const 방향읽기 = (t: string): GridPoint => {
 };
 const 이름점 = (mk: { at: GridPoint; name: string }[], name: string) => mk.find((x) => x.name === name)!.at;
 
+/** 테스트 쪽 계산기: '3+4×2', '1.2-0.5' 같은 식을 곱셈·나눗셈 먼저 계산합니다. */
+const 셈하기 = (식: string): number => {
+  const 낱 = 식.match(/\d+(?:\.\d+)?|[+\-×÷]/g)!;
+  const 수들: number[] = [Number(낱[0])];
+  const 기호들: string[] = [];
+  for (let i = 1; i < 낱.length; i += 2) {
+    const 수 = Number(낱[i + 1]);
+    if (낱[i] === '×') 수들[수들.length - 1] *= 수;
+    else if (낱[i] === '÷') 수들[수들.length - 1] /= 수;
+    else { 기호들.push(낱[i]); 수들.push(수); }
+  }
+  return 기호들.reduce((v, op, i) => (op === '+' ? v + 수들[i + 1] : v - 수들[i + 1]), 수들[0]);
+};
+/** '1과 2/5', '3/4', '2' 를 값으로 */
+const 분수값 = (t: string): number => {
+  let r = /^(\d+)[과와] (\d+)\/(\d+)$/.exec(t.trim());
+  if (r) return n(r[1]) + n(r[2]) / n(r[3]);
+  if ((r = /^(\d+)\/(\d+)$/.exec(t.trim()))) return n(r[1]) / n(r[2]);
+  return Number(t);
+};
+const 생활순위: Record<string, string[]> = {
+  무게: ['깃털', '지우개', '사과', '책가방', '자전거', '코끼리'],
+  넓이: ['우표', '공책', '신문지', '돗자리', '운동장'],
+  들이: ['숟가락', '컵', '양동이', '욕조', '수영장'],
+};
+
 /** 테스트 쪽에서 따로 만든 바른 조작 */
 const 바른조작 = (q: Question): ManipState => {
   const m = q.manipulate!;
@@ -79,6 +105,12 @@ const 바른조작 = (q: Question): ManipState => {
     case 'ruler-draw': {
       const 바퀴 = /(반지름|지름)이 (\d+) cm인 바퀴가 한 바퀴 .+\(원주율: ([\d.]+)\)/.exec(p);
       if (바퀴) { expect(m.fromMm).toBe(0); return { kind: m.kind, end: Math.round(n(바퀴[2]) * (바퀴[1] === '반지름' ? 2 : 1) * Number(바퀴[3]) * 10) }; }
+      const 이은셋 = /(\d+) cm, (\d+) cm, (\d+) cm를 이은 길이/.exec(p);
+      if (이은셋) return { kind: m.kind, end: (n(이은셋[1]) + n(이은셋[2]) + n(이은셋[3])) * 10 };
+      const 이은 = /(\d+) cm[과와] (\d+) cm[을를] 이은 길이/.exec(p);
+      if (이은) return { kind: m.kind, end: (n(이은[1]) + n(이은[2])) * 10 };
+      const 짧은 = /(\d+) cm보다 (\d+) cm 짧은 길이/.exec(p);
+      if (짧은) return { kind: m.kind, end: (n(짧은[1]) - n(짧은[2])) * 10 };
       let r = /반지름이 (\d+) cm/.exec(p);
       if (r) { expect(m.fromMm).toBe(0); return { kind: m.kind, end: n(r[1]) * 10 }; }
       r = /지름이 (\d+) cm/.exec(p);
@@ -144,6 +176,12 @@ const 바른조작 = (q: Question): ManipState => {
     }
     case 'grid-draw': {
       const g = m.goal;
+      const 각글 = /점 (\S)을 꼭짓점으로 하는 각 (\S)(\S)(\S)을/.exec(p);
+      if (각글) {
+        expect(각글[1], p).toBe(각글[3]);
+        const [p1, 꼭, p2] = [각글[2], 각글[3], 각글[4]].map((x) => 이름점(m.marks, x));
+        return { kind: m.kind, segs: [[꼭, p1], [꼭, p2]] };
+      }
       if (/대각선을 모두/.test(p)) {
         const ps = 닫힌도형(m.fixed)!;
         const segs: GridSegment[] = [];
@@ -257,6 +295,64 @@ const 바른조작 = (q: Question): ManipState => {
         const [l0, l1] = m.labels;
         return Math.round(((v - Number(l0.text)) / (Number(l1.text) - Number(l0.text))) * (l1.at - l0.at) + l0.at);
       };
+      const 계산 = /^(.+?)의 (값|몫|수)[을를] 수직선에서 찾아/.exec(p);
+      if (계산 && /^\d/.test(계산[1]) && !/어림하여/.test(p) && !/원의 넓이/.test(p)) {
+        let v: number;
+        const 식 = 계산[1];
+        let r2 = /^(\d+)\+(\d+)=□\+(\d+)에서 □$/.exec(식);
+        if (r2) v = n(r2[1]) + n(r2[2]) - n(r2[3]);
+        else if ((r2 = /^(\d+)×(\d+)=□×(\d+)에서 □$/.exec(식))) v = (n(r2[1]) * n(r2[2])) / n(r2[3]);
+        else if (/다음에 올 계산식$/.test(식)) {
+          const 줄 = [...식.matchAll(/(\d+)\+(\d+)=(\d+)/g)].map((x) => [n(x[1]), n(x[2]), n(x[3])]);
+          줄.forEach(([a, b, c]) => expect(a + b, 식).toBe(c));
+          const [, 둘, 셋] = 줄;
+          v = 셋[0] + (셋[0] - 둘[0]) + 셋[1] + (셋[1] - 둘[1]);
+        } else {
+          v = 셈하기(식);
+          if (계산[2] === '몫') v = Math.floor(v + 1e-9);
+        }
+        expect(q.answer, p).toBe(String(Number(v.toFixed(4))));
+        return { kind: m.kind, at: 자리(v) };
+      }
+      const 어림 = /^([\d.]+)([+\-×÷])([\d.]+)에서 .*?(각각 )?가까운 (몇십|몇백|자연수)(?:으로|로) 어림하여/.exec(p);
+      if (어림) {
+        const u = 어림[5] === '몇백' ? 100 : 어림[5] === '몇십' ? 10 : 1;
+        const 둥글게 = (x: number) => Math.round(x / u) * u;
+        const a = 둥글게(Number(어림[1]));
+        const b = 어림[4] ? 둥글게(Number(어림[3])) : Number(어림[3]);
+        const v = 셈하기(`${a}${어림[2]}${b}`);
+        expect(q.answer, p).toBe(String(v));
+        return { kind: m.kind, at: 자리(v) };
+      }
+      const 킬로 = /(?:(\d+) km )?(\d+) m인 곳/.exec(p);
+      if (킬로) return { kind: m.kind, at: (n(킬로[1] ?? '0') * 1000 + n(킬로[2])) / 100 };
+      const 초 = /(?:(\d+)분 )?(\d+)초인 곳/.exec(p);
+      if (초) return { kind: m.kind, at: (n(초[1] ?? '0') * 60 + n(초[2])) / 5 };
+      const 값식 = /^수직선에서 (.+)의 값을 나타내는/.exec(p);
+      if (값식) {
+        const 식 = 값식[1];
+        if (/\//.test(식)) {
+          // 분수 식: 항을 나누어 값을 구합니다(대분수·자연수 포함, 나누기는 자연수로).
+          const 항 = 식.split(/([+\-÷])/);
+          let v = 분수값(항[0]);
+          for (let i = 1; i < 항.length; i += 2) v = 항[i] === '+' ? v + 분수값(항[i + 1]) : 항[i] === '-' ? v - 분수값(항[i + 1]) : v / 분수값(항[i + 1]);
+          return { kind: m.kind, at: Math.round(v * m.labels[1].at) };
+        }
+        return { kind: m.kind, at: 자리(셈하기(식)) };
+      }
+      const 대응 = /(\d+)(?:개|송이)씩/.exec(p);
+      const 물음 = /(\S+?)[이가] (\d+)(?:개|살)일 때 (\S+?)의 (?:수|나이)/.exec(p);
+      if (/언니는 동생보다 (\d+)살 많습니다/.test(p) && 물음) return { kind: m.kind, at: 자리(n(물음[2]) + n(/(\d+)살 많습니다/.exec(p)![1])) };
+      if (대응 && 물음) {
+        const 앞말 = p.split(' ')[0];
+        const v = 물음[1] === 앞말 ? n(물음[2]) * n(대응[1]) : n(물음[2]) / n(대응[1]);
+        return { kind: m.kind, at: 자리(v) };
+      }
+      const 원 = /(반지름|지름)이 (\d+) cm인 원의 넓이.+원주율: ([\d.]+)/.exec(p);
+      if (원) {
+        const r = n(원[2]) / (원[1] === '지름' ? 2 : 1);
+        return { kind: m.kind, at: 자리(r * r * Number(원[3])) };
+      }
       const 개수로 = /0\.(1|01)이 (\d+)개인 수를 나타내는/.exec(p);
       if (개수로) return { kind: m.kind, at: 자리(n(개수로[2]) * (개수로[1] === '1' ? 0.1 : 0.01)) };
       let 어 = /(\d+)[을를] (올림|버림|반올림)하여 (십|백)의 자리까지/.exec(p);
@@ -353,6 +449,10 @@ const 바른조작 = (q: Question): ManipState => {
           if ((e[2] === '이상' ? v >= lo : v > lo) && (e[4] === '이하' ? v <= hi : v < hi)) 칸.push(k);
         }
       }
+      if (!칸 && (e = /덧셈표에서 합이 (\d+)인 칸/.exec(p))) {
+        칸 = [];
+        for (let a = 1; a <= 9; a += 1) for (let b = 1; b <= 9; b += 1) if (a + b === n(e[1])) 칸.push((a - 1) * 9 + b - 1);
+      }
       if (!칸 && (e = /곱셈표에서 곱이 (\d+)인 칸/.exec(p))) {
         칸 = [];
         for (let a = 1; a <= 9; a += 1) for (let b = 1; b <= 9; b += 1) if (a * b === n(e[1])) 칸.push((a - 1) * 9 + b - 1);
@@ -385,6 +485,9 @@ const 바른조작 = (q: Question): ManipState => {
       if (t === null && (r = /학생 (\d+)명 가운데 (\d+)명이 .+ 20칸으로/.exec(p))) t = (n(r[2]) / n(r[1])) * 20;
       if (t === null && (r = /모두 (\d+)개가 되도록/.exec(p))) t = n(r[1]);
       if (t === null && (r = /빨간 구슬이 (\d+)개 있습니다\. 파란 구슬 (\d+)개를 더 놓아/.exec(p))) { expect(m.pre.length, p).toBe(n(r[1])); t = n(r[1]) + n(r[2]); }
+      if (t === null && (r = /빨간 구슬이 (\d+)개 있습니다\. 파란 구슬 (\d+)개와 노란 구슬 (\d+)개를 더 놓아/.exec(p))) { expect(m.pre.length, p).toBe(n(r[1])); t = n(r[1]) + n(r[2]) + n(r[3]); }
+      if (t === null && (r = /(\d+)개 가운데 (\d+)개를 먹(?:고, 또 (\d+)개를 먹)?었습니다/.exec(p))) { expect(m.parts, p).toBe(n(r[1])); t = n(r[2]) + n(r[3] ?? '0'); }
+      if (t === null && (r = /(\d+)개를 모두 먹었습니다/.exec(p))) t = n(r[1]);
       if (t === null && (r = /구슬을 (\d+)개 놓아/.exec(p))) t = n(r[1]);
       if (t === null && (r = /(\d+)개만 눌러/.exec(p))) t = n(r[1]);
       expect(t, p).not.toBeNull();
@@ -397,6 +500,19 @@ const 바른조작 = (q: Question): ManipState => {
     case 'base-ten': {
       let t: number;
       let r = /^(\d+)\+(\d+)[을를]/.exec(p);
+      const 묶음 = /수 모형으로 (\d+)[을를] (\d+)묶음 놓아 (\d+)×(\d+)/.exec(p);
+      if (묶음) {
+        expect([n(묶음[3]), n(묶음[4])], p).toEqual([n(묶음[1]), n(묶음[2])]);
+        const 곱 = n(묶음[1]) * n(묶음[2]);
+        expect(m.target, p).toBe(곱);
+        return { kind: m.kind, counts: m.places.map((pl) => Math.floor(곱 / pl) % 10) };
+      }
+      const 천백 = /1000이 (\d+)개, 100이 (\d+)개인 수/.exec(p);
+      if (천백) {
+        const v = n(천백[1]) * 1000 + n(천백[2]) * 100;
+        expect(m.target, p).toBe(v);
+        return { kind: m.kind, counts: m.places.map((pl) => Math.floor(v / pl) % 10) };
+      }
       const 네모 = /^(\d+)([+-])□=(\d+)에서 □를 구하려고/.exec(p);
       if (네모) {
         expect(m.start, p).toEqual(m.places.map((pl) => Math.floor(n(네모[1]) / pl) % 10));
@@ -436,6 +552,11 @@ const 바른조작 = (q: Question): ManipState => {
       return { kind: m.kind, vals };
     }
     case 'angle': {
+      if (/정삼각형의 한 각의 크기만큼/.test(p)) return { kind: m.kind, deg: 60 };
+      if (/정삼각형 2개를 한 꼭짓점에 나란히/.test(p)) return { kind: m.kind, deg: 120 };
+      if (/정삼각형의 한 각과 직각을 합한/.test(p)) return { kind: m.kind, deg: 150 };
+      if (/직각보다 작은 각을 만들어/.test(p)) return { kind: m.kind, deg: 45 };
+      if (/직각보다 크고 일직선보다 작은 각을 만들어/.test(p)) return { kind: m.kind, deg: 135 };
       const 직각낀 = /사각형의 세 각이 (\d+)°, (\d+)°, 직각/.exec(p);
       if (직각낀) return { kind: m.kind, deg: 360 - n(직각낀[1]) - n(직각낀[2]) - 90 };
       const 사각 = /사각형의 세 각이 (\d+)°, (\d+)°, (\d+)°/.exec(p);
@@ -468,6 +589,19 @@ const 바른조작 = (q: Question): ManipState => {
           '두 밑면이 평행하지만 크기가 다른 사각형': ['각기둥이 아닌 것'], '공 모양': ['둘 다 아닌 것', '각기둥이 아닌 것'],
           '음료수 캔': ['원기둥'], '두루마리 휴지': ['원기둥'], 고깔모자: ['원뿔'], '공사장 고깔': ['원뿔'], 축구공: ['구'], 구슬: ['구'], '어느 방향에서 보아도 원': ['구'],
         };
+        const 도형: Record<string, string[]> = {
+          '어느 쪽에서 보아도 똑같이 동그란 모양': ['원'], '동전의 본을 뜬 모양': ['원'], '컴퍼스로 그린 모양': ['원'],
+          '길쭉하게 동그란 달걀 모양': ['원이 아닌 것'], '곧은 선과 굽은 선이 섞인 반달 모양': ['원이 아닌 것'], '꼭짓점이 3개인 모양': ['원이 아닌 것', '삼각형'],
+          '곧은 선 3개로 둘러싸인 모양': ['삼각형'], '삼각김밥의 본을 뜬 모양': ['삼각형'], '곧은 선 4개로 둘러싸인 모양': ['사각형'], '꼭짓점이 4개인 모양': ['사각형'], '공책의 본을 뜬 모양': ['사각형'],
+          '굽은 선으로 둘러싸인 모양': ['둘 다 아닌 것'], '곧은 선 3개가 끊어져 열린 모양': ['둘 다 아닌 것'], '곧은 선 5개로 둘러싸인 모양': ['둘 다 아닌 것'],
+          '정사각형 6개로 둘러싸인 도형': ['정육면체', '직육면체'], 주사위: ['정육면체'], '모서리 12개의 길이가 모두 같은 직육면체': ['정육면체'],
+          '직사각형 6개로 둘러싸인 우유갑': ['정육면체가 아닌 것'], '정사각형 2개와 직사각형 4개로 둘러싸인 도형': ['정육면체가 아닌 것'],
+          '직사각형 6개로 둘러싸인 도형': ['직육면체'], '상자 모양의 우유갑': ['직육면체'], '삼각형 2개와 직사각형 3개로 둘러싸인 도형': ['직육면체가 아닌 것'],
+          '원 2개와 굽은 면으로 둘러싸인 도형': ['직육면체가 아닌 것'], '사다리꼴 2개와 직사각형 4개로 둘러싸인 도형': ['직육면체가 아닌 것'],
+        };
+        const 도형칸 = 도형[label] ? bins.findIndex((b) => 도형[label].includes(b)) : -1;
+        if (도형칸 >= 0) return 도형칸;
+        if (label === '공 모양' && bins.includes('정육면체가 아닌 것')) return bins.indexOf('정육면체가 아닌 것');
         const 입체칸 = 입체[label] ? bins.findIndex((b) => 입체[label].includes(b)) : -1;
         if (입체칸 >= 0) return 입체칸;
         const 표: Record<string, string> = {
@@ -623,6 +757,12 @@ const 바른조작 = (q: Question): ManipState => {
         expect(q.prompt.replace(/\s/g, ''), p).toContain(m.expr.join(''));
         return { kind: m.kind, seq };
       }
+      const 생활 = Object.entries(생활순위).find(([, 목록]) => m.items.every((it) => 목록.includes(it.label)));
+      if (생활 && /무거운|가벼운|넓은|좁은|담을 수 있는/.test(p)) {
+        const 큰 = /무거운|넓은|많이 담을/.test(p);
+        const 위 = m.items.map((it) => 생활[1].indexOf(it.label));
+        return { kind: m.kind, seq: 위.map((_, i) => i).sort((a, b) => (큰 ? 위[b] - 위[a] : 위[a] - 위[b])) };
+      }
       if (/회전판/.test(p)) {
         const 값들 = m.items.map((it) => n(/빨간 칸이 (\d)칸/.exec(it.label)![1]) / 4);
         const 높은 = /높은 것부터/.test(p);
@@ -682,11 +822,17 @@ const 바른조작 = (q: Question): ManipState => {
       return { kind: m.kind, picked };
     }
     case 'share': {
+      const 대분수 = /^(\d+)과 \d+\/\d+÷/.exec(p);
       const 조각 = /(?:(\d+)\/(\d+)|([\d.]+))÷(?:(\d+)\/(\d+)|([\d.]+))[을를] 알아보려고/.exec(p);
       if (조각) {
-        const 앞 = 조각[1] ? n(조각[1]) : Math.round(Number(조각[3]) * 10);
-        const 뒤 = 조각[4] ? n(조각[4]) : Math.round(Number(조각[6]) * 10);
-        if (조각[1]) expect(조각[2], p).toBe(조각[5]);
+        // 조각 하나의 크기(1/U 또는 0.1)로 두 수를 조각 수로 바꿉니다.
+        const 단위 = /(?:1\/(\d+)|0\.1) 조각/.exec(p)!;
+        const U = 단위[1] ? n(단위[1]) : 10;
+        const 값 = (분자?: string, 분모?: string, 수?: string) => (분자 ? (n(분자) / n(분모!)) : Number(수)) * U;
+        const 앞값 = 값(조각[1], 조각[2], 조각[3]) + (대분수 ? n(대분수[1]) * U : 0);
+        const 앞 = Math.round(앞값);
+        const 뒤 = Math.round(값(조각[4], 조각[5], 조각[6]));
+        expect(Math.abs(앞값 - 앞) < 1e-9 && Math.abs(값(조각[4], 조각[5], 조각[6]) - 뒤) < 1e-9, p).toBe(true);
         expect([m.total, m.size, m.rest], p).toEqual([앞, 뒤, 앞 % 뒤 !== 0]);
         expect(m.rest, p).toBe(/남는 조각은 그대로/.test(p));
         return { kind: m.kind, plates: Array.from({ length: Math.floor(앞 / 뒤) }, () => 뒤) };

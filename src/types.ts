@@ -228,8 +228,8 @@ export type Manipulation =
   // 칸(조각)을 눌러 색칠하거나 구슬을 놓습니다. 미리 칠해진 칸(pre)은 그대로입니다.
   // exact가 있으면 개수가 아니라 꼭 그 칸들(미리 칠한 칸 포함)이어야 합니다.
   //   numgrid — 칸에 from부터 차례로 수를 적은 수 배열표, hours — 하루 24시간 띠(칸 k는 k시부터 1시간),
-  //   multtable — 곱셈표(칸 k는 (k÷9의 몫+1)×(k÷9의 나머지+1), 곱은 적지 않습니다)
-  | { kind: 'tap-fill'; layout: 'bar' | 'grid' | 'circle' | 'tenframe' | 'objects' | 'numgrid' | 'hours' | 'multtable'; parts: number; cols?: number; pre: number[]; target: number; emoji?: string; exact?: number[]; from?: number }
+  //   multtable — 곱셈표(칸 k는 (k÷9의 몫+1)×(k÷9의 나머지+1), 곱은 적지 않습니다). op가 '+'이면 덧셈표입니다.
+  | { kind: 'tap-fill'; layout: 'bar' | 'grid' | 'circle' | 'tenframe' | 'objects' | 'numgrid' | 'hours' | 'multtable'; parts: number; cols?: number; pre: number[]; target: number; emoji?: string; exact?: number[]; from?: number; op?: '+' | '×' }
   // 수 모형을 더하고 빼서 수를 만듭니다. start가 있으면 그 모형에서 시작하고,
   // trade면 윗자리 1개 ↔아랫자리 10개 바꾸기를 할 수 있습니다(받아올림·받아내림). 이때는 자리마다 9개 이하로 정리해야 맞습니다.
   // money면 수 모형 대신 돈(만 원, 천 원, 백 원, 십 원)으로 그립니다.
