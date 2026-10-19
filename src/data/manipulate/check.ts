@@ -24,7 +24,8 @@ export type ManipState =
   | { kind: 'bars'; vals: (number | null)[] }
   | { kind: 'angle'; deg: number }
   | { kind: 'sort-bins'; placed: (number | null)[] }
-  | { kind: 'stack-build'; h: number[][] };
+  | { kind: 'stack-build'; h: number[][] }
+  | { kind: 'cube-net'; cells: GridPoint[]; picked: GridPoint | null };
 
 export interface ManipResult {
   ok: boolean;
@@ -423,6 +424,7 @@ const 채점하기 = (m: Manipulation, s: ManipState): ManipResult => {
     return { ok: false, said, tip: 안놓음 ? `아직 옮기지 않은 것이 ${안놓음}개 있어요.` : `'${m.items[틀린[0]].label}'을(를) 다시 살펴보세요. 나누는 기준에 맞는지 생각해 보세요.` };
   }
   if (m.kind === 'stack-build' && s.kind === 'stack-build') return 쌓기채점(m, s.h);
+  if (m.kind === 'cube-net' && s.kind === 'cube-net') return 전개도채점(m, s);
   return { ok: false, said: '알 수 없는 조작' };
 };
 
@@ -514,6 +516,7 @@ export const 처음상태 = (m: Manipulation): ManipState => {
     case 'angle': return { kind: m.kind, deg: 180 };
     case 'sort-bins': return { kind: m.kind, placed: m.items.map(() => null) };
     case 'stack-build': return { kind: m.kind, h: m.target.map((row) => row.map(() => 0)) };
+    case 'cube-net': return { kind: m.kind, cells: [...m.given], picked: null };
     default: return { kind: 'grid-point', pt: null };
   }
 };
@@ -550,6 +553,7 @@ export const 정답모습 = (m: Manipulation): ManipState => {
     case 'angle': return { kind: m.kind, deg: m.target ?? Math.round((m.range![0] + m.range![1]) / 10) * 5 };
     case 'sort-bins': return { kind: m.kind, placed: m.items.map((it) => it.bin) };
     case 'stack-build': return { kind: m.kind, h: 쌓기본보기(m) };
+    case 'cube-net': return m.mode === 'pick' ? { kind: m.kind, cells: [...m.given], picked: 마주보는칸(m.given, m.star!) } : { kind: m.kind, cells: [...m.example], picked: null };
     default: return 처음상태(m);
   }
 };
@@ -577,4 +581,74 @@ const 쌓기본보기 = (m: Extract<Manipulation, { kind: 'stack-build' }>): num
   };
   돌기(0);
   return 찾음 ?? m.target.map((row) => [...row]);
+};
+
+// ── 정육면체의 전개도 ─────────────────────────────────────────────
+// 칸 하나에 정육면체를 올려 두고 옆 칸으로 굴려 가며, 칸마다 바닥에 닿는
+// 면(바깥쪽 방향)을 셉니다. 여섯 칸이 모두 다른 면에 닿으면 전개도입니다.
+type 벡 = [number, number, number];
+const 반대 = (v: 벡): 벡 => [-v[0], -v[1], -v[2]];
+const 벡글 = (v: 벡) => v.map((x) => (x === 0 ? 0 : x)).join(',');
+
+/** 칸마다 접었을 때 닿는 면(바닥 방향)입니다. 이어져 있지 않으면 null */
+export const 접기 = (cells: GridPoint[]): Map<string, string> | null => {
+  if (!cells.length) return null;
+  const 있음 = new Set(cells.map((c) => c.join(',')));
+  const 면 = new Map<string, string>();
+  const 할것: { c: GridPoint; B: 벡; N: 벡; E: 벡 }[] = [{ c: cells[0], B: [0, 0, -1], N: [0, 1, 0], E: [1, 0, 0] }];
+  면.set(cells[0].join(','), 벡글([0, 0, -1]));
+  while (할것.length) {
+    const { c, B, N, E } = 할것.pop()!;
+    const 이웃: [GridPoint, 벡, 벡, 벡][] = [
+      [[c[0] + 1, c[1]], E, N, 반대(B)],          // 오른쪽으로 굴리기
+      [[c[0] - 1, c[1]], 반대(E), N, B],          // 왼쪽
+      [[c[0], c[1] - 1], N, 반대(B), E],          // 위(북쪽)
+      [[c[0], c[1] + 1], 반대(N), B, E],          // 아래(남쪽)
+    ];
+    for (const [d, nB, nN, nE] of 이웃) {
+      const k = d.join(',');
+      if (!있음.has(k) || 면.has(k)) continue;
+      면.set(k, 벡글(nB));
+      할것.push({ c: d, B: nB, N: nN, E: nE });
+    }
+  }
+  return 면.size === cells.length ? 면 : null;
+};
+
+export const 정육면체전개도인가 = (cells: GridPoint[]) => {
+  if (cells.length !== 6 || new Set(cells.map((c) => c.join(','))).size !== 6) return false;
+  const 면 = 접기(cells);
+  return !!면 && new Set(면.values()).size === 6;
+};
+
+export const 마주보는칸 = (cells: GridPoint[], star: GridPoint): GridPoint | null => {
+  const 면 = 접기(cells);
+  if (!면) return null;
+  const 별 = 면.get(star.join(','));
+  if (!별) return null;
+  const 맞은 = 벡글(반대(별.split(',').map(Number) as 벡));
+  const 찾음 = [...면.entries()].find(([, v]) => v === 맞은);
+  return 찾음 ? (찾음[0].split(',').map(Number) as GridPoint) : null;
+};
+
+const 전개도채점 = (m: Extract<Manipulation, { kind: 'cube-net' }>, s: Extract<ManipState, { kind: 'cube-net' }>): ManipResult => {
+  if (m.mode === 'pick') {
+    if (!s.picked) return { ok: false, said: '면을 고르지 않음', tip: '★ 면과 마주 보는 면을 눌러요.' };
+    const 답 = 마주보는칸(m.given, m.star!)!;
+    const said = `(${s.picked[0]}, ${s.picked[1]}) 면을 고름`;
+    if (s.picked[0] === 답[0] && s.picked[1] === 답[1]) return { ok: true, said };
+    const 이웃 = Math.abs(s.picked[0] - m.star![0]) + Math.abs(s.picked[1] - m.star![1]) === 1;
+    return { ok: false, said, tip: 이웃 ? '★ 면과 변이 맞닿은 면은 접으면 ★ 면과 만나요(수직이에요). 마주 보는 면은 맞닿지 않아요.' : '★ 면에서 한 줄로 한 칸 건너뛴 면이 마주 보는 면인 경우가 많아요. 머릿속으로 한 면씩 접어 보세요.' };
+  }
+  const n = s.cells.length;
+  const said = `면 ${n}개로 만듦`;
+  if (n !== 6) return { ok: false, said, tip: n < 6 ? `정육면체의 면은 6개예요. ${6 - n}개가 모자라요.` : `정육면체의 면은 6개예요. ${n - 6}개가 많아요.` };
+  if (m.mode === 'move') {
+    const 처음 = new Set(m.given.map((c) => c.join(',')));
+    const 바뀜 = s.cells.filter((c) => !처음.has(c.join(','))).length;
+    if (바뀜 > 1) return { ok: false, said, tip: '면은 하나만 옮겨야 해요.' };
+  }
+  if (!접기(s.cells)) return { ok: false, said, tip: '면끼리 변이 맞닿아 모두 이어져 있어야 접을 수 있어요.' };
+  if (!정육면체전개도인가(s.cells)) return { ok: false, said, tip: '접었을 때 서로 겹치는 면이 있어요. 겹치는 면 하나를 빈 자리로 옮겨 보세요.' };
+  return { ok: true, said: '정육면체의 전개도를 바르게 만듦' };
 };

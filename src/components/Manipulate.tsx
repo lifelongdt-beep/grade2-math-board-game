@@ -819,6 +819,44 @@ function 쌓기({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipulation
   );
 }
 
+
+// ── 정육면체의 전개도 ─────────────────────────────────────────────
+function 전개도({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipulation, { kind: 'cube-net' }>; s: Extract<ManipState, { kind: 'cube-net' }>; set: 설정; locked: boolean; 바른?: Extract<ManipState, { kind: 'cube-net' }>; 도움: boolean }) {
+  const 칸 = 40;
+  const W = m.cols * 칸 + 20;
+  const H = m.rows * 칸 + 20;
+  const 있나 = (cs: GridPoint[], x: number, y: number) => cs.some((c) => c[0] === x && c[1] === y);
+  const 고정 = (x: number, y: number) => m.mode === 'complete' && 있나(m.given, x, y);
+  const 누름 = (x: number, y: number) => {
+    if (locked) return;
+    if (m.mode === 'pick') { if (있나(m.given, x, y)) set({ ...s, picked: [x, y] }); return; }
+    if (고정(x, y)) return;
+    set({ ...s, cells: 있나(s.cells, x, y) ? s.cells.filter((c) => c[0] !== x || c[1] !== y) : [...s.cells, [x, y]] });
+  };
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="manip-svg">
+      <rect x="1" y="1" width={W - 2} height={H - 2} rx="10" fill={바탕} stroke={모눈} />
+      {Array.from({ length: m.cols * m.rows }, (_, k) => {
+        const x = k % m.cols;
+        const y = Math.floor(k / m.cols);
+        const 면 = 있나(s.cells, x, y);
+        const 원래 = 있나(m.given, x, y);
+        const 고른 = s.picked && s.picked[0] === x && s.picked[1] === y;
+        const 바른면 = 바른 && (m.mode === 'pick' ? 바른.picked && 바른.picked[0] === x && 바른.picked[1] === y : 있나(바른.cells, x, y));
+        const 채움 = 고른 ? '#ffd54f' : 면 ? (원래 && m.mode !== 'move' ? '#9edce8' : 원래 ? '#9edce8' : '#64b5f6') : '#fff';
+        return (
+          <g key={k} onPointerDown={(e) => { e.preventDefault(); 누름(x, y); }} style={{ cursor: locked ? undefined : 'pointer' }}>
+            <rect x={10 + x * 칸} y={10 + y * 칸} width={칸} height={칸} fill={채움} stroke={면 ? '#0f7175' : '#d3e2ec'} strokeWidth={면 ? 2 : 1} strokeDasharray={면 ? undefined : '3 3'} />
+            {바른면 && <rect x={10 + x * 칸 + 4} y={10 + y * 칸 + 4} width={칸 - 8} height={칸 - 8} fill="none" stroke={초록} strokeWidth="3" />}
+            {m.star && m.star[0] === x && m.star[1] === y && <text x={10 + x * 칸 + 칸 / 2} y={10 + y * 칸 + 칸 / 2 + 7} textAnchor="middle" fontSize="20" fontWeight="900" fill={잉크}>★</text>}
+          </g>
+        );
+      })}
+      {도움 && m.mode !== 'pick' && <text x={W / 2} y={H - 4} textAnchor="middle" fontSize="11" fontWeight="900" fill={주황}>면 {s.cells.length}개 / 6개</text>}
+    </svg>
+  );
+}
+
 // ── 하나로 묶기 ───────────────────────────────────────────────────
 /** 조작마다 '도움'에서 보여 주는 첫 걸음 말입니다. */
 const 도움말 = (m: Manipulation): string => {
@@ -835,6 +873,7 @@ const 도움말 = (m: Manipulation): string => {
     case 'bars': return `세로 눈금 한 칸은 ${m.step}${m.unitLabel}이에요. 표의 수를 보고 막대 끝을 그 눈금까지 끌어 올리세요.`;
     case 'angle': return m.protractor ? '각도기의 중심은 꼭짓점에, 밑금은 아래 변에 맞추었어요. 아래 변이 가리키는 0에서 시작하는 눈금(빨간 숫자)을 따라 읽어요.' : '직각(90°)의 모서리를 점선으로 보여 줘요. 이보다 좁으면 예각, 넓으면 둔각이에요.';
     case 'sort-bins': return '나누는 기준을 한 번 더 읽고, 하나씩 옮겨 보세요.';
+    case 'cube-net': return m.mode === 'pick' ? '★ 면을 바닥에 놓고, 맞닿은 면들을 하나씩 세워 접어 보세요. 마지막에 뚜껑처럼 덮이는 면이 마주 보는 면이에요.' : '한 면을 바닥으로 정하고 나머지를 접어 올려 보세요. 앞, 뒤, 왼쪽, 오른쪽, 뚜껑 가운데 빈 쪽이 어디인지 찾아요.';
     case 'stack-build': return m.show === 'views' ? '위에서 본 모양의 칸에 먼저 1개씩 놓고, 앞과 옆에서 본 모양의 줄마다 가장 높은 층에 맞추어 올려요. 칸을 누를수록 한 층씩 올라가고, 가장 높이 올라가면 다시 0이 돼요.' : '그림의 맨 앞줄 칸부터 몇 층인지 세어 그만큼 누르세요. 칸을 누를수록 한 층씩 올라가고, 가장 높이 올라가면 다시 0이 돼요.';
     default: return '';
   }
@@ -871,6 +910,7 @@ export function ManipulateTask({ m, locked, reveal, onSubmit, onTap, tip }: Mani
   else if (m.kind === 'angle' && s.kind === m.kind) 화면 = <각만들기 m={m} s={s} 바른={바른 as never} {...공통} />;
   else if (m.kind === 'sort-bins' && s.kind === m.kind) 화면 = <나누기 m={m} s={s} 바른={바른 as never} {...공통} />;
   else if (m.kind === 'stack-build' && s.kind === m.kind) 화면 = <쌓기 m={m} s={s} 바른={바른 as never} {...공통} />;
+  else if (m.kind === 'cube-net' && s.kind === m.kind) 화면 = <전개도 m={m} s={s} 바른={바른 as never} {...공통} />;
   const 되돌림 = s.kind === 'grid-draw' && s.segs.length > 0;
   return (
     <div className={`manip-task manip-kind-${m.kind}`} onPointerDown={() => onTap?.()}>
