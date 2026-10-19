@@ -401,6 +401,19 @@ const 바른조작 = (q: Question): ManipState => {
       }
       throw new Error(`고칠 수 없는 전개도: ${p}`);
     }
+    case 'cylinder-net': {
+      if (m.mode === 'base') {
+        const 붙은 = m.bases[0];
+        return { kind: m.kind, bases: [붙은, { pos: m.slots - 1, side: 붙은.side === 'top' ? 'bottom' : 'top' }], w: 0, hh: 0 };
+      }
+      // 문제 글의 지름(반지름)·높이·원주율로 옆면의 크기를 따로 구합니다.
+      const 원주율 = Number(/원주율: ([\d.]+)/.exec(p)![1]);
+      const 지름 = /지름이 (\d+) cm/.test(p) && !/반지름이/.test(p) ? n(/지름이 (\d+) cm/.exec(p)![1]) : n(/반지름이 (\d+) cm/.exec(p)![1]) * 2;
+      const 높이 = n(/높이가 (\d+) cm/.exec(p)![1]);
+      const 가로 = Math.round(지름 * 원주율 * 100) / 100;
+      expect(q.answer, p).toBe(`가로 ${가로} cm, 세로 ${높이} cm`);
+      return { kind: m.kind, bases: [], w: 가로, hh: 높이 };
+    }
     case 'prism-net': {
       const 이름n = ['삼', '사', '오', '육'].indexOf(/(삼|사|오|육)각기둥/.exec(p)![1]) + 3;
       expect(m.n, p).toBe(이름n);
@@ -450,6 +463,7 @@ const 어긋난조작 = (m: Manipulation, s: ManipState): ManipState | null => {
       if (m.kind === 'stack-build' && m.check !== 'exact') h[r] = h[r].map(() => 0);
       return { ...s, h };
     }
+    case 'cylinder-net': return m.kind === 'cylinder-net' && m.mode === 'base' ? { ...s, bases: s.bases.map((b) => ({ ...b, side: 'top' as const })) } : { ...s, w: m.kind === 'cylinder-net' ? 2 * m.r : s.w };
     case 'prism-net': {
       if (s.picked) return { ...s, picked: (m.kind === 'prism-net' ? m.points! : []).find((x) => x.name !== s.picked)!.name };
       // 두 밑면을 같은 쪽에 붙이거나 옆면을 하나 뺍니다.
