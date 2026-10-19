@@ -23,7 +23,8 @@ export type ManipState =
   | { kind: 'base-ten'; counts: number[] }
   | { kind: 'bars'; vals: (number | null)[] }
   | { kind: 'angle'; deg: number }
-  | { kind: 'sort-bins'; placed: (number | null)[] };
+  | { kind: 'sort-bins'; placed: (number | null)[] }
+  | { kind: 'stack-build'; h: number[][] };
 
 export interface ManipResult {
   ok: boolean;
@@ -421,7 +422,79 @@ const 채점하기 = (m: Manipulation, s: ManipState): ManipResult => {
     const 안놓음 = 틀린.filter((i) => s.placed[i] === null).length;
     return { ok: false, said, tip: 안놓음 ? `아직 옮기지 않은 것이 ${안놓음}개 있어요.` : `'${m.items[틀린[0]].label}'을(를) 다시 살펴보세요. 나누는 기준에 맞는지 생각해 보세요.` };
   }
+  if (m.kind === 'stack-build' && s.kind === 'stack-build') return 쌓기채점(m, s.h);
   return { ok: false, said: '알 수 없는 조작' };
+};
+
+// ── 쌓기나무 ──────────────────────────────────────────────────────
+// 0번 줄이 뒤, 마지막 줄이 앞입니다. 옆(오른쪽)에서 보면 앞쪽 줄이 왼쪽에 옵니다.
+export const 앞에서본 = (h: number[][]) => h[0].map((_, c) => Math.max(...h.map((row) => row[c])));
+export const 옆에서본 = (h: number[][]) => [...h].reverse().map((row) => Math.max(...row));
+export const 위에서본 = (h: number[][]) => h.map((row) => row.map((v) => v > 0));
+const 개수 = (h: number[][]) => h.flat().reduce((a, b) => a + b, 0);
+const 째말 = ['첫째', '둘째', '셋째', '넷째', '다섯째'];
+const 같은판 = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+const 쌓기채점 = (m: Extract<Manipulation, { kind: 'stack-build' }>, h: number[][]): ManipResult => {
+  const n = 개수(h);
+  const said = `쌓기나무 ${n}개로 쌓음(${h.map((row) => row.join('')).join('/')})`;
+  if (n === 0) return { ok: false, said: '쌓지 않음', tip: '아래 칸을 누를 때마다 그 자리에 쌓기나무가 한 층씩 올라가요.' };
+  if (m.check === 'exact') {
+    if (같은판(h, m.target)) return { ok: true, said };
+    const 적음 = n < 개수(m.target);
+    const 다른곳 = h.flatMap((row, r) => row.map((v, c) => (v !== m.target[r][c] ? [r, c] : null))).filter(Boolean).length;
+    return {
+      ok: false,
+      said,
+      tip: m.show === 'layers'
+        ? '1층, 2층, 3층 그림을 차례로 보고, 칸마다 몇 층까지 색칠되어 있는지 세어 그만큼 쌓아요.'
+        : 적음 ? `쌓기나무가 모자라요(${다른곳}곳이 달라요). 앞에 있는 쌓기나무에 가려진 뒤쪽 칸도 아래층부터 받쳐 주어야 해요.` : `${다른곳}곳의 층수가 달라요. 그림에서 칸마다 가장 위에 보이는 쌓기나무가 몇 층에 있는지 세어 보세요.`,
+    };
+  }
+  const 앞 = 앞에서본(h);
+  const 옆 = 옆에서본(h);
+  const 목앞 = 앞에서본(m.target);
+  const 목옆 = 옆에서본(m.target);
+  if (!같은판(위에서본(h), 위에서본(m.target))) return { ok: false, said, tip: '위에서 본 모양과 쌓기나무가 놓인 자리가 달라요. 위에서 본 모양의 칸에만, 빠짐없이 쌓아요.' };
+  const 앞틀린 = 앞.findIndex((v, i) => v !== 목앞[i]);
+  if (앞틀린 >= 0) return { ok: false, said, tip: `앞에서 본 모양이 달라요. 왼쪽에서 ${째말[앞틀린]} 세로줄의 가장 높은 곳이 ${목앞[앞틀린]}층이어야 하는데 ${앞[앞틀린]}층이에요.` };
+  const 옆틀린 = 옆.findIndex((v, i) => v !== 목옆[i]);
+  if (옆틀린 >= 0) return { ok: false, said, tip: `옆에서 본 모양이 달라요. 앞쪽에서 ${째말[옆틀린]} 가로줄의 가장 높은 곳이 ${목옆[옆틀린]}층이어야 하는데 ${옆[옆틀린]}층이에요.` };
+  if (m.check !== 'views' && m.count !== undefined && n !== m.count) {
+    return {
+      ok: false,
+      said,
+      tip: m.check === 'views-min'
+        ? `본 모양은 모두 맞아요. 그런데 ${n}개를 썼어요. 줄마다 가장 높은 층이 한 번씩만 나오면 되니, 나머지 칸은 더 낮출 수 있는지 보세요.`
+        : `본 모양은 모두 맞아요. 그런데 ${n}개를 썼어요. 칸마다 앞에서 본 층수와 옆에서 본 층수 가운데 작은 쪽까지 쌓을 수 있어요.`,
+    };
+  }
+  return { ok: true, said };
+};
+
+/** 본 모양(위·앞·옆)이 같은 쌓기 가운데 가장 적은·많은 개수입니다(칸마다 1층부터 차례로 따져 봅니다). */
+export const 본모양개수 = (target: number[][], 어느: 'min' | 'max'): number => {
+  const 앞 = 앞에서본(target);
+  const 옆 = 옆에서본(target);
+  const rows = target.length;
+  const 칸들 = target.flatMap((row, r) => row.map((v, c) => (v > 0 ? [r, c] : null))).filter((x): x is number[] => x !== null);
+  const 위 = 칸들.map(([r, c]) => Math.min(앞[c], 옆[rows - 1 - r]));
+  let 답 = 어느 === 'min' ? Infinity : -Infinity;
+  const h = target.map((row) => row.map(() => 0));
+  const 돌기 = (k: number) => {
+    if (k === 칸들.length) {
+      if (같은판(앞에서본(h), 앞) && 같은판(옆에서본(h), 옆)) {
+        const n = 개수(h);
+        답 = 어느 === 'min' ? Math.min(답, n) : Math.max(답, n);
+      }
+      return;
+    }
+    const [r, c] = 칸들[k];
+    for (let v = 1; v <= 위[k]; v += 1) { h[r][c] = v; 돌기(k + 1); }
+    h[r][c] = 0;
+  };
+  돌기(0);
+  return 답;
 };
 
 /** 아무것도 하지 않은 처음 상태입니다. */
@@ -440,6 +513,7 @@ export const 처음상태 = (m: Manipulation): ManipState => {
     // 처음에는 왼쪽으로 펼쳐 둡니다(180°는 어떤 문제의 답도 아닙니다).
     case 'angle': return { kind: m.kind, deg: 180 };
     case 'sort-bins': return { kind: m.kind, placed: m.items.map(() => null) };
+    case 'stack-build': return { kind: m.kind, h: m.target.map((row) => row.map(() => 0)) };
     default: return { kind: 'grid-point', pt: null };
   }
 };
@@ -475,6 +549,32 @@ export const 정답모습 = (m: Manipulation): ManipState => {
     case 'bars': return { kind: m.kind, vals: [...m.values] };
     case 'angle': return { kind: m.kind, deg: m.target ?? Math.round((m.range![0] + m.range![1]) / 10) * 5 };
     case 'sort-bins': return { kind: m.kind, placed: m.items.map((it) => it.bin) };
+    case 'stack-build': return { kind: m.kind, h: 쌓기본보기(m) };
     default: return 처음상태(m);
   }
+};
+
+/** 쌓기 문항의 바른 모습 하나: 꼭 같게면 target, 가장 적게면 줄마다 가장 높은 층이 한 번씩 나오게, 가장 많게면 칸마다 작은 쪽까지. */
+const 쌓기본보기 = (m: Extract<Manipulation, { kind: 'stack-build' }>): number[][] => {
+  if (m.check === 'exact' || m.check === 'views') return m.target.map((row) => [...row]);
+  const 앞 = 앞에서본(m.target);
+  const 옆 = 옆에서본(m.target);
+  const rows = m.target.length;
+  if (m.check === 'views-max') return m.target.map((row, r) => row.map((v, c) => (v > 0 ? Math.min(앞[c], 옆[rows - 1 - r]) : 0)));
+  // 가장 적게: 가능한 쌓기 가운데 개수가 count인 것을 찾습니다.
+  const 칸들 = m.target.flatMap((row, r) => row.map((v, c) => (v > 0 ? [r, c] : null))).filter((x): x is number[] => x !== null);
+  const h = m.target.map((row) => row.map(() => 0));
+  let 찾음: number[][] | null = null;
+  const 돌기 = (k: number) => {
+    if (찾음) return;
+    if (k === 칸들.length) {
+      if (같은판(앞에서본(h), 앞) && 같은판(옆에서본(h), 옆) && h.flat().reduce((a, b) => a + b, 0) === m.count) 찾음 = h.map((row) => [...row]);
+      return;
+    }
+    const [r, c] = 칸들[k];
+    for (let v = 1; v <= Math.min(앞[c], 옆[rows - 1 - r]); v += 1) { h[r][c] = v; 돌기(k + 1); }
+    h[r][c] = 0;
+  };
+  돌기(0);
+  return 찾음 ?? m.target.map((row) => [...row]);
 };
