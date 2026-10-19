@@ -7513,7 +7513,25 @@ body::before {
 
 .manip-place-svg {
   width: 70px;
-  height: 70px;
+  height: auto;
+  max-height: 110px;
+}
+
+/* 받아올림·받아내림: 윗자리 1개 ↔ 아랫자리 10개 */
+.manip-trade {
+  min-height: 34px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  border: 2px solid #ffb74d;
+  background: #fff3e0;
+  color: #5d3a00;
+  font-size: 11.5px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.manip-trade:disabled {
+  opacity: 0.4;
 }
 
 .manip-count {
@@ -7621,6 +7639,404 @@ body::before {
   text-align: center;
   color: #2e7d32;
   font-size: 12px;
+}
+
+/* ── 순서대로 놓기 ── */
+.manip-order {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  justify-items: center;
+}
+
+.manip-order-dir {
+  margin: 0;
+  color: #9fd8ff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.manip-order-row,
+.manip-order-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+  min-height: 44px;
+}
+
+.manip-order.vertical .manip-order-row,
+.manip-order.vertical .manip-order-pool {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.manip-order-slot-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.manip-order-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  min-height: 42px;
+  border-radius: 999px;
+}
+
+.manip-order-slot.empty {
+  border: 2px dashed rgba(150, 205, 255, 0.6);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.manip-order-sign {
+  color: #ffd54f;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.manip-len-chip {
+  justify-content: flex-start;
+  border-radius: 10px;
+}
+
+.manip-len-bar {
+  display: inline-block;
+  height: 12px;
+  border-radius: 4px;
+  background: #ffb74d;
+  border: 1px solid #1d2b3a;
+}
+
+/* ── 그림그래프 ── */
+.manip-picto {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+}
+
+.manip-picto-legend {
+  margin: 0;
+  color: #e3f2fd;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.manip-picto .big {
+  font-size: 24px;
+}
+
+.manip-picto .small {
+  font-size: 14px;
+}
+
+.manip-picto-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #f7fbff;
+  color: #1d2b3a;
+}
+
+.manip-picto-row.wrong {
+  outline: 3px solid #2e7d32;
+}
+
+.manip-picto-row strong {
+  font-size: 13px;
+}
+
+.manip-picto-icons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1px;
+  min-height: 30px;
+}
+
+.manip-picto-icons em {
+  margin-left: 6px;
+  color: #ef6c00;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.manip-picto-icons em.ok {
+  color: #2e7d32;
+}
+
+.manip-picto-pm {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.manip-picto-pm button {
+  min-height: 34px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  border: 2px solid #90caf9;
+  background: #1b2540;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 900;
+}
+
+.manip-picto-pm button:disabled {
+  opacity: 0.4;
+}
+
+/* ── 달력 ── */
+.manip-calendar {
+  display: grid;
+  gap: 4px;
+  width: min(100%, 360px);
+  margin: 0 auto;
+}
+
+.manip-calendar-title {
+  margin: 0;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.manip-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+  padding: 6px;
+  border-radius: 10px;
+  background: #f7fbff;
+}
+
+.manip-calendar-grid span,
+.manip-calendar-grid button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border-radius: 6px;
+  color: #1d2b3a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.manip-calendar-grid .head {
+  min-height: 24px;
+  font-size: 12px;
+}
+
+.manip-calendar-grid button {
+  border: 1px solid #d3e2ec;
+  background: #fff;
+}
+
+.manip-calendar-grid .sun {
+  color: #e53935;
+}
+
+.manip-calendar-grid .sat {
+  color: #1e88e5;
+}
+
+.manip-calendar-grid button.picked {
+  background: #90caf9;
+  color: #0d2a4a;
+}
+
+.manip-calendar-grid button.right {
+  outline: 3px solid #2e7d32;
+  outline-offset: -2px;
+}
+
+/* ── 똑같이 나누어 담기 ── */
+.manip-share {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+
+.manip-share-pool {
+  display: grid;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  text-align: center;
+}
+
+.manip-share-pool strong {
+  font-size: 13px;
+}
+
+.manip-share-pool div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.manip-plates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.manip-plate {
+  position: relative;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  width: 92px;
+  min-height: 92px;
+  padding: 8px;
+  border-radius: 50%;
+  border: 3px solid #b0bec5;
+  background: #fff;
+  color: #1d2b3a;
+  cursor: pointer;
+}
+
+.manip-plate.wrong {
+  border-color: #2e7d32;
+}
+
+.manip-plate-items {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 72px;
+  font-size: 15px;
+  line-height: 1.1;
+}
+
+.manip-plate small {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.manip-plate-minus {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #90caf9;
+  background: #1b2540;
+  color: #fff;
+  font-weight: 900;
+}
+
+.manip-share-tools {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.manip-share-tools button {
+  min-height: 40px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  border: 2px solid rgba(120, 190, 255, 0.55);
+  background: #1b2540;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.manip-share-tools button:disabled {
+  opacity: 0.45;
+}
+
+/* ── 규칙 채우기 ── */
+.manip-pattern {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  width: 100%;
+}
+
+.manip-pattern-grid {
+  display: grid;
+  gap: 3px;
+  padding: 6px;
+  border-radius: 10px;
+  background: #f7fbff;
+}
+
+.manip-pattern-grid button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #d3e2ec;
+  background: #eef3f7;
+  color: #1d2b3a;
+}
+
+.manip-pattern-grid button:disabled {
+  opacity: 1;
+}
+
+.manip-pattern-grid button.blank {
+  border: 2px dashed #64b5f6;
+  background: #fff;
+  cursor: pointer;
+}
+
+.manip-pattern-grid button.wrong {
+  border: 3px solid #e53935;
+}
+
+.manip-pattern-grid button small.ok {
+  position: absolute;
+  right: 1px;
+  bottom: 0;
+  padding: 0 2px;
+  border-radius: 4px;
+  background: #c8e6c9;
+  font-size: 12px;
+}
+
+.manip-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.manip-palette button {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  border: 2px solid #90caf9;
+  background: #f7fbff;
+  font-size: 24px;
+}
+
+.manip-palette button.picked {
+  border-color: #ff8f00;
+  background: #ffe082;
+  transform: translateY(-2px);
 }
 
 /* 칠판(여럿이 한 화면)에서는 판 아래 단추가 칸 밖으로 밀려나지 않게 판 높이를 줄입니다. */
