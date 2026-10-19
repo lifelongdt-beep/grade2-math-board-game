@@ -831,6 +831,8 @@ function 쌓기({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipulation
   let 보기: ReactNode;
   if (m.show === 'iso') {
     보기 = <div className="manip-stack-target"><StackIsoPicture h={m.target} 크기={26} label="쌓은 모양" /></div>;
+  } else if (m.show === 'none') {
+    보기 = null;
   } else if (m.show === 'layers') {
     const 층수 = Math.max(...m.target.flat());
     const 폭 = m.cols * 칸 + 20;
@@ -1129,13 +1131,14 @@ const 도움말 = (m: Manipulation): string => {
     case 'share': return m.groups ? '접시를 차례로 하나씩 눌러 돌아가며 담아요.' : `접시를 놓고 ${m.size}개씩 담아요. 남은 것이 없을 때까지 접시를 더 놓아요.`;
     case 'array': return '주황 숫자로 한 줄에 몇 개, 몇 줄인지 세어 보세요. 왼쪽 위에서 시작해 끌어요.';
     case 'pattern': return '되풀이되는 묶음을 손가락으로 짚으며 소리 내어 읽어 보세요.';
-    case 'bars': return `세로 눈금 한 칸은 ${m.step}${m.unitLabel}이에요. 표의 수를 보고 막대 끝을 그 눈금까지 끌어 올리세요.`;
+    case 'bars': if (m.start) return '막대 끝을 위아래로 끌어요. 높은 막대에서 덜어 낸 만큼 낮은 막대에 채운다고 생각하면, 막대를 모두 더한 수는 그대로예요.';
+      return `세로 눈금 한 칸은 ${m.step}${m.unitLabel}이에요. 표의 수를 보고 막대 끝을 그 눈금까지 끌어 올리세요.`;
     case 'angle': return m.protractor ? '각도기의 중심은 꼭짓점에, 밑금은 아래 변에 맞추었어요. 아래 변이 가리키는 0에서 시작하는 눈금(빨간 숫자)을 따라 읽어요.' : '직각(90°)의 모서리를 점선으로 보여 줘요. 이보다 좁으면 예각, 넓으면 둔각이에요.';
     case 'sort-bins': return '나누는 기준을 한 번 더 읽고, 하나씩 옮겨 보세요.';
     case 'cylinder-net': return m.mode === 'base' ? '옆면을 둥글게 말아 세운다고 생각해 보세요. 이미 붙은 원의 반대쪽이 비어 있어요.' : '옆면의 가로는 밑면의 둘레(원주 = 지름 × 원주율), 세로는 원기둥의 높이예요. 파란 손잡이로 가로를, 주황 손잡이로 세로를 맞춰요.';
     case 'prism-net': return m.mode === 'meet' ? '옆면 띠를 둥글게 말아 보세요. 띠의 왼쪽 끝 변과 오른쪽 끝 변이 맞닿아요.' : m.mode === 'sides' ? `밑면의 변이 ${m.n}개이면 옆면도 ${m.n}개예요. 옆면이 끊어지지 않게 한 줄로 이어 붙여요.` : '이미 붙은 밑면과 반대쪽(위↔아래)에 붙여야 접었을 때 마주 봐요.';
     case 'cube-net': return m.mode === 'pick' ? '★ 면을 바닥에 놓고, 맞닿은 면들을 하나씩 세워 접어 보세요. 마지막에 뚜껑처럼 덮이는 면이 마주 보는 면이에요.' : '한 면을 바닥으로 정하고 나머지를 접어 올려 보세요. 앞, 뒤, 왼쪽, 오른쪽, 뚜껑 가운데 빈 쪽이 어디인지 찾아요.';
-    case 'stack-build': return m.show === 'views' ? '위에서 본 모양의 칸에 먼저 1개씩 놓고, 앞과 옆에서 본 모양의 줄마다 가장 높은 층에 맞추어 올려요. 칸을 누를수록 한 층씩 올라가고, 가장 높이 올라가면 다시 0이 돼요.' : '그림의 맨 앞줄 칸부터 몇 층인지 세어 그만큼 누르세요. 칸을 누를수록 한 층씩 올라가고, 가장 높이 올라가면 다시 0이 돼요.';
+    case 'stack-build': return m.show === 'none' ? '바닥 칸마다 같은 층수만큼 누르세요. 한 층에 놓이는 개수에 층수를 곱하면 모두 몇 개인지 알 수 있어요.' : m.show === 'views' ? '위에서 본 모양의 칸에 먼저 1개씩 놓고, 앞과 옆에서 본 모양의 줄마다 가장 높은 층에 맞추어 올려요. 칸을 누를수록 한 층씩 올라가고, 가장 높이 올라가면 다시 0이 돼요.' : '그림의 맨 앞줄 칸부터 몇 층인지 세어 그만큼 누르세요. 칸을 누를수록 한 층씩 올라가고, 가장 높이 올라가면 다시 0이 돼요.';
     default: return '';
   }
 };

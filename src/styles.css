@@ -7711,6 +7711,58 @@ body::before {
   border: 1px solid #1d2b3a;
 }
 
+/* 계산 순서: 식의 기호를 차례대로 누릅니다. */
+.manip-expr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  padding: 18px 10px 10px;
+  border-radius: 10px;
+  background: #f7fbff;
+  color: #1d2b3a;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.manip-expr-op {
+  position: relative;
+  min-width: 40px;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 2px dashed #64b5f6;
+  background: #fff;
+  color: #1d2b3a;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.manip-expr-op.picked {
+  border-style: solid;
+  border-color: #ff8f00;
+  background: #ffe082;
+}
+
+.manip-expr-badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 20px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #1e88e5;
+  color: #fff;
+  font-size: 12px;
+}
+
+.manip-expr-badge.ok {
+  top: auto;
+  bottom: -14px;
+  background: #2e7d32;
+}
+
 /* ── 그림그래프 ── */
 .manip-picto {
   display: grid;

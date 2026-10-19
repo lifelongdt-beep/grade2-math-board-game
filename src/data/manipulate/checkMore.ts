@@ -31,12 +31,13 @@ export const 눈금말 = (tool: 'beaker' | 'scale', v: number) => (tool === 'bea
 // ── 순서대로 놓기 ─────────────────────────────────────────────────
 const 순서채점 = (m: 조작<'order'>, seq: number[]): ManipResult => {
   const 큰쪽 = m.dir === 'desc';
-  const said = seq.map((i) => m.items[i].label).join(큰쪽 ? ' > ' : ' < ') || '놓지 않음';
+  const said = seq.map((i) => m.items[i].label).join(m.expr ? ' → ' : 큰쪽 ? ' > ' : ' < ') || '놓지 않음';
   if (seq.length < m.items.length) return { ok: false, said, tip: `아직 놓지 않은 것이 ${m.items.length - seq.length}개 있어요.` };
   for (let k = 0; k + 1 < seq.length; k += 1) {
     const a = m.items[seq[k]];
     const b = m.items[seq[k + 1]];
     if (큰쪽 ? a.value > b.value : a.value < b.value) continue;
+    if (m.why) return { ok: false, said, tip: m.why };
     const 말 = `'${a.label}'과(와) '${b.label}'의 크기를 다시 비교해 보세요.`;
     const 단위분수 = [a, b].every((x) => /^1\/\d+$/.test(x.label));
     const 분수 = [a, b].every((x) => x.label.includes('/'));
