@@ -352,6 +352,55 @@ const 바른조작 = (q: Question): ManipState => {
       expect(n(/(\d+)개/.exec(q.answer)![1]), p).toBe(고른수);
       return { kind: m.kind, h: 고른! };
     }
+    case 'cube-net': {
+      // 테스트 쪽 접기: 주사위를 굴리듯 칸마다 바닥에 닿는 면(1~6)을 셉니다.
+      type 주사위 = { 아래: number; 위: number; 북: number; 남: number; 동: number; 서: number };
+      const 굴리기 = (d: 주사위, 쪽: string): 주사위 =>
+        쪽 === '동' ? { ...d, 아래: d.동, 위: d.서, 동: d.위, 서: d.아래 }
+          : 쪽 === '서' ? { ...d, 아래: d.서, 위: d.동, 서: d.위, 동: d.아래 }
+            : 쪽 === '북' ? { ...d, 아래: d.북, 위: d.남, 북: d.위, 남: d.아래 }
+              : { ...d, 아래: d.남, 위: d.북, 남: d.위, 북: d.아래 };
+      const 접어보기 = (cs: GridPoint[]) => {
+        const 면 = new Map<string, 주사위>();
+        const 할것: [GridPoint, 주사위][] = [[cs[0], { 아래: 1, 위: 6, 북: 2, 남: 5, 동: 3, 서: 4 }]];
+        면.set(cs[0].join(','), 할것[0][1]);
+        while (할것.length) {
+          const [c, d] = 할것.pop()!;
+          for (const [dx, dy, 쪽] of [[1, 0, '동'], [-1, 0, '서'], [0, -1, '북'], [0, 1, '남']] as const) {
+            const k = `${c[0] + dx},${c[1] + dy}`;
+            if (!cs.some((e) => e.join(',') === k) || 면.has(k)) continue;
+            const nd = 굴리기(d, 쪽);
+            면.set(k, nd);
+            할것.push([[c[0] + dx, c[1] + dy], nd]);
+          }
+        }
+        return 면;
+      };
+      const 전개도인가 = (cs: GridPoint[]) => cs.length === 6 && new Set([...접어보기(cs).values()].map((d) => d.아래)).size === 6 && 접어보기(cs).size === 6;
+      if (m.mode === 'pick') {
+        const 면 = 접어보기(m.given);
+        const 별 = 면.get(m.star!.join(','))!;
+        const 답 = [...면.entries()].find(([, d]) => d.아래 === 별.위)![0].split(',').map(Number) as GridPoint;
+        return { kind: m.kind, cells: m.given, picked: 답 };
+      }
+      // 빈 칸을 하나(또는 둘) 고르는 모든 경우를 따로 찾아봅니다.
+      const 빈칸: GridPoint[] = [];
+      for (let y = 0; y < m.rows; y += 1) for (let x = 0; x < m.cols; x += 1) if (!m.given.some((c) => c[0] === x && c[1] === y)) 빈칸.push([x, y]);
+      if (m.mode === 'complete') {
+        const 더 = 6 - m.given.length;
+        const 후보 = 더 === 1 ? 빈칸.map((a) => [a]) : 빈칸.flatMap((a, i) => 빈칸.slice(i + 1).map((b) => [a, b]));
+        const 찾음 = 후보.find((add) => 전개도인가([...m.given, ...add]));
+        expect(찾음, p).toBeTruthy();
+        expect(전개도인가(m.given), p).toBe(false);
+        return { kind: m.kind, cells: [...m.given, ...찾음!], picked: null };
+      }
+      expect(전개도인가(m.given), p).toBe(false);
+      for (let i = 0; i < m.given.length; i += 1) for (const b of 빈칸) {
+        const cs = [...m.given.filter((_, j) => j !== i), b];
+        if (전개도인가(cs)) return { kind: m.kind, cells: cs, picked: null };
+      }
+      throw new Error(`고칠 수 없는 전개도: ${p}`);
+    }
     default:
       throw new Error('모르는 조작');
   }
@@ -379,6 +428,13 @@ const 어긋난조작 = (m: Manipulation, s: ManipState): ManipState | null => {
       // 본 모양만 보는 문항은 한 층 바꾸어도 본 모양이 같을 수 있어 앞줄 전체를 비웁니다.
       if (m.kind === 'stack-build' && m.check !== 'exact') h[r] = h[r].map(() => 0);
       return { ...s, h };
+    }
+    case 'cube-net': {
+      if (s.picked) {
+        const 다른 = (m.kind === 'cube-net' ? m.given : []).find((c) => c[0] !== s.picked![0] || c[1] !== s.picked![1])!;
+        return { ...s, picked: 다른 };
+      }
+      return { ...s, cells: s.cells.slice(0, -1) };
     }
     case 'sort-bins': return { ...s, placed: s.placed.map((b, k) => (k === 0 ? ((b! + 1) % (m.kind === 'sort-bins' ? m.bins.length : 2)) : b)) };
     default: return null;
@@ -417,6 +473,7 @@ describe('손 조작 문항', () => {
   it('아무것도 하지 않으면 맞지 않습니다(두 번 뒤집기처럼 그대로가 답인 것은 빼고)', () => {
     for (const q of 모두) {
       if (/두 번 뒤집은/.test(q.prompt)) continue;
+      if (q.manipulate!.kind === 'cube-net' && q.manipulate!.mode === 'pick') continue;
       expect(채점(q.manipulate!, 처음상태(q.manipulate!)).ok, q.prompt).toBe(false);
     }
   });

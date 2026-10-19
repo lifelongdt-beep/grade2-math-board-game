@@ -237,7 +237,13 @@ export type Manipulation =
   // target은 heights[줄][열](0번 줄이 뒤, 마지막 줄이 앞)입니다.
   //   show — 무엇을 보고 쌓는지: 'iso' 쌓은 모양 그림, 'views' 위·앞·옆에서 본 모양, 'layers' 층별로 나타낸 모양
   //   check — 'exact' 꼭 같게, 'views' 본 모양이 같게, 'views-min'·'views-max' 본 모양이 같으면서 count개(가장 적게·많게)
-  | { kind: 'stack-build'; rows: number; cols: number; maxH: number; show: 'iso' | 'views' | 'layers'; target: number[][]; check: 'exact' | 'views' | 'views-min' | 'views-max'; count?: number };
+  | { kind: 'stack-build'; rows: number; cols: number; maxH: number; show: 'iso' | 'views' | 'layers'; target: number[][]; check: 'exact' | 'views' | 'views-min' | 'views-max'; count?: number }
+  // 정육면체의 전개도(5-2 5단원). 모눈 칸을 눌러 면을 놓거나 뺍니다.
+  //   complete — given은 그대로 두고 면을 더 놓아 전개도를 완성합니다.
+  //   move     — given(전개도가 아닌 모양)에서 면 하나를 옮겨 전개도로 만듭니다.
+  //   pick     — given(전개도)을 접었을 때 star 면과 마주 보는 면을 누릅니다.
+  //   example은 틀렸을 때 보여 줄 바른 전개도 하나입니다.
+  | { kind: 'cube-net'; cols: number; rows: number; mode: 'complete' | 'move' | 'pick'; given: GridPoint[]; star?: GridPoint; example: GridPoint[] };
 
 export type Walkthrough =
   | { kind: 'add' | 'sub'; a: number; b: number }
