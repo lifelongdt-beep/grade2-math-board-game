@@ -411,7 +411,8 @@ const 채점하기 = (m: Manipulation, s: ManipState): ManipResult => {
   if (m.kind === 'number-line' && s.kind === 'number-line') {
     if (s.at === null) return { ok: false, said: '점을 놓지 않음', tip: '알맞은 눈금을 눌러 점을 놓아요.' };
     const said = `${s.at}번째 작은 눈금에 놓음`;
-    if (s.at === m.target) return { ok: true, said };
+    if (s.at === m.target || m.targets?.includes(s.at)) return { ok: true, said };
+    if (m.targets) return { ok: false, said, tip: '그 눈금의 수가 문제의 조건을 모두 만족하는지 하나씩 따져 보세요.' };
     return { ok: false, said, tip: Math.abs(s.at - m.target) === 1 ? '한 눈금 차이예요. 0에서부터 작은 눈금을 하나씩 다시 세어 보세요.' : '큰 눈금 사이가 몇 칸으로 나뉘었는지 먼저 세고, 한 칸의 크기를 생각해 보세요.' };
   }
   if (m.kind === 'tap-fill' && s.kind === 'tap-fill') {
@@ -569,6 +570,8 @@ export const 본모양개수 = (target: number[][], 어느: 'min' | 'max'): numb
 
 /** 아무것도 하지 않은 처음 상태입니다. */
 export const 처음상태 = (m: Manipulation): ManipState => {
+  // 친구가 해 둔 모습에서 시작하는 문항입니다(고칠 때마다 원래 모습이 바뀌지 않게 복사합니다).
+  if (m.friend) return JSON.parse(JSON.stringify(m.friend.state)) as ManipState;
   switch (m.kind) {
     case 'ruler-measure': return { kind: m.kind, rulerAt: m.objectStartMm + (m.objectStartMm >= 30 ? -25 : 35), endTick: null };
     case 'ruler-draw': return { kind: m.kind, end: m.fromMm };
