@@ -243,7 +243,22 @@ export type Manipulation =
   //   move     — given(전개도가 아닌 모양)에서 면 하나를 옮겨 전개도로 만듭니다.
   //   pick     — given(전개도)을 접었을 때 star 면과 마주 보는 면을 누릅니다.
   //   example은 틀렸을 때 보여 줄 바른 전개도 하나입니다.
-  | { kind: 'cube-net'; cols: number; rows: number; mode: 'complete' | 'move' | 'pick'; given: GridPoint[]; star?: GridPoint; example: GridPoint[] };
+  | { kind: 'cube-net'; cols: number; rows: number; mode: 'complete' | 'move' | 'pick'; given: GridPoint[]; star?: GridPoint; example: GridPoint[] }
+  // 각기둥의 전개도(6-1 2단원). 옆면(직사각형)이 한 줄로 놓이고, 밑면(n각형)이 위·아래에 붙습니다.
+  //   base  — 밑면 하나가 붙어 있고, 다른 밑면을 붙일 자리를 누릅니다.
+  //   sides — 두 밑면이 붙어 있고, 빈 칸을 눌러 옆면을 채웁니다.
+  //   meet  — 접었을 때 점 ask와 만나는 점을 누릅니다.
+  | {
+      kind: 'prism-net';
+      n: number;
+      columns: number;
+      mode: 'base' | 'sides' | 'meet';
+      strip: number[];
+      bases: { col: number; side: 'top' | 'bottom' }[];
+      points?: { name: string; corner: 'T' | 'B'; i: number }[];
+      ask?: string;
+      example: { strip: number[]; bases: { col: number; side: 'top' | 'bottom' }[] };
+    };
 
 export type Walkthrough =
   | { kind: 'add' | 'sub'; a: number; b: number }
