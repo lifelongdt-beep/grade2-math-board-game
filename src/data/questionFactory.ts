@@ -1,4 +1,5 @@
 import { deriveGrade2Walk } from './walkthrough';
+import { 힌트다듬기 } from './hintUpgrade';
 import {
   pickBySeed,
   pickSome,
@@ -17427,9 +17428,12 @@ export const generateQuestions = (
   options?: GenerateQuestionsOptions,
 ): Question[] =>
   차시원문항(lesson, difficulty, options).map((q) => {
-    if (q.visual || q.choiceVisuals) return q;
-    const visual = 그림추론(q.prompt);
-    return visual ? { ...q, visual } : q;
+    // 힌트는 문제의 수로 첫 걸음을 짚어 줍니다(hintUpgrade.ts).
+    const studentHint = 힌트다듬기(q.prompt, q.answer, q.support.studentHint);
+    const withHint = studentHint === q.support.studentHint ? q : { ...q, support: { ...q.support, studentHint } };
+    if (withHint.visual || withHint.choiceVisuals) return withHint;
+    const visual = 그림추론(withHint.prompt);
+    return visual ? { ...withHint, visual } : withHint;
   });
 
 const 차시원문항 = (
