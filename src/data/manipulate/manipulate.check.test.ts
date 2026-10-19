@@ -81,6 +81,8 @@ const 바른조작 = (q: Question): ManipState => {
       if (r) { expect(m.fromMm).toBe(0); return { kind: m.kind, end: n(r[1]) * 10 }; }
       r = /지름이 (\d+) cm/.exec(p);
       if (r) { expect(m.fromMm).toBe(0); return { kind: m.kind, end: (n(r[1]) / 2) * 10 }; }
+      r = /길이가 (\d+) cm인 색 테이프의 (\d+)\/(\d+)만큼/.exec(p);
+      if (r) { expect(m.fromMm).toBe(0); return { kind: m.kind, end: (n(r[1]) * n(r[2]) / n(r[3])) * 10 }; }
       const s = /자의 (\d+)(?: cm)? 눈금에서 시작하여 길이가 (\d+) cm/.exec(p)!;
       expect(s, p).not.toBeNull();
       expect(m.fromMm, p).toBe(n(s[1]) * 10);
@@ -153,6 +155,25 @@ const 바른조작 = (q: Question): ManipState => {
         for (let i = 0; i < ps.length; i += 1) for (let j = i + 1; j < ps.length; j += 1) segs.push([ps[i], ps[j]]);
         return { kind: m.kind, segs };
       }
+      if (g.type === 'between') {
+        // 한 평행선 위의 모눈점에서 수직인 방향으로 걸어가 다른 평행선에 닿을 때까지 긋습니다.
+        expect(/평행/.test(p), p).toBe(true);
+        const [l1, l2] = m.fixed;
+        const d = [l1[1][0] - l1[0][0], l1[1][1] - l1[0][1]];
+        const 약 = (x: number, y: number): number => (y ? 약(y, x % y) : Math.abs(x));
+        const k = 약(d[0], d[1]);
+        const 수직: GridPoint = [-d[1] / k, d[0] / k];
+        const 위에 = (l: GridSegment, q2: GridPoint) => (l[1][0] - l[0][0]) * (q2[1] - l[0][1]) - (l[1][1] - l[0][1]) * (q2[0] - l[0][0]) === 0
+          && Math.min(l[0][0], l[1][0]) <= q2[0] && q2[0] <= Math.max(l[0][0], l[1][0]) && Math.min(l[0][1], l[1][1]) <= q2[1] && q2[1] <= Math.max(l[0][1], l[1][1]);
+        for (let t = 1; t < k; t += 1) {
+          const 시작: GridPoint = [l1[0][0] + (d[0] / k) * t, l1[0][1] + (d[1] / k) * t];
+          for (const 쪽 of [1, -1]) for (let j = 1; j < 12; j += 1) {
+            const 끝: GridPoint = [시작[0] + 수직[0] * 쪽 * j, 시작[1] + 수직[1] * 쪽 * j];
+            if (위에(l2, 끝)) return { kind: m.kind, segs: [[시작, 끝]] };
+          }
+        }
+        throw new Error(`평행선 사이를 잇지 못함: ${p}`);
+      }
       if (g.type === 'line') {
         const [a, b] = m.fixed[0];
         const d = [b[0] - a[0], b[1] - a[1]];
@@ -177,6 +198,8 @@ const 바른조작 = (q: Question): ManipState => {
         if (크기) expect([g.goal.width, g.goal.height], p).toEqual([n(크기[1]), n(크기[2])]);
         if (/삼각형/.test(p) && !/사각형/.test(p)) expect(g.goal.sides, p).toBe(3);
         if (/사각형|사다리꼴|마름모|평행사변형/.test(p)) expect(g.goal.sides, p).toBe(4);
+        if (/오각형/.test(p)) expect(g.goal.sides, p).toBe(5);
+        if (/육각형/.test(p)) expect(g.goal.sides, p).toBe(6);
         return { kind: m.kind, segs: m.example ?? [] };
       }
       if (g.type === 'congruent') {
@@ -244,6 +267,37 @@ const 바른조작 = (q: Question): ManipState => {
       throw new Error(`풀 수 없는 수직선: ${p}`);
     }
     case 'tap-fill': {
+      const 째들 = ['첫째', '둘째', '셋째', '넷째', '다섯째', '여섯째', '일곱째', '여덟째', '아홉째'];
+      let 칸: number[] | null = null;
+      let e = /왼쪽에서부터 \S+ (\d+)개를 눌러/.exec(p);
+      if (e) 칸 = Array.from({ length: n(e[1]) }, (_, k) => k);
+      if (!칸 && (e = /(왼쪽|오른쪽)에서 (\S+째) /.exec(p))) {
+        const k = 째들.indexOf(e[2]);
+        칸 = [e[1] === '왼쪽' ? k : m.parts - 1 - k];
+      }
+      if (!칸 && /수 배열표에서 색칠한 수/.test(p)) {
+        // 미리 칠한 칸의 수를 읽어 얼마씩 커지는지 구합니다.
+        const 수들 = m.pre.map((k) => (m.from ?? 1) + k);
+        const 차 = 수들[1] - 수들[0];
+        expect(수들[2] - 수들[1], p).toBe(차);
+        칸 = [];
+        for (let v = 수들[0]; v < (m.from ?? 1) + m.parts; v += 차) 칸.push(v - (m.from ?? 1));
+      }
+      if (!칸 && (e = /(오전|오후) (\d+)시에 .+ (오전|오후) (\d+)시에/.exec(p))) {
+        const 시 = (낮: string, h: number) => (h % 12) + (낮 === '오후' ? 12 : 0);
+        const 시작 = 시(e[1], n(e[2]));
+        const 끝 = 시(e[3], n(e[4]));
+        칸 = Array.from({ length: 끝 - 시작 }, (_, k) => 시작 + k);
+      }
+      if (!칸 && (e = /곱셈표에서 곱이 (\d+)인 칸/.exec(p))) {
+        칸 = [];
+        for (let a = 1; a <= 9; a += 1) for (let b = 1; b <= 9; b += 1) if (a * b === n(e[1])) 칸.push((a - 1) * 9 + b - 1);
+      }
+      if (칸) {
+        expect([...칸].sort((a, b) => a - b), p).toEqual([...m.exact!].sort((a, b) => a - b));
+        return { kind: m.kind, on: 칸.filter((k) => !m.pre.includes(k)) };
+      }
+      expect(m.exact, p).toBeUndefined();
       let t: number | null = null;
       let r = /(\d+)\/(\d+)\+(\d+)\/(\d+)만큼/.exec(p);
       if (r) t = n(r[1]) + n(r[3]);
@@ -257,6 +311,7 @@ const 바른조작 = (q: Question): ManipState => {
       if (t === null && (r = /(\d+)\/(\d+)만큼 색칠/.exec(p))) t = (m.parts * n(r[1])) / n(r[2]);
       if (t === null && (r = /학생 (\d+)명 가운데 (\d+)명이 .+ 20칸으로/.exec(p))) t = (n(r[2]) / n(r[1])) * 20;
       if (t === null && (r = /모두 (\d+)개가 되도록/.exec(p))) t = n(r[1]);
+      if (t === null && (r = /빨간 구슬이 (\d+)개 있습니다\. 파란 구슬 (\d+)개를 더 놓아/.exec(p))) { expect(m.pre.length, p).toBe(n(r[1])); t = n(r[1]) + n(r[2]); }
       if (t === null && (r = /구슬을 (\d+)개 놓아/.exec(p))) t = n(r[1]);
       if (t === null && (r = /(\d+)개만 눌러/.exec(p))) t = n(r[1]);
       expect(t, p).not.toBeNull();
@@ -269,7 +324,15 @@ const 바른조작 = (q: Question): ManipState => {
     case 'base-ten': {
       let t: number;
       let r = /^(\d+)\+(\d+)[을를]/.exec(p);
-      if (r) t = n(r[1]) + n(r[2]);
+      const 계산 = /^수 모형이 (\d+)[을를] 나타내고 있습니다\. (\d+)만큼 모형을 (더 놓아|덜어 내어) (\d+)([+-])(\d+)[을를]/.exec(p);
+      if (계산) {
+        expect([n(계산[4]), n(계산[6])], p).toEqual([n(계산[1]), n(계산[2])]);
+        expect(계산[3] === '더 놓아' ? '+' : '-', p).toBe(계산[5]);
+        expect(m.start, p).toEqual(m.places.map((pl) => Math.floor(n(계산[1]) / pl) % 10));
+      }
+      if (계산) t = 계산[5] === '+' ? n(계산[1]) + n(계산[2]) : n(계산[1]) - n(계산[2]);
+      else if (/(\d+)원을 만들어/.test(p)) t = n(/(\d+)원을 만들어/.exec(p)![1]);
+      else if (r) t = n(r[1]) + n(r[2]);
       else if ((r = /^(\d+)보다 (\d+)만큼 더 (큰|작은)/.exec(p))) t = n(r[1]) + (r[3] === '큰' ? 1 : -1) * n(r[2]);
       else t = n(/수 모형으로 (\d+)[을를]/.exec(p)![1]);
       expect(t, p).toBe(m.target);
@@ -284,6 +347,8 @@ const 바른조작 = (q: Question): ManipState => {
       return { kind: m.kind, vals };
     }
     case 'angle': {
+      const 사각 = /사각형의 세 각이 (\d+)°, (\d+)°, (\d+)°/.exec(p);
+      if (사각) return { kind: m.kind, deg: 360 - n(사각[1]) - n(사각[2]) - n(사각[3]) };
       let r = /(\d+)°와 (\d+)°의 (합|차)/.exec(p);
       if (r) return { kind: m.kind, deg: r[3] === '합' ? n(r[1]) + n(r[2]) : n(r[1]) - n(r[2]) };
       if ((r = /두 각이 (\d+)°, (\d+)°/.exec(p))) return { kind: m.kind, deg: 180 - n(r[1]) - n(r[2]) };
@@ -435,6 +500,108 @@ const 바른조작 = (q: Question): ManipState => {
       expect(m.bases.every((b) => 띠.includes(b.col)), p).toBe(true);
       return { kind: m.kind, strip: 띠, bases: m.bases, picked: null };
     }
+    case 'order': {
+      // 글자만 보고 수의 크기를 따로 읽습니다.
+      const 값 = (t: string): number => {
+        let r = /^(\d+)[과와] (\d+)\/(\d+)$/.exec(t);
+        if (r) return n(r[1]) + n(r[2]) / n(r[3]);
+        if ((r = /^(\d+)\/(\d+)$/.exec(t))) return n(r[1]) / n(r[2]);
+        expect(t, p).toMatch(/^\d+(\.\d+)?$/);
+        return Number(t);
+      };
+      const 큰 = /큰 수부터|가장 긴 것부터/.test(p);
+      expect(큰 || /작은 수부터|가장 짧은 것부터/.test(p), p).toBe(true);
+      const 크기 = m.items.map((it) => (it.len !== undefined ? it.len : 값(it.label)));
+      m.items.forEach((it, i) => expect(Math.abs(it.value - 크기[i]) < 1e-9, `${p} ${it.label}`).toBe(true));
+      expect(new Set(크기).size, p).toBe(크기.length);
+      const seq = 크기.map((_, i) => i).sort((a, b) => (큰 ? 크기[b] - 크기[a] : 크기[a] - 크기[b]));
+      expect(q.answer, p).toBe(seq.map((i) => m.items[i].label).join(큰 ? ' > ' : ' < '));
+      return { kind: m.kind, seq };
+    }
+    case 'gauge': {
+      const 양들 = [...p.matchAll(/(?:(\d+) (L|kg))?(?: ?(\d+) (mL|g))?(?=을|를|만큼| 들어| 인|인|입니다|이 | 더| 덜)/g)]
+        .filter((x) => x[1] || x[3])
+        .map((x) => n(x[1] ?? '0') * 1000 + n(x[3] ?? '0'));
+      expect(양들.length, p).toBeGreaterThan(0);
+      let 답 = 양들[0];
+      if (/더 부으면|함께 올리면/.test(p)) 답 = 양들[0] + 양들[1];
+      if (/덜어 내면|꺼내면/.test(p)) 답 = 양들[0] - 양들[1];
+      if (양들.length > 1) expect(m.pre, p).toBe(양들[0]);
+      expect(m.target, p).toBe(답);
+      expect(답 % m.minor, p).toBe(0);
+      expect(m.tool, p).toBe(/저울|바늘/.test(p) ? 'scale' : 'beaker');
+      return { kind: m.kind, value: 답 };
+    }
+    case 'pictograph': {
+      const 큰수 = n(/큰 그림은 (\d+)/.exec(p)![1]);
+      const 작은수 = n(/작은 그림은 (\d+)/.exec(p)![1]);
+      const vals = m.labels.map((l) => n(new RegExp(`${l} (\\d+)${m.unitLabel}`).exec(p)![1]));
+      expect(vals, p).toEqual(m.values);
+      return { kind: m.kind, big: vals.map((v) => Math.floor(v / 큰수)), small: vals.map((v) => (v % 큰수) / 작은수) };
+    }
+    case 'calendar': {
+      const 달 = n(/^(\d+)월 달력/.exec(p)![1]);
+      expect(m.days, p).toBe([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][달 - 1]);
+      const 요일들 = ['일', '월', '화', '수', '목', '금', '토'];
+      const 날들 = Array.from({ length: m.days }, (_, i) => i + 1);
+      const 요일 = (d: number) => (m.first + d - 1) % 7;
+      let picked: number[];
+      let r = /이달의 (.)요일을 모두/.exec(p);
+      if (r) picked = 날들.filter((d) => 요일(d) === 요일들.indexOf(r![1]));
+      else if ((r = /이달의 (\S+째) (.)요일/.exec(p))) picked = [날들.filter((d) => 요일(d) === 요일들.indexOf(r![2]))[['첫째', '둘째', '셋째', '넷째'].indexOf(r[1])]];
+      else if ((r = /(\d+)일로부터 (\d+)주일 (후|전)/.exec(p))) picked = [n(r[1]) + (r[3] === '후' ? 7 : -7) * n(r[2])];
+      else if ((r = /(\d+)일로부터 (\d+)일 후/.exec(p))) picked = [n(r[1]) + n(r[2])];
+      else throw new Error(`풀 수 없는 달력: ${p}`);
+      return { kind: m.kind, picked };
+    }
+    case 'share': {
+      let r = /(\d+)개를 접시 (\d+)개에 똑같이/.exec(p);
+      if (r) {
+        const [total, g] = [n(r[1]), n(r[2])];
+        expect([m.total, m.groups], p).toEqual([total, g]);
+        expect(m.rest, p).toBe(/남는 것은 그대로/.test(p));
+        if (!m.rest) expect(total % g, p).toBe(0);
+        return { kind: m.kind, plates: Array.from({ length: g }, () => Math.floor(total / g)) };
+      }
+      r = /(\d+)개를 (?:한 접시에 )?(\d+)개씩/.exec(p);
+      const [total, size] = [n(r![1]), n(r![2])];
+      expect([m.total, m.size, total % size], p).toEqual([total, size, 0]);
+      return { kind: m.kind, plates: Array.from({ length: total / size }, () => size) };
+    }
+    case 'array': {
+      let rows = 0;
+      let cols = 0;
+      let r = /^(\d+)의 (\d+)배만큼/.exec(p);
+      if (r) { cols = n(r[1]); rows = n(r[2]); }
+      else if ((r = /^(\d+)[은는] (\d+)의 몇 배인지.+한 줄에 (\d+)개씩, 모두 (\d+)개/.exec(p))) { expect([n(r[2]), n(r[4])], p).toEqual([n(r[3]), n(r[1])]); cols = n(r[3]); rows = n(r[4]) / cols; }
+      else if ((r = /^(\d+)×(\d+)보다 (\d+)만큼 더 큰 수/.exec(p))) { cols = n(r[1]); rows = n(r[2]) + n(r[3]) / n(r[1]); }
+      else if ((r = /^(\d+)단 곱셈구구에서 곱이 (\d+)인/.exec(p))) { cols = n(r[1]); rows = n(r[2]) / n(r[1]); }
+      else if ((r = /^(\d+)×(\d+)[을를] 점 배열/.exec(p))) { cols = n(r[1]); rows = n(r[2]); }
+      else if ((r = /^점 (\d+)개를 (\d+)줄로 똑같이/.exec(p))) { rows = n(r[2]); cols = n(r[1]) / rows; }
+      else throw new Error(`풀 수 없는 배열: ${p}`);
+      const 한줄 = /한 줄에 (\d+)개씩 놓아요/.exec(p);
+      if (한줄) expect(cols, p).toBe(n(한줄[1]));
+      expect(Number.isInteger(rows) && Number.isInteger(cols), p).toBe(true);
+      return { kind: m.kind, rows, cols };
+    }
+    case 'pattern': {
+      // 보이는 그림만으로 가장 짧은 되풀이 묶음을 찾습니다(묶음의 칸마다 보이는 것이 있어야 합니다).
+      const g = m.given;
+      for (let per = 1; per <= g.length; per += 1) {
+        const 묶음: (number | null)[] = Array.from({ length: per }, () => null);
+        let 맞음 = true;
+        g.forEach((v, i) => {
+          if (v === null) return;
+          if (묶음[i % per] === null) 묶음[i % per] = v;
+          else if (묶음[i % per] !== v) 맞음 = false;
+        });
+        if (!맞음 || 묶음.some((v) => v === null)) continue;
+        // 묶음이 두 번 넘게 온전히 보여야 규칙이라고 말할 수 있습니다.
+        expect(g.slice(0, 2 * per).every((v) => v !== null), p).toBe(true);
+        return { kind: m.kind, fill: g.map((_, i) => 묶음[i % per]) };
+      }
+      throw new Error(`규칙을 찾지 못함: ${p}`);
+    }
     default:
       throw new Error('모르는 조작');
   }
@@ -477,6 +644,16 @@ const 어긋난조작 = (m: Manipulation, s: ManipState): ManipState | null => {
       return { ...s, cells: s.cells.slice(0, -1) };
     }
     case 'sort-bins': return { ...s, placed: s.placed.map((b, k) => (k === 0 ? ((b! + 1) % (m.kind === 'sort-bins' ? m.bins.length : 2)) : b)) };
+    case 'order': return { ...s, seq: [s.seq[1], s.seq[0], ...s.seq.slice(2)] };
+    case 'gauge': return { ...s, value: s.value + (m.kind === 'gauge' ? m.minor : 0) };
+    case 'pictograph': return { ...s, big: s.big.map((v, i) => (i === 0 ? v + 1 : v)) };
+    case 'calendar': return s.picked.length > 1 ? { ...s, picked: s.picked.slice(0, -1) } : { ...s, picked: [s.picked[0] > 1 ? s.picked[0] - 1 : 2] };
+    case 'share': return m.kind === 'share' && m.groups ? { ...s, plates: s.plates.map((v, i) => (i === 0 ? v - 1 : i === 1 ? v + 1 : v)) } : { ...s, plates: s.plates.slice(0, -1) };
+    case 'array': return { ...s, rows: s.rows < (m.kind === 'array' ? m.maxRows : 9) ? s.rows + 1 : s.rows - 1 };
+    case 'pattern': {
+      const i = (m.kind === 'pattern' ? m.given : []).findIndex((v) => v === null);
+      return { ...s, fill: s.fill.map((v, k) => (k === i ? ((v! + 1) % (m.kind === 'pattern' ? m.palette.length : 3)) : v)) };
+    }
     default: return null;
   }
 };
@@ -589,5 +766,46 @@ describe('도형 살피기(채점의 바탕)', () => {
     const 시계 = { kind: 'clock', h: 4, m: 30, step: 5 } as const;
     expect(채점(시계, { kind: 'clock', hourDeg: 120, minuteDeg: 180 }).tip).toMatch(/사이에 있어요/);
     expect(채점(시계, { kind: 'clock', hourDeg: 180, minuteDeg: 135 }).tip).toMatch(/바꾸어/);
+  });
+});
+
+describe('새 조작에서 자주 하는 실수를 알아봅니다', () => {
+  it('몇째와 몇 개, 받아올림을 하지 않은 수 모형', () => {
+    const 째 = { kind: 'tap-fill', layout: 'objects', parts: 8, cols: 8, pre: [], target: 1, exact: [2] } satisfies Manipulation;
+    expect(채점(째, { kind: 'tap-fill', on: [0, 1, 2] }).tip).toMatch(/하나만 가리켜요/);
+    expect(채점(째, { kind: 'tap-fill', on: [2] }).ok).toBe(true);
+    const 모형 = { kind: 'base-ten', places: [10, 1], target: 63, start: [5, 7], trade: true } satisfies Manipulation;
+    expect(채점(모형, { kind: 'base-ten', counts: [5, 13] }).ok).toBe(false);
+    expect(채점(모형, { kind: 'base-ten', counts: [5, 13] }).tip).toMatch(/10개는 십 모형 1개로/);
+    expect(채점(모형, { kind: 'base-ten', counts: [6, 3] }).ok).toBe(true);
+  });
+  it('똑같이 나누지 않은 접시, 바꾸어 놓은 배열, 작은 그림이 너무 많은 그림그래프', () => {
+    const 접시 = { kind: 'share', total: 12, groups: 3, emoji: '🍬', rest: false } satisfies Manipulation;
+    expect(채점(접시, { kind: 'share', plates: [5, 4, 3] }).tip).toMatch(/달라요/);
+    expect(채점(접시, { kind: 'share', plates: [3, 3, 3] }).tip).toMatch(/남았어요/);
+    const 나머지 = { kind: 'share', total: 17, groups: 5, emoji: '🍬', rest: true } satisfies Manipulation;
+    expect(채점(나머지, { kind: 'share', plates: [3, 3, 3, 3, 3] }).ok).toBe(true);
+    expect(채점(나머지, { kind: 'share', plates: [2, 2, 2, 2, 2] }).ok).toBe(false);
+    const 배열 = { kind: 'array', maxRows: 9, maxCols: 9, rows: 4, cols: 3, emoji: '●' } satisfies Manipulation;
+    expect(채점(배열, { kind: 'array', rows: 3, cols: 4 }).tip).toMatch(/바뀌었어요/);
+    const 그래프 = { kind: 'pictograph', labels: ['가'], values: [32], big: 10, small: 1, icon: '🍎', unitLabel: '상자' } satisfies Manipulation;
+    expect(채점(그래프, { kind: 'pictograph', big: [2], small: [12] }).tip).toMatch(/큰 그림 1개로/);
+    expect(채점(그래프, { kind: 'pictograph', big: [2], small: [3] }).tip).toMatch(/바꾸어 그렸어요/);
+    expect(채점(그래프, { kind: 'pictograph', big: [3], small: [2] }).ok).toBe(true);
+  });
+  it('1 L와 mL, 1주일, 비스듬한 선분, 단위분수의 크기', () => {
+    const 비커 = { kind: 'gauge', tool: 'beaker', max: 2000, major: 500, minor: 100, target: 1300, pre: 0 } satisfies Manipulation;
+    expect(채점(비커, { kind: 'gauge', value: 300 }).tip).toMatch(/1 L는 1000 mL/);
+    expect(채점(비커, { kind: 'gauge', value: 1200 }).tip).toMatch(/한 눈금 차이/);
+    const 달 = { kind: 'calendar', month: 5, first: 3, days: 31, target: [17] } satisfies Manipulation;
+    expect(채점(달, { kind: 'calendar', picked: [10] }).tip).toMatch(/1주일은 7일/);
+    const 평행 = { type: 'between', a: [[0, 2], [9, 2]], b: [[0, 5], [9, 5]] } as const;
+    const 문항 = { kind: 'grid-draw', cols: 9, rows: 7, fixed: [평행.a, 평행.b], marks: [], goal: 평행 } as unknown as Manipulation;
+    expect(채점(문항, { kind: 'grid-draw', segs: [[[3, 2], [3, 5]]] }).ok).toBe(true);
+    expect(채점(문항, { kind: 'grid-draw', segs: [[[3, 2], [4, 3]], [[4, 3], [5, 4]], [[5, 4], [6, 5]]] }).tip).toMatch(/수직인 선분/);
+    expect(채점(문항, { kind: 'grid-draw', segs: [[[3, 2], [3, 4]]] }).ok).toBe(false);
+    const 순서 = { kind: 'order', dir: 'asc', items: [{ label: '1/3', value: 1 / 3 }, { label: '1/5', value: 1 / 5 }] } satisfies Manipulation;
+    expect(채점(순서, { kind: 'order', seq: [0, 1] }).tip).toMatch(/분모가 클수록/);
+    expect(채점(순서, { kind: 'order', seq: [1, 0] }).ok).toBe(true);
   });
 });
