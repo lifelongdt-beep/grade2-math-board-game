@@ -134,7 +134,105 @@ export interface Question {
   visual?: QuestionVisual;
   // 자세히 보기에서 한 자리씩 따라가는 세로셈입니다(3학년 계산 문항).
   walkthrough?: Walkthrough;
+  // 보기를 고르지 않고 손으로 조작해서 답하는 문항입니다(자를 옮겨 재기,
+  // 시곗바늘 돌리기, 점 찍기, 선 잇기, 도형 밀기·뒤집기·돌리기 등).
+  // 이 문항의 choices는 기록용으로 정답 한 줄만 둡니다.
+  manipulate?: Manipulation;
 }
+
+// ── 손 조작 문항 ─────────────────────────────────────────────────────
+// 모눈의 점은 [가로, 세로]이고 세로는 아래로 커집니다.
+export type GridPoint = [number, number];
+export type GridSegment = [GridPoint, GridPoint];
+
+/** 그린 도형이 지켜야 할 조건입니다. 적은 것만 봅니다. */
+export interface PolygonGoal {
+  sides?: number;
+  rightAngles?: number;          // 직각의 수(이상이 아니라 꼭 그만큼)
+  minRightAngles?: number;
+  allSidesEqual?: boolean;
+  equalSides?: number;           // 길이가 같은 변이 적어도 이만큼(이등변삼각형 2)
+  parallelPairs?: number;        // 평행한 변의 쌍(사다리꼴 1 이상, 평행사변형 2)
+  minParallelPairs?: number;
+  area?: number;                 // 칸 넓이
+  perimeter?: number;            // 축에 나란한 변만 있을 때의 둘레(칸)
+  width?: number;                // 축에 나란한 직사각형의 가로·세로(칸)
+  height?: number;
+  axisAligned?: boolean;
+  tilted?: boolean;              // 모눈선에 나란하지 않은 변이 있어야 합니다
+  triangle?: 'acute' | 'right' | 'obtuse';
+  notAllSidesEqual?: boolean;
+}
+
+export type DrawGoal =
+  // 그은 선(주어진 선과 합쳐)이 이 선분들과 꼭 같아야 합니다(대칭 완성, 합동 옮겨 그리기).
+  | { type: 'exact'; segs: GridSegment[]; alt?: GridSegment[][] }
+  // shape와 모양과 크기가 같은(합동인) 닫힌 도형 하나를 그립니다. 자리와 방향은 상관없습니다.
+  | { type: 'congruent'; shape: GridPoint[] }
+  // 닫힌 도형 하나를 그립니다.
+  | { type: 'polygon'; goal: PolygonGoal }
+  // through를 지나고 기준 선분(to)에 수직/평행인 선분을 긋습니다.
+  | { type: 'line'; through: GridPoint; rel: 'perp' | 'parallel'; to: GridSegment; minLength?: number };
+
+export type Manipulation =
+  // 자를 밀어 0 눈금을 물건의 왼쪽 끝에 맞추고, 오른쪽 끝의 눈금을 누릅니다.
+  | { kind: 'ruler-measure'; unit: 'cm' | 'mm'; objectMm: number; objectStartMm: number; item: string; rulerCm: number }
+  // 자 위에서 연필(또는 컴퍼스)의 끝을 끌어 길이를 맞춥니다. fromMm에서 시작합니다.
+  | { kind: 'ruler-draw'; tool: 'pencil' | 'compass'; unit: 'cm' | 'mm'; fromMm: number; lengthMm: number; rulerCm: number }
+  // 긴바늘과 짧은바늘을 돌려 시각을 맞춥니다. step은 긴바늘이 멈추는 분 간격입니다.
+  | { kind: 'clock'; h: number; m: number; step: number }
+  // 모눈의 점 하나를 누릅니다. target 가운데 하나면 맞습니다.
+  | {
+      kind: 'grid-point';
+      cols: number;
+      rows: number;
+      shapes: { pts: GridPoint[]; closed: boolean }[];
+      marks: { at: GridPoint; name: string }[];
+      axis?: { x: number } | { y: number };
+      center?: GridPoint;
+      target: GridPoint[];
+      pointName: string;
+      // '도움'에서 보여 주는 보조 점선(대칭축에 수직인 선, 칸 세는 길 등)
+      guide?: GridSegment[];
+    }
+  // 모눈의 점을 둘씩 눌러 선분을 긋습니다.
+  | {
+      kind: 'grid-draw';
+      cols: number;
+      rows: number;
+      fixed: GridSegment[];
+      marks: { at: GridPoint; name: string }[];
+      axis?: { x: number } | { y: number };
+      center?: GridPoint;
+      goal: DrawGoal;
+      // 답이 여럿인 그리기(조건에 맞는 도형)에서 틀렸을 때 보여 줄 한 가지 예입니다.
+      example?: GridSegment[];
+      guide?: GridSegment[];
+    }
+  // 모눈 위의 도형을 끌어 밀고, 단추로 돌리고 뒤집습니다.
+  // goal.cells는 움직인 뒤 도형이 차지해야 할 칸입니다. place가 false면 자리는 보지 않고 모양만 봅니다.
+  | {
+      kind: 'shape-move';
+      cols: number;
+      rows: number;
+      cells: GridPoint[];
+      start: GridPoint;
+      goal: { cells: GridPoint[]; place: boolean };
+      ghost: boolean;
+      tools: ('move' | 'cw' | 'ccw' | 'flipH' | 'flipV')[];
+    }
+  // 수직선 위의 눈금 하나에 점을 놓습니다. ticks는 작은 눈금 수, labels는 이름을 붙인 눈금입니다.
+  | { kind: 'number-line'; ticks: number; labels: { at: number; text: string }[]; target: number; minor?: number }
+  // 칸(조각)을 눌러 색칠하거나 구슬을 놓습니다. 미리 칠해진 칸(pre)은 그대로입니다.
+  | { kind: 'tap-fill'; layout: 'bar' | 'grid' | 'circle' | 'tenframe' | 'objects'; parts: number; cols?: number; pre: number[]; target: number; emoji?: string }
+  // 수 모형을 더하고 빼서 수를 만듭니다.
+  | { kind: 'base-ten'; places: number[]; target: number }
+  // 막대(또는 꺾은선의 점, ○ 쌓기)의 높이를 맞춥니다. step은 눈금 한 칸의 크기입니다.
+  | { kind: 'bars'; style: 'bar' | 'line' | 'stack'; labels: string[]; values: number[]; max: number; step: number; pre: number[]; unitLabel: string }
+  // 반직선을 돌려 각을 만듭니다. 각도기가 있으면 눈금을 읽으며 맞춥니다.
+  | { kind: 'angle'; target?: number; range?: [number, number]; protractor: boolean }
+  // 물건을 알맞은 칸으로 옮깁니다.
+  | { kind: 'sort-bins'; bins: string[]; items: { label: string; emoji?: string; bin: number }[] };
 
 export type Walkthrough =
   | { kind: 'add' | 'sub'; a: number; b: number }

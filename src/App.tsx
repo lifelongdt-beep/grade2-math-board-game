@@ -59,6 +59,10 @@ import { HighlightedPrompt } from './components/HighlightedPrompt';
 import { MathText } from './components/MathText';
 import { CastleDefenseScene } from './components/CastleDefenseScene';
 import { InteractiveHintModal } from './components/InteractiveHintModal';
+import { ManipulateTask } from './components/Manipulate';
+import { 조작섞기 } from './data/manipulate';
+import { 답전까지걸음 } from './data/hintUpgrade';
+import type { ManipResult } from './data/manipulate/check';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
@@ -371,7 +375,8 @@ const buildScopedQuestions = (
   // castleDans는 '구구단, 몬스터를 막아라!'만 읽습니다. 다른 차시는
   // generateQuestions 안에서 조용히 무시합니다. 단원 도입 차시는 앞 단원
   // 종합 문제로 바뀝니다(generateClassQuestions).
-  const questions = lessons.flatMap((sourceLesson) => generateClassQuestions(sourceLesson, difficulty, { castleDans }));
+  // 차시마다 셋에 하나쯤은 보기를 고르지 않고 손으로 조작하는 문항으로 바꿉니다.
+  const questions = lessons.flatMap((sourceLesson) => 조작섞기(sourceLesson, difficulty, generateClassQuestions(sourceLesson, difficulty, { castleDans })));
 
   // 한 차시를 고른 경우에도 순서를 섞습니다. 섞지 않으면 수업을 다시 해도
   // 늘 같은 순서로 나와 학생이 순서를 외워 버립니다.
@@ -659,6 +664,10 @@ function App() {
   // 두 가지를 다룹니다 — 짧은 도움말을 미리 열어 보는 것과, 조작형
   // 힌트 창을 여는 것입니다. 둘 다 새 문제로 넘어가면 다시 닫힙니다.
   const [hintTextOpen, setHintTextOpen] = useState<Record<number, boolean>>({});
+  // 조작 문항에서 틀렸을 때, 알아본 실수에 맞춘 도움말입니다.
+  const [manipTips, setManipTips] = useState<Record<number, string>>({});
+  // 힌트에서 풀이를 한 걸음씩 펼친 수입니다(답을 말하는 걸음 앞에서 멈춥니다).
+  const [hintSteps, setHintSteps] = useState<Record<number, number>>({});
   const [hintModalOpen, setHintModalOpen] = useState<Record<number, boolean>>({});
   // 이 문제에서 조작형 힌트를 열어 본 적이 있는지입니다. 정답 기록에
   // 실어 두면 교사가 어느 문제에서 도움이 더 필요했는지 볼 수 있습니다.
@@ -1296,6 +1305,7 @@ function App() {
   // 그림이 열려 있는 채로 나타납니다.
   const resetHintState = (playerId: number) => {
     setHintTextOpen((prev) => ({ ...prev, [playerId]: false }));
+    setHintSteps((prev) => ({ ...prev, [playerId]: 0 }));
     setHintModalOpen((prev) => ({ ...prev, [playerId]: false }));
     setHintUsedThisQuestion((prev) => ({ ...prev, [playerId]: false }));
   };
@@ -1341,9 +1351,10 @@ function App() {
     }, successHoldMs);
   };
 
-  const answerQuestion = (player: Player, question: Question, choiceIndex: number) => {
+  const answerQuestion = (player: Player, question: Question, choiceIndex: number, manip?: ManipResult) => {
     const state = playerStates[player.id];
     if (!state || state.locked || mode !== 'playing') return;
+    if (manip) setManipTips((prev) => ({ ...prev, [player.id]: manip.ok ? '' : manip.tip ?? '' }));
 
     const isCorrect = choiceIndex === question.answerIndex;
     const responseMs = Date.now() - state.questionStartedAt;
@@ -1366,7 +1377,7 @@ function App() {
       support: question.support,
       visual: question.visual,
       correct: isCorrect,
-      chosen: question.choices[choiceIndex] ?? '',
+      chosen: manip ? manip.said : question.choices[choiceIndex] ?? '',
       // 되돌아온 문제면 두 번째 이후 시도입니다.
       attempts: state.activeRetry === null ? 1 : 2,
       responseMs,
@@ -1374,7 +1385,9 @@ function App() {
       hintUsed: hintUsedThisQuestion[player.id] ?? false,
       ...(isCorrect
         ? {}
-        : (() => {
+        : manip
+          ? (manip.tip ? { chosenMeaning: manip.tip } : {})
+          : (() => {
             const meaning = meaningOfChoice(
               question.prompt,
               question.choices[choiceIndex] ?? '',
@@ -2289,6 +2302,35 @@ function App() {
                           <div className="hint-text-panel" aria-label={`${player.name} 힌트`}>
                             <p className="quick-core"><span>핵심</span><span><MathText text={question.support.studentConcept} /></span></p>
                             <p><span>볼 곳</span><span><MathText text={question.support.studentHint} /></span></p>
+                            {(() => {
+                              // 풀이를 한 걸음씩 펼칩니다. 답이 나오는 걸음은 보여 주지 않아,
+                              // 마지막 한 걸음은 아이가 스스로 갑니다.
+                              const 걸음들 = 답전까지걸음(question);
+                              const 펼친 = Math.min(hintSteps[player.id] ?? 0, 걸음들.length);
+                              if (!걸음들.length) return null;
+                              return (
+                                <div className="hint-steps">
+                                  {걸음들.slice(0, 펼친).map((step, k) => (
+                                    <p key={k} className="hint-step"><span>{k + 1}걸음</span><span><MathText text={step} /></span></p>
+                                  ))}
+                                  {펼친 < 걸음들.length ? (
+                                    <button
+                                      type="button"
+                                      className="hint-step-button"
+                                      onClick={() => {
+                                        playTapSound();
+                                        setHintSteps((prev) => ({ ...prev, [player.id]: 펼친 + 1 }));
+                                        setHintUsedThisQuestion((prev) => ({ ...prev, [player.id]: true }));
+                                      }}
+                                    >
+                                      👣 {펼친 === 0 ? '풀이 첫 걸음 보기' : '다음 걸음 보기'} ({펼친}/{걸음들.length})
+                                    </button>
+                                  ) : (
+                                    <p className="hint-step-last">이제 마지막 걸음은 스스로 해 보세요!</p>
+                                  )}
+                                </div>
+                              );
+                            })()}
                             {/* 쌓은 모양은 앞의 것이 뒤의 것을 가립니다. 개수를
                                 묻는 문제에서 아이가 보이는 것만 세고 숨은 것을
                                 빠뜨립니다. 힌트를 열었을 때만 비쳐 보이게 그려
@@ -2334,7 +2376,11 @@ function App() {
                           <div className="support-card quick-support-card" aria-label={`${player.name} 오답 도움`}>
                             <p className="quick-core"><span>핵심</span><span><MathText text={question.support.studentConcept} /></span></p>
                             <p><span>볼 곳</span><span><MathText text={question.support.studentHint} /></span></p>
-                            <p><span>정답</span><span><MathText text={question.answer} /></span></p>
+                            {question.manipulate ? (
+                              <p><span>바르게</span><span>아래 판에 초록색으로 바르게 한 모습을 겹쳐 보여 줘요.</span></p>
+                            ) : (
+                              <p><span>정답</span><span><MathText text={question.answer} /></span></p>
+                            )}
                             <p className="quick-reason"><span>왜?</span><span><MathText text={question.support.steps[2]} /></span></p>
                           </div>
                           <div className="wrong-feedback-actions">
@@ -2366,7 +2412,17 @@ function App() {
                         />
                       )}
 
-                      <div className="student-answer-dock">
+                      <div className={`student-answer-dock ${question.manipulate ? 'manip-dock' : ''}`}>
+                        {question.manipulate ? (
+                          <ManipulateTask
+                            key={`${player.id}-${question.id}-${state.answered}`}
+                            m={question.manipulate}
+                            locked={state.locked}
+                            reveal={state.feedback === 'explain'}
+                            tip={manipTips[player.id]}
+                            onSubmit={(result) => answerQuestion(player, question, result.ok ? question.answerIndex : -1, result)}
+                          />
+                        ) : (
                         <div className={`choice-grid ${question.choiceVisuals ? 'picture-choices' : ''}`}>
                           {question.choices.map((choice, index) => (
                             <button
@@ -2389,6 +2445,7 @@ function App() {
                             </button>
                           ))}
                         </div>
+                        )}
                       </div>
                     </>
                   )}
