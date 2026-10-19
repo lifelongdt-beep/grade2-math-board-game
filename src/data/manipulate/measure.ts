@@ -59,7 +59,7 @@ export const 자로긋기 = (from0: boolean, 범위: [number, number], 결: 0 | 
       manipulate: { kind: 'ruler-draw', tool: 'pencil', unit: 'cm', fromMm: from * 10, lengthMm: len * 10, rulerCm: 10 },
       tag: 'measurement',
       strategy: from0 ? '자로 정해진 길이만큼 선 긋기' : '0이 아닌 눈금에서 시작해 길이만큼 긋기',
-      hint: from0 ? '0에서 1 cm, 2 cm… 한 칸씩 세며 끝을 옮겨요.' : `${from}에서 시작했으니 끝 눈금은 ${len}이 아니에요. 1 cm 칸을 하나씩 세어 보세요.`,
+      hint: from0 ? '0에서 1 cm, 2 cm… 한 칸씩 세며 끝을 옮겨요.' : `${from}에서 시작했으니 끝 눈금은 ${len}이(가) 아니에요. 1 cm 칸을 하나씩 세어 보세요.`,
       steps: [
         `선은 자의 ${from} 눈금에서 시작합니다.`,
         `1 cm인 칸을 ${len}번 셉니다.`,
