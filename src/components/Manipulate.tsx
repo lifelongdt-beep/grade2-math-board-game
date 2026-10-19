@@ -4,6 +4,8 @@ import type { GridPoint, GridSegment, Manipulation } from '../types';
 import type { ManipResult, ManipState } from '../data/manipulate/check';
 import { 길이말, 시각말, 자여백, 정답모습, 채점, 처음상태 } from '../data/manipulate/check';
 import { resolveParticles } from '../data/grade5/util';
+import { StackIsoPicture } from './StackIso';
+import { 앞에서본, 옆에서본 } from '../data/manipulate/check';
 
 // ════════════════════════════════════════════════════════════════════
 // 손으로 조작해서 답하는 문항
@@ -728,6 +730,95 @@ function 나누기({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipulat
   );
 }
 
+
+// ── 쌓기나무 쌓기 ─────────────────────────────────────────────────
+/** 본 모양(층수 막대)을 정사각형 칸으로 그립니다. cols[k]는 k째 줄의 층수입니다. */
+function 본모양({ 이름, 층들, x, 칸, 높이 }: { 이름: string; 층들: number[]; x: number; 칸: number; 높이: number }) {
+  const 바닥 = 높이 - 22;
+  return (
+    <g>
+      {층들.map((n, k) => Array.from({ length: n }, (_, z) => (
+        <rect key={`${k}-${z}`} x={x + k * 칸} y={바닥 - (z + 1) * 칸} width={칸} height={칸} fill="#dffafa" stroke="#0f7175" strokeWidth="1.6" />
+      )))}
+      <text x={x + (층들.length * 칸) / 2} y={높이 - 6} textAnchor="middle" fontSize="12" fontWeight="900" fill={잉크}>{이름}</text>
+    </g>
+  );
+}
+
+function 위모양({ 이름, 판, x, y, 칸, 수 = false, 층 }: { 이름: string; 판: number[][]; x: number; y: number; 칸: number; 수?: boolean; 층?: number }) {
+  return (
+    <g>
+      {판.map((row, r) => row.map((v, c) => {
+        const 칠함 = 층 === undefined ? v > 0 : v >= 층;
+        return <rect key={`${r}-${c}`} x={x + c * 칸} y={y + r * 칸} width={칸} height={칸} fill={칠함 ? '#9edce8' : '#fff'} stroke={칠함 ? '#0f7175' : '#cfe3ea'} strokeWidth="1.4" />;
+      }))}
+      {수 && 판.map((row, r) => row.map((v, c) => v > 0 && <text key={`t${r}-${c}`} x={x + c * 칸 + 칸 / 2} y={y + r * 칸 + 칸 / 2 + 4} textAnchor="middle" fontSize="12" fontWeight="900" fill={잉크}>{v}</text>))}
+      <text x={x + (판[0].length * 칸) / 2} y={y + 판.length * 칸 + 14} textAnchor="middle" fontSize="12" fontWeight="900" fill={잉크}>{이름}</text>
+    </g>
+  );
+}
+
+function 쌓기({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipulation, { kind: 'stack-build' }>; s: Extract<ManipState, { kind: 'stack-build' }>; set: 설정; locked: boolean; 바른?: Extract<ManipState, { kind: 'stack-build' }>; 도움: boolean }) {
+  const 칸 = 22;
+  // 보고 쌓을 것
+  let 보기: ReactNode;
+  if (m.show === 'iso') {
+    보기 = <div className="manip-stack-target"><StackIsoPicture h={m.target} 크기={26} label="쌓은 모양" /></div>;
+  } else if (m.show === 'layers') {
+    const 층수 = Math.max(...m.target.flat());
+    const 폭 = m.cols * 칸 + 20;
+    보기 = (
+      <svg viewBox={`0 0 ${폭 * 층수} ${m.rows * 칸 + 26}`} className="manip-svg manip-stack-views">
+        <rect x="1" y="1" width={폭 * 층수 - 2} height={m.rows * 칸 + 24} rx="8" fill={바탕} stroke={모눈} />
+        {Array.from({ length: 층수 }, (_, k) => <위모양 key={k} 이름={`${k + 1}층`} 판={m.target} x={10 + k * 폭} y={4} 칸={칸} 층={k + 1} />)}
+      </svg>
+    );
+  } else {
+    const 앞 = 앞에서본(m.target);
+    const 옆 = 옆에서본(m.target);
+    const 높이 = Math.max(m.rows * 칸 + 26, Math.max(...앞, ...옆) * 칸 + 26);
+    const 폭 = [m.cols * 칸 + 24, m.cols * 칸 + 24, m.rows * 칸 + 24];
+    보기 = (
+      <svg viewBox={`0 0 ${폭[0] + 폭[1] + 폭[2]} ${높이}`} className="manip-svg manip-stack-views">
+        <rect x="1" y="1" width={폭[0] + 폭[1] + 폭[2] - 2} height={높이 - 2} rx="8" fill={바탕} stroke={모눈} />
+        <위모양 이름="위" 판={m.target} x={12} y={높이 - 22 - m.rows * 칸} 칸={칸} />
+        <본모양 이름="앞" 층들={앞} x={폭[0] + 12} 칸={칸} 높이={높이} />
+        <본모양 이름="옆" 층들={옆} x={폭[0] + 폭[1] + 12} 칸={칸} 높이={높이} />
+      </svg>
+    );
+  }
+  const 누름 = (r: number, c: number) => {
+    if (locked) return;
+    set((prev) => (prev.kind !== 'stack-build' ? prev : { ...prev, h: prev.h.map((row, i) => row.map((v, j) => (i === r && j === c ? (v + 1) % (m.maxH + 1) : v))) }));
+  };
+  const 판칸 = 44;
+  const 개수 = s.h.flat().reduce((a, b) => a + b, 0);
+  return (
+    <div className="manip-stack">
+      {보기}
+      <div className="manip-stack-work">
+        <div className="manip-stack-grid" style={{ gridTemplateColumns: `repeat(${m.cols}, ${판칸}px)` }} aria-label="위에서 본 모양(아래쪽이 앞)">
+          {s.h.map((row, r) => row.map((v, c) => {
+            const 바른값 = 바른?.h[r][c];
+            return (
+              <button key={`${r}-${c}`} type="button" disabled={locked} onClick={() => 누름(r, c)} className={`${v ? 'on' : ''} ${바른값 !== undefined && 바른값 !== v ? 'wrong' : ''}`}>
+                {v || ''}
+                {바른값 !== undefined && 바른값 !== v && <small>→{바른값}</small>}
+              </button>
+            );
+          }))}
+          <span className="manip-stack-front" style={{ gridColumn: `1 / span ${m.cols}` }}>앞</span>
+        </div>
+        <div className="manip-stack-preview">
+          <StackIsoPicture h={s.h.some((row) => row.some(Boolean)) ? s.h : s.h.map((row) => row.map(() => 0))} 크기={22} label="내가 쌓은 모양" />
+          <span>내가 쌓은 모양 · {개수}개</span>
+        </div>
+      </div>
+      {도움 && m.show === 'views' && <p className="manip-help-line">앞에서 본 모양: 왼쪽부터 {앞에서본(m.target).join(', ')}층 · 옆에서 본 모양: 앞쪽부터 {옆에서본(m.target).join(', ')}층</p>}
+    </div>
+  );
+}
+
 // ── 하나로 묶기 ───────────────────────────────────────────────────
 /** 조작마다 '도움'에서 보여 주는 첫 걸음 말입니다. */
 const 도움말 = (m: Manipulation): string => {
@@ -744,6 +835,7 @@ const 도움말 = (m: Manipulation): string => {
     case 'bars': return `세로 눈금 한 칸은 ${m.step}${m.unitLabel}이에요. 표의 수를 보고 막대 끝을 그 눈금까지 끌어 올리세요.`;
     case 'angle': return m.protractor ? '각도기의 중심은 꼭짓점에, 밑금은 아래 변에 맞추었어요. 아래 변이 가리키는 0에서 시작하는 눈금(빨간 숫자)을 따라 읽어요.' : '직각(90°)의 모서리를 점선으로 보여 줘요. 이보다 좁으면 예각, 넓으면 둔각이에요.';
     case 'sort-bins': return '나누는 기준을 한 번 더 읽고, 하나씩 옮겨 보세요.';
+    case 'stack-build': return m.show === 'views' ? '위에서 본 모양의 칸에 먼저 1개씩 놓고, 앞과 옆에서 본 모양의 줄마다 가장 높은 층에 맞추어 올려요. 칸을 누를수록 한 층씩 올라가고, 가장 높이 올라가면 다시 0이 돼요.' : '그림의 맨 앞줄 칸부터 몇 층인지 세어 그만큼 누르세요. 칸을 누를수록 한 층씩 올라가고, 가장 높이 올라가면 다시 0이 돼요.';
     default: return '';
   }
 };
@@ -778,6 +870,7 @@ export function ManipulateTask({ m, locked, reveal, onSubmit, onTap, tip }: Mani
   else if (m.kind === 'bars' && s.kind === m.kind) 화면 = <그래프 m={m} s={s} 바른={바른 as never} {...공통} />;
   else if (m.kind === 'angle' && s.kind === m.kind) 화면 = <각만들기 m={m} s={s} 바른={바른 as never} {...공통} />;
   else if (m.kind === 'sort-bins' && s.kind === m.kind) 화면 = <나누기 m={m} s={s} 바른={바른 as never} {...공통} />;
+  else if (m.kind === 'stack-build' && s.kind === m.kind) 화면 = <쌓기 m={m} s={s} 바른={바른 as never} {...공통} />;
   const 되돌림 = s.kind === 'grid-draw' && s.segs.length > 0;
   return (
     <div className={`manip-task manip-kind-${m.kind}`} onPointerDown={() => onTap?.()}>
