@@ -176,7 +176,7 @@ export type DrawGoal =
   // 평행선 a와 b 사이의 거리를 나타내는 선분(두 선에 수직이고 양 끝이 두 선 위에 있는 선분) 하나를 긋습니다.
   | { type: 'between'; a: GridSegment; b: GridSegment };
 
-export type Manipulation =
+type 조작본 =
   // 자를 밀어 0 눈금을 물건의 왼쪽 끝에 맞추고, 오른쪽 끝의 눈금을 누릅니다.
   | { kind: 'ruler-measure'; unit: 'cm' | 'mm'; objectMm: number; objectStartMm: number; item: string; rulerCm: number }
   // 자 위에서 연필(또는 컴퍼스)의 끝을 끌어 길이를 맞춥니다. fromMm에서 시작합니다.
@@ -224,7 +224,8 @@ export type Manipulation =
       tools: ('move' | 'cw' | 'ccw' | 'flipH' | 'flipV')[];
     }
   // 수직선 위의 눈금 하나에 점을 놓습니다. ticks는 작은 눈금 수, labels는 이름을 붙인 눈금입니다.
-  | { kind: 'number-line'; ticks: number; labels: { at: number; text: string }[]; target: number; minor?: number }
+  // targets가 있으면 그 가운데 어느 눈금이든 맞습니다(조건에 맞는 수가 여럿인 문항). target은 그 가운데 하나입니다.
+  | { kind: 'number-line'; ticks: number; labels: { at: number; text: string }[]; target: number; minor?: number; targets?: number[] }
   // 칸(조각)을 눌러 색칠하거나 구슬을 놓습니다. 미리 칠해진 칸(pre)은 그대로입니다.
   // exact가 있으면 개수가 아니라 꼭 그 칸들(미리 칠한 칸 포함)이어야 합니다.
   //   numgrid — 칸에 from부터 차례로 수를 적은 수 배열표, hours — 하루 24시간 띠(칸 k는 k시부터 1시간),
@@ -296,6 +297,13 @@ export type Manipulation =
       ask?: string;
       example: { strip: number[]; bases: { col: number; side: 'top' | 'bottom' }[] };
     };
+
+/**
+ * 조작 문항입니다. friend가 있으면 친구가 먼저 해 둔(틀린) 모습에서 시작하고,
+ * 아이는 틀린 곳을 찾아 고칩니다. state의 모양은 채점 상태(ManipState)와 같습니다.
+ */
+export type Manipulation = 조작본 & { friend?: { state: object } };
+
 
 export type Walkthrough =
   | { kind: 'add' | 'sub'; a: number; b: number }

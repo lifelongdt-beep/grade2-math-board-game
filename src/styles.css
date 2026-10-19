@@ -7479,6 +7479,17 @@ body::before {
   color: #ffd2d0;
 }
 
+.manip-friend {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(126, 87, 194, 0.22);
+  color: #e1d5ff;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .manip-shape-move {
   display: grid;
   gap: 6px;
