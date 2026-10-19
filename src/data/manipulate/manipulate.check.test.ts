@@ -324,6 +324,34 @@ const 바른조작 = (q: Question): ManipState => {
       placed.forEach((b) => expect(b, p).toBeGreaterThanOrEqual(0));
       return { kind: m.kind, placed };
     }
+    case 'stack-build': {
+      // 본 모양은 테스트 쪽에서 따로 셉니다(0번 줄이 뒤, 옆은 오른쪽에서 보아 앞쪽 줄이 왼쪽).
+      const 앞 = (h: number[][]) => h[0].map((_, c) => Math.max(...h.map((row) => row[c])));
+      const 옆 = (h: number[][]) => h.map((row) => Math.max(...row)).reverse();
+      if (m.check === 'exact' || m.check === 'views') return { kind: m.kind, h: m.target.map((row) => [...row]) };
+      // 가장 적게·많게: 바닥 칸마다 1~3층을 모두 넣어 보고 본 모양이 같은 것 가운데 고릅니다.
+      const 칸들: [number, number][] = [];
+      m.target.forEach((row, r) => row.forEach((v, c) => { if (v > 0) 칸들.push([r, c]); }));
+      const h = m.target.map((row) => row.map(() => 0));
+      let 고른: number[][] | null = null;
+      let 고른수 = m.check === 'views-min' ? Infinity : -Infinity;
+      const 돌기 = (k: number) => {
+        if (k === 칸들.length) {
+          if (JSON.stringify(앞(h)) === JSON.stringify(앞(m.target)) && JSON.stringify(옆(h)) === JSON.stringify(옆(m.target))) {
+            const 수 = h.flat().reduce((a, b) => a + b, 0);
+            if (m.check === 'views-min' ? 수 < 고른수 : 수 > 고른수) { 고른수 = 수; 고른 = h.map((row) => [...row]); }
+          }
+          return;
+        }
+        const [r, c] = 칸들[k];
+        for (let v = 1; v <= 3; v += 1) { h[r][c] = v; 돌기(k + 1); }
+        h[r][c] = 0;
+      };
+      돌기(0);
+      expect(m.count, p).toBe(고른수);
+      expect(n(/(\d+)개/.exec(q.answer)![1]), p).toBe(고른수);
+      return { kind: m.kind, h: 고른! };
+    }
     default:
       throw new Error('모르는 조작');
   }
@@ -342,6 +370,16 @@ const 어긋난조작 = (m: Manipulation, s: ManipState): ManipState | null => {
     case 'base-ten': return { ...s, counts: s.counts.map((c, i) => (i === s.counts.length - 1 ? (c + 1) % 10 : c)) };
     case 'bars': { const i = m.kind === 'bars' ? m.labels.findIndex((_, k) => !m.pre.includes(k)) : 0; return { ...s, vals: s.vals.map((v, k) => (k === i ? (v ?? 0) + (m.kind === 'bars' ? m.step : 1) : v)) }; }
     case 'angle': return m.kind === 'angle' && m.range ? { ...s, deg: 90 } : { ...s, deg: s.deg + 5 };
+    case 'stack-build': {
+      // 앞줄 맨 오른쪽 칸을 한 층 더(또는 덜) 쌓습니다.
+      const h = s.h.map((row) => [...row]);
+      const r = h.length - 1;
+      const c = h[r].length - 1;
+      h[r][c] = h[r][c] === 3 ? 2 : h[r][c] + 1;
+      // 본 모양만 보는 문항은 한 층 바꾸어도 본 모양이 같을 수 있어 앞줄 전체를 비웁니다.
+      if (m.kind === 'stack-build' && m.check !== 'exact') h[r] = h[r].map(() => 0);
+      return { ...s, h };
+    }
     case 'sort-bins': return { ...s, placed: s.placed.map((b, k) => (k === 0 ? ((b! + 1) % (m.kind === 'sort-bins' ? m.bins.length : 2)) : b)) };
     default: return null;
   }
