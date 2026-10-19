@@ -77,8 +77,8 @@ const 바른조작 = (q: Question): ManipState => {
       return { kind: m.kind, rulerAt: m.objectStartMm, endTick: mm };
     }
     case 'ruler-draw': {
-      const 바퀴 = /지름이 (\d+) cm인 바퀴가 한 바퀴 .+\(원주율: ([\d.]+)\)/.exec(p);
-      if (바퀴) { expect(m.fromMm).toBe(0); return { kind: m.kind, end: Math.round(n(바퀴[1]) * Number(바퀴[2]) * 10) }; }
+      const 바퀴 = /(반지름|지름)이 (\d+) cm인 바퀴가 한 바퀴 .+\(원주율: ([\d.]+)\)/.exec(p);
+      if (바퀴) { expect(m.fromMm).toBe(0); return { kind: m.kind, end: Math.round(n(바퀴[2]) * (바퀴[1] === '반지름' ? 2 : 1) * Number(바퀴[3]) * 10) }; }
       let r = /반지름이 (\d+) cm/.exec(p);
       if (r) { expect(m.fromMm).toBe(0); return { kind: m.kind, end: n(r[1]) * 10 }; }
       r = /지름이 (\d+) cm/.exec(p);
@@ -124,8 +124,15 @@ const 바른조작 = (q: Question): ManipState => {
       if (/이등변삼각형/.test(p)) {
         const a = 이름점(m.marks, 'ㄱ');
         const b = 이름점(m.marks, 'ㄴ');
-        const x = (a[0] + b[0]) / 2;
-        return { kind: m.kind, pt: [x, a[1] >= 3 ? a[1] - 3 : a[1] + 3] };
+        // 밑변이 가로면 가운데의 위·아래, 세로면 가운데의 왼쪽·오른쪽
+        if (a[1] === b[1]) return { kind: m.kind, pt: [(a[0] + b[0]) / 2, a[1] >= 3 ? a[1] - 3 : a[1] + 3] };
+        return { kind: m.kind, pt: [a[0] >= 3 ? a[0] - 3 : a[0] + 3, (a[1] + b[1]) / 2] };
+      }
+      if (/지름의 다른 끝점/.test(p)) {
+        const ps = m.shapes[0].pts;
+        const c: GridPoint = [Math.round(ps.reduce((t, q2) => t + q2[0], 0) / ps.length), Math.round(ps.reduce((t, q2) => t + q2[1], 0) / ps.length)];
+        const a = 이름점(m.marks, 'ㄱ');
+        return { kind: m.kind, pt: [2 * c[0] - a[0], 2 * c[1] - a[1]] };
       }
       if (/원의 중심/.test(p)) {
         const ps = m.shapes[0].pts;
@@ -250,6 +257,8 @@ const 바른조작 = (q: Question): ManipState => {
         const [l0, l1] = m.labels;
         return Math.round(((v - Number(l0.text)) / (Number(l1.text) - Number(l0.text))) * (l1.at - l0.at) + l0.at);
       };
+      const 개수로 = /0\.(1|01)이 (\d+)개인 수를 나타내는/.exec(p);
+      if (개수로) return { kind: m.kind, at: 자리(n(개수로[2]) * (개수로[1] === '1' ? 0.1 : 0.01)) };
       let 어 = /(\d+)[을를] (올림|버림|반올림)하여 (십|백)의 자리까지/.exec(p);
       if (어) {
         const v = n(어[1]);
@@ -368,6 +377,9 @@ const 바른조작 = (q: Question): ManipState => {
       if (t === null && (r = /(\d+)개의 (\d+)\/(\d+)만큼/.exec(p))) t = (n(r[1]) * n(r[2])) / n(r[3]);
       if (t === null && (r = /(\d+)개를 형과 동생이 (\d+) : (\d+)로/.exec(p))) t = (n(r[1]) * n(r[2])) / (n(r[2]) + n(r[3]));
       if (t === null && (r = /0\.(\d\d)만큼/.exec(p))) t = n(r[1]);
+      if (t === null && (r = /100칸입니다\. 0\.(\d)만큼/.exec(p))) t = n(r[1]) * 10;
+      if (t === null && (r = /0\.1이 (\d+)개, 0\.01이 (\d+)개인 수만큼/.exec(p))) t = n(r[1]) * 10 + n(r[2]);
+      if (t === null && (r = /학생 25명 가운데 (\d+)명이 차지하는 비율만큼/.exec(p))) t = n(r[1]) * 4;
       if (t === null && (r = /(\d+)%만큼/.exec(p))) t = n(r[1]);
       if (t === null && (r = /(\d+)\/(\d+)만큼 색칠/.exec(p))) t = (m.parts * n(r[1])) / n(r[2]);
       if (t === null && (r = /학생 (\d+)명 가운데 (\d+)명이 .+ 20칸으로/.exec(p))) t = (n(r[2]) / n(r[1])) * 20;
@@ -385,6 +397,14 @@ const 바른조작 = (q: Question): ManipState => {
     case 'base-ten': {
       let t: number;
       let r = /^(\d+)\+(\d+)[을를]/.exec(p);
+      const 네모 = /^(\d+)([+-])□=(\d+)에서 □를 구하려고/.exec(p);
+      if (네모) {
+        expect(m.start, p).toEqual(m.places.map((pl) => Math.floor(n(네모[1]) / pl) % 10));
+        const 답 = 네모[2] === '+' ? n(네모[3]) - n(네모[1]) : n(네모[1]) - n(네모[3]);
+        expect(q.answer, p).toContain(`□=${답}`);
+        expect(m.target, p).toBe(n(네모[3]));
+        return { kind: m.kind, counts: m.places.map((pl) => Math.floor(n(네모[3]) / pl) % 10) };
+      }
       const 계산 = /^수 모형이 (\d+)[을를] 나타내고 있습니다\. (\d+)만큼 모형을 (더 놓아|덜어 내어) (\d+)([+-])(\d+)[을를]/.exec(p);
       if (계산) {
         expect([n(계산[4]), n(계산[6])], p).toEqual([n(계산[1]), n(계산[2])]);
@@ -416,6 +436,8 @@ const 바른조작 = (q: Question): ManipState => {
       return { kind: m.kind, vals };
     }
     case 'angle': {
+      const 직각낀 = /사각형의 세 각이 (\d+)°, (\d+)°, 직각/.exec(p);
+      if (직각낀) return { kind: m.kind, deg: 360 - n(직각낀[1]) - n(직각낀[2]) - 90 };
       const 사각 = /사각형의 세 각이 (\d+)°, (\d+)°, (\d+)°/.exec(p);
       if (사각) return { kind: m.kind, deg: 360 - n(사각[1]) - n(사각[2]) - n(사각[3]) };
       let r = /(\d+)°와 (\d+)°의 (합|차)/.exec(p);
@@ -727,7 +749,11 @@ const 어긋난조작 = (m: Manipulation, s: ManipState): ManipState | null => {
     case 'ruler-measure': return { ...s, rulerAt: s.rulerAt - 10, endTick: s.endTick! + 10 };
     case 'ruler-draw': return { ...s, end: s.end + 10 };
     case 'clock': return { ...s, minuteDeg: (s.minuteDeg + (m.kind === 'clock' ? m.step : 5) * 6) % 360 };
-    case 'grid-point': return { ...s, pt: [s.pt![0] + 1, s.pt![1]] };
+    case 'grid-point': {
+      // 답이 가로줄 위에 여럿이면(세로 밑변의 이등변삼각형) 위아래로 비킵니다.
+      const 옆 = (m.kind === 'grid-point' ? m.target : []).some((t) => t[0] === s.pt![0] + 1 && t[1] === s.pt![1]);
+      return { ...s, pt: 옆 ? [s.pt![0], s.pt![1] + 1] : [s.pt![0] + 1, s.pt![1]] };
+    }
     case 'grid-draw': return { ...s, segs: s.segs.slice(0, -1) };
     case 'number-line': return { ...s, at: s.at! + 1 };
     case 'tap-fill': return { ...s, on: s.on.length ? s.on.slice(0, -1) : [m.kind === 'tap-fill' ? (m.pre.length) : 0] };
@@ -936,5 +962,42 @@ describe('5~6학년 새 조작', () => {
     const 막대 = { kind: 'bars', style: 'bar', labels: ['가', '나'], values: [4, 4], max: 10, step: 1, pre: [], unitLabel: '권', start: [2, 6] } satisfies Manipulation;
     expect(채점(막대, 처음상태(막대)).tip).toMatch(/덜어 낮은 막대에/);
     expect(채점(막대, { kind: 'bars', vals: [4, 4] }).ok).toBe(true);
+  });
+});
+
+describe('하·중·상 수준', () => {
+  // 수준이 높을수록 사고의 결(지식→적용→사고), 다루는 수의 크기, 조작할 것의 수가 늘어나야 합니다.
+  const 조작크기 = (m: Manipulation): number => {
+    switch (m.kind) {
+      case 'sort-bins': return m.items.length;
+      case 'order': return m.items.length;
+      case 'tap-fill': return m.exact?.length ?? m.target;
+      case 'pattern': return m.given.filter((g) => g === null).length + m.given.length / 4;
+      case 'bars': return m.labels.length;
+      case 'pictograph': return m.labels.length;
+      case 'share': return m.total;
+      case 'array': return m.rows * m.cols;
+      case 'grid-draw': return m.goal.type === 'exact' ? m.goal.segs.length : m.goal.type === 'polygon' ? Object.keys(m.goal.goal).length : 2;
+      case 'stack-build': return m.target.flat().reduce((a, b) => a + b, 0);
+      case 'base-ten': return m.places.length + (m.trade ? 1 : 0) + m.target / 10 ** m.places.length;
+      default: return 0;
+    }
+  };
+  const 부담 = (q: Question) => {
+    const 수들 = (`${q.prompt} ${q.answer}`.match(/\d+(?:\.\d+)?/g) ?? []).map(Number);
+    return (q.thinkingLevel ?? 0) * 1000 + Math.log10(1 + Math.max(0, ...수들)) * 100 + 조작크기(q.manipulate!) * 3;
+  };
+  it('차시마다 상 문항이 하 문항보다 어렵습니다', () => {
+    const 같음: string[] = [];
+    for (const [열쇠, 표] of Object.entries(조작표)) {
+      if (!표.하?.length || !표.상?.length) continue;
+      const [학기, 단원차시] = 열쇠.split(' ');
+      const [u, l] = 단원차시.split('-').map(Number);
+      const 차시 = 모든차시.find((x) => x.semester === 학기 && x.unitNo === u && x.lessonNo === l)!;
+      const 평균 = (lv: Difficulty) => { const qs = 조작문항들(차시, lv, 8); return qs.reduce((s, q) => s + 부담(q), 0) / qs.length; };
+      const [하, 중, 상] = [평균('하'), 평균('중'), 평균('상')];
+      if (!(상 > 하 + 30) || (표.중?.length && 중 < 하 - 30)) 같음.push(`${열쇠} 하${하.toFixed(0)} 중${중.toFixed(0)} 상${상.toFixed(0)}`);
+    }
+    expect(같음).toEqual([]);
   });
 });

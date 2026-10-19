@@ -1,4 +1,4 @@
-import { 고르개, 사이, 섞기, type 조작갈래 } from './common';
+import { 고르개, 사이, 섞기, type 조작갈래, type 수준 } from './common';
 
 // ════════════════════════════════════════════════════════════════════
 // 수직선에 점 놓기, 칸 색칠하기·구슬 놓기, 수 모형, 그래프 그리기,
@@ -36,14 +36,14 @@ export const 수직선분수 = (끝: number, 대분수말: boolean, 결: 0 | 1 |
 /** 소수 한 자리(0~2)·두 자리(0.1 사이) 수직선 */
 export const 수직선소수 = (두자리: boolean): 조작갈래 => ({
   id: `nl-dec-${두자리 ? 2 : 1}`,
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
     if (!두자리) {
-      const k = 사이(next, 1, 19);
-      if (k === 10) return null;
+      // 하: 1보다 작은 소수, 중: 1보다 큰 소수, 상: '0.1이 몇 개인 수'로 묻기
+      const k = lv === 0 ? 사이(next, 1, 9) : 사이(next, 11, 19);
       const 값 = (k / 10).toFixed(1);
       return {
-        prompt: `수직선에서 ${값}을(를) 나타내는 곳에 점을 놓아 보세요.`,
+        prompt: lv === 2 ? `수직선에서 0.1이 ${k}개인 수를 나타내는 곳에 점을 놓아 보세요.` : `수직선에서 ${값}을(를) 나타내는 곳에 점을 놓아 보세요.`,
         answer: `${값}의 자리`,
         manipulate: { kind: 'number-line', ticks: 20, labels: [{ at: 0, text: '0' }, { at: 10, text: '1' }, { at: 20, text: '2' }], target: k, minor: 10 },
         tag: 'decimal',
@@ -52,14 +52,14 @@ export const 수직선소수 = (두자리: boolean): 조작갈래 => ({
         steps: ['0과 1 사이를 똑같이 10칸으로 나눈 한 칸은 0.1입니다.', `${값}은(는) 0.1이 ${k}개인 수입니다.`, `그러므로 0에서 작은 눈금 ${k}칸 간 곳이 ${값}의 자리입니다.`],
         concept: '1을 똑같이 10으로 나눈 하나는 0.1입니다.',
         misconception: '1을 지나면 다시 0.1부터 세는 것을 잊고 1.5를 0.5 자리에 놓기 쉽습니다.',
-        결: k > 10 ? 1 : 0,
+        결: lv,
       };
     }
     const 앞 = 사이(next, 1, 8);
     const k = 사이(next, 1, 9);
     const 값 = `0.${앞}${k}`;
     return {
-      prompt: `수직선에서 ${값}을(를) 나타내는 곳에 점을 놓아 보세요.`,
+      prompt: lv === 2 ? `수직선에서 0.01이 ${앞 * 10 + k}개인 수를 나타내는 곳에 점을 놓아 보세요.` : `수직선에서 ${값}을(를) 나타내는 곳에 점을 놓아 보세요.`,
       answer: `${값}의 자리`,
       manipulate: { kind: 'number-line', ticks: 10, labels: [{ at: 0, text: `0.${앞}` }, { at: 10, text: 앞 === 9 ? '1' : `0.${앞 + 1}` }], target: k },
       tag: 'decimal',
@@ -68,7 +68,7 @@ export const 수직선소수 = (두자리: boolean): 조작갈래 => ({
       steps: [`0.${앞}과(와) 0.${앞 + 1} 사이를 똑같이 10칸으로 나눈 한 칸은 0.01입니다.`, `${값}은(는) 0.${앞}보다 0.01이 ${k}개 더 큰 수입니다.`, `그러므로 0.${앞}에서 작은 눈금 ${k}칸 간 곳이 ${값}의 자리입니다.`],
       concept: '0.1을 똑같이 10으로 나눈 하나는 0.01입니다.',
       misconception: '작은 눈금 한 칸을 0.1로 생각하기 쉽습니다.',
-      결: 1,
+      결: lv === 2 ? 2 : 1,
     };
   },
 });
@@ -76,9 +76,13 @@ export const 수직선소수 = (두자리: boolean): 조작갈래 => ({
 /** 크기가 같은 분수: 1을 12칸으로 나눈 수직선에 2/3 놓기 등 */
 export const 수직선같은분수: 조작갈래 = {
   id: 'nl-equiv',
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
-    const 쌍: [number, number, number][] = [[1, 2, 12], [1, 3, 12], [2, 3, 12], [1, 4, 12], [3, 4, 12], [1, 6, 12], [5, 6, 12], [2, 5, 10], [3, 5, 10], [4, 5, 10], [1, 2, 8], [3, 4, 8]];
+    // 하: 분모를 2배 하는 쉬운 분수, 중: 여러 배, 상: 24칸으로 나눈 수직선
+    const 쌍: [number, number, number][] = lv === 0
+      ? [[1, 2, 8], [1, 2, 10], [1, 4, 8], [3, 4, 8], [1, 3, 6], [2, 3, 6], [1, 5, 10], [2, 5, 10]]
+      : lv === 1 ? [[1, 3, 12], [2, 3, 12], [1, 4, 12], [3, 4, 12], [1, 6, 12], [5, 6, 12], [3, 5, 10], [4, 5, 10]]
+        : [[3, 8, 24], [5, 8, 24], [5, 6, 24], [7, 12, 24], [3, 4, 24], [2, 3, 24], [5, 12, 24], [7, 8, 24]];
     const [n, d, T] = 쌍[next(쌍.length)];
     const k = (n * T) / d;
     return {
@@ -91,7 +95,7 @@ export const 수직선같은분수: 조작갈래 = {
       steps: [`수직선의 작은 눈금 한 칸은 1/${T}입니다.`, `${n}/${d}의 분모와 분자에 ${T / d}을(를) 곱하면 ${n}×${T / d}/${d}×${T / d}=${k}/${T}입니다.`, `그러므로 0에서 작은 눈금 ${k}칸 간 곳이 ${n}/${d}과(와) 크기가 같습니다.`],
       concept: '분모와 분자에 0이 아닌 같은 수를 곱하면 크기가 같은 분수가 됩니다.',
       misconception: `분자 ${n}을 그대로 써서 ${n}칸에 놓기 쉽습니다.`,
-      결: 2,
+      결: lv === 0 ? 1 : 2,
     };
   },
 };
@@ -129,9 +133,9 @@ export const 수직선자연수 = (끝: number, 결: 0 | 1 | 2): 조작갈래 =>
 // ── 칸 색칠하기·구슬 놓기 ───────────────────────────────────────────
 export const 분수색칠 = (모양: 'bar' | 'circle', 결: 0 | 1): 조작갈래 => ({
   id: `shade-frac-${모양}`,
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
-    const d = 사이(next, 3, 8);
+    const d = lv === 0 ? 사이(next, 2, 4) : lv === 1 ? 사이(next, 4, 6) : 사이(next, 7, 10);
     const n = 사이(next, 1, d - 1);
     return {
       prompt: `전체를 똑같이 ${d}로 나누었습니다. ${분수말(n, d)}만큼 색칠해 보세요.`,
@@ -143,7 +147,7 @@ export const 분수색칠 = (모양: 'bar' | 'circle', 결: 0 | 1): 조작갈래
       steps: [`전체를 똑같이 ${d}로 나눈 것 가운데 하나는 1/${d}입니다.`, `${분수말(n, d)}은(는) 1/${d}이 ${n}개입니다.`, `그러므로 ${d}조각 가운데 ${n}조각을 색칠합니다.`],
       concept: '전체를 똑같이 나눈 것 가운데 부분을 분수로 나타냅니다.',
       misconception: '분모만큼 칠하거나, 칠하지 않은 부분을 분수로 생각하기 쉽습니다.',
-      결,
+      결: lv === 2 ? 1 : 결,
     };
   },
 });
@@ -151,15 +155,16 @@ export const 분수색칠 = (모양: 'bar' | 'circle', 결: 0 | 1): 조작갈래
 /** 전체 개수의 분수만큼(3-2), 비례배분(6-2) */
 export const 묶음분수 = (비례: boolean): 조작갈래 => ({
   id: `shade-set-${비례 ? 'ratio' : 'frac'}`,
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
     const emoji = ['🍎', '🍓', '⭐', '🎈', '🍪'][next(5)];
     if (비례) {
-      const a = 사이(next, 1, 4);
-      const b = 사이(next, 1, 4);
+      const a = 사이(next, 1, lv === 0 ? 2 : 4);
+      const b = 사이(next, 1, lv === 0 ? 3 : 4);
       if (a === b) return null;
-      const 묶음 = 사이(next, 2, 4);
+      const 묶음 = lv === 0 ? 2 : 사이(next, 2, 4);
       const 전체 = (a + b) * 묶음;
+      if (lv === 2 && (a + b) * 묶음 < 15) return null;
       if (전체 > 24) return null;
       const 몫 = a * 묶음;
       return {
@@ -172,13 +177,15 @@ export const 묶음분수 = (비례: boolean): 조작갈래 => ({
         steps: [`비 ${a} : ${b}로 나누면 전체는 ${a}+${b}=${a + b}묶음입니다.`, `한 묶음은 ${전체}÷${a + b}=${묶음}(개)입니다.`, `형은 ${a}묶음을 가지므로 ${전체}×${a}/${a + b}=${몫}(개)입니다.`],
         concept: '전체를 주어진 비로 나누는 것을 비례배분이라고 합니다.',
         misconception: `형의 몫을 ${a}개로 생각하거나, 전체를 ${a}로 나누기 쉽습니다.`,
-        결: 2,
+        결: lv === 0 ? 1 : 2,
       };
     }
-    const d = [2, 3, 4, 6][next(4)];
-    const 묶음 = 사이(next, 2, 4);
+    // 하: 단위분수, 중: 진분수, 상: 큰 전체의 진분수
+    const d = lv === 0 ? [2, 3, 4][next(3)] : [3, 4, 6][next(3)];
+    const 묶음 = lv === 2 ? 사이(next, 3, 4) : 사이(next, 2, 3);
     const 전체 = d * 묶음;
-    const n = 사이(next, 1, d - 1);
+    const n = lv === 0 ? 1 : 사이(next, 2, d - 1);
+    if (n >= d) return null;
     return {
       prompt: `${emoji} ${전체}개의 ${분수말(n, d)}만큼 눌러 표시해 보세요.`,
       answer: `${n * 묶음}개`,
@@ -189,7 +196,7 @@ export const 묶음분수 = (비례: boolean): 조작갈래 => ({
       steps: [`${전체}개를 똑같이 ${d}묶음으로 나누면 한 묶음은 ${묶음}개입니다.`, `${분수말(n, d)}은(는) ${d}묶음 가운데 ${n}묶음입니다.`, `그러므로 ${묶음}×${n}=${n * 묶음}(개)를 표시합니다.`],
       concept: '전체 개수의 분수만큼은 전체를 분모만큼 똑같이 묶은 것 가운데 분자만큼입니다.',
       misconception: `분자 ${n}만큼 ${n}개만 표시하기 쉽습니다.`,
-      결: 1,
+      결: lv === 2 ? 2 : 1,
     };
   },
 });
@@ -197,10 +204,10 @@ export const 묶음분수 = (비례: boolean): 조작갈래 => ({
 /** 십 배열판에 구슬 놓기(1학년 모으기, 10 만들기) */
 export const 십배열 = (종류: 'count' | 'make10' | 'gather' | 'teen'): 조작갈래 => ({
   id: `tenframe-${종류}`,
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
     if (종류 === 'teen') {
-      const n = 사이(next, 11, 19);
+      const n = lv === 0 ? 사이(next, 11, 13) : lv === 1 ? 사이(next, 14, 16) : 사이(next, 17, 19);
       return {
         prompt: `구슬 판에 구슬을 ${n}개 놓아 보세요.`,
         answer: `${n}개`,
@@ -211,11 +218,13 @@ export const 십배열 = (종류: 'count' | 'make10' | 'gather' | 'teen'): 조�
         steps: [`${n}은(는) 10과 ${n - 10}입니다.`, '먼저 10칸을 모두 채웁니다.', `그다음 ${n - 10}개를 더 놓으면 ${n}개입니다.`],
         concept: '십몇은 10개씩 묶음 1개와 낱개 몇 개입니다.',
         misconception: '하나씩 세다가 빠뜨리거나 두 번 세기 쉽습니다. 10을 먼저 채우면 쉽게 셀 수 있습니다.',
-        결: 0,
+        결: lv === 2 ? 1 : 0,
       };
     }
-    const 있는 = 종류 === 'count' ? 0 : 사이(next, 2, 7);
-    const 목표 = 종류 === 'make10' ? 10 : 종류 === 'count' ? 사이(next, 3, 9) : 사이(next, 있는 + 1, 9);
+    // 하: 조금만 더 놓기(작은 수), 중: 중간, 상: 많이 더 놓기(큰 수)
+    const 있는 = 종류 === 'count' ? 0 : 종류 === 'make10' ? [사이(next, 7, 9), 사이(next, 4, 6), 사이(next, 1, 3)][lv] : 사이(next, 1, lv === 0 ? 3 : 4);
+    const 목표 = 종류 === 'make10' ? 10 : 종류 === 'count' ? [사이(next, 2, 5), 사이(next, 5, 7), 사이(next, 7, 9)][lv] : [사이(next, 있는 + 1, 5), 사이(next, Math.max(있는 + 2, 6), 8), 사이(next, Math.max(있는 + 3, 8), 9)][lv];
+    if (목표 <= 있는) return null;
     const pre = Array.from({ length: 있는 }, (_, k) => k);
     const 더 = 목표 - 있는;
     return {
@@ -234,7 +243,7 @@ export const 십배열 = (종류: 'count' | 'make10' | 'gather' | 'teen'): 조�
         : [`빨간 구슬 ${있는}개가 있습니다.`, `${있는}과(와) ${더}을(를) 모으면 ${목표}입니다.`, `그러므로 파란 구슬을 ${더}개 놓습니다.`],
       concept: 종류 === 'make10' ? '10이 되는 두 수를 알면 계산이 쉬워집니다.' : '두 수를 모으면 더 큰 수가 됩니다.',
       misconception: '이미 있는 구슬까지 다시 놓아 목표보다 많아지기 쉽습니다.',
-      결: 종류 === 'count' ? 0 : 1,
+      결: 종류 === 'count' ? (lv === 2 ? 1 : 0) : lv === 2 ? 2 : 1,
     };
   },
 });
@@ -242,11 +251,11 @@ export const 십배열 = (종류: 'count' | 'make10' | 'gather' | 'teen'): 조�
 /** 1학년 물건 세기 */
 export const 물건세기: 조작갈래 = {
   id: 'count-objects',
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
     const emoji = ['🍎', '🐟', '⭐', '🎈', '🌷'][next(5)];
     const 이름 = { '🍎': '사과', '🐟': '물고기', '⭐': '별', '🎈': '풍선', '🌷': '꽃' }[emoji]!;
-    const n = 사이(next, 3, 8);
+    const n = [사이(next, 2, 4), 사이(next, 5, 6), 사이(next, 7, 8)][lv];
     return {
       prompt: `${이름}을(를) ${n}개만 눌러 표시해 보세요.`,
       answer: `${n}개`,
@@ -257,7 +266,7 @@ export const 물건세기: 조작갈래 = {
       steps: ['하나씩 세며 누릅니다.', `마지막으로 센 수가 ${n}이면 멈춥니다.`, `그러므로 ${n}개를 표시합니다.`],
       concept: '마지막으로 센 수가 전체의 개수입니다.',
       misconception: '세다가 같은 것을 두 번 누르기 쉽습니다.',
-      결: 0,
+      결: lv === 2 ? 1 : 0,
     };
   },
 };
@@ -265,14 +274,17 @@ export const 물건세기: 조작갈래 = {
 /** 10×10 모눈 색칠(소수 두 자리, 백분율, 넓이 모델의 분수 곱셈) */
 export const 백칸색칠 = (종류: 'decimal' | 'percent' | 'frac-mul' | 'frac-add' | 'frac-div' | 'equiv-bar'): 조작갈래 => ({
   id: `grid-shade-${종류}`,
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
     if (종류 === 'decimal' || 종류 === 'percent') {
-      const k = 사이(next, 11, 89);
-      if (k % 10 === 0) return null;
-      const 말 = 종류 === 'decimal' ? `0.${k}` : `${k}%`;
+      // 하: 몇십 칸, 중: 몇십몇 칸, 상: 다른 꼴로 준 양(0.1과 0.01의 개수, 25명 가운데 몇 명)
+      const k = lv === 0 ? 사이(next, 2, 9) * 10 : 사이(next, 11, 89);
+      if (lv > 0 && k % 10 === 0) return null;
+      if (lv === 2 && 종류 === 'percent' && k % 4 !== 0) return null;
+      const 말 = 종류 === 'decimal' ? (k % 10 === 0 ? `0.${k / 10}` : `0.${k}`) : `${k}%`;
+      const 다른말 = 종류 === 'decimal' ? `0.1이 ${Math.floor(k / 10)}개, 0.01이 ${k % 10}개인 수만큼` : `학생 25명 가운데 ${k / 4}명이 차지하는 비율만큼`;
       return {
-        prompt: `전체가 100칸입니다. ${말}만큼 색칠해 보세요. 칸을 누른 채로 끌면 여러 칸을 한꺼번에 칠할 수 있습니다.`,
+        prompt: lv === 2 ? `전체가 100칸입니다. ${다른말} 색칠해 보세요. 칸을 누른 채로 끌면 여러 칸을 한꺼번에 칠할 수 있습니다.` : `전체가 100칸입니다. ${말}만큼 색칠해 보세요. 칸을 누른 채로 끌면 여러 칸을 한꺼번에 칠할 수 있습니다.`,
         answer: `${k}칸`,
         manipulate: { kind: 'tap-fill', layout: 'grid', parts: 100, cols: 10, pre: [], target: k },
         tag: 종류 === 'decimal' ? 'decimal' : 'ratio',
@@ -280,13 +292,13 @@ export const 백칸색칠 = (종류: 'decimal' | 'percent' | 'frac-mul' | 'frac-
         hint: 종류 === 'decimal' ? `0.01은 한 칸, 0.1은 한 줄(10칸)이에요. ${말}은(는) 0.1이 몇 개, 0.01이 몇 개인지 생각해 보세요.` : '백분율은 전체를 100으로 보았을 때의 양이에요. 1%는 한 칸, 10%는 한 줄(10칸)이에요.',
         steps: [종류 === 'decimal' ? '전체 100칸 가운데 1칸은 0.01이고, 한 줄(10칸)은 0.1입니다.' : '백분율은 기준량을 100으로 할 때의 비율입니다.', `${말}은(는) 100칸 가운데 ${k}칸이므로 ${Math.floor(k / 10)}줄과 ${k % 10}칸입니다.`, `그러므로 ${k}칸을 색칠합니다.`],
         concept: 종류 === 'decimal' ? '1을 100으로 나눈 하나는 0.01입니다.' : '백분율은 기준량을 100으로 할 때의 비율이고 %로 나타냅니다.',
-        misconception: 종류 === 'decimal' ? `0.${k}를 ${Math.floor(k / 10)}칸만 칠하기 쉽습니다.` : '백분율을 10칸 기준으로 생각하기 쉽습니다.',
-        결: 1,
+        misconception: 종류 === 'decimal' ? `${말}을(를) ${Math.floor(k / 10)}칸만 칠하기 쉽습니다.` : '백분율을 10칸 기준으로 생각하기 쉽습니다.',
+        결: lv,
       };
     }
     if (종류 === 'frac-mul') {
-      const d1 = 사이(next, 2, 5);
-      const d2 = 사이(next, 2, 4);
+      const d1 = lv === 0 ? 사이(next, 2, 3) : 사이(next, 3, 5);
+      const d2 = lv === 2 ? 사이(next, 3, 5) : 사이(next, 2, 3);
       const n1 = 사이(next, 1, d1 - 1);
       const n2 = 사이(next, 1, d2 - 1);
       return {
@@ -303,9 +315,10 @@ export const 백칸색칠 = (종류: 'decimal' | 'percent' | 'frac-mul' | 'frac-
       };
     }
     if (종류 === 'frac-add') {
-      const d = 사이(next, 5, 10);
+      const d = [사이(next, 4, 6), 사이(next, 6, 9), 사이(next, 10, 12)][lv];
       const a = 사이(next, 1, d - 2);
       const b = 사이(next, 1, d - 1 - a);
+      if (b < 1) return null;
       return {
         prompt: `전체를 똑같이 ${d}칸으로 나누었습니다. ${a}/${d}+${b}/${d}만큼 색칠해 보세요.`,
         answer: `${a + b}칸`,
@@ -316,11 +329,11 @@ export const 백칸색칠 = (종류: 'decimal' | 'percent' | 'frac-mul' | 'frac-
         steps: [`한 칸은 1/${d}입니다.`, `${a}/${d}은(는) ${a}칸, ${b}/${d}은(는) ${b}칸입니다.`, `${a}+${b}=${a + b}이므로 ${a + b}칸을 칠하면 ${a + b}/${d}입니다 — 분모는 그대로입니다.`],
         concept: '분모가 같은 분수의 덧셈은 분자끼리 더합니다.',
         misconception: `분모끼리도 더해 ${a + b}/${d * 2}로 생각하기 쉽습니다.`,
-        결: 1,
+        결: lv === 2 ? 2 : 1,
       };
     }
     if (종류 === 'frac-div') {
-      const d = 사이(next, 3, 5);
+      const d = lv === 0 ? 3 : 사이(next, 3, 5) + (lv === 2 ? 1 : 0);
       const n = 사이(next, 2, d - 1);
       const k = n;
       // n/d ÷ k = 1/d 조각 하나입니다. 막대를 d×k칸으로 그립니다.
@@ -339,19 +352,21 @@ export const 백칸색칠 = (종류: 'decimal' | 'percent' | 'frac-mul' | 'frac-
       };
     }
     // 크기가 같은 분수(5-1): 12칸 막대에 2/3만큼
-    const 쌍: [number, number][] = [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [1, 6], [5, 6]];
+    // 하: 12칸에 쉬운 분수, 중: 12칸에 여러 분수, 상: 24칸에 분모가 8·12인 분수
+    const 칸 = lv === 2 ? 24 : 12;
+    const 쌍: [number, number][] = lv === 0 ? [[1, 2], [1, 3], [1, 4], [1, 6]] : lv === 1 ? [[2, 3], [3, 4], [5, 6], [5, 12], [7, 12]] : [[3, 8], [5, 8], [7, 8], [5, 6], [7, 12], [11, 12]];
     const [n, d] = 쌍[next(쌍.length)];
     return {
-      prompt: `막대를 12칸으로 나누었습니다. ${n}/${d}과(와) 크기가 같도록 색칠해 보세요.`,
-      answer: `${(n * 12) / d}칸`,
-      manipulate: { kind: 'tap-fill', layout: 'bar', parts: 12, pre: [], target: (n * 12) / d },
+      prompt: `막대를 ${칸}칸으로 나누었습니다. ${n}/${d}과(와) 크기가 같도록 색칠해 보세요.`,
+      answer: `${(n * 칸) / d}칸`,
+      manipulate: { kind: 'tap-fill', layout: 'bar', parts: 칸, pre: [], target: (n * 칸) / d },
       tag: 'fraction',
       strategy: '크기가 같은 분수 만들기',
-      hint: `12칸을 ${d}묶음으로 나누면 한 묶음은 몇 칸일까요?`,
-      steps: [`12칸을 똑같이 ${d}묶음으로 나누면 한 묶음은 ${12 / d}칸입니다.`, `${n}/${d}은(는) ${n}묶음이므로 ${n}×${12 / d}=${(n * 12) / d}칸입니다.`, `그러므로 ${n}/${d}=${(n * 12) / d}/12입니다.`],
+      hint: `${칸}칸을 ${d}묶음으로 나누면 한 묶음은 몇 칸일까요?`,
+      steps: [`${칸}칸을 똑같이 ${d}묶음으로 나누면 한 묶음은 ${칸 / d}칸입니다.`, `${n}/${d}은(는) ${n}묶음이므로 ${n}×${칸 / d}=${(n * 칸) / d}칸입니다.`, `그러므로 ${n}/${d}=${(n * 칸) / d}/${칸}입니다.`],
       concept: '분모와 분자에 같은 수를 곱하면 크기가 같은 분수가 됩니다.',
       misconception: `분자 ${n}만큼만 칠하기 쉽습니다.`,
-      결: 2,
+      결: lv === 0 ? 1 : 2,
     };
   },
 });
@@ -359,11 +374,18 @@ export const 백칸색칠 = (종류: 'decimal' | 'percent' | 'frac-mul' | 'frac-
 // ── 수 모형 ───────────────────────────────────────────────────────
 export const 수모형만들기 = (places: number[], 종류: 'read' | 'plus' | 'minus' | 'add', 범위?: [number, number]): 조작갈래 => ({
   id: `base-ten-${places.join('-')}-${종류}${범위 ? `-${범위.join('-')}` : ''}`,
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
     const 최대 = 범위?.[1] ?? places[0] * 10 - 1;
     const 최소 = 범위?.[0] ?? places[0];
     const n = 사이(next, 최소, 최대);
+    // 읽기 — 하: 0이 없는 수, 중: 0이 있는 자리가 섞인 수, 상: 몇십(몇백)만큼 더 큰 수 만들기
+    if (종류 === 'read' && places.length > 1) {
+      const 영자리 = places.slice(1).some((p) => Math.floor(n / p) % 10 === 0);
+      if (lv === 0 && 영자리) return null;
+      if (lv === 1 && !영자리 && !범위) return null;
+      if (lv === 2) { const t = 수모형만들기(places, 'plus', 범위).make(seed, 1); if (t) return t; }
+    }
     const 자리 = places[1 + next(places.length - 1)] ?? 1;
     const 큰자리 = places[next(places.length - 1)];
     const 이름 = { 1000: '천', 100: '백', 10: '십', 1: '일' } as Record<number, string>;
@@ -378,7 +400,7 @@ export const 수모형만들기 = (places: number[], 종류: 'read' | 'plus' | '
         steps: [`${n}의 각 자리 숫자를 읽습니다.`, places.map((p) => `${이름[p]}의 자리 숫자 ${Math.floor(n / p) % 10}`).join(', ') + '입니다.', `그러므로 ${places.map((p) => `${이름[p]} 모형 ${Math.floor(n / p) % 10}개`).join(', ')}를 놓습니다.`],
         concept: '같은 숫자라도 어느 자리에 있느냐에 따라 나타내는 값이 다릅니다.',
         misconception: '자리를 바꾸어 놓거나 0인 자리를 빠뜨리기 쉽습니다.',
-        결: 0,
+        결: lv === 1 ? 1 : 0,
       };
     }
     if (종류 === 'add') {
@@ -400,7 +422,8 @@ export const 수모형만들기 = (places: number[], 종류: 'read' | 'plus' | '
       };
     }
     const 차 = 큰자리;
-    const m = 종류 === 'plus' ? n + 차 * 사이(next, 1, 3) : n - 차 * 사이(next, 1, 3);
+    // 하: 1만큼, 중: 2만큼, 상: 3만큼 몇십(몇백) 더 크거나 작은 수
+    const m = 종류 === 'plus' ? n + 차 * (lv + 1) : n - 차 * (lv + 1);
     if (m < 최소 || m > 최대) return null;
     const 몇 = Math.abs(m - n) / 차;
     // 받아올림·받아내림이 생기지 않는 것만 둡니다.
@@ -416,7 +439,7 @@ export const 수모형만들기 = (places: number[], 종류: 'read' | 'plus' | '
       steps: [`${n}을(를) 수 모형으로 나타냅니다.`, `${몇 * 차}만큼 더 ${종류 === 'plus' ? '크려면' : '작으려면'} ${이름[차]} 모형을 ${몇}개 ${종류 === 'plus' ? '더 놓습니다' : '덜어 냅니다'}.`, `그러므로 ${m}이(가) 됩니다 — 다른 자리 모형은 그대로입니다.`],
       concept: '몇백(몇십)만큼 크거나 작은 수는 그 자리의 숫자만 바뀝니다.',
       misconception: `${몇 * 차}을(를) 일 모형 ${몇}개로 생각하기 쉽습니다.`,
-      결: 2,
+      결: lv === 0 ? 1 : 2,
     };
   },
 });
@@ -477,7 +500,7 @@ export const 그래프그리기 = (style: 'bar' | 'stack' | 'line', step: number
 // ── 각 ────────────────────────────────────────────────────────────
 export const 각그리기 = (종류: 'right' | 'deg' | 'acute' | 'obtuse' | 'sum' | 'tri' | 'quad'): 조작갈래 => ({
   id: `angle-${종류}`,
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
     if (종류 === 'right') {
       return {
@@ -512,31 +535,35 @@ export const 각그리기 = (종류: 'right' | 'deg' | 'acute' | 'obtuse' | 'sum
     let 말: string;
     let 걸음: [string, string];
     if (종류 === 'deg') {
-      target = 사이(next, 3, 33) * 5;
-      if (target === 90) return null;
+      // 하: 몇십°인 예각, 중: 5° 단위 예각, 상: 둔각(반대쪽 눈금과 헷갈리기 쉬움)
+      target = lv === 0 ? 사이(next, 2, 8) * 10 : lv === 1 ? 사이(next, 3, 17) * 5 : 사이(next, 19, 34) * 5;
+      if (target === 90 || (lv === 1 && target % 10 === 0)) return null;
       말 = `${target}°인 각`;
       걸음 = ['각도기의 중심을 꼭짓점에, 밑금을 아래 변에 맞추었습니다.', `아래 변이 가리키는 0에서 시작하는 눈금을 따라 ${target}까지 갑니다.`];
     } else if (종류 === 'sum') {
-      const a = 사이(next, 4, 12) * 5;
-      const b = 사이(next, 4, 12) * 5;
-      const 빼기 = next(2) === 1 && a !== b;
+      const a = lv === 0 ? 사이(next, 2, 6) * 10 : 사이(next, 4, 12) * 5;
+      const b = lv === 0 ? 사이(next, 2, 6) * 10 : 사이(next, 4, 12) * 5;
+      // 하: 몇십°끼리의 합, 중: 합 또는 차, 상: 차
+      const 빼기 = lv === 0 ? false : lv === 2 ? a !== b : next(2) === 1 && a !== b;
       const [x, y] = 빼기 ? [Math.max(a, b), Math.min(a, b)] : [a, b];
       target = 빼기 ? x - y : x + y;
       if (target > 175 || target < 15) return null;
       말 = `${x}°와 ${y}°의 ${빼기 ? '차' : '합'}만큼의 각`;
       걸음 = [`${x}°${빼기 ? '-' : '+'}${y}°=${target}°입니다.`, `각도기에서 0에서 시작하는 눈금을 따라 ${target}까지 갑니다.`];
     } else if (종류 === 'quad') {
-      const a = 사이(next, 14, 26) * 5;
-      const b = 사이(next, 14, 26) * 5;
-      const c = 사이(next, 12, 26) * 5;
+      // 하: 두 각이 직각, 중: 세 각이 모두 다름, 상: 세 각 가운데 하나를 '직각'이라는 말로 줌
+      const a = lv === 0 ? 90 : 사이(next, 14, 26) * 5;
+      const b = lv === 0 ? 90 : 사이(next, 14, 26) * 5;
+      const c = lv === 2 ? 90 : lv === 0 ? 사이(next, 7, 30) * 5 : 사이(next, 12, 26) * 5;
       target = 360 - a - b - c;
-      if (target < 30 || target > 170 || target === 90) return null;
-      말 = `사각형의 세 각이 ${a}°, ${b}°, ${c}°일 때 나머지 한 각의 크기만큼의 각`;
+      if (target < 30 || target > 170 || target === 90 || (lv === 1 && [a, b, c].includes(90))) return null;
+      말 = lv === 2 ? `사각형의 세 각이 ${a}°, ${b}°, 직각일 때 나머지 한 각의 크기만큼의 각` : `사각형의 세 각이 ${a}°, ${b}°, ${c}°일 때 나머지 한 각의 크기만큼의 각`;
       걸음 = [`사각형의 네 각의 크기의 합은 360°이므로 나머지 한 각은 360°-${a}°-${b}°-${c}°=${target}°입니다.`, `각도기에서 0에서 시작하는 눈금을 따라 ${target}까지 갑니다.`];
     } else {
-      const a = 사이(next, 6, 14) * 5;
-      const b = 사이(next, 6, 14) * 5;
+      const a = lv === 0 ? 사이(next, 3, 7) * 10 : 사이(next, 6, 14) * 5;
+      const b = lv === 0 ? 사이(next, 3, 7) * 10 : 사이(next, 6, 14) * 5;
       target = 180 - a - b;
+      if (lv === 2 && target <= 90) return null;
       if (target < 20 || target > 120) return null;
       말 = `삼각형의 두 각이 ${a}°, ${b}°일 때 나머지 한 각의 크기만큼의 각`;
       걸음 = [`삼각형의 세 각의 크기의 합은 180°이므로 나머지 한 각은 180°-${a}°-${b}°=${target}°입니다.`, `각도기에서 0에서 시작하는 눈금을 따라 ${target}까지 갑니다.`];
@@ -555,17 +582,17 @@ export const 각그리기 = (종류: 'right' | 'deg' | 'acute' | 'obtuse' | 'sum
       steps: [...걸음, `그 눈금에 파란 변을 맞추면 ${target}°인 각이 됩니다 — 바깥 눈금과 안쪽 눈금을 바꾸어 읽으면 ${180 - target}°가 됩니다.`],
       concept: '각도기의 중심을 꼭짓점에, 밑금을 한 변에 맞추고 그 변의 0에서 시작하는 눈금을 읽습니다.',
       misconception: '각도기의 두 줄 눈금 가운데 반대쪽 줄을 읽기 쉽습니다.',
-      결: 종류 === 'deg' ? 1 : 2,
+      결: 종류 === 'deg' ? (lv === 2 ? 2 : 1) : lv === 0 ? 1 : 2,
     };
   },
 });
 
 // ── 분류하기 ──────────────────────────────────────────────────────
 type 물건 = { label: string; emoji?: string; bin: number };
-const 분류문항 = (id: string, 만들기: (next: (n: number) => number) => { prompt: string; bins: string[]; items: 물건[]; 기준: string; 결: 0 | 1 | 2; tag: 'classification' | 'solid' | 'shape' | 'number' | 'possibility' } | null): 조작갈래 => ({
+const 분류문항 = (id: string, 만들기: (next: (n: number) => number, lv: 수준) => { prompt: string; bins: string[]; items: 물건[]; 기준: string; 결: 0 | 1 | 2; tag: 'classification' | 'solid' | 'shape' | 'number' | 'possibility' } | null): 조작갈래 => ({
   id: `sort-${id}`,
-  make: (seed) => {
-    const t = 만들기(고르개(seed));
+  make: (seed, lv = 0) => {
+    const t = 만들기(고르개(seed), lv);
     if (!t) return null;
     return {
       prompt: t.prompt,
@@ -577,34 +604,34 @@ const 분류문항 = (id: string, 만들기: (next: (n: number) => number) => { 
       steps: [`분류하는 기준은 '${t.기준}'입니다.`, '물건을 하나씩 그 기준에 비추어 봅니다.', `${t.items.map((it) => `${it.label}은(는) ${t.bins[it.bin]}`).slice(0, 3).join(', ')}처럼 기준에 맞는 칸에 넣습니다.`],
       concept: '분류는 분명한 기준에 따라 나누는 것입니다. 누가 나누어도 결과가 같아야 합니다.',
       misconception: '기준이 아닌 다른 특징(색, 크기)을 보고 나누기 쉽습니다.',
-      결: t.결,
+      결: lv === 2 ? 2 : t.결,
     };
   },
 });
 
 const 뽑기 = <T,>(items: T[], k: number, next: (n: number) => number) => 섞기(items, next).slice(0, k);
 
-export const 입체모양분류 = 분류문항('solid-1', (next) => {
+export const 입체모양분류 = 분류문항('solid-1', (next, lv) => {
   const 모두: 물건[] = [
     { label: '선물 상자', emoji: '🎁', bin: 0 }, { label: '주사위', emoji: '🎲', bin: 0 }, { label: '우유갑', emoji: '🧃', bin: 0 }, { label: '책', emoji: '📕', bin: 0 },
     { label: '통조림', emoji: '🥫', bin: 1 }, { label: '북', emoji: '🥁', bin: 1 }, { label: '건전지', emoji: '🔋', bin: 1 }, { label: '양초', emoji: '🕯️', bin: 1 },
     { label: '축구공', emoji: '⚽', bin: 2 }, { label: '농구공', emoji: '🏀', bin: 2 }, { label: '구슬', emoji: '🔮', bin: 2 }, { label: '귤', emoji: '🍊', bin: 2 },
   ];
-  const items = [0, 1, 2].flatMap((b) => 뽑기(모두.filter((it) => it.bin === b), 2, next));
+  const items = [0, 1, 2].flatMap((b) => 뽑기(모두.filter((it) => it.bin === b), 2 + lv, next));
   return { prompt: '물건을 같은 모양끼리 모아 보세요.', bins: ['상자 모양', '둥근기둥 모양', '공 모양'], items: 섞기(items, next), 기준: '물건의 모양', 결: 0, tag: 'solid' };
 });
 
-export const 평면모양분류 = 분류문항('plane-1', (next) => {
+export const 평면모양분류 = 분류문항('plane-1', (next, lv) => {
   const 모두: 물건[] = [
     { label: '공책', emoji: '📓', bin: 0 }, { label: '액자', emoji: '🖼️', bin: 0 }, { label: '창문', emoji: '🪟', bin: 0 },
     { label: '삼각김밥', emoji: '🍙', bin: 1 }, { label: '조각 피자', emoji: '🍕', bin: 1 }, { label: '삼각 깃발', emoji: '🚩', bin: 1 },
     { label: '동전', emoji: '🪙', bin: 2 }, { label: '시계', emoji: '🕒', bin: 2 }, { label: '접시', emoji: '🍽️', bin: 2 },
   ];
-  const items = [0, 1, 2].flatMap((b) => 뽑기(모두.filter((it) => it.bin === b), 2, next));
+  const items = [0, 1, 2].flatMap((b) => 뽑기(모두.filter((it) => it.bin === b), 2 + lv, next));
   return { prompt: '물건의 본을 떴을 때 나오는 모양끼리 모아 보세요.', bins: ['■ 모양', '▲ 모양', '● 모양'], items: 섞기(items, next), 기준: '본뜬 모양', 결: 1, tag: 'shape' };
 });
 
-export const 동물분류 = 분류문항('animals', (next) => {
+export const 동물분류 = 분류문항('animals', (next, lv) => {
   const 기준들 = [
     { 기준: '다리의 수', bins: ['다리가 2개', '다리가 4개'], 모두: [['닭', '🐔', 0], ['오리', '🦆', 0], ['펭귄', '🐧', 0], ['타조', '🦤', 0], ['강아지', '🐶', 1], ['고양이', '🐱', 1], ['돼지', '🐷', 1], ['소', '🐮', 1], ['코끼리', '🐘', 1]] },
     { 기준: '사는 곳', bins: ['물에서 사는 것', '땅에서 사는 것'], 모두: [['물고기', '🐟', 0], ['문어', '🐙', 0], ['고래', '🐳', 0], ['상어', '🦈', 0], ['토끼', '🐰', 1], ['사자', '🦁', 1], ['말', '🐴', 1], ['다람쥐', '🐿️', 1]] },
@@ -612,28 +639,30 @@ export const 동물분류 = 분류문항('animals', (next) => {
   ] as const;
   const g = 기준들[next(기준들.length)];
   const 모두 = g.모두.map(([label, emoji, bin]) => ({ label, emoji, bin }) as 물건);
-  const items = [0, 1].flatMap((b) => 뽑기(모두.filter((it) => it.bin === b), 3, next));
+  const items = [0, 1].flatMap((b) => 뽑기(모두.filter((it) => it.bin === b), 2 + lv, next));
   return { prompt: `${g.기준}에 따라 동물을 분류해 보세요.`, bins: [...g.bins], items: 섞기(items, next), 기준: g.기준, 결: 1, tag: 'classification' };
 });
 
-export const 수분류 = (종류: 'even' | 'divisor' | 'multiple' | 'range-ge' | 'range-gt'): 조작갈래 => 분류문항(`num-${종류}`, (next) => {
+export const 수분류 = (종류: 'even' | 'divisor' | 'multiple' | 'range-ge' | 'range-gt'): 조작갈래 => 분류문항(`num-${종류}`, (next, lv) => {
   if (종류 === 'even') {
-    const ns = 뽑기(Array.from({ length: 30 }, (_, k) => k + 1), 6, next);
+    // 하: 20까지 6개, 중: 50까지 8개, 상: 99까지 10개
+    const ns = 뽑기(Array.from({ length: [20, 50, 99][lv] }, (_, k) => k + 1), 6 + 2 * lv, next);
     if (ns.filter((n) => n % 2 === 0).length < 2 || ns.filter((n) => n % 2).length < 2) return null;
     return { prompt: '수를 짝수와 홀수로 나누어 보세요.', bins: ['짝수', '홀수'], items: ns.map((n) => ({ label: String(n), bin: n % 2 ? 1 : 0 })), 기준: '둘씩 짝을 지을 수 있는지(일의 자리 숫자)', 결: 1, tag: 'number' };
   }
   if (종류 === 'divisor' || 종류 === 'multiple') {
-    const 기준수 = 종류 === 'divisor' ? [12, 18, 20, 24, 16][next(5)] : 사이(next, 3, 7);
-    const 후보 = 종류 === 'divisor' ? Array.from({ length: 기준수 }, (_, k) => k + 1) : Array.from({ length: 40 }, (_, k) => k + 1);
+    const 기준수 = 종류 === 'divisor' ? [[8, 10, 12], [12, 16, 18, 20], [24, 30, 36]][lv][next(3)] : [사이(next, 2, 4), 사이(next, 4, 6), 사이(next, 6, 9)][lv];
+    const 후보 = 종류 === 'divisor' ? Array.from({ length: 기준수 }, (_, k) => k + 1) : Array.from({ length: [30, 50, 80][lv] }, (_, k) => k + 1);
     const 맞음 = (n: number) => (종류 === 'divisor' ? 기준수 % n === 0 : n % 기준수 === 0);
-    const 예 = 뽑기(후보.filter(맞음), 3, next);
-    const 아니오 = 뽑기(후보.filter((n) => !맞음(n)), 3, next);
+    const 예 = 뽑기(후보.filter(맞음), 3 + (lv === 2 ? 1 : 0), next);
+    const 아니오 = 뽑기(후보.filter((n) => !맞음(n)), 3 + lv, next);
     const 말 = 종류 === 'divisor' ? `${기준수}의 약수` : `${기준수}의 배수`;
     return { prompt: `수를 ${말}인 것과 아닌 것으로 나누어 보세요.`, bins: [말, `${말}가 아닌 수`], items: 섞기([...예.map((n) => ({ label: String(n), bin: 0 })), ...아니오.map((n) => ({ label: String(n), bin: 1 }))], next), 기준: 종류 === 'divisor' ? `${기준수}을(를) 나누어떨어지게 하는지` : `${기준수}을(를) 몇 배 한 수인지`, 결: 1, tag: 'number' };
   }
-  const 경계 = 사이(next, 12, 40);
+  const 경계 = [사이(next, 12, 30), 사이(next, 30, 70), 사이(next, 100, 400)][lv];
   const 이상 = 종류 === 'range-ge';
-  const ns = [경계, 경계 - 사이(next, 1, 5), 경계 + 사이(next, 1, 5), 경계 - 사이(next, 6, 9), 경계 + 사이(next, 6, 9), 경계 + 10];
+  // 상에서는 경계에 1만큼 가까운 수를 더 넣어 헷갈리게 합니다.
+  const ns = [...new Set([경계, 경계 - 사이(next, 1, 5), 경계 + 사이(next, 1, 5), 경계 - 사이(next, 6, 9), 경계 + 사이(next, 6, 9), 경계 + 10, ...(lv === 2 ? [경계 - 1, 경계 + 1] : [])])];
   // 1-2차시는 이상·이하만 배웠으므로 '미만'을 쓰지 않습니다.
   const bins = 이상 ? [`${경계} 이상인 수`, `${경계} 이상이 아닌 수`] : [`${경계} 초과인 수`, `${경계} 이하인 수`];
   return {
@@ -646,25 +675,26 @@ export const 수분류 = (종류: 'even' | 'divisor' | 'multiple' | 'range-ge' |
   };
 });
 
-export const 가능성분류 = 분류문항('chance', (next) => {
+export const 가능성분류 = 분류문항('chance', (next, lv) => {
   const 모두: 물건[] = [
     { label: '주사위를 굴리면 7의 눈이 나온다', bin: 0 }, { label: '1월 다음에 3월이 온다', bin: 0 }, { label: '흰 바둑돌만 든 주머니에서 검은 돌을 꺼낸다', bin: 0 },
     { label: '동전을 던지면 그림 면이 나온다', bin: 1 }, { label: '주사위를 굴리면 짝수의 눈이 나온다', bin: 1 }, { label: '흰 돌 1개, 검은 돌 1개 가운데 흰 돌을 꺼낸다', bin: 1 },
     { label: '내일 아침에 해가 동쪽에서 뜬다', bin: 2 }, { label: '주사위를 굴리면 6 이하의 눈이 나온다', bin: 2 }, { label: '빨간 공만 든 상자에서 빨간 공을 꺼낸다', bin: 2 },
   ];
-  const items = [0, 1, 2].flatMap((b) => 뽑기(모두.filter((it) => it.bin === b), 2, next));
+  const items = [0, 1, 2].flatMap((b) => 뽑기(모두.filter((it) => it.bin === b), 2 + lv, next));
   return { prompt: '일이 일어날 가능성에 알맞게 나누어 보세요.', bins: ['불가능하다', '반반이다', '확실하다'], items: 섞기(items, next), 기준: '일이 일어날 가능성', 결: 1, tag: 'possibility' };
 });
 
 /** 띠그래프·원그래프(6-1 5단원): 20칸으로 나눈 띠(원)에 백분율만큼 칠하기 */
 export const 비율그래프칠하기 = (모양: 'bar' | 'circle'): 조작갈래 => ({
   id: `ratio-graph-${모양}`,
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
     const 칸 = 사이(next, 2, 15);
     const 퍼센트 = 칸 * 5;
     const 항목 = ['축구', '피구', '줄넘기', '수영', '농구'][next(5)];
-    const 전체 = [20, 40, 60, 80][next(4)];
+    // 하: 20명(한 칸이 한 명), 중: 40명·60명, 상: 80명·120명
+    const 전체 = lv === 0 ? 20 : lv === 1 ? [40, 60][next(2)] : [80, 120][next(2)];
     const 명 = (전체 * 퍼센트) / 100;
     if (!Number.isInteger(명)) return null;
     const 말 = 모양 === 'bar' ? '띠그래프' : '원그래프';
@@ -678,7 +708,7 @@ export const 비율그래프칠하기 = (모양: 'bar' | 'circle'): 조작갈래
       steps: [`${항목}의 백분율은 ${명}÷${전체}×100=${퍼센트}(%)입니다.`, '20칸으로 나누었으므로 한 칸은 100÷20=5(%)입니다.', `${퍼센트}÷5=${칸}이므로 ${칸}칸을 색칠합니다.`],
       concept: `${말}는 전체를 100%로 보고 각 항목이 차지하는 비율을 나타낸 그래프입니다.`,
       misconception: '사람 수를 그대로 칸 수로 칠하기 쉽습니다. 먼저 백분율로 바꾸어야 합니다.',
-      결: 2,
+      결: lv === 0 ? 1 : 2,
     };
   },
 });
