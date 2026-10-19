@@ -172,7 +172,9 @@ export type DrawGoal =
   // 닫힌 도형 하나를 그립니다.
   | { type: 'polygon'; goal: PolygonGoal }
   // through를 지나고 기준 선분(to)에 수직/평행인 선분을 긋습니다.
-  | { type: 'line'; through: GridPoint; rel: 'perp' | 'parallel'; to: GridSegment; minLength?: number };
+  | { type: 'line'; through: GridPoint; rel: 'perp' | 'parallel'; to: GridSegment; minLength?: number }
+  // 평행선 a와 b 사이의 거리를 나타내는 선분(두 선에 수직이고 양 끝이 두 선 위에 있는 선분) 하나를 긋습니다.
+  | { type: 'between'; a: GridSegment; b: GridSegment };
 
 export type Manipulation =
   // 자를 밀어 0 눈금을 물건의 왼쪽 끝에 맞추고, 오른쪽 끝의 눈금을 누릅니다.
@@ -224,9 +226,14 @@ export type Manipulation =
   // 수직선 위의 눈금 하나에 점을 놓습니다. ticks는 작은 눈금 수, labels는 이름을 붙인 눈금입니다.
   | { kind: 'number-line'; ticks: number; labels: { at: number; text: string }[]; target: number; minor?: number }
   // 칸(조각)을 눌러 색칠하거나 구슬을 놓습니다. 미리 칠해진 칸(pre)은 그대로입니다.
-  | { kind: 'tap-fill'; layout: 'bar' | 'grid' | 'circle' | 'tenframe' | 'objects'; parts: number; cols?: number; pre: number[]; target: number; emoji?: string }
-  // 수 모형을 더하고 빼서 수를 만듭니다.
-  | { kind: 'base-ten'; places: number[]; target: number }
+  // exact가 있으면 개수가 아니라 꼭 그 칸들(미리 칠한 칸 포함)이어야 합니다.
+  //   numgrid — 칸에 from부터 차례로 수를 적은 수 배열표, hours — 하루 24시간 띠(칸 k는 k시부터 1시간),
+  //   multtable — 곱셈표(칸 k는 (k÷9의 몫+1)×(k÷9의 나머지+1), 곱은 적지 않습니다)
+  | { kind: 'tap-fill'; layout: 'bar' | 'grid' | 'circle' | 'tenframe' | 'objects' | 'numgrid' | 'hours' | 'multtable'; parts: number; cols?: number; pre: number[]; target: number; emoji?: string; exact?: number[]; from?: number }
+  // 수 모형을 더하고 빼서 수를 만듭니다. start가 있으면 그 모형에서 시작하고,
+  // trade면 윗자리 1개 ↔아랫자리 10개 바꾸기를 할 수 있습니다(받아올림·받아내림). 이때는 자리마다 9개 이하로 정리해야 맞습니다.
+  // money면 수 모형 대신 돈(만 원, 천 원, 백 원, 십 원)으로 그립니다.
+  | { kind: 'base-ten'; places: number[]; target: number; start?: number[]; trade?: boolean; money?: boolean }
   // 막대(또는 꺾은선의 점, ○ 쌓기)의 높이를 맞춥니다. step은 눈금 한 칸의 크기입니다.
   | { kind: 'bars'; style: 'bar' | 'line' | 'stack'; labels: string[]; values: number[]; max: number; step: number; pre: number[]; unitLabel: string }
   // 반직선을 돌려 각을 만듭니다. 각도기가 있으면 눈금을 읽으며 맞춥니다.
@@ -261,6 +268,21 @@ export type Manipulation =
       bases: { pos: number; side: 'top' | 'bottom' }[];
       step: number;
     }
+  // 물건을 차례로 눌러 크기(길이) 순서대로 늘어놓습니다. len이 있으면 그 길이의 막대로 그립니다.
+  | { kind: 'order'; items: { label: string; value: number; len?: number; emoji?: string }[]; dir: 'asc' | 'desc' }
+  // 비커의 물 높이(들이) 또는 저울의 바늘(무게)을 끌어 눈금을 맞춥니다. 값은 mL·g 단위이고 pre는 처음 값입니다.
+  | { kind: 'gauge'; tool: 'beaker' | 'scale'; max: number; major: number; minor: number; target: number; pre: number }
+  // 그림그래프: 줄마다 큰 그림(big)과 작은 그림(small)의 수를 맞춥니다. 작은 그림은 큰 그림 하나보다 적어야 합니다.
+  | { kind: 'pictograph'; labels: string[]; values: number[]; big: number; small: number; icon: string; unitLabel: string }
+  // 달력의 날짜를 누릅니다. first는 1일의 요일(0 일요일)입니다.
+  | { kind: 'calendar'; month: number; first: number; days: number; target: number[] }
+  // 똑같이 나누어 담기. groups가 있으면 접시가 그만큼 놓여 있고(등분제), 없으면 size개씩 담을 접시를 아이가 놓습니다(포함제).
+  // rest면 똑같이 나누고 남는 것을 그대로 둡니다(나머지).
+  | { kind: 'share'; total: number; groups?: number; size?: number; emoji: string; rest: boolean }
+  // 점 배열: 왼쪽 위 모서리에서 끌어 한 줄에 cols개씩 rows줄인 직사각형 배열을 만듭니다.
+  | { kind: 'array'; maxRows: number; maxCols: number; rows: number; cols: number; emoji: string }
+  // 규칙 채우기: 빈칸(null)을 palette의 그림으로 채웁니다. cols칸마다 다음 줄로 넘어갑니다(한 줄로 이어 읽습니다).
+  | { kind: 'pattern'; palette: string[]; cols: number; given: (number | null)[]; answer: number[] }
   | {
       kind: 'prism-net';
       n: number;
