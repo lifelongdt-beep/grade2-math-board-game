@@ -11,7 +11,7 @@ import { lessons51 } from '../curriculum51';
 import { lessons5 } from '../curriculum5';
 import { lessons61 } from '../curriculum61';
 import { curriculum62 } from '../curriculum62';
-import { 조작문항들, 조작섞기, 조작표 } from './index';
+import { 조작문항들, 조작섞기, 조작표, 고차표 } from './index';
 import { 채점, 처음상태, 정답모습, 도형살피기, 닫힌도형, 합동인가 } from './check';
 import type { ManipState } from './check';
 import { generateQuestions } from '../questionFactory';
@@ -84,6 +84,83 @@ const 분수값 = (t: string): number => {
   if ((r = /^(\d+)\/(\d+)$/.exec(t.trim()))) return n(r[1]) / n(r[2]);
   return Number(t);
 };
+/** 열린 문항(조건에 맞는 수가 여럿)의 조건을 글에서 읽어 판정식으로 만듭니다. */
+const 열린조건 = (p: string): ((v: number) => boolean) => {
+  // 눈금 값은 소수 여섯째 자리까지 반올림해 두므로 그만큼 너그럽게 견줍니다.
+  const 작다 = 1e-5;
+  const 분수풀기 = (t: string) => t.replace(/(\d+)\/(\d+)/g, (_, a: string, b: string) => String(n(a) / n(b)));
+  const 값 = (t: string) => 분수값(t);
+  let r: RegExpExecArray | null;
+  // 식의 값이 조건에 맞도록 하는 □
+  if ((r = /([□\d+\-×/]+)(?:의 값이|[을를] 계산한 결과가) (?:(\S+)보다 크고 )?(\S+)보다 (작아|커)지도록 □에/.exec(p))) {
+    const [, 식, 아래, 위, 쪽] = r;
+    const 영빼기 = /□에 0은 넣지 않아요/.test(p);
+    return (v) => {
+      if (영빼기 && v === 0) return false;
+      const x = 셈하기(분수풀기(식.replace('□', String(v))));
+      return (아래 === undefined || x > 값(아래) + 작다) && (쪽 === '작아' ? x < 값(위) - 작다 : x > 값(위) + 작다);
+    };
+  }
+  if ((r = /분모가 (\d+)인 진분수 □가 있습니다\. ([□\d+\-/]+)의 값이 (\S+)보다 (작아|커)지도록/.exec(p))) {
+    const [, , 식, 위, 쪽] = r;
+    return (v) => {
+      if (v <= 0 || v >= 1) return false;
+      const x = 셈하기(분수풀기(식.replace('□', String(v))));
+      return 쪽 === '작아' ? x < 값(위) - 작다 : x > 값(위) + 작다;
+    };
+  }
+  if ((r = /(\d+)단 곱셈구구의 곱 가운데 (\d+)보다 크고 (\d+)보다 작은 수/.exec(p))) {
+    const [d, A, B] = [n(r[1]), n(r[2]), n(r[3])];
+    return (v) => v > A && v < B && v % d === 0 && v / d >= 1 && v / d <= 9;
+  }
+  if ((r = /어떤 수를 (\d+)\(?으?\)?로 나누면 나머지가 (\d+)입니다\. (\d+)보다 크고 (\d+)보다 작은/.exec(p))) {
+    const [d, rr, A, B] = [n(r[1]), n(r[2]), n(r[3]), n(r[4])];
+    return (v) => v > A && v < B && v % d === rr;
+  }
+  if ((r = /가장 가까운 몇백으로 어림하면 (\d+)입니다\. 어떤 수가 (\d+)보다 (작은|큰) 몇십/.exec(p))) {
+    const [Y, , 쪽] = [n(r[1]), r[2], r[3]];
+    return (v) => v % 10 === 0 && Math.round(v / 100) * 100 === Y && v % 100 !== 50 && (쪽 === '작은' ? v < Y : v > Y);
+  }
+  if ((r = /반올림하여 소수 첫째 자리까지 나타내면 ([\d.]+)입니다\. 그 수가 ([\d.]+)보다 (작은|큰)/.exec(p))) {
+    const Y = Number(r[1]);
+    const 쪽 = r[3];
+    return (v) => Math.abs(Math.floor(v * 10 + 0.5 + 작다) / 10 - Y) < 작다 && (쪽 === '작은' ? v < Y - 작다 : v > Y + 작다);
+  }
+  if ((r = /어떤 자연수를 (올림|버림|반올림)하여 십의 자리까지 나타내면 (\d+)입니다\. 어떤 수가 (\d+)보다 (작은|큰)/.exec(p))) {
+    const [방법, Y, 기준, 쪽] = [r[1], n(r[2]), n(r[3]), r[4]];
+    const 어림 = (v: number) => (방법 === '올림' ? Math.ceil(v / 10) * 10 : 방법 === '버림' ? Math.floor(v / 10) * 10 : Math.floor(v / 10 + 0.5) * 10);
+    return (v) => v > 0 && 어림(v) === Y && (쪽 === '작은' ? v < 기준 : v > 기준);
+  }
+  if ((r = /(\d+) (이상|초과) (\d+) (이하|미만)인 자연수(?: 가운데 (짝수|홀수))?/.exec(p))) {
+    const [A, 앞, B, 뒤, 짝] = [n(r[1]), r[2], n(r[3]), r[4], r[5]];
+    return (v) => v > 0 && (앞 === '이상' ? v >= A : v > A) && (뒤 === '이하' ? v <= B : v < B) && (짝 === undefined || v % 2 === (짝 === '짝수' ? 0 : 1));
+  }
+  if ((r = /(\d+)의 배수 가운데 (\d+)보다 큰 수/.exec(p))) { const [k, A] = [n(r[1]), n(r[2])]; return (v) => v > A && v % k === 0; }
+  if ((r = /(\d+)[과와] (\d+)의 공배수/.exec(p))) { const [a, b] = [n(r[1]), n(r[2])]; return (v) => v > 0 && v % a === 0 && v % b === 0; }
+  if ((r = /(\d+)[과와] (\d+)의 공약수/.exec(p))) { const [a, b] = [n(r[1]), n(r[2])]; return (v) => v > 0 && a % v === 0 && b % v === 0; }
+  if ((r = /기록이?|과녁 맞히기를 1회부터 4회까지 하여 ([\d점, ]+)점을 얻었습니다\. 5회까지 얻은 점수의 평균이 (\d+)점 이상/.exec(p)) && r[1]) {
+    const 합 = 숫자들(r[1]).reduce((a, b) => a + b, 0);
+    const M = n(r[2]);
+    return (v) => (합 + v) / 5 >= M;
+  }
+  if ((r = /문제 (\d+)개 가운데 맞힌 문제 수의 비율이 (\d+)% 이상 (\d+)% 미만/.exec(p))) {
+    const [N, lo, hi] = [n(r[1]), n(r[2]), n(r[3])];
+    return (v) => (v * 100) / N >= lo && (v * 100) / N < hi;
+  }
+  // 두 수 사이의 수(몇십·몇백·몇천, 짝수·홀수, 분수, 소수)
+  if ((r = /(?:분모가 (\d+)인 분수 가운데 )?(\S+)보다 크고 (\S+)보다 작은 (수 가운데 (몇십|몇백|몇천)|짝수|홀수|수|분수|소수 (한|두) 자리 수)/.exec(p))) {
+    const [, 분모, A, B, 종류, 몇, 자리] = r;
+    const [a, b] = [값(A), 값(B)];
+    const 단위 = 몇 === '몇십' ? 10 : 몇 === '몇백' ? 100 : 몇 === '몇천' ? 1000 : 0;
+    return (v) => v > a + 작다 && v < b - 작다
+      && (!단위 || v % 단위 === 0)
+      && (종류 !== '짝수' || v % 2 === 0) && (종류 !== '홀수' || v % 2 === 1)
+      && (!분모 || Math.abs(v * n(분모) - Math.round(v * n(분모))) < 1e-4)
+      && (!자리 || Math.abs(v * (자리 === '한' ? 10 : 100) - Math.round(v * (자리 === '한' ? 10 : 100))) < 1e-4);
+  }
+  throw new Error(`풀 수 없는 열린 문항: ${p}`);
+};
+
 const 생활순위: Record<string, string[]> = {
   무게: ['깃털', '지우개', '사과', '책가방', '자전거', '코끼리'],
   넓이: ['우표', '공책', '신문지', '돗자리', '운동장'],
@@ -288,6 +365,17 @@ const 바른조작 = (q: Question): ManipState => {
       return { kind: m.kind, cells: c, offset: m.start };
     }
     case 'number-line': {
+      if (/조건에 맞는 수는 여러 개예요/.test(p)) {
+        // 이름 붙은 눈금 둘로 눈금마다의 값을 구하고, 글의 조건으로 답이 되는 눈금을 모두 찾습니다.
+        const [l0, l1] = m.labels;
+        const 한칸 = (분수값(l1.text) - 분수값(l0.text)) / (l1.at - l0.at);
+        const 눈금값 = (k: number) => 분수값(l0.text) + (k - l0.at) * 한칸;
+        const 조건 = 열린조건(p);
+        const 답들 = Array.from({ length: m.ticks + 1 }, (_, k) => k).filter((k) => 조건(Number(눈금값(k).toFixed(6))));
+        expect(답들, p).toEqual(m.targets);
+        expect(답들.length, p).toBeGreaterThan(1);
+        return { kind: m.kind, at: 답들[답들.length - 1] };
+      }
       const 앞 = (k: number) => m.labels.find((l) => l.at === k)!;
       const 값 = (텍스트: string) => Number(텍스트);
       // 이름 붙은 첫 두 눈금으로 수를 눈금 자리로 바꿉니다(이름이 수일 때).
@@ -1131,7 +1219,10 @@ describe('하·중·상 수준', () => {
   };
   const 부담 = (q: Question) => {
     const 수들 = (`${q.prompt} ${q.answer}`.match(/\d+(?:\.\d+)?/g) ?? []).map(Number);
-    return (q.thinkingLevel ?? 0) * 1000 + Math.log10(1 + Math.max(0, ...수들)) * 100 + 조작크기(q.manipulate!) * 3;
+    // 틀린 곳을 찾아 고치거나 조건에 맞는 답을 스스로 찾는 문항은 같은 수라도 따질 거리가 한 겹 더 있습니다.
+    const m = q.manipulate!;
+    const 고차 = m.friend || (m.kind === 'number-line' && m.targets) ? 300 : 0;
+    return (q.thinkingLevel ?? 0) * 1000 + 고차 + Math.log10(1 + Math.max(0, ...수들)) * 100 + 조작크기(m) * 3;
   };
   it('차시마다 상 문항이 하 문항보다 어렵습니다', () => {
     const 같음: string[] = [];
@@ -1161,5 +1252,35 @@ describe('배우지 않은 수', () => {
         }
       }
     }
+  });
+});
+
+describe('상 수준의 고차 문항', () => {
+  const 상 = 모두.filter((q) => q.difficulty === '상');
+  it('친구가 해 둔 모습은 틀린 것이고, 그 모습에서 시작합니다', () => {
+    for (const q of 상.filter((x) => x.manipulate!.friend)) {
+      const m = q.manipulate!;
+      const 처음 = 처음상태(m);
+      expect(채점(m, 처음).ok, q.prompt).toBe(false);
+      expect(JSON.stringify(처음), q.prompt).toBe(JSON.stringify(m.friend!.state));
+      expect(q.support.steps[0].startsWith('친구는'), q.prompt).toBe(true);
+    }
+  });
+  it('고차표에 적은 차시는 상에서 조건에 맞는 답을 찾는 열린 문항이 나옵니다', () => {
+    const 빈: string[] = [];
+    for (const 열쇠 of Object.keys(고차표)) {
+      const [학기, 단원차시] = 열쇠.split(' ');
+      const [u, l] = 단원차시.split('-').map(Number);
+      const 차시 = 모든차시.find((x) => x.semester === 학기 && x.unitNo === u && x.lessonNo === l);
+      if (!차시) { 빈.push(`${열쇠} 차시 없음`); continue; }
+      const 열린 = 조작문항들(차시, '상', 6).filter((q) => q.manipulate!.kind === 'number-line' && q.manipulate!.targets);
+      if (열린.length < 1) 빈.push(열쇠);
+    }
+    expect(빈).toEqual([]);
+  });
+  it('상 문항의 대부분은 고차 문항(틀린 곳 고치기·조건에 맞는 답 찾기)입니다', () => {
+    const 고차 = 상.filter((q) => q.manipulate!.friend || (q.manipulate!.kind === 'number-line' && q.manipulate!.targets));
+    const 남은종류 = [...new Set(상.filter((q) => !고차.includes(q)).map((q) => q.manipulate!.kind))];
+    expect(고차.length / 상.length, `고차가 아닌 조작: ${남은종류.join(', ')}`).toBeGreaterThan(0.9);
   });
 });

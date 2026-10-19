@@ -1187,6 +1187,7 @@ export function ManipulateTask({ m, locked, reveal, onSubmit, onTap, tip }: Mani
   const 되돌림 = s.kind === 'grid-draw' && s.segs.length > 0;
   return (
     <div className={`manip-task manip-kind-${m.kind}`} onPointerDown={() => onTap?.()}>
+      {m.friend && !reveal && <p className="manip-friend">🧐 친구가 해 둔 모습이에요. 틀린 곳을 찾아 고친 다음 확인을 눌러요.</p>}
       <div className="manip-stage">{화면}</div>
       {도움 && !reveal && <p className="manip-help-line">💡 {resolveParticles(도움말(m))}</p>}
       {reveal && tip && <p className="manip-tip">{resolveParticles(tip)}</p>}
@@ -1199,7 +1200,7 @@ export function ManipulateTask({ m, locked, reveal, onSubmit, onTap, tip }: Mani
           <button type="button" onClick={() => set({ ...s, segs: s.segs.slice(0, -1) })}>↶ 한 선 지우기</button>
         )}
         {!locked && (
-          <button type="button" onClick={() => setS(처음상태(m))}>처음부터</button>
+          <button type="button" onClick={() => setS(처음상태(m))}>{m.friend ? '친구 것으로 되돌리기' : '처음부터'}</button>
         )}
         {!locked && (
           <button type="button" className="manip-submit" onClick={() => onSubmit(채점(m, s))}>확인</button>
