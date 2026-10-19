@@ -169,12 +169,13 @@ export const 크기순서 = (종류: 순서종류, k: number, 결: 0 | 1 | 2): �
 // ── 몇째 고르기(1-1) ──────────────────────────────────────────────
 export const 몇째고르기: 조작갈래 = {
   id: 'ordinal-pick',
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
-    const parts = 사이(next, 7, 9);
-    const k = 사이(next, 2, Math.min(6, parts - 1));
-    const 몇개 = next(2) === 0;
-    const 오른쪽 = !몇개 && next(2) === 0;
+    // 하: 왼쪽에서 몇째·몇 개(작은 수), 중: 큰 수, 상: 오른쪽에서 몇째
+    const parts = lv === 0 ? 사이(next, 5, 6) : 사이(next, 7, 9);
+    const k = lv === 0 ? 사이(next, 2, 3) : 사이(next, 4, Math.min(7, parts - 1));
+    const 몇개 = lv < 2 && next(2) === 0;
+    const 오른쪽 = lv === 2;
     const emoji = ['🍎', '🐥', '🚗', '⭐', '🌷'][next(5)];
     const 이름 = { '🍎': '사과', '🐥': '병아리', '🚗': '자동차', '⭐': '별', '🌷': '꽃' }[emoji]!;
     const exact = 몇개 ? Array.from({ length: k }, (_, i) => i) : [오른쪽 ? parts - k : k - 1];
@@ -229,13 +230,15 @@ export const 수배열표 = (시작들: number[], 걸음들: number[], 결: 0 | 
 // ── 곱셈표 ────────────────────────────────────────────────────────
 export const 곱셈표찾기: 조작갈래 = {
   id: 'multtable-product',
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
-    const 후보 = [6, 8, 12, 16, 18, 24, 36, 4, 9, 10, 14, 15, 20, 21, 28, 30, 32, 40, 42, 45, 48, 54, 56, 63, 72];
+    // 하: 칸이 2개인 곱, 중: 칸이 3개 이상인 작은 곱, 상: 칸이 3개 이상인 큰 곱
+    const 후보 = [[10, 14, 15, 20, 21, 28, 35, 40, 45, 56, 63, 72], [4, 6, 8, 9, 12, 16], [18, 24, 36]][lv];
     const P = 후보[next(후보.length)];
     const exact: number[] = [];
     for (let a = 1; a <= 9; a += 1) for (let b = 1; b <= 9; b += 1) if (a * b === P) exact.push((a - 1) * 9 + (b - 1));
     if (exact.length < 2) return null;
+    if (lv > 0 && exact.length < 3) return null;
     return {
       prompt: `곱셈표에서 곱이 ${P}인 칸을 모두 찾아 눌러 색칠해 보세요. 칸에는 곱이 적혀 있지 않습니다.`,
       answer: `${exact.map((k) => `${Math.floor(k / 9) + 1}×${(k % 9) + 1}`).join(', ')}`,
@@ -246,7 +249,7 @@ export const 곱셈표찾기: 조작갈래 = {
       steps: [`곱셈표에서 칸의 곱은 맨 왼쪽 줄의 수와 맨 윗줄의 수를 곱한 것입니다.`, `곱셈구구에서 곱이 ${P}인 것을 모두 찾습니다.`, `${exact.map((k) => `${Math.floor(k / 9) + 1}×${(k % 9) + 1}`).join(', ')}이(가) ${P}이므로 그 칸에 모두 색칠합니다.`],
       concept: '곱셈표에서 곱하는 두 수의 순서를 바꾸어도 곱은 같습니다. 그래서 같은 곱이 대각선을 사이에 두고 마주 보며 나옵니다.',
       misconception: '한 칸만 찾고 순서를 바꾼 곱셈식의 칸을 빠뜨리기 쉽습니다.',
-      결: 2,
+      결: lv === 0 ? 1 : 2,
     };
   },
 };
@@ -255,9 +258,10 @@ export const 곱셈표찾기: 조작갈래 = {
 const 시각글 = (h: number) => `${h < 12 ? '오전' : '오후'} ${h % 12 === 0 ? 12 : h % 12}시`;
 export const 시간띠: 조작갈래 = {
   id: 'hours-bar',
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
-    const 종류 = next(3);
+    // 하: 오전 안에서, 중: 오후 안에서, 상: 낮 12시를 지나는 시간
+    const 종류 = [0, 2, 1][lv];
     const 시작 = 종류 === 0 ? 사이(next, 6, 9) : 종류 === 1 ? 사이(next, 8, 11) : 사이(next, 13, 16);
     const 끝 = 종류 === 0 ? 사이(next, 시작 + 2, 11) : 종류 === 1 ? 사이(next, 13, 17) : 사이(next, 시작 + 2, 21);
     if (끝 <= 시작) return null;
@@ -274,7 +278,7 @@ export const 시간띠: 조작갈래 = {
       steps: ['하루는 24시간이고, 오전 12시간과 오후 12시간으로 나뉩니다.', `${시각글(시작)}에서 ${시각글(끝)}까지 1시간마다 한 칸씩 셉니다${시작 < 12 && 끝 > 12 ? ' — 낮 12시를 지나면 오후입니다' : ''}.`, `그러므로 ${시각글(시작)}부터 ${시각글(끝)}까지 ${끝 - 시작}칸을 색칠합니다.`],
       concept: '전날 밤 12시부터 낮 12시까지를 오전, 낮 12시부터 밤 12시까지를 오후라고 합니다.',
       misconception: '오후 시각을 오전 칸에 칠하거나, 낮 12시를 지날 때 시간을 잘못 세기 쉽습니다.',
-      결: 종류 === 1 ? 2 : 1,
+      결: lv,
     };
   },
 };
@@ -338,10 +342,11 @@ const 올림수 = (a: number, b: number, op: '+' | '-', places: number[]) => {
 
 export const 수모형계산 = (places: number[], op: '+' | '-', 받아: 0 | 1 | 2, b한자리 = false): 조작갈래 => ({
   id: `base-ten-calc-${places.join('-')}-${op}-${받아}${b한자리 ? '-b1' : ''}`,
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
-    const 최대 = places[0] * 10 - 1;
-    const a = 사이(next, places[0] + 1, 최대);
+    // 하: 작은 수, 중: 큰 수, 상: □가 있는 식(처음 수에서 결과가 되도록 모형을 더하거나 덜어 내고 □ 구하기)
+    const 최대 = lv === 0 ? places[0] * 5 - 1 : places[0] * 10 - 1;
+    const a = lv === 0 ? 사이(next, places[0] + 1, 최대) : 사이(next, places[0] * 3, 최대);
     const b한계 = op === '+' ? 최대 - a : a - 1;
     if (!b한자리 && b한계 < places[0]) return null;
     const b = b한자리 ? 사이(next, 2, 9) : 사이(next, places[0], b한계);
@@ -355,6 +360,20 @@ export const 수모형계산 = (places: number[], op: '+' | '-', 받아: 0 | 1 |
     const 놓을것 = 자리수들(b, places).map((c, i) => (c ? `${자리글[places[i]]} 모형 ${c}개` : '')).filter(Boolean).reverse().join(', ');
     const 식 = `${a}${op}${b}`;
     const 자리 = [...places].reverse();
+    if (lv === 2) {
+      return {
+        prompt: `${a}${op}□=${결과}에서 □를 구하려고 합니다. 수 모형 ${a}에서 모형을 ${op === '+' ? '더 놓아' : '덜어 내어'} ${결과}을(를) 만들어 보세요. ${op === '+' ? '더 놓은' : '덜어 낸'} 모형이 나타내는 수가 □입니다.${받아 ? ` ${바꿈}.` : ''}`,
+        answer: `${결과}을(를) 만들면 □=${b}`,
+        manipulate: { kind: 'base-ten', places, target: 결과, start: 자리수들(a, places), trade: 받아 > 0 },
+        tag: op === '+' ? 'addition' : 'subtraction',
+        strategy: '덧셈과 뺄셈의 관계로 □ 구하기',
+        hint: `${a}과(와) ${결과}을(를) 자리마다 견주어 보세요. 자리마다 모형이 몇 개 ${op === '+' ? '모자란지' : '남는지'} 세면 □를 알 수 있어요.${받아 ? ' 모자라거나 넘치는 자리는 윗자리와 바꾸어 정리해요.' : ''}`,
+        steps: [`${a}${op}□=${결과}은(는) ${op === '+' ? `${결과}-${a}=□` : `${a}-${결과}=□`}와 같습니다.`.replace('와 같습니다', '과(와) 같습니다'), `수 모형 ${a}에서 ${op === '+' ? '더 놓아' : '덜어 내어'} ${결과}을(를) 만들고, ${op === '+' ? '더 놓은' : '덜어 낸'} 모형을 셉니다.`, `그러므로 □=${b}입니다.`],
+        concept: '덧셈과 뺄셈은 서로 거꾸로 하는 계산이므로, 덧셈식의 □는 뺄셈으로, 뺄셈식의 □는 덧셈이나 뺄셈으로 구할 수 있습니다.',
+        misconception: '□ 자리를 생각하지 않고 보이는 두 수를 그대로 더하기 쉽습니다.',
+        결: 2,
+      };
+    }
     return {
       prompt: `수 모형이 ${a}을(를) 나타내고 있습니다. ${b}만큼 모형을 ${op === '+' ? '더 놓아' : '덜어 내어'} ${식}을(를) 구해 보세요.${받아 ? ` ${바꿈}.` : ''}`,
       answer: String(결과),
@@ -371,7 +390,7 @@ export const 수모형계산 = (places: number[], op: '+' | '-', 받아: 0 | 1 |
       ],
       concept: op === '+' ? '같은 자리끼리 더하고, 10이 되면 윗자리로 받아올립니다.' : '같은 자리끼리 빼고, 뺄 수 없으면 윗자리에서 10을 받아내립니다.',
       misconception: op === '+' ? '받아올린 1을 윗자리에 더하지 않기 쉽습니다.' : '큰 수에서 작은 수를 거꾸로 빼거나(3-7을 7-3으로), 받아내린 뒤 윗자리를 1 줄이지 않기 쉽습니다.',
-      결: 받아 === 2 ? 2 : 받아 === 1 ? 1 : 0,
+      결: 받아 === 2 ? 2 : lv === 1 || 받아 === 1 ? 1 : 0,
     };
   },
 });
@@ -379,10 +398,14 @@ export const 수모형계산 = (places: number[], op: '+' | '-', 받아: 0 | 1 |
 // ── 돈으로 큰 수 만들기(4-1) ──────────────────────────────────────
 export const 돈으로만들기 = (종류: 'man' | 'five'): 조작갈래 => ({
   id: `money-${종류}`,
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
     const places = [10000, 1000, 100, 10];
-    const n = 종류 === 'man' ? 사이(next, 1, 5) * 10000 + 사이(next, 0, 9) * 1000 : 사이(next, 1, 9) * 10000 + 사이(next, 0, 9) * 1000 + 사이(next, 0, 9) * 100 + 사이(next, 0, 9) * 10;
+    const n = 종류 === 'man' ? 사이(next, 1, 5) * 10000 + 사이(next, 0, 9) * 1000 + (lv === 2 ? 사이(next, 1, 9) * 100 : 0) : 사이(next, 1, 9) * 10000 + 사이(next, 0, 9) * 1000 + 사이(next, 0, 9) * 100 + 사이(next, 0, 9) * 10;
+    // 하: 0인 자리가 없는 수, 중: 0인 자리가 하나, 상: 0인 자리가 둘 이상(빠뜨리기 쉬움)
+    const 영 = [1000, 100, 10].filter((p) => Math.floor(n / p) % 10 === 0).length;
+    if (종류 === 'five' && (lv === 0 ? 영 !== 0 : lv === 1 ? 영 !== 1 : 영 < 2)) return null;
+    if (종류 === 'man' && lv === 1 && Math.floor(n / 1000) % 10 !== 0) return null;
     const 글 = String(n);
     return {
       prompt: `만 원짜리, 천 원짜리, 백 원짜리, 십 원짜리로 ${글}원을 만들어 보세요. 돈은 가장 적은 장수(개수)로 놓아요.`,
@@ -394,7 +417,7 @@ export const 돈으로만들기 = (종류: 'man' | 'five'): 조작갈래 => ({
       steps: [`${글}에서 만의 자리, 천의 자리, 백의 자리, 십의 자리 숫자를 차례로 읽습니다.`, '각 자리 숫자만큼 그 자리의 돈을 놓습니다 — 천 원짜리 10장은 만 원짜리 1장과 같습니다.', `그러므로 ${places.map((p) => `${{ 10000: '만', 1000: '천', 100: '백', 10: '십' }[p]} 원짜리 ${Math.floor(n / p) % 10}`).join(', ')}을(를) 놓으면 ${글}원입니다.`],
       concept: '10000은 1000이 10개인 수이고, 만이라고 읽습니다. 다섯 자리 수는 자리마다 숫자가 나타내는 값이 다릅니다.',
       misconception: '0인 자리를 빼고 나머지 숫자를 앞으로 당겨 놓기 쉽습니다.',
-      결: 종류 === 'man' ? 0 : 1,
+      결: lv,
     };
   },
 });
@@ -403,14 +426,18 @@ export const 돈으로만들기 = (종류: 'man' | 'five'): 조작갈래 => ({
 const 담을것 = [['사탕', '🍬'], ['딸기', '🍓'], ['구슬', '🔵'], ['쿠키', '🍪'], ['귤', '🍊']] as const;
 export const 나누어담기 = (종류: 'share' | 'group' | 'group2' | 'rest' | 'rest-big' | 'big'): 조작갈래 => ({
   id: `share-${종류}`,
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
     const [이름, emoji] = 담을것[next(담을것.length)];
+    // 하: 적은 수를 적은 접시에, 중: 조금 더 많이, 상: 많은 수를 많은 접시에
     if (종류 === 'share' || 종류 === 'big') {
-      const g = 사이(next, 2, 종류 === 'big' ? 3 : 5);
-      const q = 종류 === 'big' ? 사이(next, 11, 16) : 사이(next, 2, 6);
+      // 내림이 있는 (몇십몇)÷(몇): 십의 자리가 나누는 수로 나누어떨어지지 않고 몫이 10보다 큰 것
+      const g = 종류 === 'big' ? [2, 3, 4][lv] : [사이(next, 2, 3), 사이(next, 3, 4), 사이(next, 4, 6)][lv];
+      const 내림후보 = Array.from({ length: 40 }, (_, i) => 20 + i).filter((t) => t % g === 0 && Math.floor(t / 10) % g !== 0 && t / g >= 10);
+      const q = 종류 === 'big' ? (내림후보.length ? 내림후보[next(내림후보.length)] / g : 0) : [사이(next, 2, 3), 사이(next, 3, 5), 사이(next, 4, 7)][lv];
+      if (!q) return null;
       const total = g * q;
-      if (total > 48) return null;
+      if (total > 56) return null;
       if (종류 === 'big' && Math.floor(total / 10) % g === 0) return null;
       return {
         prompt: `${이름} ${total}개를 접시 ${g}개에 똑같이 나누어 담아 보세요. 접시를 누를 때마다 하나씩 담깁니다.`,
@@ -422,14 +449,14 @@ export const 나누어담기 = (종류: 'share' | 'group' | 'group2' | 'rest' | 
         steps: [`${이름}을(를) 접시마다 하나씩 차례로 담습니다.`, `한 바퀴에 ${g}개씩 담기므로, 남은 것이 없을 때까지 되풀이합니다.`, `${total}÷${g}=${q}이므로 한 접시에 ${q}개씩 담깁니다.`],
         concept: '똑같이 나누는 것을 나눗셈으로 나타낼 수 있습니다. 나누어 담은 한 접시의 수가 몫입니다.',
         misconception: '한 접시에 많이 담고 다른 접시에 적게 담아 똑같이 나누지 않기 쉽습니다.',
-        결: 종류 === 'big' ? 2 : 0,
+        결: 종류 === 'big' ? 2 : lv,
       };
     }
     if (종류 === 'group' || 종류 === 'group2') {
-      const size = 사이(next, 2, 종류 === 'group2' ? 5 : 6);
-      const q = 사이(next, 2, 6);
+      const size = [사이(next, 2, 3), 사이(next, 3, 5), 사이(next, 4, 6)][lv];
+      const q = [사이(next, 2, 3), 사이(next, 3, 5), 사이(next, 4, 6)][lv];
       const total = size * q;
-      if (total > 30) return null;
+      if (total > 36) return null;
       const 둘 = 종류 === 'group2';
       return {
         prompt: 둘
@@ -443,12 +470,13 @@ export const 나누어담기 = (종류: 'share' | 'group' | 'group2' | 'rest' | 
         steps: [`접시 하나에 ${size}개씩 담습니다.`, `${total}에서 ${size}씩 덜어 내면 ${Array.from({ length: q }, (_, i) => total - size * (i + 1)).join(', ')}이(가) 남습니다.`, 둘 ? `${size}개씩 ${q}묶음이 되므로 ${size}의 ${q}배입니다.` : `${q}번 덜어 내었으므로 접시는 ${q}개이고, ${total}÷${size}=${q}입니다.`],
         concept: 둘 ? '몇씩 몇 묶음으로 묶어 세면 많은 수를 빠르게 셀 수 있습니다.' : '전체를 몇씩 덜어 내어 몇 번 덜어 낼 수 있는지 구하는 것도 나눗셈입니다.',
         misconception: '접시마다 담는 수를 다르게 하거나, 마지막에 남은 것을 그대로 두기 쉽습니다.',
-        결: 1,
+        결: lv === 2 ? 2 : 1,
       };
     }
     // 나머지가 있는 나눗셈(3-2)
-    const g = 종류 === 'rest-big' ? 사이(next, 2, 3) : 사이(next, 3, 6);
-    const total = 종류 === 'rest-big' ? 사이(next, 21, 39) : 사이(next, 10, 29);
+    const g = 종류 === 'rest-big' ? (lv === 2 ? 3 : 2) : [3, 사이(next, 4, 5), 사이(next, 5, 7)][lv];
+    // 내림이 있고 나머지가 있는 것: 하·중은 2로(30~39), 상은 3으로(40~44) 나눕니다.
+    const total = 종류 === 'rest-big' ? (lv === 2 ? 사이(next, 40, 44) : [사이(next, 31, 35), 사이(next, 33, 39)][lv]) : [사이(next, 10, 17), 사이(next, 16, 23), 사이(next, 22, 34)][lv];
     const q = Math.floor(total / g);
     const r = total % g;
     if (r === 0) return null;
@@ -463,7 +491,7 @@ export const 나누어담기 = (종류: 'share' | 'group' | 'group2' | 'rest' | 
       steps: [`접시 ${g}개에 하나씩 돌아가며 똑같이 담습니다.`, `남은 것이 ${g}개보다 적으면 더 이상 똑같이 나눌 수 없습니다.`, `${total}÷${g}=${q}…${r}이므로 한 접시에 ${q}개씩 담고 ${r}개가 남습니다.`],
       concept: '나머지는 나누는 수보다 항상 작아야 합니다.',
       misconception: '남은 것이 나누는 수보다 많은데도 멈추거나, 남은 것을 한 접시에 몰아 담기 쉽습니다.',
-      결: 2,
+      결: lv === 0 ? 1 : 2,
     };
   },
 });
@@ -471,10 +499,12 @@ export const 나누어담기 = (종류: 'share' | 'group' | 'group2' | 'rest' | 
 // ── 점 배열로 곱셈·나눗셈 ─────────────────────────────────────────
 export const 점배열 = (종류: 'times' | 'mul' | 'dan' | 'dan-more' | 'dan-product' | 'div' | 'times-think', 단들: number[] = [2, 3, 4, 5, 6, 7, 8, 9]): 조작갈래 => ({
   id: `array-${종류}-${단들.join('')}`,
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
-    const a = 단들[next(단들.length)];
-    const b = 사이(next, 2, 종류 === 'dan-more' ? 8 : 9);
+    // 하: 작은 수, 중: 중간, 상: 큰 수(단이 정해진 곱셈구구는 곱하는 수만 커집니다)
+    const 고른단 = 단들.length > 2 ? 단들.filter((d) => (lv === 0 ? d <= 4 : lv === 1 ? d >= 3 && d <= 6 : d >= 5)) : 단들;
+    const a = (고른단.length ? 고른단 : 단들)[next((고른단.length ? 고른단 : 단들).length)];
+    const b = [사이(next, 2, 4), 사이(next, 4, 6), 사이(next, 6, 종류 === 'dan-more' ? 8 : 9)][lv];
     if (a * b > 81 || a > 9) return null;
     // 나눗셈은 '점 몇 개'라고 말하므로 점으로 놓습니다.
     const emoji = 종류 === 'div' ? '●' : ['●', '🍓', '⭐', '🍪'][next(4)];
@@ -540,7 +570,7 @@ export const 점배열 = (종류: 'times' | 'mul' | 'dan' | 'dan-more' | 'dan-pr
       steps,
       concept: 종류 === 'div' ? '곱셈식 하나로 나눗셈식 두 개를 만들 수 있습니다.' : '같은 수씩 여러 줄로 놓은 배열은 곱셈으로 나타낼 수 있습니다.',
       misconception: '한 줄에 놓는 수와 줄의 수를 바꾸어 놓기 쉽습니다.',
-      결,
+      결: (lv === 2 ? Math.max(결, 1) : 결) as 0 | 1 | 2,
     };
   },
 });
@@ -548,7 +578,7 @@ export const 점배열 = (종류: 'times' | 'mul' | 'dan' | 'dan-more' | 'dan-pr
 // ── 들이와 무게: 눈금 맞추기 ──────────────────────────────────────
 export const 눈금맞추기 = (tool: 'beaker' | 'scale', 종류: 'small' | 'big' | 'fine' | 'add' | 'sub'): 조작갈래 => ({
   id: `gauge-${tool}-${종류}`,
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
     const 비커 = tool === 'beaker';
     const 말 = (v: number) => (비커 ? 들이말(v) : 무게말(v));
@@ -577,8 +607,9 @@ export const 눈금맞추기 = (tool: 'beaker' | 'scale', 종류: 'small' | 'big
       steps = [`작은 눈금 한 칸은 ${설정.minor} ${단위}입니다.`, `${말(target)}은(는) ${target} ${단위}입니다${target >= 1000 ? ` — ${비커 ? '1 L=1000 mL' : '1 kg=1000 g'}` : ''}.`, `그러므로 ${Math.floor(target / 설정.major) * 설정.major ? `${말(Math.floor(target / 설정.major) * 설정.major)}에서 ` : '0에서 '}작은 눈금 ${(target % 설정.major) / 설정.minor}칸 더 간 곳에 맞춥니다.`];
     } else {
       const 더 = 종류 === 'add';
-      const a = 사이(next, 더 ? 6 : 12, 더 ? 18 : 28) * 100;
-      const b = 사이(next, 3, 9) * 100;
+      // 하: 작은 양, 중: 큰 양, 상: 큰 양을 'L·mL'로 섞어 말하기
+      const a = (더 ? [사이(next, 6, 9), 사이(next, 11, 15), 사이(next, 14, 18)][lv] : [사이(next, 11, 15), 사이(next, 16, 22), 사이(next, 21, 28)][lv]) * 100;
+      const b = [사이(next, 3, 5), 사이(next, 5, 7), 사이(next, 6, 9)][lv] * 100;
       target = 더 ? a + b : a - b;
       if (target <= 0 || target >= 설정.max) return null;
       // 받아올림(받아내림)이 생기도록 합니다.
@@ -607,7 +638,7 @@ export const 눈금맞추기 = (tool: 'beaker' | 'scale', 종류: 'small' | 'big
       steps,
       concept: 비커 ? '1 L는 1000 mL입니다. 들이를 잴 때는 물의 윗면과 만나는 눈금을 읽습니다.' : '1 kg은 1000 g입니다. 저울의 바늘이 가리키는 눈금을 읽습니다.',
       misconception: `작은 눈금 한 칸을 1 ${단위}나 10 ${단위}로 생각하거나, ${비커 ? '1 L 200 mL를 1200 mL가 아닌 1020 mL' : '1 kg 200 g을 1200 g이 아닌 1020 g'}로 바꾸기 쉽습니다.`,
-      결: 종류 === 'small' ? 0 : 종류 === 'big' || 종류 === 'fine' ? 1 : 2,
+      결: 종류 === 'small' ? (lv === 2 ? 1 : 0) : 종류 === 'big' || 종류 === 'fine' ? (lv === 2 ? 2 : 1) : lv === 0 ? 1 : 2,
     };
   },
 });
@@ -767,7 +798,19 @@ export const 다각형그리기 = (n: 5 | 6): 조작갈래 => {
   const 예: GridPoint[] = n === 5 ? [[4, 1], [7, 3], [6, 6], [2, 6], [1, 3]] : [[3, 1], [6, 1], [8, 4], [6, 6], [3, 6], [1, 4]];
   return {
     id: `draw-poly-${n}`,
-    make: () => ({
+    make: (_seed, lv = 0) => (lv === 2 ? {
+      // 상: 육각형은 모눈선만으로(오목한 ㄱ자), 오각형은 직각이 2개 이상이 되게(집 모양)
+      prompt: n === 6 ? '모눈선을 따라서만 그어 육각형을 그려 보세요. 비스듬한 변은 쓰지 않습니다.' : '직각이 2개 이상인 오각형을 그려 보세요.',
+      answer: `${이름}을 그림`,
+      manipulate: { kind: 'grid-draw', cols: 9, rows: 7, fixed: [], marks: [], goal: { type: 'polygon', goal: n === 6 ? { sides: 6, axisAligned: true } : { sides: 5, minRightAngles: 2 } }, example: 닫은선(n === 5 ? [[1, 6], [1, 3], [4, 1], [7, 3], [7, 6]] : [[1, 1], [6, 1], [6, 3], [4, 3], [4, 6], [1, 6]]) },
+      tag: 'shape',
+      strategy: n === 6 ? '모눈선만으로 변의 수 맞추기' : '직각과 변의 수를 함께 맞추기',
+      hint: n === 6 ? '가로선과 세로선만 쓰면 꼭짓점마다 직각으로 꺾여요. 직사각형의 한 모서리를 ㄱ자처럼 안쪽으로 들어가게 그려 변을 6개로 맞추어 보세요.' : '아래쪽은 직사각형처럼 가로선과 세로선으로 직각을 만들고, 위쪽은 지붕처럼 비스듬한 변 두 개로 닫아 보세요.',
+      steps: [`변이 ${n}개인 다각형이 ${이름}입니다.`, n === 6 ? '모눈선만 쓰면 변은 모두 가로나 세로이고, 꼭짓점에서 직각으로 꺾입니다.' : '가로선과 세로선이 만나는 꼭짓점은 직각이 됩니다.', n === 6 ? '직사각형의 한 모서리를 안쪽으로 오목하게 들이면 변이 2개 늘어나 육각형이 됩니다.' : '직사각형 위에 지붕을 얹은 집 모양으로 그리면 아래 두 각이 직각인 오각형이 됩니다.'],
+      concept: '다각형은 변의 수에 따라 이름을 붙입니다. 모양이 오목해도 변의 수가 같으면 같은 이름입니다.',
+      misconception: '오목한 도형은 다각형이 아니라고 생각하거나 변의 수를 잘못 세기 쉽습니다.',
+      결: 2,
+    } : {
       prompt: `모눈의 점을 이어 ${이름}을 그려 보세요.`,
       answer: `${이름}을 그림`,
       manipulate: { kind: 'grid-draw', cols: 9, rows: 7, fixed: [], marks: [], goal: { type: 'polygon', goal: { sides: n } }, example: 닫은선(예) },
@@ -785,11 +828,13 @@ export const 다각형그리기 = (n: 5 | 6): 조작갈래 => {
 // ── 전체 길이의 분수만큼(3-2 4-4) ─────────────────────────────────
 export const 분수만큼긋기: 조작갈래 = {
   id: 'ruler-frac',
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
-    const d = [2, 3, 4, 5, 6][next(5)];
+    // 하: 단위분수, 중: 진분수, 상: 분모가 큰 진분수
+    const d = lv === 2 ? [5, 6][next(2)] : [2, 3, 4][next(3)];
     const 전체 = d * 사이(next, 2, Math.floor(14 / d));
-    const n = 사이(next, 1, d - 1);
+    const n = lv === 0 ? 1 : 사이(next, 2, d - 1);
+    if (n >= d) return null;
     const len = (전체 * n) / d;
     if (전체 > 14 || !Number.isInteger(len)) return null;
     return {
@@ -802,7 +847,7 @@ export const 분수만큼긋기: 조작갈래 = {
       steps: [`${전체} cm를 똑같이 ${d}부분으로 나누면 1/${d}은(는) ${전체 / d} cm입니다.`, `${n}/${d}은(는) 1/${d}이 ${n}개입니다.`, `그러므로 ${전체 / d}×${n}=${len}(cm)만큼 긋습니다.`],
       concept: '전체 길이의 분수만큼은 전체를 분모만큼 똑같이 나눈 것 가운데 분자만큼입니다.',
       misconception: `분자 ${n}을(를) 그대로 ${n} cm로 생각하기 쉽습니다.`,
-      결: 1,
+      결: lv === 2 ? 2 : 1,
     };
   },
 };
@@ -810,9 +855,10 @@ export const 분수만큼긋기: 조작갈래 = {
 // ── 10을 만들어 더하기(1-2 6단원) ─────────────────────────────────
 export const 십만들어더하기: 조작갈래 = {
   id: 'tenframe-add-teen',
-  make: (seed) => {
+  make: (seed, lv = 0) => {
     const next = 고르개(seed);
-    const a = 사이(next, 6, 9);
+    // 하: 9+몇(1개만 옮기면 10), 중: 8·7+몇, 상: 6·5+몇(많이 가르기)
+    const a = [9, 사이(next, 7, 8), 사이(next, 5, 6)][lv];
     const b = 사이(next, 11 - a, 9);
     const 합 = a + b;
     if (합 <= 10 || 합 > 18) return null;
@@ -827,7 +873,7 @@ export const 십만들어더하기: 조작갈래 = {
       steps: [`${a}에 ${10 - a}을(를) 더하면 10이 됩니다.`, `${b}을(를) ${10 - a}과(와) ${b - (10 - a)}(으)로 가르기 하여, ${10 - a}개로 위의 판을 채우고 ${b - (10 - a)}개를 아래 판에 놓습니다.`, `10과 ${b - (10 - a)}이므로 ${a}+${b}=${합}입니다.`],
       concept: '더해서 10이 넘을 때는 10을 먼저 만들고 남은 수를 더하면 쉽습니다.',
       misconception: '구슬을 하나씩 세다가 빠뜨리거나, 처음 구슬까지 다시 놓기 쉽습니다.',
-      결: 1,
+      결: lv === 2 ? 2 : 1,
     };
   },
 };

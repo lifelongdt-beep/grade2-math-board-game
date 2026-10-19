@@ -22,7 +22,9 @@ export interface 조작틀 {
   결: 0 | 1 | 2;
 }
 
-export type 조작갈래 = { id: string; make: (seed: number) => 조작틀 | null };
+/** 수준: 0 하(배운 그대로), 1 중(한 번 더 생각), 2 상(거꾸로·조건 여럿·큰 수). 갈래마다 수준에 맞게 수와 조건을 바꿉니다. */
+export type 수준 = 0 | 1 | 2;
+export type 조작갈래 = { id: string; make: (seed: number, 수준: 수준) => 조작틀 | null };
 
 export const 조작문항 = (lesson: Lesson, difficulty: Difficulty, id: string, seed: number, t: 조작틀): Question => {
   const r = resolveParticles;
