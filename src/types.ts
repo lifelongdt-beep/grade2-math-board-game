@@ -232,7 +232,12 @@ export type Manipulation =
   // 반직선을 돌려 각을 만듭니다. 각도기가 있으면 눈금을 읽으며 맞춥니다.
   | { kind: 'angle'; target?: number; range?: [number, number]; protractor: boolean }
   // 물건을 알맞은 칸으로 옮깁니다.
-  | { kind: 'sort-bins'; bins: string[]; items: { label: string; emoji?: string; bin: number }[] };
+  | { kind: 'sort-bins'; bins: string[]; items: { label: string; emoji?: string; bin: number }[] }
+  // 쌓기나무 쌓기(6-2 3단원). 위에서 본 모양의 칸을 누를 때마다 한 층씩 올라갑니다.
+  // target은 heights[줄][열](0번 줄이 뒤, 마지막 줄이 앞)입니다.
+  //   show — 무엇을 보고 쌓는지: 'iso' 쌓은 모양 그림, 'views' 위·앞·옆에서 본 모양, 'layers' 층별로 나타낸 모양
+  //   check — 'exact' 꼭 같게, 'views' 본 모양이 같게, 'views-min'·'views-max' 본 모양이 같으면서 count개(가장 적게·많게)
+  | { kind: 'stack-build'; rows: number; cols: number; maxH: number; show: 'iso' | 'views' | 'layers'; target: number[][]; check: 'exact' | 'views' | 'views-min' | 'views-max'; count?: number };
 
 export type Walkthrough =
   | { kind: 'add' | 'sub'; a: number; b: number }
