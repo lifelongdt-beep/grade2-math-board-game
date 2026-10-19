@@ -5,7 +5,7 @@ import type { ManipResult, ManipState } from '../data/manipulate/check';
 import { 길이말, 시각말, 자여백, 정답모습, 채점, 처음상태 } from '../data/manipulate/check';
 import { resolveParticles } from '../data/grade5/util';
 import { StackIsoPicture } from './StackIso';
-import { 앞에서본, 옆에서본 } from '../data/manipulate/check';
+import { 앞에서본, 옆에서본, 옆면가로 } from '../data/manipulate/check';
 
 // ════════════════════════════════════════════════════════════════════
 // 손으로 조작해서 답하는 문항
@@ -947,6 +947,101 @@ function 각기둥전개도({ m, s, set, locked, 바른, 도움 }: { m: Extract<
   );
 }
 
+
+// ── 원기둥의 전개도 ───────────────────────────────────────────────
+function 원기둥전개도({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipulation, { kind: 'cylinder-net' }>; s: Extract<ManipState, { kind: 'cylinder-net' }>; set: 설정; locked: boolean; 바른?: Extract<ManipState, { kind: 'cylinder-net' }>; 도움: boolean }) {
+  const ref = useRef<SVGSVGElement>(null);
+  const 잡은 = useRef<'w' | 'h' | null>(null);
+  if (m.mode === 'base') {
+    // 옆면을 세 칸 자리로 나누어 위·아래에 원을 붙일 자리를 둡니다.
+    const W = 330;
+    const 가로 = 270;
+    const 세로 = 110;
+    const 반지름 = 가로 / (2 * Math.PI);
+    const 왼 = (W - 가로) / 2;
+    const 위 = 반지름 * 2 + 14;
+    const H = 위 + 세로 + 반지름 * 2 + 14;
+    const cx = (pos: number) => 왼 + (가로 / m.slots) * (pos + 0.5);
+    const cy = (side: 'top' | 'bottom') => (side === 'top' ? 위 - 반지름 : 위 + 세로 + 반지름);
+    const 있음 = (pos: number, side: 'top' | 'bottom') => s.bases.some((b) => b.pos === pos && b.side === side);
+    const 원래 = (pos: number, side: 'top' | 'bottom') => m.bases.some((b) => b.pos === pos && b.side === side);
+    const 바른곳 = (pos: number, side: 'top' | 'bottom') => 바른?.bases.some((b) => b.pos === pos && b.side === side) && !원래(pos, side);
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} className="manip-svg">
+        <rect x="1" y="1" width={W - 2} height={H - 2} rx="10" fill={바탕} stroke={모눈} />
+        <rect x={왼} y={위} width={가로} height={세로} fill="#c5eef3" stroke="#0f7175" strokeWidth="2" />
+        {Array.from({ length: m.slots }, (_, pos) => (['top', 'bottom'] as const).map((side) => (
+          <circle key={`${pos}${side}`} cx={cx(pos)} cy={cy(side)} r={반지름}
+            fill={있음(pos, side) ? (원래(pos, side) ? '#9edce8' : '#64b5f6') : 'rgba(255,255,255,0.6)'}
+            stroke={바른곳(pos, side) ? 초록 : 있음(pos, side) ? '#0f7175' : '#b0c4d4'} strokeWidth={바른곳(pos, side) ? 3.5 : 1.6} strokeDasharray={있음(pos, side) ? undefined : '4 3'}
+            style={{ cursor: locked || 원래(pos, side) ? undefined : 'pointer' }}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              if (locked || 원래(pos, side)) return;
+              const 남긴 = s.bases.filter((b) => 원래(b.pos, b.side));
+              set({ ...s, bases: 있음(pos, side) ? 남긴 : [...남긴, { pos, side }] });
+            }} />
+        )))}
+      </svg>
+    );
+  }
+  // 크기 맞추기: 1 cm를 일정한 칸으로 그리고, 오른쪽 변과 아래쪽 변을 끕니다.
+  const 최대가로 = Math.ceil(옆면가로({ ...m, r: 4, pi: 3.1 }) + 2);
+  const cm = 300 / 최대가로;
+  const 왼 = 16;
+  const 원지름 = 2 * m.r * cm;
+  const 위 = 원지름 + 26;
+  const 최대세로 = 10;
+  const H = 위 + 최대세로 * cm + 46;
+  const W = 왼 * 2 + 최대가로 * cm;
+  const 단계 = m.step;
+  const 반올림 = (v: number) => Math.round(v / 단계) * 단계;
+  const 놓기 = (e: ReactPointerEvent) => {
+    if (!잡은.current || locked) return;
+    const [x, y] = svg좌표(ref.current, e);
+    if (잡은.current === 'w') set({ ...s, w: Number(Math.max(1, Math.min(최대가로, 반올림((x - 왼) / cm))).toFixed(2)) });
+    else set({ ...s, hh: Math.max(1, Math.min(최대세로, Math.round((y - 위) / cm))) });
+  };
+  const 눈금 = Array.from({ length: 최대가로 + 1 }, (_, k) => k);
+  return (
+    <div className="manip-shape-move">
+      <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className="manip-svg" onPointerMove={놓기} onPointerUp={() => { 잡은.current = null; }}>
+        <rect x="1" y="1" width={W - 2} height={H - 2} rx="10" fill={바탕} stroke={모눈} />
+        {눈금.map((k) => (
+          <g key={k}>
+            <line x1={왼 + k * cm} y1={위 - 4} x2={왼 + k * cm} y2={위 + 최대세로 * cm} stroke={k % 5 ? '#edf3f7' : 모눈} />
+            {k % 5 === 0 && <text x={왼 + k * cm} y={H - 6} textAnchor="middle" fontSize="9" fill="#6d7f8f">{k}</text>}
+          </g>
+        ))}
+        {Array.from({ length: 최대세로 + 1 }, (_, k) => <line key={`h${k}`} x1={왼} y1={위 + k * cm} x2={W - 왼} y2={위 + k * cm} stroke={k % 5 ? '#edf3f7' : 모눈} />)}
+        <circle cx={왼 + Math.min(s.w, 최대가로) * cm / 2} cy={위 - 원지름 / 2 - 2} r={원지름 / 2} fill="#9edce8" stroke="#0f7175" strokeWidth="1.6" />
+        {바른 && <rect x={왼} y={위} width={바른.w * cm} height={바른.hh * cm} fill="none" stroke={초록} strokeWidth="3" strokeDasharray="6 4" />}
+        <rect x={왼} y={위} width={s.w * cm} height={s.hh * cm} fill="rgba(100,181,246,0.45)" stroke="#0d47a1" strokeWidth="2" />
+        <circle cx={왼 + Math.min(s.w, 최대가로) * cm / 2} cy={위 + s.hh * cm + 원지름 / 2 + 2} r={원지름 / 2} fill="#9edce8" stroke="#0f7175" strokeWidth="1.6" opacity="0.8" />
+        <g style={{ cursor: locked ? undefined : 'ew-resize' }} onPointerDown={(e) => { if (locked) return; 붙잡기(e); 잡은.current = 'w'; }}>
+          <rect x={왼 + s.w * cm - 9} y={위} width="18" height={s.hh * cm} fill="transparent" />
+          <circle cx={왼 + s.w * cm} cy={위 + (s.hh * cm) / 2} r="10" fill="#fff" stroke={파랑} strokeWidth="2.5" />
+          <text x={왼 + s.w * cm} y={위 + (s.hh * cm) / 2 + 4} textAnchor="middle" fontSize="11" fontWeight="900" fill={파랑}>↔</text>
+        </g>
+        <g style={{ cursor: locked ? undefined : 'ns-resize' }} onPointerDown={(e) => { if (locked) return; 붙잡기(e); 잡은.current = 'h'; }}>
+          <rect x={왼} y={위 + s.hh * cm - 9} width={s.w * cm} height="18" fill="transparent" />
+          <circle cx={왼 + (s.w * cm) / 2} cy={위 + s.hh * cm} r="10" fill="#fff" stroke={주황} strokeWidth="2.5" />
+          <text x={왼 + (s.w * cm) / 2} y={위 + s.hh * cm + 4} textAnchor="middle" fontSize="11" fontWeight="900" fill={주황}>↕</text>
+        </g>
+        <text x={W - 10} y={18} textAnchor="end" fontSize="12" fontWeight="900" fill={잉크}>가로 {s.w} cm · 세로 {s.hh} cm</text>
+        {도움 && <text x={왼} y={18} fontSize="11" fontWeight="900" fill={주황}>가로 = 지름 × {m.pi}</text>}
+      </svg>
+      {단계 < 1 && !locked && (
+        <div className="manip-tools">
+          {[-1, -0.1, 0.1, 1].map((d) => (
+            <button key={d} type="button" onClick={() => set({ ...s, w: Number(Math.max(1, Math.min(최대가로, s.w + d)).toFixed(2)) })}>가로 {d > 0 ? '+' : '−'}{Math.abs(d)}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── 하나로 묶기 ───────────────────────────────────────────────────
 /** 조작마다 '도움'에서 보여 주는 첫 걸음 말입니다. */
 const 도움말 = (m: Manipulation): string => {
@@ -963,6 +1058,7 @@ const 도움말 = (m: Manipulation): string => {
     case 'bars': return `세로 눈금 한 칸은 ${m.step}${m.unitLabel}이에요. 표의 수를 보고 막대 끝을 그 눈금까지 끌어 올리세요.`;
     case 'angle': return m.protractor ? '각도기의 중심은 꼭짓점에, 밑금은 아래 변에 맞추었어요. 아래 변이 가리키는 0에서 시작하는 눈금(빨간 숫자)을 따라 읽어요.' : '직각(90°)의 모서리를 점선으로 보여 줘요. 이보다 좁으면 예각, 넓으면 둔각이에요.';
     case 'sort-bins': return '나누는 기준을 한 번 더 읽고, 하나씩 옮겨 보세요.';
+    case 'cylinder-net': return m.mode === 'base' ? '옆면을 둥글게 말아 세운다고 생각해 보세요. 이미 붙은 원의 반대쪽이 비어 있어요.' : '옆면의 가로는 밑면의 둘레(원주 = 지름 × 원주율), 세로는 원기둥의 높이예요. 파란 손잡이로 가로를, 주황 손잡이로 세로를 맞춰요.';
     case 'prism-net': return m.mode === 'meet' ? '옆면 띠를 둥글게 말아 보세요. 띠의 왼쪽 끝 변과 오른쪽 끝 변이 맞닿아요.' : m.mode === 'sides' ? `밑면의 변이 ${m.n}개이면 옆면도 ${m.n}개예요. 옆면이 끊어지지 않게 한 줄로 이어 붙여요.` : '이미 붙은 밑면과 반대쪽(위↔아래)에 붙여야 접었을 때 마주 봐요.';
     case 'cube-net': return m.mode === 'pick' ? '★ 면을 바닥에 놓고, 맞닿은 면들을 하나씩 세워 접어 보세요. 마지막에 뚜껑처럼 덮이는 면이 마주 보는 면이에요.' : '한 면을 바닥으로 정하고 나머지를 접어 올려 보세요. 앞, 뒤, 왼쪽, 오른쪽, 뚜껑 가운데 빈 쪽이 어디인지 찾아요.';
     case 'stack-build': return m.show === 'views' ? '위에서 본 모양의 칸에 먼저 1개씩 놓고, 앞과 옆에서 본 모양의 줄마다 가장 높은 층에 맞추어 올려요. 칸을 누를수록 한 층씩 올라가고, 가장 높이 올라가면 다시 0이 돼요.' : '그림의 맨 앞줄 칸부터 몇 층인지 세어 그만큼 누르세요. 칸을 누를수록 한 층씩 올라가고, 가장 높이 올라가면 다시 0이 돼요.';
@@ -1001,6 +1097,7 @@ export function ManipulateTask({ m, locked, reveal, onSubmit, onTap, tip }: Mani
   else if (m.kind === 'angle' && s.kind === m.kind) 화면 = <각만들기 m={m} s={s} 바른={바른 as never} {...공통} />;
   else if (m.kind === 'sort-bins' && s.kind === m.kind) 화면 = <나누기 m={m} s={s} 바른={바른 as never} {...공통} />;
   else if (m.kind === 'stack-build' && s.kind === m.kind) 화면 = <쌓기 m={m} s={s} 바른={바른 as never} {...공통} />;
+  else if (m.kind === 'cylinder-net' && s.kind === m.kind) 화면 = <원기둥전개도 m={m} s={s} 바른={바른 as never} {...공통} />;
   else if (m.kind === 'prism-net' && s.kind === m.kind) 화면 = <각기둥전개도 m={m} s={s} 바른={바른 as never} {...공통} />;
   else if (m.kind === 'cube-net' && s.kind === m.kind) 화면 = <전개도 m={m} s={s} 바른={바른 as never} {...공통} />;
   const 되돌림 = s.kind === 'grid-draw' && s.segs.length > 0;
