@@ -401,6 +401,27 @@ const 바른조작 = (q: Question): ManipState => {
       }
       throw new Error(`고칠 수 없는 전개도: ${p}`);
     }
+    case 'prism-net': {
+      const 이름n = ['삼', '사', '오', '육'].indexOf(/(삼|사|오|육)각기둥/.exec(p)![1]) + 3;
+      expect(m.n, p).toBe(이름n);
+      if (m.mode === 'meet') {
+        // 띠의 양 끝 꼭짓점은 위는 위끼리, 아래는 아래끼리 만납니다.
+        const 물은 = m.points!.find((x) => x.name === m.ask)!;
+        const 끝 = Math.max(...m.strip) + 1;
+        const 짝 = m.points!.find((x) => x.corner === 물은.corner && x.i === (물은.i === 0 ? 끝 : 0))!;
+        return { kind: m.kind, strip: m.strip, bases: m.bases, picked: 짝.name };
+      }
+      if (m.mode === 'base') {
+        const 붙은 = m.bases[0];
+        return { kind: m.kind, strip: m.strip, bases: [붙은, { col: m.strip[m.strip.length - 1], side: 붙은.side === 'top' ? 'bottom' : 'top' }], picked: null };
+      }
+      // 두 밑면이 붙은 칸을 모두 포함하도록 n칸을 한 줄로 채웁니다.
+      const 왼 = Math.min(...m.bases.map((b) => b.col));
+      const 시작 = Math.max(0, Math.min(왼, m.columns - 이름n));
+      const 띠 = Array.from({ length: 이름n }, (_, i) => 시작 + i);
+      expect(m.bases.every((b) => 띠.includes(b.col)), p).toBe(true);
+      return { kind: m.kind, strip: 띠, bases: m.bases, picked: null };
+    }
     default:
       throw new Error('모르는 조작');
   }
@@ -428,6 +449,11 @@ const 어긋난조작 = (m: Manipulation, s: ManipState): ManipState | null => {
       // 본 모양만 보는 문항은 한 층 바꾸어도 본 모양이 같을 수 있어 앞줄 전체를 비웁니다.
       if (m.kind === 'stack-build' && m.check !== 'exact') h[r] = h[r].map(() => 0);
       return { ...s, h };
+    }
+    case 'prism-net': {
+      if (s.picked) return { ...s, picked: (m.kind === 'prism-net' ? m.points! : []).find((x) => x.name !== s.picked)!.name };
+      // 두 밑면을 같은 쪽에 붙이거나 옆면을 하나 뺍니다.
+      return s.strip.length > 1 && m.kind === 'prism-net' && m.mode === 'sides' ? { ...s, strip: s.strip.slice(1) } : { ...s, bases: s.bases.map((b) => ({ ...b, side: 'top' as const })) };
     }
     case 'cube-net': {
       if (s.picked) {
