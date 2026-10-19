@@ -10,6 +10,7 @@ import {
   수모형만들기, 그래프그리기, 각그리기, 입체모양분류, 평면모양분류, 동물분류, 수분류, 가능성분류, 비율그래프칠하기,
 } from './fill';
 import { 그림보고쌓기, 층별로쌓기, 본모양으로쌓기 } from './stack';
+import { 전개도완성, 전개도고치기, 마주보는면 } from './net';
 
 // ════════════════════════════════════════════════════════════════════
 // 차시마다 손으로 조작하는 문항
@@ -141,6 +142,8 @@ export const 조작표: Record<string, 수준갈래> = {
   '5-2 3-5': { 하: [선대칭대응점], 중: [대칭완성('line')], 상: [대칭완성('line')] },
   '5-2 3-6': { 하: [점대칭대응점], 중: [점대칭대응점], 상: [대칭완성('point')] },
   '5-2 3-7': { 하: [점대칭대응점], 중: [대칭완성('point')], 상: [대칭완성('point')] },
+  '5-2 5-6': { 중: [마주보는면], 상: [전개도완성(1)] },
+  '5-2 5-7': { 하: [전개도완성(1)], 중: [전개도완성(2), 마주보는면], 상: [전개도고치기, 마주보는면] },
   '5-2 6-5': 같이([가능성분류]),
   // ── 6학년 ──
   '6-1 1-4': { 중: [백칸색칠('frac-div')], 상: [백칸색칠('frac-div')] },
@@ -163,16 +166,26 @@ export const 조작문항들 = (lesson: Lesson, difficulty: Difficulty, n: numbe
   if (!갈래.length || n <= 0) return [];
   const out: Question[] = [];
   const 본글 = new Set<string>();
-  for (let seed = 1 + 씨앗; out.length < n && seed < 씨앗 + 400; seed += 1) {
-    const g = 갈래[(seed + out.length) % 갈래.length];
-    const t = g.make(seed * 7919 + difficulty.charCodeAt(0));
-    if (!t) continue;
-    const q = 조작문항(lesson, difficulty, g.id, seed, t);
-    // 같은 문항이 되풀이되지 않게 글과 조작 내용을 함께 봅니다.
-    const 열쇠 = `${q.prompt}|${JSON.stringify(q.manipulate)}`;
-    if (본글.has(열쇠)) continue;
-    본글.add(열쇠);
-    out.push(q);
+  let seed = 1 + 씨앗;
+  // 칸마다 갈래를 차례로 돌려 씁니다. 한 갈래가 문항을 못 만들면(조건이
+  // 안 맞는 씨앗) 같은 갈래로 씨앗만 바꾸어 다시 해 보고, 그래도 안 되면
+  // 다음 갈래로 넘깁니다. 씨앗과 갈래를 함께 돌리면 한 갈래만 계속 뽑힐 수 있습니다.
+  for (let k = 0; out.length < n && k < n * 3; k += 1) {
+    for (let 차례 = 0; 차례 < 갈래.length; 차례 += 1) {
+      const g = 갈래[(k + 차례) % 갈래.length];
+      let 만듦: Question | null = null;
+      for (let 시도 = 0; 시도 < 60 && !만듦; 시도 += 1, seed += 1) {
+        const t = g.make(seed * 7919 + difficulty.charCodeAt(0));
+        if (!t) continue;
+        const q = 조작문항(lesson, difficulty, g.id, seed, t);
+        // 같은 문항이 되풀이되지 않게 글과 조작 내용을 함께 봅니다.
+        const 열쇠 = `${q.prompt}|${JSON.stringify(q.manipulate)}`;
+        if (본글.has(열쇠)) continue;
+        본글.add(열쇠);
+        만듦 = q;
+      }
+      if (만듦) { out.push(만듦); break; }
+    }
   }
   return out;
 };
