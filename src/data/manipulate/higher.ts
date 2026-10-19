@@ -248,7 +248,8 @@ export const 고쳐보기 = (g: 조작갈래): 조작갈래 => ({
     const t = g.make(seed, lv);
     if (!t) return null;
     if (t.manipulate.friend) return t;
-    const 실 = 친구실수(t.manipulate, seed);
+    const 갈래실수 = (t.실수 ?? []).find((x) => !채점(t.manipulate, x.state as ManipState).ok);
+    const 실 = 갈래실수 ? { state: 갈래실수.state as ManipState, 말: 갈래실수.말 } : 친구실수(t.manipulate, seed);
     if (!실) return t;
     const 고침: 조작틀 = {
       ...t,
