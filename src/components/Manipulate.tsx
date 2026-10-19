@@ -491,7 +491,7 @@ function 색칠하기({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipu
     const 칸들 = Array.from({ length: m.parts }, (_, k) => {
       const c = k % cols; const r = Math.floor(k / cols);
       const x0 = 12 + 머리 + c * 한칸; const y0 = 12 + 머리 + r * 한칸;
-      const 글 = 표 ? (도움 && (켜짐.has(k) || 미리.has(k)) ? String((r + 1) * (c + 1)) : '') : String((m.from ?? 1) + k);
+      const 글 = 표 ? (도움 && (켜짐.has(k) || 미리.has(k)) ? String(m.op === '+' ? r + 1 + c + 1 : (r + 1) * (c + 1)) : '') : String((m.from ?? 1) + k);
       return 틀(k, <>
         <rect x={x0} y={y0} width={한칸} height={한칸} fill={미리.has(k) ? '#ffcc80' : 켜짐.has(k) ? '#90caf9' : '#fff'} stroke={바른칸?.has(k) ? 초록 : 잉크} strokeWidth={바른칸?.has(k) ? 3.5 : 1} />
         <text x={x0 + 한칸 / 2} y={y0 + 한칸 / 2 + 4} textAnchor="middle" fontSize={글.length > 3 ? 8.5 : 11} fontWeight="800" fill={잉크} pointerEvents="none">{글}</text>
@@ -500,7 +500,7 @@ function 색칠하기({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipu
     const 머리칸 = 표 ? Array.from({ length: 10 }, (_, i) => (
       <g key={`h${i}`} pointerEvents="none">
         <rect x={12 + i * 한칸} y={12} width={한칸} height={한칸} fill="#e3f2fd" stroke={잉크} strokeWidth="1" />
-        <text x={12 + i * 한칸 + 한칸 / 2} y={12 + 한칸 / 2 + 4} textAnchor="middle" fontSize="12" fontWeight="900" fill={잉크}>{i ? i : '×'}</text>
+        <text x={12 + i * 한칸 + 한칸 / 2} y={12 + 한칸 / 2 + 4} textAnchor="middle" fontSize="12" fontWeight="900" fill={잉크}>{i ? i : m.op ?? '×'}</text>
         {i > 0 && <rect x={12} y={12 + i * 한칸} width={한칸} height={한칸} fill="#e3f2fd" stroke={잉크} strokeWidth="1" />}
         {i > 0 && <text x={12 + 한칸 / 2} y={12 + i * 한칸 + 한칸 / 2 + 4} textAnchor="middle" fontSize="12" fontWeight="900" fill={잉크}>{i}</text>}
       </g>

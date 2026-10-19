@@ -63,7 +63,8 @@ export const 계산순서 = (쓸기호: string[], 괄호: boolean, 결: 0 | 1 | 
     if (new Set(ops).size < Math.min(2, 쓸기호.length)) return null;
     const nums = ops.map(() => 0).concat(0).map((_, i) => {
       const 곁 = [ops[i - 1], ops[i]];
-      return 곁.includes('×') || 곁.includes('÷') ? 사이(next, 2, 9) : 사이(next, 3, 40);
+      // 하: 작은 수, 중: 두 자리 수, 상: 큰 두 자리 수
+      return 곁.includes('×') || 곁.includes('÷') ? 사이(next, 2, [5, 9, 9][lv]) : 사이(next, 3, [20, 40, 90][lv]);
     });
     // 나눗셈은 앞 수를 나누는 수의 배수로 고칩니다.
     ops.forEach((o, i) => { if (o === '÷') nums[i] = nums[i + 1] * 사이(next, 2, 9); });
@@ -110,7 +111,7 @@ export const 계산순서 = (쓸기호: string[], 괄호: boolean, 결: 0 | 1 | 
       ],
       concept: '여러 가지 계산이 섞인 식은 괄호 안, 곱셈과 나눗셈, 덧셈과 뺄셈의 차례로 계산합니다.',
       misconception: '앞에서부터 차례로 계산하여 곱셈·나눗셈이나 괄호를 먼저 하지 않기 쉽습니다.',
-      결,
+      결: (lv === 2 ? Math.max(결, 1) : 결) as 0 | 1 | 2,
     };
   },
 });
@@ -533,10 +534,11 @@ export const 부피쌓기 = (높이로: boolean): 조작갈래 => ({
 });
 
 // ── 분수·소수의 나눗셈을 조각 묶기로 ──────────────────────────────
-export const 조각묶기 = (종류: 'frac' | 'frac-rest' | 'dec' | 'nat-dec'): 조작갈래 => ({
+export const 조각묶기 = (종류: 'frac' | 'frac-rest' | 'dec' | 'nat-dec' | 'nat-frac' | 'frac-diff' | 'mixed-frac' | 'dec-rest'): 조작갈래 => ({
   id: `share-unit-${종류}`,
   make: (seed, lv = 0) => {
     const next = 고르개(seed);
+    if (종류 === 'nat-frac' || 종류 === 'frac-diff' || 종류 === 'mixed-frac' || 종류 === 'dec-rest') return 조각묶기더(종류, next, lv);
     const 소수 = 종류 === 'dec' || 종류 === 'nat-dec';
     const d = 소수 ? 10 : [사이(next, 5, 7), 사이(next, 7, 9), 사이(next, 9, 12)][lv];
     let size = 소수 ? [2, 사이(next, 3, 4), 사이(next, 5, 7)][lv] : [2, 사이(next, 2, 3), 사이(next, 3, 4)][lv];
@@ -703,3 +705,59 @@ export const 원기둥원뿔구분류 = 입체분류('round', '물건이나 설�
   { label: '구슬', emoji: '🔮', bin: 2 },
   { label: '어느 방향에서 보아도 원', bin: 2 },
 ], '밑면의 수, 뾰족한 꼭짓점, 어느 쪽에서 보아도 원인지', 1);
+
+/** 조각 묶기 (2): (자연수)÷(분수), 분모가 다른 (분수)÷(분수), (대분수)÷(분수), 나누어 주고 남는 양 */
+const 조각묶기더 = (종류: 'nat-frac' | 'frac-diff' | 'mixed-frac' | 'dec-rest', next: (n: number) => number, lv: number): ReturnType<조작갈래['make']> => {
+  let 단위: string;
+  let 앞: string;
+  let 뒤: string;
+  let total: number;
+  let size: number;
+  if (종류 === 'nat-frac') {
+    const d = [사이(next, 2, 3), 사이(next, 3, 4), 사이(next, 4, 5)][lv];
+    const n = [1, 2, 사이(next, 2, 3)][lv];
+    const b = lv === 0 ? 1 : 사이(next, 2, d - 1);
+    if (b >= d) return null;
+    total = n * d;
+    size = b;
+    단위 = `1/${d}`;
+    앞 = String(n);
+    뒤 = `${b}/${d}`;
+  } else if (종류 === 'dec-rest') {
+    size = [사이(next, 3, 4), 사이(next, 4, 6), 사이(next, 6, 8)][lv];
+    const 몫 = 사이(next, 2, 4);
+    total = size * 몫 + 사이(next, 1, size - 1);
+    단위 = '0.1';
+    앞 = (total / 10).toFixed(1);
+    뒤 = (size / 10).toFixed(1);
+  } else {
+    const [d1, d2] = 뽑기([[2, 4], [3, 6], [2, 6], [4, 8], [3, 9]], 1, next)[0];
+    const L = 최소공배(d1, d2);
+    const 대 = 종류 === 'mixed-frac';
+    const a = 대 ? d1 + 사이(next, 1, d1 - 1) : 사이(next, 1, d1 - 1);
+    const b = 사이(next, 1, d2 - 1);
+    total = (a * L) / d1;
+    size = (b * L) / d2;
+    단위 = `1/${L}`;
+    앞 = 대 ? 대분수글(a, d1) : `${a}/${d1}`;
+    뒤 = `${b}/${d2}`;
+    if (lv === 0 && total % size !== 0) return null;
+  }
+  if (total > 36 || size < 1 || total <= size) return null;
+  const 몫 = Math.floor(total / size);
+  const 남 = total % size;
+  const 몫글 = 남 ? 대분수글(total, size) : String(몫);
+  const 소수 = 종류 === 'dec-rest';
+  return {
+    prompt: `${앞}÷${뒤}을(를) 알아보려고 합니다. ${단위} 조각 ${total}개를 한 접시에 ${size}개씩(${뒤}씩) 담아 보세요.${남 ? ' 남는 조각은 그대로 두세요.' : ''}`,
+    answer: 남 ? (소수 ? `접시 ${몫}개, ${(남 / 10).toFixed(1)} 남음` : `접시 ${몫}개, 조각 ${남}개 남음(몫 ${몫글})`) : `접시 ${몫}개(몫 ${몫})`,
+    manipulate: { kind: 'share', total, size, emoji: '🟦', rest: 남 > 0 },
+    tag: 소수 ? 'decimalDiv' : 'fractionDiv',
+    strategy: 종류 === 'dec-rest' ? '나누어 주고 남는 양 알기' : '같은 단위 조각으로 바꾸어 몇 번 들어가는지 세기',
+    hint: `${앞}과(와) ${뒤}을(를) 모두 ${단위} 조각으로 바꾸어 보세요.${종류 === 'frac-diff' || 종류 === 'mixed-frac' ? ' 두 분모를 같게 통분하면 돼요.' : ''} 그다음 ${size}개씩 몇 접시가 되는지 담아요.`,
+    steps: [`${앞}은(는) ${단위}이 ${total}개, ${뒤}은(는) ${단위}이 ${size}개입니다.`, `그러므로 ${앞}÷${뒤}은(는) ${total}÷${size}과(와) 같습니다.`, 남 ? (소수 ? `${size}개씩 ${몫}접시에 담고 ${남}개, 곧 ${(남 / 10).toFixed(1)}이(가) 남습니다.` : `${size}개씩 ${몫}접시에 담고 ${남}개가 남으므로 몫은 ${몫글}입니다.`) : `${size}개씩 ${몫}접시가 되므로 몫은 ${몫}입니다.`],
+    concept: 소수 ? '나누어 주고 남는 양은 나머지에 소수점을 그대로 찍어 나타냅니다.' : '(분수)÷(분수)는 분모를 같게 하여 분자끼리 나누어 구할 수 있습니다.',
+    misconception: 소수 ? '남는 양을 0.1이 몇 개인지가 아니라 자연수(4)로 쓰기 쉽습니다.' : '분모가 다른데 분자끼리만 나누기 쉽습니다.',
+    결: lv === 0 && !남 ? 1 : 2,
+  };
+};
