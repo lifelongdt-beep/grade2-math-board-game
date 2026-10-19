@@ -25,7 +25,8 @@ export type ManipState =
   | { kind: 'angle'; deg: number }
   | { kind: 'sort-bins'; placed: (number | null)[] }
   | { kind: 'stack-build'; h: number[][] }
-  | { kind: 'cube-net'; cells: GridPoint[]; picked: GridPoint | null };
+  | { kind: 'cube-net'; cells: GridPoint[]; picked: GridPoint | null }
+  | { kind: 'prism-net'; strip: number[]; bases: { col: number; side: 'top' | 'bottom' }[]; picked: string | null };
 
 export interface ManipResult {
   ok: boolean;
@@ -425,6 +426,7 @@ const 채점하기 = (m: Manipulation, s: ManipState): ManipResult => {
   }
   if (m.kind === 'stack-build' && s.kind === 'stack-build') return 쌓기채점(m, s.h);
   if (m.kind === 'cube-net' && s.kind === 'cube-net') return 전개도채점(m, s);
+  if (m.kind === 'prism-net' && s.kind === 'prism-net') return 각기둥채점(m, s);
   return { ok: false, said: '알 수 없는 조작' };
 };
 
@@ -517,6 +519,7 @@ export const 처음상태 = (m: Manipulation): ManipState => {
     case 'sort-bins': return { kind: m.kind, placed: m.items.map(() => null) };
     case 'stack-build': return { kind: m.kind, h: m.target.map((row) => row.map(() => 0)) };
     case 'cube-net': return { kind: m.kind, cells: [...m.given], picked: null };
+    case 'prism-net': return { kind: m.kind, strip: [...m.strip], bases: [...m.bases], picked: null };
     default: return { kind: 'grid-point', pt: null };
   }
 };
@@ -553,6 +556,7 @@ export const 정답모습 = (m: Manipulation): ManipState => {
     case 'angle': return { kind: m.kind, deg: m.target ?? Math.round((m.range![0] + m.range![1]) / 10) * 5 };
     case 'sort-bins': return { kind: m.kind, placed: m.items.map((it) => it.bin) };
     case 'stack-build': return { kind: m.kind, h: 쌓기본보기(m) };
+    case 'prism-net': return m.mode === 'meet' ? { kind: m.kind, strip: [...m.strip], bases: [...m.bases], picked: 만나는점(m) } : { kind: m.kind, strip: [...m.example.strip], bases: [...m.example.bases], picked: null };
     case 'cube-net': return m.mode === 'pick' ? { kind: m.kind, cells: [...m.given], picked: 마주보는칸(m.given, m.star!) } : { kind: m.kind, cells: [...m.example], picked: null };
     default: return 처음상태(m);
   }
@@ -651,4 +655,43 @@ const 전개도채점 = (m: Extract<Manipulation, { kind: 'cube-net' }>, s: Extr
   if (!접기(s.cells)) return { ok: false, said, tip: '면끼리 변이 맞닿아 모두 이어져 있어야 접을 수 있어요.' };
   if (!정육면체전개도인가(s.cells)) return { ok: false, said, tip: '접었을 때 서로 겹치는 면이 있어요. 겹치는 면 하나를 빈 자리로 옮겨 보세요.' };
   return { ok: true, said: '정육면체의 전개도를 바르게 만듦' };
+};
+
+// ── 각기둥의 전개도 ───────────────────────────────────────────────
+const 각기둥이름 = (n: number) => `${['', '', '', '삼', '사', '오', '육', '칠', '팔'][n]}각기둥`;
+const 다각형이름 = (n: number) => `${['', '', '', '삼', '사', '오', '육', '칠', '팔'][n]}각형`;
+export { 각기둥이름, 다각형이름 };
+
+/** 옆면 띠의 양 끝은 접으면 만납니다: 왼쪽 위 꼭짓점 ↔ 오른쪽 위 꼭짓점, 왼쪽 아래 ↔ 오른쪽 아래. */
+export const 만나는점 = (m: Extract<Manipulation, { kind: 'prism-net' }>): string | null => {
+  const 띠 = [...m.strip].sort((a, b) => a - b);
+  const 왼 = 띠[0];
+  const 오 = 띠[띠.length - 1] + 1;
+  const 물은 = m.points?.find((p) => p.name === m.ask);
+  if (!물은) return null;
+  const 짝i = 물은.i === 왼 ? 오 : 물은.i === 오 ? 왼 : null;
+  if (짝i === null) return null;
+  return m.points!.find((p) => p.corner === 물은.corner && p.i === 짝i)?.name ?? null;
+};
+
+const 각기둥채점 = (m: Extract<Manipulation, { kind: 'prism-net' }>, s: Extract<ManipState, { kind: 'prism-net' }>): ManipResult => {
+  const 이름 = 각기둥이름(m.n);
+  if (m.mode === 'meet') {
+    if (!s.picked) return { ok: false, said: '점을 고르지 않음', tip: `점 ${m.ask}과(와) 만나는 점을 눌러요.` };
+    const 답 = 만나는점(m);
+    const said = `점 ${s.picked}을(를) 고름`;
+    if (s.picked === 답) return { ok: true, said };
+    const 고른 = m.points!.find((p) => p.name === s.picked)!;
+    const 물은 = m.points!.find((p) => p.name === m.ask)!;
+    return { ok: false, said, tip: 고른.corner !== 물은.corner ? '위쪽 꼭짓점은 위쪽 꼭짓점과, 아래쪽 꼭짓점은 아래쪽 꼭짓점과 만나요. 옆면을 둥글게 말아 보세요.' : '옆면을 둥글게 말면 띠의 양 끝 변이 만나요. 띠의 반대쪽 끝을 보세요.' };
+  }
+  const 띠 = [...new Set(s.strip)].sort((a, b) => a - b);
+  const said = `옆면 ${띠.length}개, 밑면 ${s.bases.length}개로 만듦`;
+  const 이어짐 = 띠.every((c, i) => i === 0 || c === 띠[i - 1] + 1);
+  if (띠.length !== m.n) return { ok: false, said, tip: `${이름}은(는) 밑면이 ${다각형이름(m.n)}이라 옆면이 ${m.n}개예요. 지금 옆면은 ${띠.length}개예요.` };
+  if (!이어짐) return { ok: false, said, tip: '옆면은 끊어지지 않고 한 줄로 이어져야 해요.' };
+  if (s.bases.length !== 2) return { ok: false, said, tip: s.bases.length < 2 ? '밑면이 2개 있어야 해요.' : '각기둥의 밑면은 2개예요.' };
+  if (s.bases.some((b) => !띠.includes(b.col))) return { ok: false, said, tip: '밑면은 옆면의 변에 붙어 있어야 접을 수 있어요.' };
+  if (s.bases[0].side === s.bases[1].side) return { ok: false, said, tip: '두 밑면이 옆면의 같은 쪽에 붙으면 접었을 때 겹쳐요. 하나는 위쪽, 하나는 아래쪽에 붙여요.' };
+  return { ok: true, said: `${이름}의 전개도를 바르게 만듦` };
 };

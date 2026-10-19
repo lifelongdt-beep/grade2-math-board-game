@@ -857,6 +857,96 @@ function 전개도({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipulat
   );
 }
 
+
+// ── 각기둥의 전개도 ───────────────────────────────────────────────
+function 각기둥전개도({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipulation, { kind: 'prism-net' }>; s: Extract<ManipState, { kind: 'prism-net' }>; set: 설정; locked: boolean; 바른?: Extract<ManipState, { kind: 'prism-net' }>; 도움: boolean }) {
+  const w = 44;
+  const h = 64;
+  // 한 변이 w인 정n각형의 변에서 맞은편까지의 높이(밑면을 붙일 자리)
+  const 높이 = (() => {
+    let x = w;
+    let y = 0;
+    let 가장 = 0;
+    for (let k = 1; k < m.n - 1; k += 1) {
+      x += w * Math.cos((2 * Math.PI * k) / m.n);
+      y += w * Math.sin((2 * Math.PI * k) / m.n);
+      가장 = Math.max(가장, y);
+    }
+    return 가장 + 2;
+  })();
+  const 왼 = 14;
+  const 위 = 14 + 높이;
+  const W = 왼 * 2 + m.columns * w;
+  const H = 위 + h + 높이 + 14;
+  const 밑면점 = (col: number, side: 'top' | 'bottom') => {
+    // 옆면의 위(아래) 변을 한 변으로 하고 바깥쪽으로 그린 정n각형
+    const x0 = 왼 + col * w;
+    const y0 = side === 'top' ? 위 : 위 + h;
+    const 방향 = side === 'top' ? -1 : 1;
+    const pts: [number, number][] = [[x0, y0], [x0 + w, y0]];
+    let 각 = 0;
+    for (let k = 2; k < m.n; k += 1) {
+      각 += (2 * Math.PI) / m.n;
+      const [px, py] = pts[pts.length - 1];
+      pts.push([px + w * Math.cos(각), py + 방향 * w * Math.sin(각)]);
+    }
+    return pts.map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ');
+  };
+  const 있는띠 = new Set(s.strip);
+  const 밑면있나 = (col: number, side: 'top' | 'bottom') => s.bases.some((b) => b.col === col && b.side === side);
+  const 원래밑면 = (col: number, side: 'top' | 'bottom') => m.bases.some((b) => b.col === col && b.side === side);
+  const 바른밑면 = (col: number, side: 'top' | 'bottom') => 바른?.bases.some((b) => b.col === col && b.side === side);
+  const 밑면누름 = (col: number, side: 'top' | 'bottom') => {
+    if (locked || m.mode !== 'base' || 원래밑면(col, side)) return;
+    const 남긴 = s.bases.filter((b) => 원래밑면(b.col, b.side));
+    set({ ...s, bases: 밑면있나(col, side) ? 남긴 : [...남긴, { col, side }] });
+  };
+  const 옆면누름 = (col: number) => {
+    if (locked || m.mode !== 'sides' || m.strip.includes(col)) return;
+    set({ ...s, strip: 있는띠.has(col) ? s.strip.filter((c) => c !== col) : [...s.strip, col] });
+  };
+  const 점자리 = (corner: 'T' | 'B', i: number): [number, number] => [왼 + i * w, corner === 'T' ? 위 : 위 + h];
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="manip-svg">
+      <rect x="1" y="1" width={W - 2} height={H - 2} rx="10" fill={바탕} stroke={모눈} />
+      {Array.from({ length: m.columns }, (_, col) => {
+        const 있음 = 있는띠.has(col);
+        const 바른있음 = 바른?.strip.includes(col);
+        return (
+          <g key={`s${col}`} onPointerDown={(e) => { e.preventDefault(); 옆면누름(col); }} style={{ cursor: m.mode === 'sides' && !locked ? 'pointer' : undefined }}>
+            <rect x={왼 + col * w} y={위} width={w} height={h} fill={있음 ? (m.strip.includes(col) ? '#c5eef3' : '#64b5f6') : '#fff'} stroke={있음 ? '#0f7175' : '#cfe3ea'} strokeWidth={있음 ? 2 : 1} strokeDasharray={있음 ? undefined : '3 3'} />
+            {바른있음 && !있음 && <rect x={왼 + col * w + 4} y={위 + 4} width={w - 8} height={h - 8} fill="none" stroke={초록} strokeWidth="3" />}
+          </g>
+        );
+      })}
+      {Array.from({ length: m.columns }, (_, col) => (['top', 'bottom'] as const).map((side) => {
+        const 있음 = 밑면있나(col, side);
+        const 자리보임 = 있음 || (m.mode === 'base' && 있는띠.has(col)) || 바른밑면(col, side);
+        if (!자리보임) return null;
+        return (
+          <polygon key={`b${col}${side}`} points={밑면점(col, side)}
+            onPointerDown={(e) => { e.preventDefault(); 밑면누름(col, side); }}
+            fill={있음 ? (원래밑면(col, side) ? '#9edce8' : '#64b5f6') : 'rgba(255,255,255,0.6)'}
+            stroke={바른밑면(col, side) && !있음 ? 초록 : 있음 ? '#0f7175' : '#b0c4d4'} strokeWidth={바른밑면(col, side) && !있음 ? 3 : 1.6} strokeDasharray={있음 ? undefined : '4 3'}
+            style={{ cursor: m.mode === 'base' && !locked ? 'pointer' : undefined }} />
+        );
+      }))}
+      {(m.points ?? []).map((p) => {
+        const [x, y] = 점자리(p.corner, p.i);
+        const 고른 = s.picked === p.name;
+        const 바른점 = 바른?.picked === p.name;
+        return (
+          <g key={p.name} onPointerDown={(e) => { e.preventDefault(); if (!locked) set({ ...s, picked: p.name }); }} style={{ cursor: locked ? undefined : 'pointer' }}>
+            <circle cx={x} cy={y} r="13" fill={고른 ? '#ffd54f' : 'rgba(255,255,255,0.85)'} stroke={바른점 ? 초록 : 잉크} strokeWidth={바른점 ? 3.5 : 1.5} />
+            <text x={x} y={y + 5} textAnchor="middle" fontSize="13" fontWeight="900" fill={p.name === m.ask ? 빨강 : 잉크}>{p.name}</text>
+          </g>
+        );
+      })}
+      {도움 && m.mode !== 'meet' && <text x={W / 2} y={H - 4} textAnchor="middle" fontSize="11" fontWeight="900" fill={주황}>옆면 {s.strip.length}개 · 밑면 {s.bases.length}개 (밑면의 변 {m.n}개)</text>}
+    </svg>
+  );
+}
+
 // ── 하나로 묶기 ───────────────────────────────────────────────────
 /** 조작마다 '도움'에서 보여 주는 첫 걸음 말입니다. */
 const 도움말 = (m: Manipulation): string => {
@@ -873,6 +963,7 @@ const 도움말 = (m: Manipulation): string => {
     case 'bars': return `세로 눈금 한 칸은 ${m.step}${m.unitLabel}이에요. 표의 수를 보고 막대 끝을 그 눈금까지 끌어 올리세요.`;
     case 'angle': return m.protractor ? '각도기의 중심은 꼭짓점에, 밑금은 아래 변에 맞추었어요. 아래 변이 가리키는 0에서 시작하는 눈금(빨간 숫자)을 따라 읽어요.' : '직각(90°)의 모서리를 점선으로 보여 줘요. 이보다 좁으면 예각, 넓으면 둔각이에요.';
     case 'sort-bins': return '나누는 기준을 한 번 더 읽고, 하나씩 옮겨 보세요.';
+    case 'prism-net': return m.mode === 'meet' ? '옆면 띠를 둥글게 말아 보세요. 띠의 왼쪽 끝 변과 오른쪽 끝 변이 맞닿아요.' : m.mode === 'sides' ? `밑면의 변이 ${m.n}개이면 옆면도 ${m.n}개예요. 옆면이 끊어지지 않게 한 줄로 이어 붙여요.` : '이미 붙은 밑면과 반대쪽(위↔아래)에 붙여야 접었을 때 마주 봐요.';
     case 'cube-net': return m.mode === 'pick' ? '★ 면을 바닥에 놓고, 맞닿은 면들을 하나씩 세워 접어 보세요. 마지막에 뚜껑처럼 덮이는 면이 마주 보는 면이에요.' : '한 면을 바닥으로 정하고 나머지를 접어 올려 보세요. 앞, 뒤, 왼쪽, 오른쪽, 뚜껑 가운데 빈 쪽이 어디인지 찾아요.';
     case 'stack-build': return m.show === 'views' ? '위에서 본 모양의 칸에 먼저 1개씩 놓고, 앞과 옆에서 본 모양의 줄마다 가장 높은 층에 맞추어 올려요. 칸을 누를수록 한 층씩 올라가고, 가장 높이 올라가면 다시 0이 돼요.' : '그림의 맨 앞줄 칸부터 몇 층인지 세어 그만큼 누르세요. 칸을 누를수록 한 층씩 올라가고, 가장 높이 올라가면 다시 0이 돼요.';
     default: return '';
@@ -910,6 +1001,7 @@ export function ManipulateTask({ m, locked, reveal, onSubmit, onTap, tip }: Mani
   else if (m.kind === 'angle' && s.kind === m.kind) 화면 = <각만들기 m={m} s={s} 바른={바른 as never} {...공통} />;
   else if (m.kind === 'sort-bins' && s.kind === m.kind) 화면 = <나누기 m={m} s={s} 바른={바른 as never} {...공통} />;
   else if (m.kind === 'stack-build' && s.kind === m.kind) 화면 = <쌓기 m={m} s={s} 바른={바른 as never} {...공통} />;
+  else if (m.kind === 'prism-net' && s.kind === m.kind) 화면 = <각기둥전개도 m={m} s={s} 바른={바른 as never} {...공통} />;
   else if (m.kind === 'cube-net' && s.kind === m.kind) 화면 = <전개도 m={m} s={s} 바른={바른 as never} {...공통} />;
   const 되돌림 = s.kind === 'grid-draw' && s.segs.length > 0;
   return (
