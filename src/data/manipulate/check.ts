@@ -479,7 +479,7 @@ const 칸맞추기채점 = (m: Extract<Manipulation, { kind: 'tap-fill' }>, 칠�
   const 목표 = new Set(m.exact!);
   const 빠짐 = [...목표].filter((k) => !칠한.has(k));
   const 더 = [...칠한].filter((k) => !목표.has(k));
-  const 칸말 = (k: number) => (m.layout === 'numgrid' ? String((m.from ?? 1) + k) : m.layout === 'hours' ? `${k < 12 ? '오전' : '오후'} ${k % 12 || 12}시` : m.layout === 'multtable' ? `${Math.floor(k / 9) + 1}×${(k % 9) + 1}` : `${k + 1}번째`);
+  const 칸말 = (k: number) => (m.layout === 'numgrid' ? String((m.from ?? 1) + k) : m.layout === 'hours' ? `${k < 12 ? '오전' : '오후'} ${k % 12 || 12}시` : m.layout === 'multtable' ? `${Math.floor(k / 9) + 1}${m.op ?? '×'}${(k % 9) + 1}` : `${k + 1}번째`);
   const said = 칠한.size ? `${[...칠한].sort((a, b) => a - b).map(칸말).join(', ')}을(를) 칠함` : '칠하지 않음';
   if (!빠짐.length && !더.length) return { ok: true, said };
   if (m.layout === 'objects' && 목표.size === 1) {
@@ -489,6 +489,7 @@ const 칸맞추기채점 = (m: Extract<Manipulation, { kind: 'tap-fill' }>, 칠�
   if (m.layout === 'objects' && 칠한.size === 1 && 목표.size > 1) return { ok: false, said, tip: `'${목표.size}개'는 하나, 둘, 셋…처럼 처음부터 ${목표.size}개를 모두 세어 누르는 거예요.` };
   if (m.layout === 'hours' && 칠한.size === 목표.size) return { ok: false, said, tip: '칸 수는 맞지만 자리가 달라요. 오전은 밤 12시부터 낮 12시까지, 오후는 낮 12시부터 밤 12시까지예요.' };
   if (m.layout === 'hours') return { ok: false, said, tip: `시작한 시각부터 끝난 시각까지 1시간마다 한 칸이에요. 지금 ${칠한.size}칸을 칠했어요.` };
+  if (m.layout === 'multtable' && m.op === '+') return { ok: false, said, tip: 빠짐.length ? `아직 찾지 못한 칸이 ${빠짐.length}개 있어요. 덧셈표에서 합이 같은 칸은 비스듬한 한 줄에 놓여 있어요.` : '합이 맞지 않는 칸이 있어요. 그 칸의 줄과 칸의 수를 더해 보세요.' };
   if (m.layout === 'multtable') return { ok: false, said, tip: 빠짐.length ? `아직 찾지 못한 칸이 ${빠짐.length}개 있어요. 곱하는 두 수의 순서를 바꾸어도 곱은 같아요.` : '곱이 맞지 않는 칸이 있어요. 그 칸의 줄과 칸의 수를 곱해 보세요.' };
   return { ok: false, said, tip: 빠짐.length && !더.length ? `빠진 칸이 ${빠짐.length}개 있어요. 규칙을 끝까지 이어 가 보세요.` : 더.length && !빠짐.length ? `규칙에 맞지 않는 칸 ${더.length}개를 칠했어요.` : '규칙에 맞지 않게 칠한 칸이 있어요. 색칠한 수들이 얼마씩 커지는지 먼저 찾아보세요.' };
 };
