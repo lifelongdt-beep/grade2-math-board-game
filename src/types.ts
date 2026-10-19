@@ -235,16 +235,17 @@ export type Manipulation =
   // money면 수 모형 대신 돈(만 원, 천 원, 백 원, 십 원)으로 그립니다.
   | { kind: 'base-ten'; places: number[]; target: number; start?: number[]; trade?: boolean; money?: boolean }
   // 막대(또는 꺾은선의 점, ○ 쌓기)의 높이를 맞춥니다. step은 눈금 한 칸의 크기입니다.
-  | { kind: 'bars'; style: 'bar' | 'line' | 'stack'; labels: string[]; values: number[]; max: number; step: number; pre: number[]; unitLabel: string }
+  // start가 있으면 그 높이에서 시작합니다(평균: 막대를 고르게 맞추기).
+  | { kind: 'bars'; style: 'bar' | 'line' | 'stack'; labels: string[]; values: number[]; max: number; step: number; pre: number[]; unitLabel: string; start?: number[] }
   // 반직선을 돌려 각을 만듭니다. 각도기가 있으면 눈금을 읽으며 맞춥니다.
   | { kind: 'angle'; target?: number; range?: [number, number]; protractor: boolean }
   // 물건을 알맞은 칸으로 옮깁니다.
   | { kind: 'sort-bins'; bins: string[]; items: { label: string; emoji?: string; bin: number }[] }
   // 쌓기나무 쌓기(6-2 3단원). 위에서 본 모양의 칸을 누를 때마다 한 층씩 올라갑니다.
   // target은 heights[줄][열](0번 줄이 뒤, 마지막 줄이 앞)입니다.
-  //   show — 무엇을 보고 쌓는지: 'iso' 쌓은 모양 그림, 'views' 위·앞·옆에서 본 모양, 'layers' 층별로 나타낸 모양
+  //   show — 무엇을 보고 쌓는지: 'iso' 쌓은 모양 그림, 'views' 위·앞·옆에서 본 모양, 'layers' 층별로 나타낸 모양, 'none' 글만(부피)
   //   check — 'exact' 꼭 같게, 'views' 본 모양이 같게, 'views-min'·'views-max' 본 모양이 같으면서 count개(가장 적게·많게)
-  | { kind: 'stack-build'; rows: number; cols: number; maxH: number; show: 'iso' | 'views' | 'layers'; target: number[][]; check: 'exact' | 'views' | 'views-min' | 'views-max'; count?: number }
+  | { kind: 'stack-build'; rows: number; cols: number; maxH: number; show: 'iso' | 'views' | 'layers' | 'none'; target: number[][]; check: 'exact' | 'views' | 'views-min' | 'views-max'; count?: number }
   // 정육면체의 전개도(5-2 5단원). 모눈 칸을 눌러 면을 놓거나 뺍니다.
   //   complete — given은 그대로 두고 면을 더 놓아 전개도를 완성합니다.
   //   move     — given(전개도가 아닌 모양)에서 면 하나를 옮겨 전개도로 만듭니다.
@@ -269,7 +270,8 @@ export type Manipulation =
       step: number;
     }
   // 물건을 차례로 눌러 크기(길이) 순서대로 늘어놓습니다. len이 있으면 그 길이의 막대로 그립니다.
-  | { kind: 'order'; items: { label: string; value: number; len?: number; emoji?: string }[]; dir: 'asc' | 'desc' }
+  // expr가 있으면 식의 기호(items[i].at째 낱말)를 계산하는 차례대로 누릅니다. why는 틀렸을 때 덧붙이는 까닭입니다.
+  | { kind: 'order'; items: { label: string; value: number; len?: number; emoji?: string; at?: number }[]; dir: 'asc' | 'desc'; expr?: string[]; why?: string }
   // 비커의 물 높이(들이) 또는 저울의 바늘(무게)을 끌어 눈금을 맞춥니다. 값은 mL·g 단위이고 pre는 처음 값입니다.
   | { kind: 'gauge'; tool: 'beaker' | 'scale'; max: number; major: number; minor: number; target: number; pre: number }
   // 그림그래프: 줄마다 큰 그림(big)과 작은 그림(small)의 수를 맞춥니다. 작은 그림은 큰 그림 하나보다 적어야 합니다.
