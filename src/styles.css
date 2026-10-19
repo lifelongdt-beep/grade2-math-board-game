@@ -7379,3 +7379,294 @@ body::before {
   cursor: pointer;
   flex: none;
 }
+
+/* ── 손 조작 문항 ─────────────────────────────────────────────────────
+   판은 밝은 종이색으로 둡니다(눈금·모눈이 잘 보이게). 단추는 손가락으로
+   누르기 좋게 크게 둡니다. */
+.student-answer-dock.manip-dock {
+  padding: 6px;
+}
+
+.manip-task {
+  display: grid;
+  gap: 6px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.manip-stage {
+  display: grid;
+  justify-items: center;
+}
+
+.manip-svg {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  max-height: 42vh;
+  touch-action: none;
+}
+
+.manip-svg.manip-square {
+  max-width: min(100%, 340px);
+}
+
+.players-4 .manip-svg,
+.players-5 .manip-svg {
+  max-height: 34vh;
+}
+
+.manip-actions,
+.manip-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.manip-actions button,
+.manip-tools button,
+.manip-pm button {
+  min-height: 42px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 2px solid rgba(120, 190, 255, 0.55);
+  background: #1b2540;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.manip-actions button:disabled,
+.manip-tools button:disabled,
+.manip-pm button:disabled {
+  opacity: 0.45;
+}
+
+.manip-actions .manip-submit {
+  min-width: 96px;
+  background: linear-gradient(180deg, #2fc7f0 0%, #1f8bd8 100%);
+  border-color: rgba(150, 232, 255, 0.8);
+  color: #04203a;
+}
+
+.manip-actions .manip-help[aria-pressed='true'] {
+  background: #ffb300;
+  border-color: #ffe082;
+  color: #3a2a00;
+}
+
+.manip-help-line,
+.manip-tip {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255, 179, 0, 0.14);
+  color: #ffe9a8;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.manip-help-line.ok {
+  background: rgba(46, 125, 50, 0.2);
+  color: #b9f6ca;
+}
+
+.manip-tip {
+  background: rgba(229, 57, 53, 0.18);
+  color: #ffd2d0;
+}
+
+.manip-shape-move {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  justify-items: center;
+}
+
+.manip-base-ten {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
+.manip-place {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 6px 4px;
+  border-radius: 8px;
+  background: #f7fbff;
+  color: #1d2b3a;
+}
+
+.manip-place.wrong {
+  outline: 3px solid #2e7d32;
+}
+
+.manip-place strong {
+  font-size: 13px;
+}
+
+.manip-place-svg {
+  width: 70px;
+  height: 70px;
+}
+
+.manip-count {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.manip-pm {
+  display: flex;
+  gap: 4px;
+}
+
+.manip-pm button {
+  min-width: 40px;
+  padding: 4px 8px;
+}
+
+.manip-base-ten .manip-help-line {
+  grid-column: 1 / -1;
+}
+
+.manip-sort {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+
+.manip-sort-pool,
+.manip-bin-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.manip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 2px solid #90caf9;
+  background: #f7fbff;
+  color: #1d2b3a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.manip-chip.picked {
+  background: #ffe082;
+  border-color: #ff8f00;
+  transform: translateY(-2px);
+}
+
+.manip-chip.wrong {
+  border-color: #e53935;
+}
+
+.manip-chip-emoji {
+  font-size: 20px;
+}
+
+.manip-bins {
+  display: grid;
+  gap: 6px;
+}
+
+.manip-bin {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-height: 90px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 2px dashed rgba(150, 205, 255, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  text-align: center;
+}
+
+.manip-bin.ready {
+  border-color: #ffd54f;
+  background: rgba(255, 213, 79, 0.1);
+}
+
+.manip-bin strong {
+  font-size: 14px;
+}
+
+.manip-chip span,
+.manip-chip small {
+  white-space: nowrap;
+}
+
+.manip-chip:has(small) {
+  flex-wrap: wrap;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.manip-chip small {
+  flex-basis: 100%;
+  text-align: center;
+  color: #2e7d32;
+  font-size: 12px;
+}
+
+/* 칠판(여럿이 한 화면)에서는 판 아래 단추가 칸 밖으로 밀려나지 않게 판 높이를 줄입니다. */
+.app-shell:not(.mobile-entry) .player-lanes .manip-svg {
+  max-height: clamp(150px, 30vh, 420px);
+}
+
+/* 큐알로 들어온 휴대폰은 한 사람이 화면을 다 씁니다. */
+.app-shell.mobile-entry .manip-svg {
+  max-height: 50vh;
+}
+
+.player-lanes .manip-tools button {
+  min-height: 36px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.app-shell:not(.mobile-entry) .player-lanes .manip-actions button {
+  min-height: 40px;
+}
+
+/* 힌트의 풀이 걸음 */
+.hint-steps {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.hint-step {
+  border-left: 3px solid #ffb300;
+  padding-left: 6px;
+}
+
+.hint-step-button {
+  justify-self: start;
+  min-height: 36px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 2px solid #ff8f00;
+  background: #fff3cd;
+  color: #6b3f00;
+  font-weight: 900;
+}
+
+.hint-step-last {
+  color: #1b5e20;
+  font-weight: 800;
+}
