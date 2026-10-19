@@ -6,6 +6,7 @@ import { 길이말, 시각말, 자여백, 정답모습, 채점, 처음상태 } f
 import { resolveParticles } from '../data/grade5/util';
 import { StackIsoPicture } from './StackIso';
 import { 앞에서본, 옆에서본, 옆면가로 } from '../data/manipulate/check';
+import { 그림그래프, 규칙채우기, 나누어담기, 눈금, 달력, 순서놓기, 점배열 } from './ManipulateMore';
 
 // ════════════════════════════════════════════════════════════════════
 // 손으로 조작해서 답하는 문항
@@ -479,6 +480,50 @@ function 색칠하기({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipu
       const am = (a0 + a1) / 2;
       return 틀(k, <><path d={d} fill={색(k)} stroke={바른칸?.has(k) ? 초록 : 잉크} strokeWidth={바른칸?.has(k) ? 4 : 1.6} />{번호(k, C + R * 0.62 * Math.cos(am), C + R * 0.62 * Math.sin(am))}</>);
     });
+  } else if (m.layout === 'numgrid' || m.layout === 'multtable') {
+    // 수 배열표(칸마다 수)와 곱셈표(맨 윗줄·맨 왼쪽 줄에 곱하는 수, 칸은 비워 둡니다)
+    const 표 = m.layout === 'multtable';
+    const cols = 표 ? 9 : m.cols ?? 10;
+    const 한칸 = 표 ? 28 : 31;
+    const 머리 = 표 ? 한칸 : 0;
+    const rows = Math.ceil(m.parts / cols);
+    W = 머리 + cols * 한칸 + 24; H = 머리 + rows * 한칸 + 24;
+    const 칸들 = Array.from({ length: m.parts }, (_, k) => {
+      const c = k % cols; const r = Math.floor(k / cols);
+      const x0 = 12 + 머리 + c * 한칸; const y0 = 12 + 머리 + r * 한칸;
+      const 글 = 표 ? (도움 && (켜짐.has(k) || 미리.has(k)) ? String((r + 1) * (c + 1)) : '') : String((m.from ?? 1) + k);
+      return 틀(k, <>
+        <rect x={x0} y={y0} width={한칸} height={한칸} fill={미리.has(k) ? '#ffcc80' : 켜짐.has(k) ? '#90caf9' : '#fff'} stroke={바른칸?.has(k) ? 초록 : 잉크} strokeWidth={바른칸?.has(k) ? 3.5 : 1} />
+        <text x={x0 + 한칸 / 2} y={y0 + 한칸 / 2 + 4} textAnchor="middle" fontSize={글.length > 3 ? 8.5 : 11} fontWeight="800" fill={잉크} pointerEvents="none">{글}</text>
+      </>);
+    });
+    const 머리칸 = 표 ? Array.from({ length: 10 }, (_, i) => (
+      <g key={`h${i}`} pointerEvents="none">
+        <rect x={12 + i * 한칸} y={12} width={한칸} height={한칸} fill="#e3f2fd" stroke={잉크} strokeWidth="1" />
+        <text x={12 + i * 한칸 + 한칸 / 2} y={12 + 한칸 / 2 + 4} textAnchor="middle" fontSize="12" fontWeight="900" fill={잉크}>{i ? i : '×'}</text>
+        {i > 0 && <rect x={12} y={12 + i * 한칸} width={한칸} height={한칸} fill="#e3f2fd" stroke={잉크} strokeWidth="1" />}
+        {i > 0 && <text x={12 + 한칸 / 2} y={12 + i * 한칸 + 한칸 / 2 + 4} textAnchor="middle" fontSize="12" fontWeight="900" fill={잉크}>{i}</text>}
+      </g>
+    )) : null;
+    그림 = <>{머리칸}{칸들}</>;
+  } else if (m.layout === 'hours') {
+    // 시간 띠: 윗줄은 오전(밤 12시~낮 12시), 아랫줄은 오후. 칸 k는 k시부터 1시간입니다.
+    W = 380; H = 150;
+    const 왼 = 46; const w = (W - 왼 - 14) / 12;
+    const y줄 = [34, 100];
+    그림 = <>
+      {[0, 1].map((r) => (
+        <g key={r} pointerEvents="none">
+          <text x={8} y={y줄[r] + 21} fontSize="12" fontWeight="900" fill={잉크}>{r ? '오후' : '오전'}</text>
+          {Array.from({ length: 13 }, (_, j) => <text key={j} x={왼 + j * w} y={y줄[r] - 5} textAnchor="middle" fontSize="10" fontWeight="800" fill={잉크}>{(r * 12 + j) % 12 === 0 ? 12 : (r * 12 + j) % 12}</text>)}
+        </g>
+      ))}
+      {Array.from({ length: 24 }, (_, k) => {
+        const r = Math.floor(k / 12); const c = k % 12;
+        return 틀(k, <rect x={왼 + c * w} y={y줄[r]} width={w} height={30} fill={색(k)} stroke={바른칸?.has(k) ? 초록 : 잉크} strokeWidth={바른칸?.has(k) ? 3.5 : 1.2} />);
+      })}
+      {도움 && <text x={W / 2} y={H - 6} textAnchor="middle" fontSize="10" fontWeight="800" fill={주황} pointerEvents="none">낮 12시를 지나면 아랫줄(오후)로 이어져요</text>}
+    </>;
   } else {
     const cols = m.layout === 'tenframe' ? 5 : m.cols ?? Math.min(10, m.parts);
     const rows = Math.ceil(m.parts / cols);
@@ -556,29 +601,51 @@ function 색칠하기({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipu
 }
 
 // ── 수 모형 ───────────────────────────────────────────────────────
-const 자리이름: Record<number, string> = { 1000: '천 모형', 100: '백 모형', 10: '십 모형', 1: '일 모형' };
+const 자리이름: Record<number, string> = { 10000: '만 모형', 1000: '천 모형', 100: '백 모형', 10: '십 모형', 1: '일 모형' };
+const 돈이름: Record<number, string> = { 10000: '만 원짜리', 1000: '천 원짜리', 100: '백 원짜리', 10: '십 원짜리' };
 function 수모형({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipulation, { kind: 'base-ten' }>; s: Extract<ManipState, { kind: 'base-ten' }>; set: 설정; locked: boolean; 바른?: Extract<ManipState, { kind: 'base-ten' }>; 도움: boolean }) {
+  // 받아올림·받아내림을 하는 동안에는 한 자리에 19개까지 놓일 수 있습니다.
+  const 최대 = m.trade ? 19 : 9;
   const 모형 = (place: number, k: number) => {
-    if (place === 1000) return <rect key={k} x={(k % 3) * 22} y={Math.floor(k / 3) * 22} width="18" height="18" rx="2" fill="#ab47bc" stroke={잉크} />;
+    if (m.money) {
+      const x = (k % 3) * 22; const y = Math.floor(k / 3) * (place >= 1000 ? 12 : 14);
+      if (place >= 1000) return <g key={k} transform={`translate(${x},${y})`}><rect width="20" height="10" rx="1.5" fill={place === 10000 ? '#81c784' : '#90caf9'} stroke={잉크} strokeWidth="0.8" /><text x="10" y="7.5" textAnchor="middle" fontSize="6" fontWeight="900" fill={잉크}>{place === 10000 ? '만' : '천'}</text></g>;
+      return <g key={k} transform={`translate(${x + 10},${y + 6})`}><circle r={place === 100 ? 6 : 5} fill={place === 100 ? '#cfd8dc' : '#ffcc80'} stroke={잉크} strokeWidth="0.8" /><text y="2.5" textAnchor="middle" fontSize="5.5" fontWeight="900" fill={잉크}>{place}</text></g>;
+    }
+    if (place >= 1000) return <rect key={k} x={(k % 3) * 22} y={Math.floor(k / 3) * 22} width="18" height="18" rx="2" fill="#ab47bc" stroke={잉크} />;
     if (place === 100) return <g key={k} transform={`translate(${(k % 3) * 22},${Math.floor(k / 3) * 22})`}><rect width="18" height="18" fill="#ffb74d" stroke={잉크} />{[6, 12].map((t) => <line key={t} x1={t} y1={0} x2={t} y2={18} stroke={잉크} strokeWidth="0.5" />)}</g>;
-    if (place === 10) return <rect key={k} x={k * 7} y={0} width="5" height="40" fill="#4fc3f7" stroke={잉크} strokeWidth="0.8" />;
+    if (place === 10) return <rect key={k} x={(k % 10) * 7} y={Math.floor(k / 10) * 44} width="5" height="40" fill="#4fc3f7" stroke={잉크} strokeWidth="0.8" />;
     return <rect key={k} x={(k % 5) * 9} y={Math.floor(k / 5) * 9} width="7" height="7" fill="#aed581" stroke={잉크} strokeWidth="0.8" />;
   };
+  const 높이 = (place: number, n: number) => (place === 10 && !m.money ? (n > 10 ? 88 : 44) : place >= 100 || m.money ? Math.max(1, Math.ceil(n / 3)) * (place === 100 && !m.money ? 22 : 14) : Math.max(1, Math.ceil(n / 5)) * 9);
   const 값 = s.counts.reduce((sum, c, i) => sum + c * m.places[i], 0);
+  const 바꾸기 = (i: number, 아래로: boolean) => {
+    // 아래로: i자리 1개 → i+1자리 10개. 위로: i+1자리 10개 → i자리 1개.
+    set({ ...s, counts: s.counts.map((c, j) => (j === i ? c + (아래로 ? -1 : 1) : j === i + 1 ? c + (아래로 ? 10 : -10) : c)) });
+  };
+  const 이름 = (place: number) => (m.money ? 돈이름[place] : 자리이름[place]);
   return (
     <div className="manip-base-ten">
       {m.places.map((place, i) => (
         <div key={place} className={`manip-place ${바른 && 바른.counts[i] !== s.counts[i] ? 'wrong' : ''}`}>
-          <strong>{자리이름[place]}</strong>
-          <svg viewBox="0 0 70 70" className="manip-place-svg">{Array.from({ length: s.counts[i] }, (_, k) => 모형(place, k))}</svg>
-          <span className="manip-count">{s.counts[i]}개{바른 && 바른.counts[i] !== s.counts[i] ? ` → ${바른.counts[i]}개` : ''}</span>
+          <strong>{이름(place)}</strong>
+          <svg viewBox={`0 0 70 ${Math.max(70, 높이(place, s.counts[i]) + 4)}`} className="manip-place-svg">{Array.from({ length: s.counts[i] }, (_, k) => 모형(place, k))}</svg>
+          <span className="manip-count">{s.counts[i]}{m.money ? '장' : '개'}{바른 && 바른.counts[i] !== s.counts[i] ? ` → ${바른.counts[i]}${m.money ? '장' : '개'}` : ''}</span>
           <div className="manip-pm">
             <button type="button" disabled={locked || s.counts[i] === 0} onClick={() => set({ ...s, counts: s.counts.map((c, j) => (j === i ? c - 1 : c)) })}>－</button>
-            <button type="button" disabled={locked || s.counts[i] === 9} onClick={() => set({ ...s, counts: s.counts.map((c, j) => (j === i ? c + 1 : c)) })}>＋</button>
+            <button type="button" disabled={locked || s.counts[i] >= 최대} onClick={() => set({ ...s, counts: s.counts.map((c, j) => (j === i ? c + 1 : c)) })}>＋</button>
           </div>
+          {m.trade && i < m.places.length - 1 && (
+            <button type="button" className="manip-trade" disabled={locked || s.counts[i] === 0 || s.counts[i + 1] + 10 > 최대}
+              onClick={() => 바꾸기(i, true)}>1개 → {이름(m.places[i + 1])} 10개</button>
+          )}
+          {m.trade && i > 0 && (
+            <button type="button" className="manip-trade" disabled={locked || s.counts[i] < 10 || s.counts[i - 1] >= 최대}
+              onClick={() => 바꾸기(i - 1, false)}>10개 → {이름(m.places[i - 1])} 1개</button>
+          )}
         </div>
       ))}
-      {도움 && <p className="manip-help-line">지금 만든 수: {값}</p>}
+      {도움 && <p className="manip-help-line">지금 만든 {m.money ? '돈' : '수'}: {값}{m.money ? '원' : ''}</p>}
     </div>
   );
 }
@@ -1053,8 +1120,15 @@ const 도움말 = (m: Manipulation): string => {
     case 'grid-draw': return m.guide?.length ? '주황 점선을 따라 칸을 세면 점을 찍을 자리를 알 수 있어요.' : '꼭짓점이 될 점을 먼저 정하고, 칸을 세어 변의 길이를 확인하며 이어요.';
     case 'shape-move': return '★ 칸이 어디로 가는지 따라가 보세요. 회색 칸은 처음 자리예요.';
     case 'number-line': return '이름이 붙은 눈금 사이가 몇 칸으로 나뉘었는지 세어요. 주황 숫자는 앞의 큰 눈금에서부터 센 칸 수예요.';
-    case 'tap-fill': return '칸마다 번호를 붙였어요. 세면서 칠해 보세요.';
-    case 'base-ten': return '높은 자리부터, 그 자리 숫자만큼 모형을 놓아요.';
+    case 'tap-fill': return m.layout === 'numgrid' ? '색칠된 두 수의 차를 구해 보세요. 그만큼씩 뛰어 세며 끝까지 칠해요.' : m.layout === 'hours' ? '시작한 시각의 눈금 바로 오른쪽 칸부터, 끝난 시각의 눈금까지 칠해요.' : m.layout === 'multtable' ? '칠한 칸에는 곱을 보여 줘요. 곱셈구구를 외우며 줄과 칸의 수를 곱해 보세요.' : '칸마다 번호를 붙였어요. 세면서 칠해 보세요.';
+    case 'base-ten': return m.trade ? '일의 자리부터 계산해요. 10개가 넘으면 「10개 → 1개」로, 모자라면 「1개 → 10개」로 바꾸어요.' : m.money ? '높은 자리부터, 그 자리 숫자만큼 돈을 놓아요.' : '높은 자리부터, 그 자리 숫자만큼 모형을 놓아요.';
+    case 'order': return '가장 작은(짧은) 것부터 하나씩 찾아 누르면 차례대로 놓여요. 크기를 두 개씩 견주어 보세요.';
+    case 'gauge': return m.tool === 'beaker' ? '주황 숫자는 작은 눈금이 나타내는 양이에요. 물의 윗면이 맞추려는 눈금에 오게 끌어요.' : '0에서 시계 방향으로 작은 눈금을 세어 가요. 큰 눈금의 숫자를 먼저 찾으면 빨라요.';
+    case 'pictograph': return '주황 숫자는 지금 그린 그림이 나타내는 수예요. 큰 그림을 먼저 놓고 남는 만큼 작은 그림을 놓아요.';
+    case 'calendar': return '맨 윗줄의 요일 이름을 보고 세로줄을 따라 읽어요.';
+    case 'share': return m.groups ? '접시를 차례로 하나씩 눌러 돌아가며 담아요.' : `접시를 놓고 ${m.size}개씩 담아요. 남은 것이 없을 때까지 접시를 더 놓아요.`;
+    case 'array': return '주황 숫자로 한 줄에 몇 개, 몇 줄인지 세어 보세요. 왼쪽 위에서 시작해 끌어요.';
+    case 'pattern': return '되풀이되는 묶음을 손가락으로 짚으며 소리 내어 읽어 보세요.';
     case 'bars': return `세로 눈금 한 칸은 ${m.step}${m.unitLabel}이에요. 표의 수를 보고 막대 끝을 그 눈금까지 끌어 올리세요.`;
     case 'angle': return m.protractor ? '각도기의 중심은 꼭짓점에, 밑금은 아래 변에 맞추었어요. 아래 변이 가리키는 0에서 시작하는 눈금(빨간 숫자)을 따라 읽어요.' : '직각(90°)의 모서리를 점선으로 보여 줘요. 이보다 좁으면 예각, 넓으면 둔각이에요.';
     case 'sort-bins': return '나누는 기준을 한 번 더 읽고, 하나씩 옮겨 보세요.';
@@ -1100,6 +1174,13 @@ export function ManipulateTask({ m, locked, reveal, onSubmit, onTap, tip }: Mani
   else if (m.kind === 'cylinder-net' && s.kind === m.kind) 화면 = <원기둥전개도 m={m} s={s} 바른={바른 as never} {...공통} />;
   else if (m.kind === 'prism-net' && s.kind === m.kind) 화면 = <각기둥전개도 m={m} s={s} 바른={바른 as never} {...공통} />;
   else if (m.kind === 'cube-net' && s.kind === m.kind) 화면 = <전개도 m={m} s={s} 바른={바른 as never} {...공통} />;
+  else if (m.kind === 'order' && s.kind === m.kind) 화면 = <순서놓기 m={m} s={s} 바른={바른 as never} {...공통} />;
+  else if (m.kind === 'gauge' && s.kind === m.kind) 화면 = <눈금 m={m} s={s} 바른={바른 as never} {...공통} />;
+  else if (m.kind === 'pictograph' && s.kind === m.kind) 화면 = <그림그래프 m={m} s={s} 바른={바른 as never} {...공통} />;
+  else if (m.kind === 'calendar' && s.kind === m.kind) 화면 = <달력 m={m} s={s} 바른={바른 as never} {...공통} />;
+  else if (m.kind === 'share' && s.kind === m.kind) 화면 = <나누어담기 m={m} s={s} 바른={바른 as never} {...공통} />;
+  else if (m.kind === 'array' && s.kind === m.kind) 화면 = <점배열 m={m} s={s} 바른={바른 as never} {...공통} />;
+  else if (m.kind === 'pattern' && s.kind === m.kind) 화면 = <규칙채우기 m={m} s={s} 바른={바른 as never} {...공통} />;
   const 되돌림 = s.kind === 'grid-draw' && s.segs.length > 0;
   return (
     <div className={`manip-task manip-kind-${m.kind}`} onPointerDown={() => onTap?.()}>

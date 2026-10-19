@@ -1,5 +1,6 @@
 import type { DrawGoal, GridPoint, GridSegment, Manipulation, PolygonGoal } from '../../types';
 import { resolveParticles } from '../grade5/util';
+import { 더채점, 더정답, 더처음, 째말 as 차례말, type 더한상태 } from './checkMore';
 
 // ════════════════════════════════════════════════════════════════════
 // 손 조작 문항의 채점
@@ -27,7 +28,8 @@ export type ManipState =
   | { kind: 'stack-build'; h: number[][] }
   | { kind: 'cube-net'; cells: GridPoint[]; picked: GridPoint | null }
   | { kind: 'cylinder-net'; bases: { pos: number; side: 'top' | 'bottom' }[]; w: number; hh: number }
-  | { kind: 'prism-net'; strip: number[]; bases: { col: number; side: 'top' | 'bottom' }[]; picked: string | null };
+  | { kind: 'prism-net'; strip: number[]; bases: { col: number; side: 'top' | 'bottom' }[]; picked: string | null }
+  | 더한상태;
 
 export interface ManipResult {
   ok: boolean;
@@ -213,6 +215,18 @@ const 선분포함 = (s: GridSegment, p: GridPoint) => {
   return Math.min(a[0], b[0]) <= p[0] && p[0] <= Math.max(a[0], b[0]) && Math.min(a[1], b[1]) <= p[1] && p[1] <= Math.max(a[1], b[1]);
 };
 
+/** 그은 선들이 한 직선 위에서 끊어짐 없이 이어진 선분 하나이면 그 양 끝을 돌려줍니다. */
+const 한선분 = (segs: GridSegment[]): GridSegment | null => {
+  const ps = segs.flat();
+  const [a, b] = segs[0];
+  const d = [b[0] - a[0], b[1] - a[1]];
+  if (ps.some((p) => d[0] * (p[1] - a[1]) - d[1] * (p[0] - a[0]) !== 0)) return null;
+  const t = (p: GridPoint) => (p[0] - a[0]) * d[0] + (p[1] - a[1]) * d[1];
+  const 차례 = [...ps].sort((p, q) => t(p) - t(q));
+  const 선: GridSegment = [차례[0], 차례[차례.length - 1]];
+  return 조각들(선).length === 조각집합(segs).size ? 선 : null;
+};
+
 export const 그림채점 = (goal: DrawGoal, fixed: GridSegment[], segs: GridSegment[]): ManipResult => {
   if (!segs.length) return { ok: false, said: '아무 선도 긋지 않음', tip: '점 두 개를 차례로 누르면 선이 그어져요.' };
   if (goal.type === 'exact') {
@@ -228,6 +242,20 @@ export const 그림채점 = (goal: DrawGoal, fixed: GridSegment[], segs: GridSeg
       ok: false,
       said: `선 ${빠짐}조각 빠짐, ${더}조각 더 그음`,
       tip: 더 ? '맞지 않는 선이 있어요. 꼭짓점의 대응점을 먼저 찍듯이, 칸 수를 세어 점을 정한 뒤 이어 보세요.' : '아직 다 잇지 않았어요. 빠진 변을 찾아 이어 보세요.',
+    };
+  }
+  if (goal.type === 'between') {
+    const 선 = 한선분(segs);
+    if (!선) return { ok: false, said: '선분 여러 개를 그음', tip: '곧은 선분 하나만 그어요. 필요 없는 선은 지워 보세요.' };
+    const u = [선[1][0] - 선[0][0], 선[1][1] - 선[0][1]];
+    const v = [goal.a[1][0] - goal.a[0][0], goal.a[1][1] - goal.a[0][1]];
+    const 수직 = u[0] * v[0] + u[1] * v[1] === 0;
+    const 양끝 = (선분포함(goal.a, 선[0]) && 선분포함(goal.b, 선[1])) || (선분포함(goal.a, 선[1]) && 선분포함(goal.b, 선[0]));
+    if (수직 && 양끝) return { ok: true, said: '평행선 사이의 거리를 바르게 그음' };
+    return {
+      ok: false,
+      said: 수직 ? '수직인 선분이지만 두 평행선을 잇지 않음' : '평행선에 수직이 아닌 선분을 그음',
+      tip: !수직 ? '평행선 사이의 거리는 두 평행선에 수직인 선분의 길이예요. 비스듬히 이으면 더 길어져요.' : '선분의 한 끝은 한 평행선 위에, 다른 끝은 다른 평행선 위에 있어야 해요.',
     };
   }
   if (goal.type === 'line') {
@@ -387,15 +415,25 @@ const 채점하기 = (m: Manipulation, s: ManipState): ManipResult => {
     return { ok: false, said, tip: Math.abs(s.at - m.target) === 1 ? '한 눈금 차이예요. 0에서부터 작은 눈금을 하나씩 다시 세어 보세요.' : '큰 눈금 사이가 몇 칸으로 나뉘었는지 먼저 세고, 한 칸의 크기를 생각해 보세요.' };
   }
   if (m.kind === 'tap-fill' && s.kind === 'tap-fill') {
-    const n = new Set([...m.pre, ...s.on]).size;
+    const 칠한 = new Set([...m.pre, ...s.on]);
+    const n = 칠한.size;
+    if (m.exact) return 칸맞추기채점(m, 칠한);
     const said = `${n}칸을 채움`;
     if (n === m.target) return { ok: true, said };
     return { ok: false, said, tip: n > m.target ? `${n - m.target}칸을 더 칠했어요.` : `${m.target - n}칸이 모자라요.` };
   }
   if (m.kind === 'base-ten' && s.kind === 'base-ten') {
     const v = s.counts.reduce((sum, c, i) => sum + c * m.places[i], 0);
-    const said = `${v}을(를) 만듦`;
+    const said = `${v}을(를) 만듦${m.trade ? `(${m.places.map((p, i) => `${모형이름(p, m.money)} ${s.counts[i]}개`).join(', ')})` : ''}`;
+    const 넘침 = s.counts.findIndex((c, i) => i > 0 && c > 9);
+    if (v === m.target && 넘침 >= 0) return { ok: false, said, tip: `수는 맞아요. 그런데 ${모형이름(m.places[넘침], m.money)}이(가) ${s.counts[넘침]}개예요. 10개는 ${모형이름(m.places[넘침 - 1], m.money)} 1개로 바꾸어 정리해요.` };
     if (v === m.target) return { ok: true, said };
+    if (m.start) {
+      const 처음 = m.start.reduce((sum, c, i) => sum + c * m.places[i], 0);
+      if (v === 처음) return { ok: false, said, tip: m.target > 처음 ? '처음 모형 그대로예요. 더하는 수만큼 모형을 더 놓아요.' : '처음 모형 그대로예요. 빼는 수만큼 모형을 덜어 내요.' };
+      if (m.target < 처음 && v === 2 * 처음 - m.target) return { ok: false, said, tip: '빼야 하는데 더했어요. 빼는 수만큼 모형을 덜어 내요.' };
+      return { ok: false, said, tip: m.target > 처음 ? '같은 자리 모형끼리 더하고, 10개가 되면 윗자리 모형 1개로 바꾸어요.' : '같은 자리 모형끼리 빼요. 덜어 낼 모형이 모자라면 윗자리 모형 1개를 아랫자리 모형 10개로 바꾸어요.' };
+    }
     return { ok: false, said, tip: '자리마다 모형의 수를 세어 보세요. 그 자리의 숫자만큼 모형이 있어야 해요.' };
   }
   if (m.kind === 'bars' && s.kind === 'bars') {
@@ -429,7 +467,28 @@ const 채점하기 = (m: Manipulation, s: ManipState): ManipResult => {
   if (m.kind === 'cube-net' && s.kind === 'cube-net') return 전개도채점(m, s);
   if (m.kind === 'prism-net' && s.kind === 'prism-net') return 각기둥채점(m, s);
   if (m.kind === 'cylinder-net' && s.kind === 'cylinder-net') return 원기둥채점(m, s);
-  return { ok: false, said: '알 수 없는 조작' };
+  return 더채점(m, s as 더한상태) ?? { ok: false, said: '알 수 없는 조작' };
+};
+
+const 모형이름 = (p: number, money?: boolean) => (money ? { 10000: '만 원짜리', 1000: '천 원짜리', 100: '백 원짜리', 10: '십 원짜리', 1: '일 원짜리' } : { 10000: '만 모형', 1000: '천 모형', 100: '백 모형', 10: '십 모형', 1: '일 모형' })[p as 1] ?? `${p} 모형`;
+
+/** 칠할 칸이 정해진 색칠(몇째, 수 배열표, 시간 띠, 곱셈표) */
+const 칸맞추기채점 = (m: Extract<Manipulation, { kind: 'tap-fill' }>, 칠한: Set<number>): ManipResult => {
+  const 목표 = new Set(m.exact!);
+  const 빠짐 = [...목표].filter((k) => !칠한.has(k));
+  const 더 = [...칠한].filter((k) => !목표.has(k));
+  const 칸말 = (k: number) => (m.layout === 'numgrid' ? String((m.from ?? 1) + k) : m.layout === 'hours' ? `${k < 12 ? '오전' : '오후'} ${k % 12 || 12}시` : m.layout === 'multtable' ? `${Math.floor(k / 9) + 1}×${(k % 9) + 1}` : `${k + 1}번째`);
+  const said = 칠한.size ? `${[...칠한].sort((a, b) => a - b).map(칸말).join(', ')}을(를) 칠함` : '칠하지 않음';
+  if (!빠짐.length && !더.length) return { ok: true, said };
+  if (m.layout === 'objects' && 목표.size === 1) {
+    const k = [...목표][0];
+    if (칠한.size === k + 1 && [...칠한].every((x) => x <= k)) return { ok: false, said, tip: `'${차례말(k)}'는 하나만 가리켜요. 처음부터 ${k + 1}개를 모두 누르는 것은 '${k + 1}개'예요.` };
+  }
+  if (m.layout === 'objects' && 칠한.size === 1 && 목표.size > 1) return { ok: false, said, tip: `'${목표.size}개'는 하나, 둘, 셋…처럼 처음부터 ${목표.size}개를 모두 세어 누르는 거예요.` };
+  if (m.layout === 'hours' && 칠한.size === 목표.size) return { ok: false, said, tip: '칸 수는 맞지만 자리가 달라요. 오전은 밤 12시부터 낮 12시까지, 오후는 낮 12시부터 밤 12시까지예요.' };
+  if (m.layout === 'hours') return { ok: false, said, tip: `시작한 시각부터 끝난 시각까지 1시간마다 한 칸이에요. 지금 ${칠한.size}칸을 칠했어요.` };
+  if (m.layout === 'multtable') return { ok: false, said, tip: 빠짐.length ? `아직 찾지 못한 칸이 ${빠짐.length}개 있어요. 곱하는 두 수의 순서를 바꾸어도 곱은 같아요.` : '곱이 맞지 않는 칸이 있어요. 그 칸의 줄과 칸의 수를 곱해 보세요.' };
+  return { ok: false, said, tip: 빠짐.length && !더.length ? `빠진 칸이 ${빠짐.length}개 있어요. 규칙을 끝까지 이어 가 보세요.` : 더.length && !빠짐.length ? `규칙에 맞지 않는 칸 ${더.length}개를 칠했어요.` : '규칙에 맞지 않게 칠한 칸이 있어요. 색칠한 수들이 얼마씩 커지는지 먼저 찾아보세요.' };
 };
 
 // ── 쌓기나무 ──────────────────────────────────────────────────────
@@ -514,7 +573,6 @@ export const 처음상태 = (m: Manipulation): ManipState => {
     case 'shape-move': return { kind: m.kind, cells: 칸바로놓기(m.cells), offset: m.start };
     case 'number-line': return { kind: m.kind, at: null };
     case 'tap-fill': return { kind: m.kind, on: [] };
-    case 'base-ten': return { kind: m.kind, counts: m.places.map(() => 0) };
     case 'bars': return { kind: m.kind, vals: m.values.map((v, i) => (m.pre.includes(i) ? v : null)) };
     // 처음에는 왼쪽으로 펼쳐 둡니다(180°는 어떤 문제의 답도 아닙니다).
     case 'angle': return { kind: m.kind, deg: 180 };
@@ -523,7 +581,8 @@ export const 처음상태 = (m: Manipulation): ManipState => {
     case 'cube-net': return { kind: m.kind, cells: [...m.given], picked: null };
     case 'prism-net': return { kind: m.kind, strip: [...m.strip], bases: [...m.bases], picked: null };
     case 'cylinder-net': return { kind: m.kind, bases: [...m.bases], w: 5, hh: 2 };
-    default: return { kind: 'grid-point', pt: null };
+    case 'base-ten': return { kind: m.kind, counts: m.start ? [...m.start] : m.places.map(() => 0) };
+    default: return 더처음(m) ?? { kind: 'grid-point', pt: null };
   }
 };
 
@@ -547,6 +606,7 @@ export const 정답모습 = (m: Manipulation): ManipState => {
     }
     case 'number-line': return { kind: m.kind, at: m.target };
     case 'tap-fill': {
+      if (m.exact) return { kind: m.kind, on: m.exact.filter((k) => !m.pre.includes(k)) };
       const on: number[] = [];
       for (let k = 0; on.length + m.pre.length < m.target && k < m.parts; k += 1) if (!m.pre.includes(k)) on.push(k);
       return { kind: m.kind, on };
@@ -562,7 +622,7 @@ export const 정답모습 = (m: Manipulation): ManipState => {
     case 'cylinder-net': return m.mode === 'base' ? { kind: m.kind, bases: [...m.bases, { pos: 0, side: m.bases[0].side === 'top' ? 'bottom' : 'top' }], w: 옆면가로(m), hh: m.h } : { kind: m.kind, bases: [...m.bases], w: 옆면가로(m), hh: m.h };
     case 'prism-net': return m.mode === 'meet' ? { kind: m.kind, strip: [...m.strip], bases: [...m.bases], picked: 만나는점(m) } : { kind: m.kind, strip: [...m.example.strip], bases: [...m.example.bases], picked: null };
     case 'cube-net': return m.mode === 'pick' ? { kind: m.kind, cells: [...m.given], picked: 마주보는칸(m.given, m.star!) } : { kind: m.kind, cells: [...m.example], picked: null };
-    default: return 처음상태(m);
+    default: return 더정답(m) ?? 처음상태(m);
   }
 };
 

@@ -475,7 +475,7 @@ export const 그래프그리기 = (style: 'bar' | 'stack' | 'line', step: number
 });
 
 // ── 각 ────────────────────────────────────────────────────────────
-export const 각그리기 = (종류: 'right' | 'deg' | 'acute' | 'obtuse' | 'sum' | 'tri'): 조작갈래 => ({
+export const 각그리기 = (종류: 'right' | 'deg' | 'acute' | 'obtuse' | 'sum' | 'tri' | 'quad'): 조작갈래 => ({
   id: `angle-${종류}`,
   make: (seed) => {
     const next = 고르개(seed);
@@ -525,6 +525,14 @@ export const 각그리기 = (종류: 'right' | 'deg' | 'acute' | 'obtuse' | 'sum
       if (target > 175 || target < 15) return null;
       말 = `${x}°와 ${y}°의 ${빼기 ? '차' : '합'}만큼의 각`;
       걸음 = [`${x}°${빼기 ? '-' : '+'}${y}°=${target}°입니다.`, `각도기에서 0에서 시작하는 눈금을 따라 ${target}까지 갑니다.`];
+    } else if (종류 === 'quad') {
+      const a = 사이(next, 14, 26) * 5;
+      const b = 사이(next, 14, 26) * 5;
+      const c = 사이(next, 12, 26) * 5;
+      target = 360 - a - b - c;
+      if (target < 30 || target > 170 || target === 90) return null;
+      말 = `사각형의 세 각이 ${a}°, ${b}°, ${c}°일 때 나머지 한 각의 크기만큼의 각`;
+      걸음 = [`사각형의 네 각의 크기의 합은 360°이므로 나머지 한 각은 360°-${a}°-${b}°-${c}°=${target}°입니다.`, `각도기에서 0에서 시작하는 눈금을 따라 ${target}까지 갑니다.`];
     } else {
       const a = 사이(next, 6, 14) * 5;
       const b = 사이(next, 6, 14) * 5;
@@ -538,8 +546,12 @@ export const 각그리기 = (종류: 'right' | 'deg' | 'acute' | 'obtuse' | 'sum
       answer: `${target}°`,
       manipulate: { kind: 'angle', target, protractor: true },
       tag: 'shape',
-      strategy: 종류 === 'deg' ? '각도기로 각 그리기' : 종류 === 'sum' ? '각도의 합과 차를 구해 각 그리기' : '삼각형의 세 각의 합을 이용하기',
-      hint: '각도기에는 눈금이 두 줄 있어요. 아래 변이 가리키는 쪽의 0에서 시작하는 줄(빨간 숫자)을 따라 읽어요.',
+      strategy: 종류 === 'deg' ? '각도기로 각 그리기' : 종류 === 'sum' ? '각도의 합과 차를 구해 각 그리기' : 종류 === 'quad' ? '사각형의 네 각의 합을 이용하기' : '삼각형의 세 각의 합을 이용하기',
+      hint: 종류 === 'quad'
+        ? '사각형은 대각선 하나로 삼각형 2개로 나뉘어서 네 각의 합이 180°×2=360°예요. 360°에서 주어진 세 각을 차례로 빼 보세요.'
+        : 종류 === 'tri'
+          ? '삼각형의 세 각을 잘라 모으면 한 직선(180°)이 돼요. 180°에서 주어진 두 각을 차례로 빼 보세요.'
+          : '각도기에는 눈금이 두 줄 있어요. 아래 변이 가리키는 쪽의 0에서 시작하는 줄(빨간 숫자)을 따라 읽어요.',
       steps: [...걸음, `그 눈금에 파란 변을 맞추면 ${target}°인 각이 됩니다 — 바깥 눈금과 안쪽 눈금을 바꾸어 읽으면 ${180 - target}°가 됩니다.`],
       concept: '각도기의 중심을 꼭짓점에, 밑금을 한 변에 맞추고 그 변의 0에서 시작하는 눈금을 읽습니다.',
       misconception: '각도기의 두 줄 눈금 가운데 반대쪽 줄을 읽기 쉽습니다.',
