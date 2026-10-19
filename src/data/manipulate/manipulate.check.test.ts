@@ -1147,3 +1147,19 @@ describe('하·중·상 수준', () => {
     expect(같음).toEqual([]);
   });
 });
+
+describe('배우지 않은 수', () => {
+  it('1학년 1학기 1~4단원 조작 문항에는 10 이상의 수가 나오지 않습니다(10은 5단원에서 배웁니다)', () => {
+    for (const lesson of lessons11.filter((l) => l.unitNo <= 4)) {
+      for (const d of ['하', '중', '상'] as const) {
+        for (let 씨앗 = 0; 씨앗 < 40; 씨앗 += 1) {
+          for (const q of 조작문항들(lesson, d, 3, 씨앗)) {
+            const 글 = [q.prompt, q.answer, q.support.studentHint, ...(q.support.steps ?? [])].join(' ');
+            const 큰수 = [...글.matchAll(/(?<![\d.])\d+(?![\d.])/g)].map((x) => Number(x[0])).filter((v) => v >= 10);
+            expect(큰수, `${lesson.unitNo}-${lesson.lessonNo} ${d}: ${글}`).toEqual([]);
+          }
+        }
+      }
+    }
+  });
+});
