@@ -61,6 +61,42 @@ const 분으로 = (t: string) => { const m = /(\d+)시(?: (\d+)분)?/.exec(t)!; 
 const 시각글 = (분: number) => { const h = Math.floor(분 / 60) % 12 || 12; const m = 분 % 60; return m ? `${h}시 ${m}분` : `${h}시`; };
 const 항목들 = (글: string) => [...글.matchAll(/(\S+) (\d+)(명|개)/g)].map((m) => ({ 이름: m[1], 수: Number(m[2]) }));
 
+// ── 그림만 보고 다시 풀 때 쓰는 셈 ─────────────────────────────────
+type 점 = [number, number];
+const 길이 = (a: 점, b: 점) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+const 같다 = (x: number, y: number, 틈 = 0.03) => Math.abs(x - y) < 틈;
+const 평행하다 = (a: 점, b: 점, c: 점, d: 점) => { const u = [b[0] - a[0], b[1] - a[1]]; const v = [d[0] - c[0], d[1] - c[1]]; return Math.abs(u[0] * v[1] - u[1] * v[0]) < 0.02 * Math.hypot(...u) * Math.hypot(...v); };
+const 직각이다 = (a: 점, b: 점, c: 점) => { const u = [a[0] - b[0], a[1] - b[1]]; const v = [c[0] - b[0], c[1] - b[1]]; return Math.abs(u[0] * v[0] + u[1] * v[1]) < 0.02 * Math.hypot(...u) * Math.hypot(...v); };
+/** 사각형이 속하는 이름들(4-2 4단원의 뜻 그대로) */
+const 사각이름 = (p: 점[]) => {
+  const 쌍 = (평행하다(p[0], p[1], p[3], p[2]) ? 1 : 0) + (평행하다(p[1], p[2], p[0], p[3]) ? 1 : 0);
+  const 변 = p.map((_, k) => 길이(p[k], p[(k + 1) % 4]));
+  const 네변같음 = 변.every((x) => 같다(x, 변[0]));
+  const 네각직각 = p.every((_, k) => 직각이다(p[(k + 3) % 4], p[k], p[(k + 1) % 4]));
+  const 이름: string[] = ['사각형'];
+  if (쌍 >= 1) 이름.push('사다리꼴');
+  if (쌍 === 2) 이름.push('평행사변형');
+  if (쌍 === 2 && 네변같음) 이름.push('마름모');
+  if (네각직각) 이름.push('직사각형');
+  if (네각직각 && 네변같음) 이름.push('정사각형');
+  return 이름;
+};
+/** 다각형의 대칭축 수: 무게중심을 지나는 여러 방향의 선으로 접어 꼭짓점이 겹치는지 봅니다. */
+const 대칭축수 = (p: 점[]) => {
+  const c: 점 = [p.reduce((s0, q) => s0 + q[0], 0) / p.length, p.reduce((s0, q) => s0 + q[1], 0) / p.length];
+  const 후보 = [...p, ...p.map((q, k) => [(q[0] + p[(k + 1) % p.length][0]) / 2, (q[1] + p[(k + 1) % p.length][1]) / 2] as 점)];
+  const 방향들: number[] = [];
+  for (const q of 후보) {
+    const deg = (((Math.atan2(q[1] - c[1], q[0] - c[0]) * 180) / Math.PI) + 360) % 180;
+    if (!방향들.some((d) => Math.min(Math.abs(d - deg), 180 - Math.abs(d - deg)) < 1)) 방향들.push(deg);
+  }
+  return 방향들.filter((deg) => {
+    const t = (deg * Math.PI) / 180;
+    const 접기 = ([x, y]: 점): 점 => { const dx = x - c[0]; const dy = y - c[1]; const d = dx * Math.cos(t) + dy * Math.sin(t); return [c[0] + 2 * d * Math.cos(t) - dx, c[1] + 2 * d * Math.sin(t) - dy]; };
+    return p.every((q) => p.some((r) => 길이(접기(q), r) < 0.03));
+  }).length;
+};
+
 describe('문제집을 늘리는 문항', () => {
   const 셈 = new Map<string, number>();
   const 맞다 = (k: string, 받은: unknown, 바라는: unknown, 글: string) => { expect(받은, 글).toEqual(바라는); 셈.set(k, (셈.get(k) ?? 0) + 1); };
@@ -183,6 +219,61 @@ describe('문제집을 늘리는 문항', () => {
       if ((m = /^반지름이 (\d+) cm인 구의 지름/.exec(p))) 맞다('구지름', 수(a), +m[1] * 2, p);
       if ((m = /반원의 지름이 (\d+) cm이면 구의 반지름/.exec(p))) 맞다('구반지름', 수(a), +m[1] / 2, p);
       if ((m = /^밑면의 반지름이 (\d+) cm, 모선의 길이가 (\d+) cm인 원뿔을 앞에서 보면 .+ (밑변|길이가 같은 두 변)/.exec(p))) 맞다('원뿔앞', 수(a), m[3] === '밑변' ? +m[1] * 2 : +m[2], p);
+      // ── 그림 묶음
+      const v = q.visual;
+      if (v?.kind === 'figure-set' && (m = /^그림에서 (사다리꼴|평행사변형|마름모|직사각형|정사각형)(은|는|이|가) (어느 것일까요|아닌 것은)/.exec(p))) {
+        const 이름들 = v.items.map((it) => 사각이름(it.points as 점[]));
+        const 맞는 = v.items.map((it, k) => ({ 이름: it.name, 속함: 이름들[k].includes(m![1]) }));
+        const 고를 = m[3].startsWith('아닌') ? 맞는.filter((x) => !x.속함) : 맞는.filter((x) => x.속함);
+        expect(고를, p).toHaveLength(1);
+        맞다('사각형고르기', a, 고를[0].이름, p);
+      }
+      if (v?.kind === 'figure-set' && (m = /^그림의 사각형 가운데 (\S+?)[은는] 모두 몇 개/.exec(p))) 맞다('사각형세기', 수(a), v.items.filter((it) => 사각이름(it.points as 점[]).includes(m![1])).length, p);
+      if (v?.kind === 'figure-set' && (m = /^그림에서 (삼각형|사각형|원)[은는] 모두 몇 개/.exec(p))) {
+        const 꼴 = (it: (typeof v.items)[number]) => (it.shape === '원' ? '원' : it.points!.length === 3 ? '삼각형' : '사각형');
+        맞다('도형세기', 수(a), v.items.filter((it) => 꼴(it) === m![1]).length, p);
+      }
+      if (v?.kind === 'figure-set' && (m = /^그림에서 (정삼각형|이등변삼각형)[은는] 어느 것/.exec(p))) {
+        const 변들 = v.items.map((it) => { const t = it.points as 점[]; return [길이(t[0], t[1]), 길이(t[1], t[2]), 길이(t[2], t[0])]; });
+        const 맞음 = 변들.map(([x, y, z]) => (m![1] === '정삼각형' ? 같다(x, y) && 같다(y, z) : 같다(x, y) || 같다(y, z) || 같다(x, z)));
+        expect(맞음.filter(Boolean), p).toHaveLength(1);
+        맞다('삼각형고르기', a, v.items[맞음.indexOf(true)].name, p);
+      }
+      if (v?.kind === 'line-figure' && /두 선분이 서로 수직인 것은/.test(p)) {
+        const 직각 = v.items.map((it) => 직각이다(it.points[0], it.points[1], it.points[2]));
+        expect(직각.filter(Boolean), p).toHaveLength(1);
+        맞다('수직', a, v.items[직각.indexOf(true)].name, p);
+      }
+      if (v?.kind === 'figure-set' && (m = /^처음 도형을 (시계 방향|시계 반대 방향)으로 (\d+)°만큼 돌린 도형은/.exec(p))) {
+        const 처음 = v.items[0].rotate ?? 0;
+        const 바라는 = (처음 + (m[1] === '시계 방향' ? +m[2] : 360 - +m[2])) % 360;
+        const 맞음 = v.items.slice(1).filter((it) => (it.rotate ?? 0) % 360 === 바라는 && !it.flip);
+        맞다('돌리기', a, 맞음.length === 1 ? 맞음[0].name : '없습니다', p);
+      }
+      if (v?.kind === 'figure-set' && /선대칭도형입니다\. 대칭축은 모두 몇 개/.test(p)) 맞다('대칭축', 수(a), 대칭축수(v.items[0].points as 점[]), p);
+      if (v?.kind === 'circles' && /^그림에서 원의 (지름|반지름)/.test(p)) { const r = v.circles[0].r; 맞다('원그림', 수(a), /지름은/.test(p) && !/반지름/.test(p) ? 2 * r : r, p); }
+      if (v?.kind === 'circles' && /맞닿게 한 줄로 놓고 둘레에 꼭 맞는 직사각형/.test(p)) 맞다('원이어붙이기', 수(a), v.rect!.w, p);
+      if (v?.kind === 'marble-bag' && (m = /(\S+) 공이 나올 가능성을 (말로|수로)/.exec(p))) {
+        const 색 = { 빨간: 'red', 파란: 'blue', 노란: 'yellow', 초록: 'green' }[m[1]]!;
+        const 공 = v.bags[0].marbles;
+        const k = 공.filter((c) => c === 색).length;
+        const n = 공.length;
+        const 말 = k === 0 ? '불가능하다' : k === n ? '확실하다' : k * 2 === n ? '반반이다' : k * 2 < n ? '~아닐 것 같다' : '~일 것 같다';
+        맞다('가능성', a, m[2] === '말로' ? 말 : k === 0 ? '0' : k === n ? '1' : '1/2', p);
+      }
+      if (v?.kind === 'marble-bag' && (m = /(\S+) 공을 꺼낼 가능성이 더 큰 주머니/.exec(p))) {
+        const 색 = { 빨간: 'red', 파란: 'blue', 노란: 'yellow', 초록: 'green' }[m[1]]!;
+        const 몫 = v.bags.map((b) => b.marbles.filter((c) => c === 색).length / b.marbles.length);
+        맞다('가능성견주기', a, 몫[0] > 몫[1] ? '가' : '나', p);
+      }
+      if (v?.kind === 'partition' && (m = /색칠한 부분을 (대분수|가분수)로/.exec(p))) {
+        const d = v.figures[0].parts!;
+        const n = v.figures.reduce((s0, f) => s0 + f.shaded.length, 0);
+        const 대 = `${Math.floor(n / d)}${'영일이삼사오육칠팔구'[Math.floor(n / d)].match(/[일삼칠팔]/) ? '과' : '와'} ${n % d}/${d}`;
+        맞다('분수띠', a, m[1] === '가분수' ? `${n}/${d}` : 대, p);
+      }
+      if (v?.kind === 'ruler' && /^자에서 색칠한 부분은 1cm가 몇 번/.test(p)) 맞다('자그림', 수(a), v.highlightEnd - v.highlightStart, p);
+      if (v?.kind === 'pattern' && /빈칸에 알맞은 모양은/.test(p)) 맞다('무늬', a, v.items[v.missingIndex!], p);
       // ── 둘째 묶음
       if ((m = /^그림에서 (\S+?)[과와] (\S+?)[을를] 세어 보세요\. 어느 것이 더 (많을|적을)까요/.exec(p)) && q.visual?.kind === 'counters') {
         const [x, y] = q.visual.groups.map((g) => g.count);
@@ -216,7 +307,7 @@ describe('문제집을 늘리는 문항', () => {
   });
 
   it('늘린 문항이 모두 쓰입니다', () => {
-    const 바라는 = ['묶음낱개', '자릿값', '자리숫자', '나타내는값', '수읽기', '수쓰기', '뛰어세기', '두수비교', '세수비교', '사이개수', '만큼큰수', '계산', '세수계산', '더하기이야기', '빼기이야기', '차이야기', '네모식', '어떤수', '곱', '영일', '묶음이야기', '곱네모', '묶어세기', '같은수더하기', '곱셈식으로', '몇배', '빈묶음', '곱셈표', 'm를cm로', 'cm를m로', '길이합차', '눈금사이', '일센티', '어림', '같은단위', '다른단위', '바늘읽기', '몇분전', '시간을분', '분을시간', '끝난시각', '걸린분', '하루', '오전오후', '주일', '요일', '정각반읽기', '짧은바늘', '표가장', '표모두', '표차', '표빈칸', '분류모두', '분류차', '수배열', '반복모양', '덧셈표', '늘어나는쌓기', '버스', '꼭짓점합', '칠교', '층쌓기', '견주기', '몇째', '모으기', '가르기', '그림세기', '모양견주기', '몇백', '몇백거꾸로', '백씩', '몫곱셈', '지름', '반지름', '정다각형둘레', '정다각형한변', '어림거꾸로', '원주', '원주로지름', '원넓이', '구지름', '구반지름', '원뿔앞', '정육면체합', '정육면체한모서리', '그림둘견주기', '만큼거꾸로', '모으기거꾸로', '십채우기', '묶음낱개이야기', '묶어세기이야기', '곱셈표세기', '덧셈표세기', '길이견주기', '색반복', '분수로', 'mm로', 'm로', '나눗셈', '컴퍼스', '각도거꾸로', '각도계산', '예각둔각', '최대공약수생활', '최소공배수생활', '같은분수', 'm²', 'km²'];
+    const 바라는 = ['묶음낱개', '자릿값', '자리숫자', '나타내는값', '수읽기', '수쓰기', '뛰어세기', '두수비교', '세수비교', '사이개수', '만큼큰수', '계산', '세수계산', '더하기이야기', '빼기이야기', '차이야기', '네모식', '어떤수', '곱', '영일', '묶음이야기', '곱네모', '묶어세기', '같은수더하기', '곱셈식으로', '몇배', '빈묶음', '곱셈표', 'm를cm로', 'cm를m로', '길이합차', '눈금사이', '일센티', '어림', '같은단위', '다른단위', '바늘읽기', '몇분전', '시간을분', '분을시간', '끝난시각', '걸린분', '하루', '오전오후', '주일', '요일', '정각반읽기', '짧은바늘', '표가장', '표모두', '표차', '표빈칸', '분류모두', '분류차', '수배열', '반복모양', '덧셈표', '늘어나는쌓기', '버스', '꼭짓점합', '칠교', '층쌓기', '견주기', '몇째', '모으기', '가르기', '그림세기', '모양견주기', '몇백', '몇백거꾸로', '백씩', '몫곱셈', '지름', '반지름', '정다각형둘레', '정다각형한변', '어림거꾸로', '원주', '원주로지름', '원넓이', '구지름', '구반지름', '원뿔앞', '정육면체합', '정육면체한모서리', '그림둘견주기', '만큼거꾸로', '모으기거꾸로', '십채우기', '묶음낱개이야기', '묶어세기이야기', '곱셈표세기', '덧셈표세기', '길이견주기', '색반복', '분수로', 'mm로', 'm로', '나눗셈', '컴퍼스', '각도거꾸로', '각도계산', '예각둔각', '최대공약수생활', '최소공배수생활', '같은분수', 'm²', 'km²', '사각형고르기', '사각형세기', '도형세기', '삼각형고르기', '수직', '돌리기', '대칭축', '원그림', '원이어붙이기', '가능성', '가능성견주기', '분수띠', '자그림', '무늬'];
     expect(바라는.filter((k) => !셈.get(k))).toEqual([]);
   });
 
