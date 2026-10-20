@@ -176,9 +176,6 @@ export function ScratchPad({
     <div className="scratch-pad" hidden={!open} aria-label="계산하는 곳">
       <div className="scratch-pad-head">
         <p className="scratch-pad-prompt"><MathText text={prompt} /></p>
-        <button type="button" className="scratch-close" onClick={() => { onTap?.(); onClose(); }}>
-          <X size={16} /> 접기
-        </button>
       </div>
 
       {/* 연필과 지우개는 지금 무엇을 쥐고 있는지 늘 보여야 하므로 글자를
@@ -232,6 +229,13 @@ export function ScratchPad({
           onPointerCancel={끝}
           onPointerLeave={끝}
         />
+      </div>
+
+      {/* 다 쓰고 나서 손이 가는 곳은 계산판의 아래쪽이라 접기 단추를 아래에 둡니다. */}
+      <div className="scratch-pad-foot">
+        <button type="button" className="scratch-close" onClick={() => { onTap?.(); onClose(); }}>
+          <X size={16} /> 접기
+        </button>
       </div>
     </div>
   );
