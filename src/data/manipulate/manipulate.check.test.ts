@@ -11,7 +11,7 @@ import { lessons51 } from '../curriculum51';
 import { lessons5 } from '../curriculum5';
 import { lessons61 } from '../curriculum61';
 import { curriculum62 } from '../curriculum62';
-import { 조작문항들, 조작섞기, 조작표, 고차표 } from './index';
+import { 조작문항들, 조작섞기, 조작표, 고차표, 임무이름표, 조작칭찬 } from './index';
 import { 채점, 처음상태, 정답모습, 도형살피기, 닫힌도형, 합동인가 } from './check';
 import type { ManipState } from './check';
 import { generateQuestions } from '../questionFactory';
@@ -1093,13 +1093,13 @@ describe('손 조작 문항', () => {
     }
   });
 
-  it('조작 문항을 섞어도 문항 수는 그대로이고 셋에 하나쯤입니다', () => {
+  it('조작 문항을 섞어도 문항 수는 그대로이고 둘에 하나쯤입니다', () => {
     const 차시 = lessons41.find((x) => x.unitNo === 4 && x.lessonNo === 4)!;
     const 원래 = generateQuestions(차시, '중');
     const 섞음 = 조작섞기(차시, '중', 원래);
     expect(섞음.length).toBe(원래.length);
     const 조작수 = 섞음.filter((q) => q.manipulate).length;
-    expect(조작수).toBeGreaterThanOrEqual(Math.floor(원래.length / 4));
+    expect(조작수).toBeGreaterThanOrEqual(Math.floor(원래.length / 2) - 1);
     expect(조작수).toBeLessThanOrEqual(Math.ceil(원래.length / 2));
   });
 });
@@ -1263,7 +1263,9 @@ describe('상 수준의 고차 문항', () => {
       const 처음 = 처음상태(m);
       expect(채점(m, 처음).ok, q.prompt).toBe(false);
       expect(JSON.stringify(처음), q.prompt).toBe(JSON.stringify(m.friend!.state));
-      expect(q.support.steps[0].startsWith('친구는'), q.prompt).toBe(true);
+      expect(m.friend!.who, q.prompt).toBeTruthy();
+      expect(q.support.steps[0].startsWith(m.friend!.who!), q.prompt).toBe(true);
+      expect(q.prompt, q.prompt).toContain(m.friend!.who!);
     }
   });
   it('고차표에 적은 차시는 상에서 조건에 맞는 답을 찾는 열린 문항이 나옵니다', () => {
@@ -1286,9 +1288,32 @@ describe('상 수준의 고차 문항', () => {
       }
     }
   });
-  it('상 문항의 대부분은 고차 문항(틀린 곳 고치기·조건에 맞는 답 찾기)입니다', () => {
-    const 고차 = 상.filter((q) => q.manipulate!.friend || (q.manipulate!.kind === 'number-line' && q.manipulate!.targets));
-    const 남은종류 = [...new Set(상.filter((q) => !고차.includes(q)).map((q) => q.manipulate!.kind))];
-    expect(고차.length / 상.length, `고차가 아닌 조작: ${남은종류.join(', ')}`).toBeGreaterThan(0.9);
+  it('상 문항은 모두 고차 문항(틀린 곳 고치기·조건에 맞는 답 찾기)입니다', () => {
+    // 이미 틀린 전개도를 고치는 조작은 그 자체로 오류를 고치는 문항입니다.
+    const 고차 = 상.filter((q) => { const m = q.manipulate!; return m.friend || (m.kind === 'number-line' && m.targets) || (m.kind === 'cube-net' && m.mode === 'move'); });
+    const 남은 = 상.filter((q) => !고차.includes(q)).map((q) => `${q.manipulate!.kind}: ${q.prompt}`);
+    expect(남은).toEqual([]);
+  });
+});
+
+describe('풀고 싶게: 임무 이름표와 칭찬', () => {
+  it('모든 조작 문항에 임무 이름표와 칭찬이 있고, 조사가 바르게 골라집니다', () => {
+    for (const q of 모두) {
+      const 임 = 임무이름표(q.manipulate!, q.difficulty);
+      const 칭 = 조작칭찬(q);
+      const 글 = `${임.이름} ${임.할일} ${칭.제목} ${칭.말}`;
+      expect(글, q.prompt).not.toMatch(/\((을|를|은|는|이|가|과|와|으)\)|undefined|NaN/);
+      expect(칭.별, q.prompt).toBe(q.difficulty === '상' ? 3 : q.difficulty === '중' ? 2 : 1);
+      if (q.manipulate!.friend) expect(칭.말, q.prompt).toContain(q.manipulate!.friend.who!);
+    }
+  });
+  it('열린 문항을 맞히면 조건에 맞는 수를 모두 보여 줍니다', () => {
+    for (const q of 모두.filter((x) => x.manipulate!.kind === 'number-line' && (x.manipulate as { targets?: number[] }).targets)) {
+      const 칭 = 조작칭찬(q);
+      expect(칭.말, q.prompt).toContain(q.answer.replace(/ 가운데 하나$/, ''));
+    }
+  });
+  it('1학년 문항의 이름표에는 수직선이라는 말이 없습니다', () => {
+    for (const q of 모두.filter((x) => x.lessonId.startsWith('1-'))) expect(임무이름표(q.manipulate!, q.difficulty).이름, q.prompt).not.toMatch(/수직선/);
   });
 });
