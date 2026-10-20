@@ -350,8 +350,10 @@ export const buildGrade5Questions = (
   // 뭉치가 넉넉하면(다섯 넘게) 가장 덜 바라는 뭉치는 첫 바퀴에서 한 문항만
   // 냅니다 — 하에 '어떤 수'가, 상에 '바로 계산'이 몰리지 않게.
   const 몫 = (family: G5Family, 바퀴: number) => {
-    // 셋째 바퀴는 낼 수 있는 문항이 적은 뭉치들 때문에 서른 자리가 모자랄 때만 돕니다.
-    if (바퀴 === 2) return mostPerFamily + 5;
+    // 셋째 바퀴부터는 낼 수 있는 문항이 적은 뭉치들 때문에 서른 자리가 모자랄 때만 돕니다.
+    if (바퀴 >= 4) return SLOTS_PER_LESSON;
+    if (바퀴 >= 3) return mostPerFamily * 2 + 5;
+    if (바퀴 >= 2) return mostPerFamily + 5;
     if (바퀴 > 0 || families.length <= 2) return mostPerFamily;
     const p = 선호.get(family)!;
     if (families.length >= 5 && p < 0.2) return 1;
@@ -359,8 +361,20 @@ export const buildGrade5Questions = (
     return Math.max(1, Math.round(mostPerFamily * (0.25 + 0.75 * p)));
   };
 
-  for (let 바퀴 = 0; 바퀴 < 3 && made.length < SLOTS_PER_LESSON; 바퀴 += 1) {
-    for (let round = 0; round < 200 && made.length < SLOTS_PER_LESSON; round += 1) {
+  // 상에는 바로 꺼내 답하는 지식형을, 하에는 따지고 거꾸로 생각하는 사고형을
+  // 내지 않습니다. 뭉치에 그 결의 후보밖에 없으면 그 뭉치는 그 수준에서 쉽니다.
+  // 자리가 모자라면 넷째·다섯째 바퀴에서 결이 맞는 뭉치에 몫을 더 주고(수만
+  // 다른 문항이 늘어납니다 — 수준에 맞지 않는 문항보다 낫습니다), 그래도 비면
+  // 여섯째 바퀴에서만 결을 가리지 않고 채웁니다.
+  const 결맞음 = (단계: 0 | 1 | 2, 바퀴: number) =>
+    바퀴 === 5 || (difficulty === '상' ? 단계 > 0 : difficulty === '하' ? 단계 < 2 : true);
+
+  for (let 바퀴 = 0; 바퀴 < 6 && made.length < SLOTS_PER_LESSON; 바퀴 += 1) {
+    // 몫을 늘려도 한 모양이 서른 자리를 다 차지하지는 않게 합니다.
+    const 모양몫 = 바퀴 >= 3 ? mostPerShape + 5 : mostPerShape;
+    // 스무 바퀴 내리 하나도 못 고르면 이 바퀴에서 더 나올 것이 없습니다.
+    for (let round = 0, 빈판 = 0; round < 200 && 빈판 < 20 && made.length < SLOTS_PER_LESSON; round += 1) {
+      const 앞 = made.length;
       for (const family of 도는차례) {
         if (made.length >= SLOTS_PER_LESSON) break;
         if ((familyCount.get(family.id) ?? 0) >= 몫(family, 바퀴)) continue;
@@ -383,7 +397,8 @@ export const buildGrade5Questions = (
           const 보이는것 = spec.visual ? `${spec.prompt}||${JSON.stringify(spec.visual)}` : key;
           if (seenPrompt.has(key) || seenPrompt.has(보이는것) || 후보.some((one) => one.값.key === key || one.값.보이는것 === 보이는것)) continue;
           const shape = shapeOfPrompt(spec.prompt);
-          if ((shapeCount.get(shape) ?? 0) >= mostPerShape) continue;
+          if ((shapeCount.get(shape) ?? 0) >= 모양몫) continue;
+          if (!결맞음(사고단계(spec), 바퀴)) continue;
           후보.push({ 단계: 사고단계(spec), 수: 수번거로움(spec), 값: { spec, key, 보이는것, shape } });
         }
         // 점수가 같은 후보끼리는 수준마다 다른 것을 고릅니다. 글만 있는 문항은
@@ -397,6 +412,7 @@ export const buildGrade5Questions = (
         shapeCount.set(고른.shape, (shapeCount.get(고른.shape) ?? 0) + 1);
         made.push(toQuestion(lesson, difficulty, made.length, 고른.spec));
       }
+      빈판 = made.length > 앞 ? 0 : 빈판 + 1;
     }
   }
 

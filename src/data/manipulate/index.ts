@@ -501,7 +501,13 @@ export const 수준갈래들 = (열쇠: string, difficulty: Difficulty): 조작�
   const 더하기 = (앞: 조작갈래[], 뒤: 조작갈래[], lv: 0 | 1 | 2) => [...앞, ...뒤.filter((g) => !앞.includes(g)).map((g) => 수준고정(g, lv))];
   // 하: 그 차시의 조작을 쉬운 수(하 수준)로 냅니다. 중 갈래도 하 수준의 수로 함께 써서
   // 조작 문항을 넉넉히 만듭니다.
-  if (difficulty === '하') return 하.length || 중.length ? 더하기(하, 중, 0) : 상.map((g) => 수준고정(g, 0));
+  // 다만 중에서 빌려 온 갈래가 쉬운 수로도 따져야 풀리는 사고형(결 2)이면 하에서는 내지 않습니다
+  // (가장 적게 쌓기, 성질로 꼭짓점 찾기 같은 것). 하 갈래가 없을 때는 그 차시의 조작이 그것뿐이라 그대로 씁니다.
+  if (difficulty === '하') {
+    if (!하.length && !중.length) return 상.map((g) => 수준고정(g, 0));
+    const 빌린것 = 중.filter((g) => !하.includes(g)).map((g) => 수준고정(g, 0));
+    return 하.length ? [...하, ...빌린것.map(사고형빼기)] : 빌린것;
+  }
   // 중: 그대로 해 보기만 하면 되는 조작은 수가 커도 중에서 냅니다. 상 갈래의
   // 그대로 하는 문항(큰 수·조건 여럿)을 중으로 내립니다.
   if (difficulty === '중') return 더하기(중.length ? 중 : 하.map((g) => 수준고정(g, 1)), 상, 2);
@@ -509,6 +515,9 @@ export const 수준갈래들 = (열쇠: string, difficulty: Difficulty): 조작�
   const 바탕 = 상.length ? 상 : 중.length ? 중 : 하;
   return [...(고차표[열쇠] ?? []), ...바탕.map(고쳐보기), ...(상.length ? 중.filter((g) => !상.includes(g)).map((g) => 고쳐보기(수준고정(g, 2))) : [])];
 };
+
+/** 사고형(결 2) 문항을 내지 않는 갈래로 바꿉니다. */
+const 사고형빼기 = (g: 조작갈래): 조작갈래 => ({ id: g.id, make: (seed, lv) => { const t = g.make(seed, lv); return t && t.결 === 2 ? null : t; } });
 
 /** 갈래를 정해 둔 수준의 수와 조건으로 냅니다(다른 수준에서 쓸 때). 같은 갈래라도 id가 같아 문항이 겹치지 않게 수준을 붙입니다. */
 const 수준고정 = (g: 조작갈래, lv: 0 | 1 | 2): 조작갈래 => ({ id: `${g.id}@${lv}`, make: (seed) => g.make(seed, lv) });
