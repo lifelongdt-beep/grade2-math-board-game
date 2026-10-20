@@ -301,8 +301,9 @@ type 조작본 =
 /**
  * 조작 문항입니다. friend가 있으면 친구가 먼저 해 둔(틀린) 모습에서 시작하고,
  * 아이는 틀린 곳을 찾아 고칩니다. state의 모양은 채점 상태(ManipState)와 같습니다.
+ * who·emoji는 실수를 해 둔 동물 친구의 이름과 그림입니다.
  */
-export type Manipulation = 조작본 & { friend?: { state: object } };
+export type Manipulation = 조작본 & { friend?: { state: object; who?: string; emoji?: string } };
 
 
 export type Walkthrough =
