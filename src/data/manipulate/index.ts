@@ -1,6 +1,7 @@
 import type { Difficulty, Lesson, Question } from '../../types';
 import { 조작문항, type 조작갈래 } from './common';
 import { 고쳐보기 } from './higher';
+export { 임무이름표, 조작칭찬 } from './fun';
 import { 사이수, 식조건, 곱셈구구범위, 나머지수, 어림거꾸로, 범위수, 배수약수, 분수소수사이, 목표수 } from './open';
 import { 자로재기, 자로긋기, 컴퍼스, 몇시, 몇시반, 몇분, 몇분전, 지난시각 } from './measure';
 import {
@@ -495,10 +496,22 @@ export const 조작표: Record<string, 수준갈래> = {
  * 스스로 찾는 열린 문항을 앞에 둡니다.
  */
 export const 수준갈래들 = (열쇠: string, difficulty: Difficulty): 조작갈래[] => {
-  const 갈래 = 조작표[열쇠]?.[difficulty] ?? [];
-  if (difficulty !== '상') return 갈래;
-  return [...(고차표[열쇠] ?? []), ...갈래.map(고쳐보기)];
+  const 표 = 조작표[열쇠] ?? {};
+  const [하, 중, 상] = [표.하 ?? [], 표.중 ?? [], 표.상 ?? []];
+  const 더하기 = (앞: 조작갈래[], 뒤: 조작갈래[], lv: 0 | 1 | 2) => [...앞, ...뒤.filter((g) => !앞.includes(g)).map((g) => 수준고정(g, lv))];
+  // 하: 그 차시의 조작을 쉬운 수(하 수준)로 냅니다. 중 갈래도 하 수준의 수로 함께 써서
+  // 조작 문항을 넉넉히 만듭니다.
+  if (difficulty === '하') return 하.length || 중.length ? 더하기(하, 중, 0) : 상.map((g) => 수준고정(g, 0));
+  // 중: 그대로 해 보기만 하면 되는 조작은 수가 커도 중에서 냅니다. 상 갈래의
+  // 그대로 하는 문항(큰 수·조건 여럿)을 중으로 내립니다.
+  if (difficulty === '중') return 더하기(중.length ? 중 : 하.map((g) => 수준고정(g, 1)), 상, 2);
+  // 상: 같은 조작이라도 고차적 사고가 있어야 풀리는 문항만 냅니다.
+  const 바탕 = 상.length ? 상 : 중.length ? 중 : 하;
+  return [...(고차표[열쇠] ?? []), ...바탕.map(고쳐보기), ...(상.length ? 중.filter((g) => !상.includes(g)).map((g) => 고쳐보기(수준고정(g, 2))) : [])];
 };
+
+/** 갈래를 정해 둔 수준의 수와 조건으로 냅니다(다른 수준에서 쓸 때). 같은 갈래라도 id가 같아 문항이 겹치지 않게 수준을 붙입니다. */
+const 수준고정 = (g: 조작갈래, lv: 0 | 1 | 2): 조작갈래 => ({ id: `${g.id}@${lv}`, make: (seed) => g.make(seed, lv) });
 
 /** 상 수준에 더하는 고차 문항(조건 만족·거꾸로·열린 답)입니다. */
 export const 고차표: Record<string, 조작갈래[]> = {
@@ -571,17 +584,18 @@ export const 조작문항들 = (lesson: Lesson, difficulty: Difficulty, n: numbe
 };
 
 /**
- * 고르는 문항 사이에 조작 문항을 끼웁니다. 문항 수는 그대로 두고 셋에
+ * 고르는 문항 사이에 조작 문항을 끼웁니다. 문항 수는 그대로 두고 둘에
  * 하나쯤을 바꿉니다. 조작 문항이 없는 차시는 그대로 돌려줍니다.
  */
 export const 조작섞기 = (lesson: Lesson, difficulty: Difficulty, questions: Question[]): Question[] => {
   if (!questions.length) return questions;
-  const 몫 = Math.max(1, Math.round(questions.length / 3));
+  // 둘에 하나를 손으로 조작하는 문항으로 바꿉니다(조작 문항이 모자라면 있는 만큼).
+  const 몫 = Math.max(1, Math.round(questions.length / 2));
   const 조작 = 조작문항들(lesson, difficulty, 몫);
   if (!조작.length) return questions;
   const out = [...questions];
   조작.forEach((q, k) => {
-    const at = Math.min(out.length - 1, 1 + k * 3);
+    const at = Math.min(out.length - 1, 1 + k * 2);
     out[at] = q;
   });
   return out;
