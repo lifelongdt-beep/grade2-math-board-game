@@ -1284,7 +1284,7 @@ describe('상 수준의 고차 문항', () => {
     const 한칸차이 = /눈금을 한 칸 (잘못|더) 세어|하나를 (덜|더) 세어|^\S+[은는] 거꾸로 늘어놓았|가장 낮은 자리 모형을 하나 더|줄의 수를 하나|한 접시를 덜|한 칸 어긋나게|막대를 눈금 한 칸만큼|앞줄 쌓기나무를 빠뜨|칸을 하나 잘못 세어 바로 옆|첫 눈금을 0이 아니라|첫 접시에|옆면 하나를 빠뜨|층수를 잘못 세었/;
     const 친구 = 상.filter((q) => q.manipulate!.friend);
     const 쉬운 = 친구.filter((q) => 한칸차이.test(q.support.steps[0]));
-    expect(쉬운.length / 친구.length).toBeLessThan(0.15);
+    expect(쉬운.length / 친구.length).toBeLessThan(0.08);
   });
   it('고차표에 적은 차시는 상에서 조건에 맞는 답을 찾는 열린 문항이 나옵니다', () => {
     const 빈: string[] = [];
