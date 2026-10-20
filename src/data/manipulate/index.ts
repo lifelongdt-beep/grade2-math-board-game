@@ -562,11 +562,11 @@ export const 고차표: Record<string, 조작갈래[]> = {
 };
 
 /** 이 차시·수준에서 만들 수 있는 조작 문항을 n개까지 만듭니다. */
-export const 조작문항들 = (lesson: Lesson, difficulty: Difficulty, n: number, 씨앗 = 0): Question[] => {
+export const 조작문항들 = (lesson: Lesson, difficulty: Difficulty, n: number, 씨앗 = 0, 앞에낸것?: Set<string>): Question[] => {
   const 갈래 = 수준갈래들(`${lesson.semester} ${lesson.unitNo}-${lesson.lessonNo}`, difficulty);
   if (!갈래.length || n <= 0) return [];
   const out: Question[] = [];
-  const 본글 = new Set<string>();
+  const 본글 = new Set<string>(앞에낸것);
   // 같은 갈래를 여러 차시에서 써도 차시마다 다른 문항이 나오도록 씨앗을 차시에 따라 비킵니다.
   let seed = 1 + 씨앗 + lesson.unitNo * 97 + lesson.lessonNo * 13;
   // 칸마다 갈래를 차례로 돌려 씁니다. 한 갈래가 문항을 못 만들면(조건이
@@ -577,7 +577,9 @@ export const 조작문항들 = (lesson: Lesson, difficulty: Difficulty, n: numbe
       const g = 갈래[(k + 차례) % 갈래.length];
       let 만듦: Question | null = null;
       for (let 시도 = 0; 시도 < 60 && !만듦; 시도 += 1, seed += 1) {
-        const t = g.make(seed * 7919 + difficulty.charCodeAt(0), ({ 하: 0, 중: 1, 상: 2 } as const)[difficulty]);
+        // 씨앗에 따라 조작을 만들지 못하고 멈추는 갈래가 있어도 그 씨앗만 건너뜁니다.
+        let t: ReturnType<typeof g.make> = null;
+        try { t = g.make(seed * 7919 + difficulty.charCodeAt(0), ({ 하: 0, 중: 1, 상: 2 } as const)[difficulty]); } catch { t = null; }
         if (!t) continue;
         const q = 조작문항(lesson, difficulty, g.id, seed, t);
         // 같은 문항이 되풀이되지 않게 글과 조작 내용을 함께 봅니다.
@@ -596,11 +598,24 @@ export const 조작문항들 = (lesson: Lesson, difficulty: Difficulty, n: numbe
  * 고르는 문항 사이에 조작 문항을 끼웁니다. 문항 수는 그대로 두고 둘에
  * 하나쯤을 바꿉니다. 조작 문항이 없는 차시는 그대로 돌려줍니다.
  */
-export const 조작섞기 = (lesson: Lesson, difficulty: Difficulty, questions: Question[]): Question[] => {
+// 판마다 낸 조작 문항의 열쇠입니다(차시·수준·판).
+const 판에서낸조작 = new Map<string, Set<string>>();
+const 조작열쇠 = (q: Question) => `${q.prompt}|${JSON.stringify(q.manipulate)}`;
+
+export const 조작섞기 = (lesson: Lesson, difficulty: Difficulty, questions: Question[], 판 = 0): Question[] => {
   if (!questions.length) return questions;
   // 둘에 하나를 손으로 조작하는 문항으로 바꿉니다(조작 문항이 모자라면 있는 만큼).
+  // 판마다 씨앗을 비켜 같은 조작에 다른 수가 들어가게 합니다.
   const 몫 = Math.max(1, Math.round(questions.length / 2));
-  const 조작 = 조작문항들(lesson, difficulty, 몫);
+  // 뒤 판은 앞 판들에서 낸 조작 문항을 피합니다.
+  const 앞에낸것 = new Set<string>();
+  for (let 앞판 = 0; 앞판 < 판; 앞판 += 1) {
+    const 열쇠 = `${lesson.id}|${difficulty}|${앞판}`;
+    if (!판에서낸조작.has(열쇠)) 판에서낸조작.set(열쇠, new Set(조작문항들(lesson, difficulty, 몫, 앞판 * 100003, new Set(앞에낸것)).map(조작열쇠)));
+    for (const k of 판에서낸조작.get(열쇠)!) 앞에낸것.add(k);
+  }
+  const 조작 = 조작문항들(lesson, difficulty, 몫, 판 * 100003, 앞에낸것);
+  판에서낸조작.set(`${lesson.id}|${difficulty}|${판}`, new Set(조작.map(조작열쇠)));
   if (!조작.length) return questions;
   const out = [...questions];
   조작.forEach((q, k) => {

@@ -365,6 +365,9 @@ const spaceOutRepeats = (questions: Question[], gap: number): Question[] => {
   return placed;
 };
 
+// 문제집에 이어 붙이는 판의 수입니다. 한 판이 차시마다 서른 문항쯤이고 뒤 판은 앞 판에 없던 문항만 내므로, 일곱 판이면 차시마다 백오십 문항쯤 됩니다.
+const 문제판수 = 7;
+
 const buildScopedQuestions = (
   lessons: Lesson[],
   difficulty: Difficulty,
@@ -376,7 +379,30 @@ const buildScopedQuestions = (
   // generateQuestions 안에서 조용히 무시합니다. 단원 도입 차시는 앞 단원
   // 종합 문제로 바뀝니다(generateClassQuestions).
   // 차시마다 셋에 하나쯤은 보기를 고르지 않고 손으로 조작하는 문항으로 바꿉니다.
-  const questions = lessons.flatMap((sourceLesson) => 조작섞기(sourceLesson, difficulty, generateClassQuestions(sourceLesson, difficulty, { castleDans })));
+  // 판을 여러 벌 이어 붙입니다. 판마다 같은 틀에 다른 수가 들어가므로, 한
+  // 판(차시마다 서른 문항쯤)을 다 풀어도 바로 같은 문제가 되풀이되지 않습니다.
+  // 판끼리 우연히 같은 문항은 한 번만 둡니다.
+  const 본 = new Set<string>();
+  // 여러 차시를 함께 고르면 한 판만으로도 문제집이 넉넉하므로, 문제집이
+  // 백오십 문항쯤 되는 데까지만 판을 더합니다(만드는 시간을 아낍니다).
+  const 판수 = Math.max(1, Math.min(문제판수, Math.ceil(문제판수 / Math.max(1, lessons.length))));
+  const questions = Array.from({ length: 판수 }, (_, 판) =>
+    lessons.flatMap((sourceLesson) => {
+      // 처음 판은 검사를 모두 거친 판이라 그대로 씁니다. 뒤 판에서 문항을 만들다
+      // 멈추는 일이 생기면 그 차시의 그 판만 건너뛰고 수업은 이어 갑니다.
+      if (판 === 0) return 조작섞기(sourceLesson, difficulty, generateClassQuestions(sourceLesson, difficulty, { castleDans }), 0);
+      try {
+        return 조작섞기(sourceLesson, difficulty, generateClassQuestions(sourceLesson, difficulty, { castleDans, 판 }), 판);
+      } catch {
+        return [];
+      }
+    }),
+  ).flat().filter((q) => {
+    const 열쇠 = `${q.lessonId}|${q.prompt}|${q.answer}|${JSON.stringify(q.visual ?? null)}|${JSON.stringify(q.manipulate ?? null)}`;
+    if (본.has(열쇠)) return false;
+    본.add(열쇠);
+    return true;
+  });
 
   // 한 차시를 고른 경우에도 순서를 섞습니다. 섞지 않으면 수업을 다시 해도
   // 늘 같은 순서로 나와 학생이 순서를 외워 버립니다.
@@ -708,14 +734,17 @@ function App() {
   const toggleAllCastleDans = () => {
     setCastleDans((prev) => (prev.length === ALL_CASTLE_DEFENSE_DANS.length ? [] : ALL_CASTLE_DEFENSE_DANS));
   };
-  const questionBanks = useMemo<Record<Difficulty, Question[]>>(
-    () => ({
-      하: buildScopedQuestions(scopedLessons, '하', reviewScope, bankSeed, castleDans),
-      중: buildScopedQuestions(scopedLessons, '중', reviewScope, bankSeed, castleDans),
-      상: buildScopedQuestions(scopedLessons, '상', reviewScope, bankSeed, castleDans),
-    }),
-    [bankSeed, reviewScope, scopedLessons, castleDans],
-  );
+  // 판을 여러 벌 만들면 시간이 걸리므로, 수준마다 처음 꺼낼 때 한 번만 만듭니다.
+  // 하에서 시작한 학생이 상에 오르기 전에는 상 문제집을 만들지 않습니다.
+  const questionBanks = useMemo<Record<Difficulty, Question[]>>(() => {
+    const 만든것: Partial<Record<Difficulty, Question[]>> = {};
+    const 꺼내기 = (level: Difficulty) => (만든것[level] ??= buildScopedQuestions(scopedLessons, level, reviewScope, bankSeed, castleDans));
+    return {
+      get 하() { return 꺼내기('하'); },
+      get 중() { return 꺼내기('중'); },
+      get 상() { return 꺼내기('상'); },
+    };
+  }, [bankSeed, reviewScope, scopedLessons, castleDans]);
   const [remainingSeconds, setRemainingSeconds] = useState<SessionDuration | number>(sessionDuration);
   const [playerStates, setPlayerStates] = useState<Record<number, PlayerQuestionState>>(() => createQuestionState(players, undefined, checkLevel));
   const [records, setRecords] = useState<AnswerRecord[]>([]);

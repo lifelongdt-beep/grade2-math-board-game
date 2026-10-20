@@ -63,8 +63,8 @@ export const grade11FamiliesFor = (lesson: Lesson, difficulty: Difficulty): G5Fa
 };
 
 /** 1학년 1학기 차시의 문항입니다. 그 차시가 아니면 null입니다. */
-export const generateGrade11Questions = (lesson: Lesson, difficulty: Difficulty): Question[] | null => {
+export const generateGrade11Questions = (lesson: Lesson, difficulty: Difficulty, 판 = 0): Question[] | null => {
   const families = grade11FamiliesFor(lesson, difficulty);
   if (!families) return null;
-  return buildGrade5Questions(lesson, difficulty, families);
+  return buildGrade5Questions(lesson, difficulty, families, 판);
 };
