@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
-import type { GridPoint, GridSegment, Manipulation } from '../types';
+import type { Difficulty, GridPoint, GridSegment, Manipulation } from '../types';
 import type { ManipResult, ManipState } from '../data/manipulate/check';
 import { 길이말, 시각말, 자여백, 정답모습, 채점, 처음상태 } from '../data/manipulate/check';
 import { resolveParticles } from '../data/grade5/util';
 import { StackIsoPicture } from './StackIso';
 import { 앞에서본, 옆에서본, 옆면가로 } from '../data/manipulate/check';
 import { 그림그래프, 규칙채우기, 나누어담기, 눈금, 달력, 순서놓기, 점배열 } from './ManipulateMore';
+import { 임무이름표 } from '../data/manipulate/fun';
 
 // ════════════════════════════════════════════════════════════════════
 // 손으로 조작해서 답하는 문항
@@ -1145,6 +1146,8 @@ const 도움말 = (m: Manipulation): string => {
 
 export interface ManipulateTaskProps {
   m: Manipulation;
+  /** 임무 이름표에 '도전'을 붙일지 정합니다. */
+  difficulty?: Difficulty;
   locked: boolean;
   /** 틀린 뒤입니다. 바른 모습을 겹쳐 보여 줍니다. */
   reveal: boolean;
@@ -1153,7 +1156,8 @@ export interface ManipulateTaskProps {
   tip?: string;
 }
 
-export function ManipulateTask({ m, locked, reveal, onSubmit, onTap, tip }: ManipulateTaskProps) {
+export function ManipulateTask({ m, difficulty = '중', locked, reveal, onSubmit, onTap, tip }: ManipulateTaskProps) {
+  const 임무 = 임무이름표(m, difficulty);
   const [s, setS] = useState<ManipState>(() => 처음상태(m));
   const [도움, set도움] = useState(false);
   useEffect(() => { setS(처음상태(m)); set도움(false); }, [m]);
@@ -1187,7 +1191,12 @@ export function ManipulateTask({ m, locked, reveal, onSubmit, onTap, tip }: Mani
   const 되돌림 = s.kind === 'grid-draw' && s.segs.length > 0;
   return (
     <div className={`manip-task manip-kind-${m.kind}`} onPointerDown={() => onTap?.()}>
-      {m.friend && !reveal && <p className="manip-friend">🧐 친구가 해 둔 모습이에요. 틀린 곳을 찾아 고친 다음 확인을 눌러요.</p>}
+      {!reveal && (
+        <p className={`manip-mission ${m.friend || (m.kind === 'number-line' && m.targets) || (m.kind === 'cube-net' && m.mode === 'move') ? 'manip-mission-challenge' : ''}`}>
+          <span className="manip-mission-badge"><span aria-hidden="true">{임무.emoji}</span>{임무.이름}</span>
+          <span>{임무.할일}</span>
+        </p>
+      )}
       <div className="manip-stage">{화면}</div>
       {도움 && !reveal && <p className="manip-help-line">💡 {resolveParticles(도움말(m))}</p>}
       {reveal && tip && <p className="manip-tip">{resolveParticles(tip)}</p>}
@@ -1200,7 +1209,7 @@ export function ManipulateTask({ m, locked, reveal, onSubmit, onTap, tip }: Mani
           <button type="button" onClick={() => set({ ...s, segs: s.segs.slice(0, -1) })}>↶ 한 선 지우기</button>
         )}
         {!locked && (
-          <button type="button" onClick={() => setS(처음상태(m))}>{m.friend ? '친구 것으로 되돌리기' : '처음부터'}</button>
+          <button type="button" onClick={() => setS(처음상태(m))}>{m.friend ? `${m.friend.who ?? '친구'} 것으로 되돌리기` : '처음부터'}</button>
         )}
         {!locked && (
           <button type="button" className="manip-submit" onClick={() => onSubmit(채점(m, s))}>확인</button>

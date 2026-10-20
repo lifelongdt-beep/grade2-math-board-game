@@ -60,7 +60,7 @@ import { MathText } from './components/MathText';
 import { CastleDefenseScene } from './components/CastleDefenseScene';
 import { InteractiveHintModal } from './components/InteractiveHintModal';
 import { ManipulateTask } from './components/Manipulate';
-import { 조작섞기 } from './data/manipulate';
+import { 조작섞기, 조작칭찬 } from './data/manipulate';
 import { 답전까지걸음 } from './data/hintUpgrade';
 import type { ManipResult } from './data/manipulate/check';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
@@ -2366,6 +2366,17 @@ function App() {
                       {state.feedback === 'correct' && (
                         <div className="student-feedback correct-feedback">
                           <strong><CheckCircle2 size={18} /> 정답</strong>
+                          {/* 조작 문항은 임무에 맞춘 칭찬과 별로 해낸 것을 알려 줍니다. */}
+                          {question.manipulate && (() => {
+                            const 칭찬 = 조작칭찬(question);
+                            return (
+                              <div className="manip-cheer" aria-live="polite">
+                                <span className="manip-cheer-stars" aria-label={`별 ${칭찬.별}개`}>{'★'.repeat(칭찬.별)}<span className="dim">{'★'.repeat(3 - 칭찬.별)}</span></span>
+                                <b>{칭찬.제목}</b>
+                                <span>{칭찬.말}</span>
+                              </div>
+                            );
+                          })()}
                           <button type="button" onClick={() => nextForPlayer(player)}>다음 문제</button>
                         </div>
                       )}
@@ -2417,6 +2428,7 @@ function App() {
                           <ManipulateTask
                             key={`${player.id}-${question.id}-${state.answered}`}
                             m={question.manipulate}
+                            difficulty={question.difficulty}
                             locked={state.locked}
                             reveal={state.feedback === 'explain'}
                             tip={manipTips[player.id]}

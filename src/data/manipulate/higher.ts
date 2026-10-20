@@ -241,7 +241,13 @@ export const 친구실수 = (m: Manipulation, seed = 0): 실수 | null => {
   return null;
 };
 
-/** 갈래의 문항을 '친구가 틀리게 해 둔 것을 고치기'로 바꿉니다. 고칠 실수를 만들 수 없는 조작이면 그대로 둡니다. */
+/** 실수를 해 둔 동물 친구들입니다. 아이는 친구의 실수를 찾아 고쳐 주는 '실수 탐정'이 됩니다. */
+export const 동물친구들: { 이름: string; emoji: string }[] = [
+  { 이름: '곰돌이', emoji: '🐻' }, { 이름: '토끼', emoji: '🐰' }, { 이름: '다람쥐', emoji: '🐿️' },
+  { 이름: '여우', emoji: '🦊' }, { 이름: '판다', emoji: '🐼' }, { 이름: '펭귄', emoji: '🐧' },
+];
+
+/** 갈래의 문항을 '친구가 틀리게 해 둔 것을 고치기'로 바꿉니다. 고칠 실수를 만들 수 없으면 null을 돌려 다른 씨앗을 쓰게 합니다. */
 export const 고쳐보기 = (g: 조작갈래): 조작갈래 => ({
   id: `fix-${g.id}`,
   make: (seed, lv) => {
@@ -250,16 +256,21 @@ export const 고쳐보기 = (g: 조작갈래): 조작갈래 => ({
     if (t.manipulate.friend) return t;
     const 갈래실수 = (t.실수 ?? []).find((x) => !채점(t.manipulate, x.state as ManipState).ok);
     const 실 = 갈래실수 ? { state: 갈래실수.state as ManipState, 말: 갈래실수.말 } : 친구실수(t.manipulate, seed);
-    if (!실) return t;
+    if (!실) {
+      // 이미 틀린 모습을 고치는 조작(정육면체 전개도 고치기)은 그대로 고차 문항입니다.
+      // 그 밖에 고칠 실수를 만들 수 없으면 이 씨앗은 버리고 다른 문항을 만듭니다.
+      return t.manipulate.kind === 'cube-net' && t.manipulate.mode === 'move' ? { ...t, 결: 2 } : null;
+    }
+    const 친구 = 동물친구들[seed % 동물친구들.length];
     const 고침: 조작틀 = {
       ...t,
-      prompt: `${t.prompt} 그런데 친구가 먼저 해 둔 것이 틀렸어요. 친구가 무엇을 잘못했는지 찾아 바르게 고쳐 보세요.`,
-      manipulate: { ...t.manipulate, friend: { state: 실.state } },
+      prompt: `${t.prompt} 그런데 ${친구.이름}이(가) 먼저 해 둔 것이 틀렸어요. ${친구.이름}이(가) 무엇을 잘못했는지 찾아 바르게 고쳐 주세요.`,
+      manipulate: { ...t.manipulate, friend: { state: 실.state, who: 친구.이름, emoji: 친구.emoji } },
       strategy: `틀린 곳 찾아 고치기(${t.strategy})`,
-      hint: `친구가 한 것을 문제의 조건과 하나씩 맞추어 보세요. ${t.hint}`,
-      steps: [`친구는 ${실.말}`, ...t.steps] as 조작틀['steps'],
+      hint: `${친구.이름}이(가) 한 것을 문제의 조건과 하나씩 맞추어 보세요. ${t.hint}`,
+      steps: [`${친구.이름}은(는) ${실.말}`, ...t.steps] as 조작틀['steps'],
       misconception: `${실.말} ${t.misconception}`,
-      selfCheck: '친구가 한 것 가운데 맞는 부분과 틀린 부분을 나누어 말할 수 있나요?',
+      selfCheck: `${친구.이름}이(가) 한 것 가운데 맞는 부분과 틀린 부분을 나누어 말할 수 있나요?`,
       결: 2,
     };
     return 고침;
