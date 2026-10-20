@@ -107,9 +107,12 @@ function 자로재기({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipu
     const dx = svg좌표(ref.current, e)[0] - d.x0;
     if (Math.abs(dx) > 4) d.moved = true;
     if (!d.moved) return;
-    const at = Math.round(d.at0 + dx / MM);
+    // 1 mm씩 붙으면 손가락으로 맞추기가 너무 까다로워 2 mm(0.2 cm)씩 붙입니다.
+    // 칸은 물건의 왼쪽 끝에서부터 세므로, 0 눈금을 끝에 맞추는 자리는 늘 칸 위에 있습니다.
+    const 칸 = 2;
     const 가장 = Math.round((판폭 - 20) / MM);
-    set({ ...s, rulerAt: Math.max(-m.rulerCm * 5, Math.min(가장, at)) });
+    const 안 = Math.max(-m.rulerCm * 5, Math.min(가장, d.at0 + dx / MM));
+    set({ ...s, rulerAt: m.objectStartMm + Math.round((안 - m.objectStartMm) / 칸) * 칸 });
   };
   const up = (e: ReactPointerEvent) => {
     const d = 끌기.current;
