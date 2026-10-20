@@ -2,6 +2,7 @@ import type { ConceptTag, Difficulty, LearningSupport, Lesson, Question, Questio
 import { parse as parseFraction } from './fraction';
 import { rand, resolveParticles } from './util';
 import { deriveWalkthrough } from '../walkthrough';
+import { 늘림뭉치 } from '../expand';
 import { 난도점수, 뭉치선호, 사고단계, 수번거로움, 후보고르기 } from './levelPick';
 import { 수준뭉치 } from '../levels';
 import {
@@ -313,18 +314,22 @@ export const buildGrade5Questions = (
   // 몇째 판인지입니다. 판마다 씨앗을 바꾸어 같은 틀에 다른 수가 들어간
   // 문항 서른 개를 새로 만듭니다(0이 처음 판).
   판 = 0,
+  // 앞 판을 어디서부터 셀지입니다. 2학년은 처음 판을 2학년 생성기가 만들고
+  // 이 뭉치는 둘째 판부터 쓰므로 1을 넘겨줍니다.
+  시작판 = 0,
 ): Question[] => {
   if (!families.length) return [];
   // 수준마다 덧붙이는 문항 뭉치(levels/)입니다. 상에는 사고력 문항을,
   // 하에는 단순한 지식 문항을 더합니다.
-  families = [...families, ...수준뭉치(lesson, difficulty)];
+  // 둘째 판부터는 문제집을 늘리는 뭉치(expand/)를 더합니다. 2학년은 2학년 경로가 따로 넘겨줍니다.
+  families = [...families, ...수준뭉치(lesson, difficulty), ...(판 && !lesson.semester.startsWith('2') ? 늘림뭉치(lesson, difficulty) : [])];
 
   const made: Question[] = [];
   const seenPrompt = new Set<string>();
   // 뒤 판은 앞 판들에서 낸 문항을 피합니다. 그래야 판마다 새 수, 새 답이 나옵니다.
-  for (let 앞판 = 0; 앞판 < 판; 앞판 += 1) {
+  for (let 앞판 = 시작판; 앞판 < 판; 앞판 += 1) {
     const 열쇠 = `${lesson.id}|${difficulty}|${앞판}`;
-    if (!판에서낸것.has(열쇠)) buildGrade5Questions(lesson, difficulty, families, 앞판);
+    if (!판에서낸것.has(열쇠)) buildGrade5Questions(lesson, difficulty, families, 앞판, 시작판);
     for (const k of 판에서낸것.get(열쇠) ?? []) seenPrompt.add(k);
   }
   const 이판에서낸것 = new Set<string>();
