@@ -1280,6 +1280,12 @@ describe('상 수준의 고차 문항', () => {
       if (바른그은.length >= 2) expect(친구.segs.filter((g) => g[0][0] !== g[1][0] || g[0][1] !== g[1][1]).length, q.prompt).toBe(바른그은.length);
     }
   });
+  it('친구의 실수는 대부분 다시 세기만 하면 고칠 수 있는 한 칸 차이가 아니라 개념을 따져야 하는 실수입니다', () => {
+    const 한칸차이 = /눈금을 한 칸 (잘못|더) 세어|하나를 (덜|더) 세어|^\S+[은는] 거꾸로 늘어놓았|가장 낮은 자리 모형을 하나 더|줄의 수를 하나|한 접시를 덜|한 칸 어긋나게|막대를 눈금 한 칸만큼|앞줄 쌓기나무를 빠뜨|칸을 하나 잘못 세어 바로 옆|첫 눈금을 0이 아니라|첫 접시에|옆면 하나를 빠뜨|층수를 잘못 세었/;
+    const 친구 = 상.filter((q) => q.manipulate!.friend);
+    const 쉬운 = 친구.filter((q) => 한칸차이.test(q.support.steps[0]));
+    expect(쉬운.length / 친구.length).toBeLessThan(0.08);
+  });
   it('고차표에 적은 차시는 상에서 조건에 맞는 답을 찾는 열린 문항이 나옵니다', () => {
     const 빈: string[] = [];
     for (const 열쇠 of Object.keys(고차표)) {
