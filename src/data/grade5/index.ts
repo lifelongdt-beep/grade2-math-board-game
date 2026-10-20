@@ -249,8 +249,8 @@ export const grade5FamiliesFor = (lesson: Lesson, difficulty: Difficulty): G5Fam
 };
 
 /** 5학년 차시의 문항입니다. 5학년 차시가 아니면 null입니다. */
-export const generateGrade5Questions = (lesson: Lesson, difficulty: Difficulty): Question[] | null => {
+export const generateGrade5Questions = (lesson: Lesson, difficulty: Difficulty, 판 = 0): Question[] | null => {
   const families = grade5FamiliesFor(lesson, difficulty);
   if (!families) return null;
-  return buildGrade5Questions(lesson, difficulty, families);
+  return buildGrade5Questions(lesson, difficulty, families, 판);
 };

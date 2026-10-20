@@ -17210,8 +17210,19 @@ const questionsFor = (
   lesson: Lesson,
   difficulty: Difficulty,
   avoidShapes?: Set<string>,
+  판 = 0,
 ): Question[] => {
+  // 판마다 자리 번호를 멀리 비켜 같은 틀에 다른 수가 들어가게 합니다. 자리
+  // 갈래는 30자리마다 되풀이되므로 30의 배수만큼 비킵니다.
+  const 비킴 = 판 * 30 * 11;
   const seen = new Set<string>();
+  // 뒤 판은 앞 판들에서 낸 문제 글을 피합니다.
+  const 판열쇠 = (p: number) => `${lesson.id}|${difficulty}|${avoidShapes ? 'avoid' : ''}|${p}`;
+  for (let 앞판 = 0; 앞판 < 판; 앞판 += 1) {
+    if (!판에서낸글.has(판열쇠(앞판))) questionsFor(lesson, difficulty, avoidShapes, 앞판);
+    for (const 글 of 판에서낸글.get(판열쇠(앞판)) ?? []) seen.add(글);
+  }
+  const 이판글 = new Set<string>();
   const made: Question[] = [];
 
   // 한 모양이 차지할 수 있는 자리 수입니다. 서른 자리를 여섯 모양이
@@ -17224,7 +17235,7 @@ const questionsFor = (
 
 
   for (let slot = 0; slot < 30; slot += 1) {
-    const first = buildQuestionAt(lesson, difficulty, slot);
+    const first = buildQuestionAt(lesson, difficulty, slot + 비킴);
     // 그 자리가 맡고 있던 몫입니다. 자료를 읽고 조건을 함께 보는 문항이
     // 수준마다 몇 자리씩 있어야 하는데, 겹친다고 아무것으로나 바꾸면
     // 그 몫이 무너집니다.
@@ -17248,7 +17259,7 @@ const questionsFor = (
       let anyFresh: Question | null = null;
 
       for (let again = 1; again <= 8; again += 1) {
-        const other = buildQuestionAt(lesson, difficulty, slot + again * 30);
+        const other = buildQuestionAt(lesson, difficulty, slot + 비킴 + again * 30);
         if (seen.has(other.prompt)) continue;
         const shape = shapeOfPrompt(other.prompt);
         if (avoidShapes?.has(shape)) continue;
@@ -17288,20 +17299,33 @@ const questionsFor = (
         ?? (wantsRich ? first : anyFresh ?? first);
     }
 
+    // 뒤 판에서 새 글을 찾지 못해 앞 판과 같은 문항이 되면 그 자리는 비웁니다.
+    if (판 && seen.has(question.prompt)) continue;
     seen.add(question.prompt);
+    이판글.add(question.prompt);
     const shape = shapeOfPrompt(question.prompt);
     shapeSeen.set(shape, taken(shape) + 1);
     made.push(question);
   }
 
+  판에서낸글.set(판열쇠(판), 이판글);
   return spreadRepeats(made).map((question, slot) => ({
     ...question,
     // 다른 번호로 다시 만들었어도 자리 번호로 매겨 두어야 기록과 다시
     // 풀기가 자리를 제대로 찾습니다.
-    id: `${lesson.id}-${difficulty}-${slot}`,
+    id: `${lesson.id}-${difficulty}-${판글(판)}${slot}`,
     basePrompt: question.prompt,
   }));
 };
+
+// 판마다 낸 문제 글입니다(차시·수준·판). 뒤 판이 앞 판을 피할 때 씁니다.
+const 판에서낸글 = new Map<string, Set<string>>();
+
+/** 처음 판이 아닌 문항의 id 앞에 붙이는 판 표시입니다(처음 판의 id는 그대로 둡니다). */
+const 판글 = (판 = 0) => (판 ? `p${판}-` : '');
+
+/** 문항 id에 판 표시를 붙입니다. */
+const 판매기기 = (qs: Question[], 판: number) => (판 ? qs.map((q) => ({ ...q, id: q.id.replace(`-${q.difficulty}-`, `-${q.difficulty}-${판글(판)}`) })) : qs);
 
 // '구구단, 몬스터를 막아라!'는 곱셈구구 단원 맨 앞에 두는 흥미 유발 차시로,
 // 성벽으로 다가오는 몬스터가 낸 곱셈 하나를 빠르게 푸는 게임입니다.
@@ -17323,12 +17347,12 @@ export const CASTLE_MULTIPLY_TITLE = '구구단, 몬스터를 막아라!';
 export const CASTLE_DIVIDE_TITLE = '나눗셈, 몬스터를 막아라!';
 export const isCastleLesson = (title: string) => title === CASTLE_MULTIPLY_TITLE || title === CASTLE_DIVIDE_TITLE;
 
-const generateCastleDivisionQuestions = (lesson: Lesson, difficulty: Difficulty, divisors: number[]): Question[] => {
+const generateCastleDivisionQuestions = (lesson: Lesson, difficulty: Difficulty, divisors: number[], 판 = 0): Question[] => {
   const combos: Array<[number, number]> = [];
   for (const b of divisors) {
     for (let q = 1; q <= 9; q += 1) combos.push([b * q, b]);
   }
-  const seed = lesson.unitNo * 101 + lesson.lessonNo * 17 + difficultyIndex[difficulty] * 13 + 7;
+  const seed = lesson.unitNo * 101 + lesson.lessonNo * 17 + difficultyIndex[difficulty] * 13 + 7 + 판 * 7919;
   const picks = pickSome(combos, seed, Math.min(30, combos.length));
 
   return picks.map(([a, b], slot) => {
@@ -17363,15 +17387,18 @@ const generateCastleDivisionQuestions = (lesson: Lesson, difficulty: Difficulty,
 
 export interface GenerateQuestionsOptions {
   castleDans?: number[];
+  // 몇째 판인지입니다(0이 처음 판). 판마다 같은 틀에 다른 수를 넣은 문항
+  // 서른 개를 새로 만듭니다. 문제집을 한 바퀴 다 풀면 다음 판이 이어집니다.
+  판?: number;
 }
 
-const generateCastleDefenseQuestions = (lesson: Lesson, difficulty: Difficulty, dans: number[]): Question[] => {
+const generateCastleDefenseQuestions = (lesson: Lesson, difficulty: Difficulty, dans: number[], 판 = 0): Question[] => {
   const combos: Array<[number, number]> = [];
   for (const a of dans) {
     for (let b = 1; b <= 9; b += 1) combos.push([a, b]);
   }
   // 난이도마다 다른 문제 순서가 나오도록 씨앗에 난이도를 함께 넣습니다.
-  const seed = lesson.unitNo * 101 + lesson.lessonNo * 17 + difficultyIndex[difficulty] * 13;
+  const seed = lesson.unitNo * 101 + lesson.lessonNo * 17 + difficultyIndex[difficulty] * 13 + 판 * 7919;
   const picks = pickSome(combos, seed, Math.min(30, combos.length));
 
   return picks.map(([a, b], slot) => {
@@ -17402,23 +17429,36 @@ export const generateClassQuestions = (
   const 자기것 = generateQuestions(lesson, difficulty, options);
   const 앞차시들 = 도입복습차시(lesson);
   if (!앞차시들) return 자기것;
-  const 줄들 = 앞차시들.map((l) => generateQuestions(l, difficulty)).filter((qs) => qs.length > 0);
+  const 줄들 = 앞차시들.map((l) => generateQuestions(l, difficulty, { 판: options?.판 })).filter((qs) => qs.length > 0);
   if (줄들.length === 0) return 자기것;
   const 목표 = Math.max(자기것.length, 20);
   const 본 = new Set<string>();
+  const 판 = options?.판 ?? 0;
+  // 뒤 판은 앞 판들의 복습 문항을 피합니다. 다른 차시에서 온 같은 글도 같은 문제로 봅니다.
+  const 글답 = (q: Question) => `${q.basePrompt ?? q.prompt}|${q.answer}`;
+  for (let 앞판 = 0; 앞판 < 판; 앞판 += 1) {
+    const 열쇠 = `${lesson.id}|${difficulty}|${앞판}`;
+    if (!판에서낸복습.has(열쇠)) generateClassQuestions(lesson, difficulty, { ...options, 판: 앞판 });
+    for (const k of 판에서낸복습.get(열쇠) ?? []) 본.add(k);
+  }
   const 모음: Question[] = [];
   for (let 차례 = 0; 모음.length < 목표 && 줄들.some((qs) => 차례 < qs.length); 차례 += 1) {
     for (const qs of 줄들) {
       const q = qs[차례];
       if (!q || 모음.length >= 목표) continue;
       const 열쇠 = `${q.basePrompt ?? q.prompt}|${q.answer}|${q.lessonId}`;
-      if (본.has(열쇠)) continue;
+      if (본.has(열쇠) || (판 && 본.has(글답(q)))) continue;
       본.add(열쇠);
-      모음.push({ ...q, id: `${lesson.id}-${difficulty}-review-${모음.length + 1}`, lessonId: lesson.id, difficulty });
+      본.add(글답(q));
+      모음.push({ ...q, id: `${lesson.id}-${difficulty}-review-${판글(판)}${모음.length + 1}`, lessonId: lesson.id, difficulty });
     }
   }
+  판에서낸복습.set(`${lesson.id}|${difficulty}|${판}`, new Set(모음.map(글답)));
   return 모음;
 };
+
+// 판마다 낸 단원 도입 복습 문항입니다(차시·수준·판).
+const 판에서낸복습 = new Map<string, Set<string>>();
 
 /** 한 차시의 문항입니다. 차시마다의 검사는 모두 이것을 봅니다. */
 // 도형 문항인데 그림이 없으면 문제 글에 적힌 수만으로 그림을 붙입니다(autoFigure.ts).
@@ -17441,51 +17481,52 @@ const 차시원문항 = (
   difficulty: Difficulty,
   options?: GenerateQuestionsOptions,
 ): Question[] => {
+  const 판 = options?.판 ?? 0;
   if (lesson.title === CASTLE_DIVIDE_TITLE) {
     const divisors = options?.castleDans?.length ? options.castleDans : ALL_CASTLE_DEFENSE_DANS;
-    return generateCastleDivisionQuestions(lesson, difficulty, divisors);
+    return 판매기기(generateCastleDivisionQuestions(lesson, difficulty, divisors, 판), 판);
   }
   // 5학년 차시는 자기 길로 갑니다. 아래의 생성기들은 모두 2학년 차시
   // 제목에 맞추어 갈래를 정하므로, 5학년 차시가 여기까지 내려오면
   // 어느 것도 맞지 않아 맨 끝의 기본 문항으로 떨어집니다. 그러면 5학년
   // 차시에 2학년 문제가 나옵니다.
-  const grade5 = generateGrade5Questions(lesson, difficulty);
+  const grade5 = generateGrade5Questions(lesson, difficulty, 판);
   if (grade5) return grade5;
-  const grade51 = generateGrade51Questions(lesson, difficulty);
+  const grade51 = generateGrade51Questions(lesson, difficulty, 판);
   if (grade51) return grade51;
   // 3학년 차시도 같은 까닭으로 자기 길로 갑니다.
-  const grade31 = generateGrade31Questions(lesson, difficulty);
+  const grade31 = generateGrade31Questions(lesson, difficulty, 판);
   if (grade31) return grade31;
   // 3학년 차시가 여기까지 내려왔다면 아직 문항을 만들지 않은 차시입니다.
   // 2학년 생성기로 떨어뜨리면 3학년 차시에 2학년 문제가 나오므로 비워 둡니다.
   if (lesson.semester.startsWith('3')) return [];
   // 1학년 차시도 같은 까닭으로 자기 길로 갑니다.
-  const grade11 = generateGrade11Questions(lesson, difficulty);
+  const grade11 = generateGrade11Questions(lesson, difficulty, 판);
   if (grade11) return grade11;
-  const grade12 = generateGrade12Questions(lesson, difficulty);
+  const grade12 = generateGrade12Questions(lesson, difficulty, 판);
   if (grade12) return grade12;
   if (lesson.semester.startsWith('1')) return [];
-  const grade41 = generateGrade41Questions(lesson, difficulty);
+  const grade41 = generateGrade41Questions(lesson, difficulty, 판);
   if (grade41) return grade41;
-  const grade42 = generateGrade42Questions(lesson, difficulty);
+  const grade42 = generateGrade42Questions(lesson, difficulty, 판);
   if (grade42) return grade42;
   if (lesson.semester.startsWith('4')) return [];
-  const grade61 = generateGrade61Questions(lesson, difficulty);
+  const grade61 = generateGrade61Questions(lesson, difficulty, 판);
   if (grade61) return grade61;
-  const grade62 = generateGrade62Questions(lesson, difficulty);
+  const grade62 = generateGrade62Questions(lesson, difficulty, 판);
   if (grade62) return grade62;
   if (lesson.semester.startsWith('6')) return [];
 
   if (lesson.title === '구구단, 몬스터를 막아라!') {
     const dans = options?.castleDans?.length ? options.castleDans : ALL_CASTLE_DEFENSE_DANS;
-    return generateCastleDefenseQuestions(lesson, difficulty, dans);
+    return 판매기기(generateCastleDefenseQuestions(lesson, difficulty, dans, 판), 판);
   }
-  if (difficulty !== '상') return questionsFor(lesson, difficulty);
+  if (difficulty !== '상') return questionsFor(lesson, difficulty, undefined, 판);
 
   // 피할 모양이 없으면 그대로 고르므로, 상에만 있는 문항이 모자란
   // 차시라도 문항 수는 줄지 않습니다.
-  const middleShapes = new Set(questionsFor(lesson, '중').map((question) => shapeOfPrompt(question.prompt)));
-  return questionsFor(lesson, '상', middleShapes);
+  const middleShapes = new Set(questionsFor(lesson, '중', undefined, 판).map((question) => shapeOfPrompt(question.prompt)));
+  return questionsFor(lesson, '상', middleShapes, 판);
 };
 
 export const generateLessonBank = (lesson: Lesson): Record<Difficulty, Question[]> => ({

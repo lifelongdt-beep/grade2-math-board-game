@@ -296,10 +296,23 @@ const 글해시 = (text: string) => {
   return h;
 };
 
+// 뭉치가 어떤 씨앗에서 문항을 만들지 못하고 멈추면(도형을 못 그리는 등) 그 씨앗은 건너뜁니다.
+// 판마다 씨앗이 달라지므로, 한 씨앗의 실패로 차시 전체가 멈추면 안 됩니다.
+const 만들기 = (family: G5Family, seed: number, difficulty: Difficulty): G5Spec | null => {
+  try {
+    return family.make(seed, difficulty);
+  } catch {
+    return null;
+  }
+};
+
 export const buildGrade5Questions = (
   lesson: Lesson,
   difficulty: Difficulty,
   families: G5Family[],
+  // 몇째 판인지입니다. 판마다 씨앗을 바꾸어 같은 틀에 다른 수가 들어간
+  // 문항 서른 개를 새로 만듭니다(0이 처음 판).
+  판 = 0,
 ): Question[] => {
   if (!families.length) return [];
   // 수준마다 덧붙이는 문항 뭉치(levels/)입니다. 상에는 사고력 문항을,
@@ -308,6 +321,13 @@ export const buildGrade5Questions = (
 
   const made: Question[] = [];
   const seenPrompt = new Set<string>();
+  // 뒤 판은 앞 판들에서 낸 문항을 피합니다. 그래야 판마다 새 수, 새 답이 나옵니다.
+  for (let 앞판 = 0; 앞판 < 판; 앞판 += 1) {
+    const 열쇠 = `${lesson.id}|${difficulty}|${앞판}`;
+    if (!판에서낸것.has(열쇠)) buildGrade5Questions(lesson, difficulty, families, 앞판);
+    for (const k of 판에서낸것.get(열쇠) ?? []) seenPrompt.add(k);
+  }
+  const 이판에서낸것 = new Set<string>();
   const shapeCount = new Map<string, number>();
   const familyCount = new Map<string, number>();
   // 한 뭉치가 서른 자리를 다 먹으면 그 차시는 한 가지만 되풀이됩니다.
@@ -318,7 +338,7 @@ export const buildGrade5Questions = (
   // 뭉치가 다르면 묻는 것도 다릅니다.
   const mostPerShape = 15;
 
-  const salt = difficultyIndex[difficulty] * 1009 + lesson.unitNo * 101 + lesson.lessonNo * 17;
+  const salt = difficultyIndex[difficulty] * 1009 + lesson.unitNo * 101 + lesson.lessonNo * 17 + 판 * 1000003;
 
   // ── 수준에 맞게 고르기(levelPick.ts) ────────────────────────────────
   // 1) 뭉치마다 몇 문항을 미리 만들어 보아 이 차시 안에서 쉬운 차례를
@@ -331,7 +351,7 @@ export const buildGrade5Questions = (
     let 합 = 0;
     let 수 = 0;
     for (let k = 0; k < 6; k += 1) {
-      const spec = family.make(salt + 7001 + k * 131 + family.id.length, difficulty);
+      const spec = 만들기(family, salt + 7001 + k * 131 + family.id.length, difficulty);
       if (!spec) continue;
       합 += 난도점수(spec);
       수 += 1;
@@ -369,7 +389,8 @@ export const buildGrade5Questions = (
   const 결맞음 = (단계: 0 | 1 | 2, 바퀴: number) =>
     바퀴 === 5 || (difficulty === '상' ? 단계 > 0 : difficulty === '하' ? 단계 < 2 : true);
 
-  for (let 바퀴 = 0; 바퀴 < 6 && made.length < SLOTS_PER_LESSON; 바퀴 += 1) {
+  // 뒤 판은 결을 가리지 않고 채우는 마지막 바퀴를 돌지 않습니다. 수준에 맞는 새 문항이 모자라면 그 판은 조금 작아집니다.
+  for (let 바퀴 = 0; 바퀴 < (판 ? 5 : 6) && made.length < SLOTS_PER_LESSON; 바퀴 += 1) {
     // 몫을 늘려도 한 모양이 서른 자리를 다 차지하지는 않게 합니다.
     const 모양몫 = 바퀴 >= 3 ? mostPerShape + 5 : mostPerShape;
     // 스무 바퀴 내리 하나도 못 고르면 이 바퀴에서 더 나올 것이 없습니다.
@@ -380,7 +401,7 @@ export const buildGrade5Questions = (
         if ((familyCount.get(family.id) ?? 0) >= 몫(family, 바퀴)) continue;
         const 후보: Array<{ 단계: 0 | 1 | 2; 수: number; 값: { spec: G5Spec; key: string; 보이는것: string; shape: string } }> = [];
         for (let k = 0; k < 6; k += 1) {
-          const spec = family.make(salt + round * 37 + family.id.length + 바퀴 * 50021 + k * 7919, difficulty);
+          const spec = 만들기(family, salt + round * 37 + family.id.length + 바퀴 * 50021 + k * 7919, difficulty);
           if (!spec) continue;
           // 같은 문제인지는 글만으로 보면 안 됩니다. '그림이 나타내는 수의
           // 범위는?'처럼 수가 그림에만 있는 문항은 글이 늘 똑같아서, 글로만
@@ -408,13 +429,25 @@ export const buildGrade5Questions = (
         if (!고른) continue;
         seenPrompt.add(고른.key);
         seenPrompt.add(고른.보이는것);
+        이판에서낸것.add(고른.key);
+        이판에서낸것.add(고른.보이는것);
+        const 문항 = toQuestion(lesson, difficulty, made.length + 판 * 1000, 고른.spec);
+        // 보기만 다르고 글과 답과 그림이 같은 문항은 아이에게 같은 문제입니다. 뒤 판에서는 이것도 피합니다.
+        const 글답 = `글답||${문항.prompt}||${문항.answer}||${JSON.stringify(문항.visual ?? null)}`;
+        if (판 && seenPrompt.has(글답)) continue;
+        seenPrompt.add(글답);
+        이판에서낸것.add(글답);
         familyCount.set(family.id, (familyCount.get(family.id) ?? 0) + 1);
         shapeCount.set(고른.shape, (shapeCount.get(고른.shape) ?? 0) + 1);
-        made.push(toQuestion(lesson, difficulty, made.length, 고른.spec));
+        made.push(문항);
       }
       빈판 = made.length > 앞 ? 0 : 빈판 + 1;
     }
   }
 
+  판에서낸것.set(`${lesson.id}|${difficulty}|${판}`, 이판에서낸것);
   return made;
 };
+
+// 판마다 낸 문항의 열쇠입니다(차시·수준·판). 뒤 판이 앞 판을 피할 때 씁니다.
+const 판에서낸것 = new Map<string, Set<string>>();
