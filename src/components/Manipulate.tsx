@@ -315,7 +315,9 @@ function 선긋기({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipulat
     if (!고른) { set고른(p); return; }
     if (고른[0] === p[0] && 고른[1] === p[1]) { set고른(null); return; }
     const seg: GridSegment = [고른, p];
-    set({ ...s, segs: [...s.segs, seg] });
+    // 이미 그은 선의 두 끝을 다시 이으면 그 선을 지웁니다(친구가 잘못 그은 선을 골라 지울 수 있게).
+    const 같은선 = (g: GridSegment) => (g[0][0] === seg[0][0] && g[0][1] === seg[0][1] && g[1][0] === seg[1][0] && g[1][1] === seg[1][1]) || (g[0][0] === seg[1][0] && g[0][1] === seg[1][1] && g[1][0] === seg[0][0] && g[1][1] === seg[0][1]);
+    set({ ...s, segs: s.segs.some(같은선) ? s.segs.filter((g) => !같은선(g)) : [...s.segs, seg] });
     // 이어 그리기 쉽게, 방금 끝난 점에서 다음 선을 시작합니다.
     set고른(p);
   };
@@ -1120,7 +1122,7 @@ const 도움말 = (m: Manipulation): string => {
     case 'ruler-draw': return m.tool === 'compass' ? '컴퍼스의 침은 0에 두고, 연필 쪽 다리를 반지름만큼 벌려요. 1 cm마다 세어 주는 숫자를 보세요.' : '시작한 점에서부터 1 cm씩 세어 주는 숫자를 보며 끝을 끌어가세요.';
     case 'clock': return '바깥쪽 숫자는 긴바늘이 가리킬 때의 분이에요. 긴바늘을 먼저 맞추고, 짧은바늘은 그 시각에 맞게 두 숫자 사이(또는 숫자 위)에 두세요.';
     case 'grid-point': return m.guide?.length ? '주황 점선을 따라 칸을 세어 보세요.' : '기준이 되는 점에서부터 한 칸씩 세어 자리를 찾아요.';
-    case 'grid-draw': return m.guide?.length ? '주황 점선을 따라 칸을 세면 점을 찍을 자리를 알 수 있어요.' : '꼭짓점이 될 점을 먼저 정하고, 칸을 세어 변의 길이를 확인하며 이어요.';
+    case 'grid-draw': return `${m.guide?.length ? '주황 점선을 따라 칸을 세면 점을 찍을 자리를 알 수 있어요.' : '꼭짓점이 될 점을 먼저 정하고, 칸을 세어 변의 길이를 확인하며 이어요.'}${m.friend ? ' 꼭짓점마다 칸 수를 세어 어긋난 점을 찾고, 그 점에 이어진 파란 선을 같은 두 점을 다시 이어 지운 다음 바르게 그어요.' : ''}`;
     case 'shape-move': return '★ 칸이 어디로 가는지 따라가 보세요. 회색 칸은 처음 자리예요.';
     case 'number-line': return '이름이 붙은 눈금 사이가 몇 칸으로 나뉘었는지 세어요. 주황 숫자는 앞의 큰 눈금에서부터 센 칸 수예요.';
     case 'tap-fill': return m.layout === 'numgrid' ? '색칠된 두 수의 차를 구해 보세요. 그만큼씩 뛰어 세며 끝까지 칠해요.' : m.layout === 'hours' ? '시작한 시각의 눈금 바로 오른쪽 칸부터, 끝난 시각의 눈금까지 칠해요.' : m.layout === 'multtable' ? '칠한 칸에는 곱을 보여 줘요. 곱셈구구를 외우며 줄과 칸의 수를 곱해 보세요.' : '칸마다 번호를 붙였어요. 세면서 칠해 보세요.';

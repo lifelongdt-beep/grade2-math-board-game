@@ -1,5 +1,5 @@
 import type { GridPoint, Manipulation } from '../../types';
-import { 채점, 정답모습, 시계로돌리기, 반대로돌리기, 좌우뒤집기, 위아래뒤집기, type ManipState } from './check';
+import { 채점, 정답모습, 조각들, 시계로돌리기, 반대로돌리기, 좌우뒤집기, 위아래뒤집기, type ManipState } from './check';
 import type { 조작갈래, 조작틀 } from './common';
 
 // ════════════════════════════════════════════════════════════════════
@@ -52,16 +52,12 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
       return 옆.filter(([a, b]) => a >= 0 && b >= 0 && a <= m.cols && b <= m.rows).map((pt) => ({ state: { kind: 'grid-point' as const, pt }, 말: '칸을 하나 잘못 세어 바로 옆 점에 찍었습니다.' }));
     }
     case 'grid-draw': {
-      if (바른.kind !== 'grid-draw' || !바른.segs.length) return [];
-      if (바른.segs.length === 1) {
-        // 선 하나를 긋는 문항(수직·평행·직각 등): 끝점을 한 칸 비껴 비스듬하게 긋는 실수입니다.
-        const [[a, b], [c, d]] = 바른.segs[0];
-        const 비낀: GridPoint[] = [[c + 1, d], [c, d + 1], [c - 1, d], [c, d - 1]];
-        return 비낀.filter(([x, y]) => x >= 0 && y >= 0 && x <= m.cols && y <= m.rows && !(x === a && y === b))
-          .map((끝) => ({ state: { ...바른, segs: [[[a, b], 끝]] as typeof 바른.segs }, 말: '선의 끝점을 한 칸 비껴 찍어 선이 비스듬해졌습니다. 그래서 문제의 조건을 만족하지 않습니다.' }));
-      }
-      const k = seed % 바른.segs.length;
-      return [{ state: { ...바른, segs: 바른.segs.filter((_, i) => i !== k) }, 말: '선분 하나를 빠뜨려 조건에 맞는 모양이 되지 않았습니다.' }];
+      if (바른.kind !== 'grid-draw') return [];
+      // 문제에 주어진 선(검정)은 친구가 그은 선(파랑)에 넣지 않습니다.
+      const 주어진조각 = new Set(m.fixed.flatMap(조각들));
+      const 그은 = 바른.segs.filter((g) => !조각들(g).every((c) => 주어진조각.has(c)));
+      if (!그은.length) return [];
+      return 선실수(m, { ...바른, segs: 그은 }, seed);
     }
     case 'shape-move': {
       if (바른.kind !== 'shape-move') return [];
@@ -166,7 +162,18 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
         const 다른 = m.given.find((c) => c[0] !== 바른.picked![0] || c[1] !== 바른.picked![1]);
         return 다른 ? [{ state: { ...바른, picked: 다른 }, 말: '이웃한 면을 마주 보는 면으로 골랐습니다. 접으면 이웃한 면은 서로 맞닿습니다.' }] : [];
       }
-      return 바른.cells.length > m.given.length ? [{ state: { ...바른, cells: 바른.cells.slice(0, -1) }, 말: '면 하나를 빠뜨려 접어도 상자가 닫히지 않습니다.' }] : [];
+      if (바른.cells.length <= m.given.length) return [];
+      // 면을 모두 붙였지만 하나를 엉뚱한 자리에 붙여, 접으면 겹치는 면과 빈 면이 생기는 실수입니다.
+      const 열쇠 = (p: GridPoint) => `${p[0]},${p[1]}`;
+      const 마지막 = 바른.cells[바른.cells.length - 1];
+      const 남은 = 바른.cells.slice(0, -1);
+      const 있는 = new Set(남은.map(열쇠));
+      const 자리들 = 남은.flatMap(([x, y]) => [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as GridPoint[])
+        .filter(([x, y]) => x >= 0 && y >= 0 && x < m.cols && y < m.rows && !있는.has(`${x},${y}`) && 열쇠([x, y]) !== 열쇠(마지막));
+      return [
+        ...자리들.map((p) => ({ state: { ...바른, cells: [...남은, p] }, 말: '면을 모두 붙였지만 하나를 알맞지 않은 자리에 붙였습니다. 접으면 두 면이 겹치고 한쪽이 비어 상자가 닫히지 않습니다.' })),
+        { state: { ...바른, cells: 바른.cells.slice(0, -1) }, 말: '면 하나를 빠뜨려 접어도 상자가 닫히지 않습니다.' },
+      ];
     }
     case 'cylinder-net': {
       if (바른.kind !== 'cylinder-net') return [];
@@ -232,6 +239,95 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
     default: return [];
   }
 };
+
+/** 모눈에 선을 긋는 문항의 친구 실수입니다. 바른은 친구가 그어야 했던 선(주어진 선은 뺀 것)입니다. */
+const 선실수 = (m: Extract<Manipulation, { kind: 'grid-draw' }>, 바른: Extract<ManipState, { kind: 'grid-draw' }>, seed: number): 실수[] => {
+  if (바른.segs.length === 1) {
+    // 선 하나를 긋는 문항(수직·평행·직각 등): 끝점을 한 칸 비껴 비스듬하게 긋는 실수입니다.
+    const [[a, b], [c, d]] = 바른.segs[0];
+    const 비낀: GridPoint[] = [[c + 1, d], [c, d + 1], [c - 1, d], [c, d - 1]];
+    return 비낀.filter(([x, y]) => x >= 0 && y >= 0 && x <= m.cols && y <= m.rows && !(x === a && y === b))
+      .map((끝) => ({ state: { ...바른, segs: [[[a, b], 끝]] as typeof 바른.segs }, 말: '선의 끝점을 한 칸 비껴 찍어 선이 비스듬해졌습니다. 그래서 문제의 조건을 만족하지 않습니다.' }));
+  }
+  // 그림은 끝까지 그렸지만 점 하나를 한 칸 엉뚱한 곳에 찍어, 그 점에 이어진 선이 모두 어긋난 실수입니다.
+  // 아이는 칸을 세어 어느 점이 틀렸는지 찾고, 그 점에 이어진 선을 지운 뒤 다시 그어야 합니다.
+  const 열쇠 = (p: GridPoint) => `${p[0]},${p[1]}`;
+  const 고정점 = new Set(m.fixed.flat().map(열쇠));
+  const 축위 = (p: GridPoint) => (m.axis ? ('x' in m.axis ? p[0] === m.axis.x : p[1] === m.axis.y) : false);
+  const 중심 = (p: GridPoint) => Boolean(m.center && p[0] === m.center[0] && p[1] === m.center[1]);
+  const 점들 = [...new Map(바른.segs.flat().map((p) => [열쇠(p), p] as const)).values()]
+    .filter((p) => !고정점.has(열쇠(p)) && !축위(p) && !중심(p));
+  const 이미 = new Set(바른.segs.flat().map(열쇠));
+  const 말 = m.goal.type === 'exact' && m.axis
+    ? '대칭축에서 떨어진 칸 수를 잘못 세어 대응점 하나를 엉뚱한 곳에 찍었습니다. 그래서 그 점에 이어진 선이 어긋났습니다.'
+    : m.goal.type === 'exact' && m.center
+      ? '대칭의 중심에서 반대쪽으로 같은 거리만큼 가지 않고 대응점 하나를 엉뚱한 곳에 찍었습니다. 그래서 그 점에 이어진 선이 어긋났습니다.'
+      : m.goal.type === 'congruent'
+        ? '꼭짓점 하나를 한 칸 잘못 찍어, 변의 길이가 처음 도형과 달라졌습니다.'
+        : '꼭짓점 하나를 한 칸 엉뚱한 곳에 찍어, 그 점에 이어진 선이 어긋나 조건에 맞지 않게 되었습니다.';
+  // 한 칸 어긋난 것을 먼저 찾고, 그래도 조건에 맞아 버리면 두 칸·대각선으로 어긋난 것을 찾습니다.
+  const 방향들: GridPoint[] = [
+    ...(m.axis && 'x' in m.axis ? [[1, 0], [-1, 0], [0, 1], [0, -1]] : [[0, 1], [1, 0], [0, -1], [-1, 0]]) as GridPoint[],
+    [1, 1], [-1, 1], [1, -1], [-1, -1], [2, 0], [-2, 0], [0, 2], [0, -2],
+  ];
+  const 옮긴: 실수[] = [];
+  for (let i = 0; i < 점들.length; i += 1) {
+    const v = 점들[(i + seed) % 점들.length];
+    for (const [dx, dy] of 방향들) {
+      // 대칭축 문항에서는 축에서 더 멀어지는 쪽으로 잘못 셉니다.
+      const 멀리 = m.axis && 'x' in m.axis ? Math.sign(v[0] - m.axis.x) : 0;
+      const w: GridPoint = [v[0] + (멀리 && dx ? Math.abs(dx) * 멀리 : dx), v[1] + dy];
+      if (w[0] < 0 || w[1] < 0 || w[0] > m.cols || w[1] > m.rows || 이미.has(열쇠(w)) || 축위(w)) continue;
+      const segs = 바른.segs.map(([a, b]) => [열쇠(a) === 열쇠(v) ? w : a, 열쇠(b) === 열쇠(v) ? w : b] as [GridPoint, GridPoint]);
+      옮긴.push({ state: { ...바른, segs }, 말 });
+    }
+  }
+  // 어디로 옮겨도 조건에 맞는 그림(아무 삼각형 등)이면, 점 하나를 이웃한 두 점과 한 줄 위에 찍어
+  // 도형이 만들어지지 않게 한 실수로 만듭니다.
+  const 한줄: 실수[] = [];
+  const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : Math.abs(a));
+  for (const v of 점들) {
+    const 이웃 = 바른.segs.filter(([a, b]) => 열쇠(a) === 열쇠(v) || 열쇠(b) === 열쇠(v)).map(([a, b]) => (열쇠(a) === 열쇠(v) ? b : a));
+    if (이웃.length !== 2) continue;
+    const [a, b] = 이웃;
+    const g = gcd(b[0] - a[0], b[1] - a[1]);
+    if (!g) continue;
+    const [dx, dy] = [(b[0] - a[0]) / g, (b[1] - a[1]) / g];
+    for (let t = 1; t < g; t += 1) {
+      const w: GridPoint = [a[0] + dx * t, a[1] + dy * t];
+      if (이미.has(열쇠(w))) continue;
+      const segs = 바른.segs.map(([p, q]) => [열쇠(p) === 열쇠(v) ? w : p, 열쇠(q) === 열쇠(v) ? w : q] as [GridPoint, GridPoint]);
+      한줄.push({ state: { ...바른, segs }, 말: '꼭짓점 하나를 이웃한 두 꼭짓점과 한 줄 위에 찍어, 선이 한 줄로 겹쳐 도형이 만들어지지 않았습니다.' });
+    }
+  }
+  // '모눈선에 나란하지 않은 변이 있는' 도형인데 모든 변을 모눈선에 나란하게 그린 실수입니다.
+  const 나란히: 실수[] = [];
+  if (m.goal.type === 'polygon' && m.goal.goal.tilted && 바른.segs.length === 4) {
+    const xs = 바른.segs.flat().map((p) => p[0]);
+    const ys = 바른.segs.flat().map((p) => p[1]);
+    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    if (x0 < x1 && y0 < y1) {
+      const 네: GridPoint[] = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+      나란히.push({ state: { ...바른, segs: 네.map((p, i) => [p, 네[(i + 1) % 4]] as [GridPoint, GridPoint]) }, 말: '사각형을 그렸지만 네 변을 모두 모눈선에 나란하게 그렸습니다. 문제는 모눈선에 나란하지 않은(비스듬한) 변이 있어야 합니다.' });
+    }
+  }
+  // 선의 끝이 모두 주어진 꼭짓점이면(대각선 긋기) 선 하나의 끝을 꼭짓점이 아닌 점에 이은 실수로 만듭니다.
+  const 끝비낌: 실수[] = [];
+  if (!점들.length) {
+    for (let i = 0; i < 바른.segs.length; i += 1) {
+      const k = (i + seed) % 바른.segs.length;
+      const [a, b] = 바른.segs[k];
+      for (const [dx, dy] of 방향들) {
+        const w: GridPoint = [b[0] + dx, b[1] + dy];
+        if (w[0] < 0 || w[1] < 0 || w[0] > m.cols || w[1] > m.rows || 이미.has(열쇠(w)) || 고정점.has(열쇠(w))) continue;
+        끝비낌.push({ state: { ...바른, segs: 바른.segs.map((g, j) => (j === k ? [a, w] as [GridPoint, GridPoint] : g)) }, 말: '선 하나의 끝을 꼭짓점이 아닌 점에 이었습니다. 대각선은 이웃하지 않은 두 꼭짓점을 이은 선분입니다.' });
+      }
+    }
+  }
+  const k = seed % 바른.segs.length;
+  return [...나란히, ...옮긴, ...한줄, ...끝비낌, { state: { ...바른, segs: 바른.segs.filter((_, i) => i !== k) }, 말: '선분 하나를 빠뜨려 조건에 맞는 모양이 되지 않았습니다.' }];
+};
+
 
 /** 그 조작에서 흔한 실수 하나(채점하면 틀린 것)를 고릅니다. 없으면 null입니다. */
 export const 친구실수 = (m: Manipulation, seed = 0): 실수 | null => {

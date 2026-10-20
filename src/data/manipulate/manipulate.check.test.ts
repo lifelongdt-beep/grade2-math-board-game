@@ -1268,6 +1268,18 @@ describe('상 수준의 고차 문항', () => {
       expect(q.prompt, q.prompt).toContain(m.friend!.who!);
     }
   });
+  it('친구가 그린 그림에는 문제에 주어진 선이 섞이지 않고, 빠뜨린 그림이 아니라 끝까지 그렸지만 점이 어긋난 그림입니다', () => {
+    for (const q of 상.filter((x) => x.manipulate!.kind === 'grid-draw' && x.manipulate!.friend)) {
+      const m = q.manipulate as Extract<Manipulation, { kind: 'grid-draw' }>;
+      const 친구 = m.friend!.state as Extract<ManipState, { kind: 'grid-draw' }>;
+      const 주어진 = new Set(m.fixed.map((g) => JSON.stringify([...g].sort())));
+      expect(친구.segs.some((g) => 주어진.has(JSON.stringify([...g].sort()))), q.prompt).toBe(false);
+      const 바른 = 정답모습(m) as Extract<ManipState, { kind: 'grid-draw' }>;
+      // 길이가 0인 선(같은 점을 이은 것)은 그림에 보이지 않으므로 세지 않습니다.
+      const 바른그은 = 바른.segs.filter((g) => !주어진.has(JSON.stringify([...g].sort())) && (g[0][0] !== g[1][0] || g[0][1] !== g[1][1]));
+      if (바른그은.length >= 2) expect(친구.segs.filter((g) => g[0][0] !== g[1][0] || g[0][1] !== g[1][1]).length, q.prompt).toBe(바른그은.length);
+    }
+  });
   it('고차표에 적은 차시는 상에서 조건에 맞는 답을 찾는 열린 문항이 나옵니다', () => {
     const 빈: string[] = [];
     for (const 열쇠 of Object.keys(고차표)) {
