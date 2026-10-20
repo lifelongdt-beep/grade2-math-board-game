@@ -32,7 +32,8 @@ const 손임무: Partial<Record<Manipulation['kind'], [string, string]>> = {
 
 export const 임무이름표 = (m: Manipulation, difficulty: Difficulty): 임무 => {
   if (m.friend) {
-    return { emoji: '🕵️', 이름: `실수 탐정${difficulty === '상' ? ' · 도전' : ''}`, 할일: resolveParticles(`${m.friend.emoji ?? '🧐'} ${m.friend.who ?? '친구'}이(가) 해 둔 모습이에요. 어디가 틀렸는지 찾아 고쳐 주세요!`) };
+    const 지우기 = m.kind === 'grid-draw' ? ` 검정 선은 문제에 있던 선, 파란 선은 ${m.friend.who ?? '친구'}이(가) 그은 선이에요. 틀린 파란 선은 같은 두 점을 다시 이으면 지워져요.` : '';
+    return { emoji: '🕵️', 이름: `실수 탐정${difficulty === '상' ? ' · 도전' : ''}`, 할일: resolveParticles(`${m.friend.emoji ?? '🧐'} ${m.friend.who ?? '친구'}이(가) 해 둔 모습이에요. 어디가 틀렸는지 찾아 고쳐 주세요!${지우기}`) };
   }
   if (m.kind === 'number-line' && m.targets) {
     return { emoji: '🔍', 이름: `비밀의 수 찾기${difficulty === '상' ? ' · 도전' : ''}`, 할일: '조건에 맞는 수가 여러 개 숨어 있어요. 하나를 찾아 점을 놓아요!' };
