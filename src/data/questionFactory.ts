@@ -35,6 +35,8 @@ import { questionBank } from './questionBank';
 import { 도입복습차시 } from './introReview';
 import { 그림추론 } from './autoFigure';
 import { generateGrade5Questions } from './grade5';
+import { buildGrade5Questions } from './grade5/build';
+import { 늘림뭉치 } from './expand';
 import { generateGrade51Questions } from './grade51';
 import { generateGrade31Questions } from './grade31';
 import { generateGrade11Questions } from './grade11';
@@ -17521,12 +17523,17 @@ const 차시원문항 = (
     const dans = options?.castleDans?.length ? options.castleDans : ALL_CASTLE_DEFENSE_DANS;
     return 판매기기(generateCastleDefenseQuestions(lesson, difficulty, dans, 판), 판);
   }
-  if (difficulty !== '상') return questionsFor(lesson, difficulty, undefined, 판);
-
   // 피할 모양이 없으면 그대로 고르므로, 상에만 있는 문항이 모자란
   // 차시라도 문항 수는 줄지 않습니다.
-  const middleShapes = new Set(questionsFor(lesson, '중', undefined, 판).map((question) => shapeOfPrompt(question.prompt)));
-  return questionsFor(lesson, '상', middleShapes, 판);
+  const 기본 = difficulty !== '상'
+    ? questionsFor(lesson, difficulty, undefined, 판)
+    : questionsFor(lesson, '상', new Set(questionsFor(lesson, '중', undefined, 판).map((question) => shapeOfPrompt(question.prompt))), 판);
+  // 둘째 판부터는 문제집을 늘리는 뭉치(expand/)로 만든 문항을 더합니다.
+  // 2학년 생성기는 자리 번호로 수를 정해, 뒤 판에서 새 수가 금방 바닥납니다.
+  const 늘림 = 판 ? 늘림뭉치(lesson, difficulty) : [];
+  if (!늘림.length) return 기본;
+  const 있는글 = new Set(기본.map((q) => q.prompt));
+  return [...기본, ...buildGrade5Questions(lesson, difficulty, 늘림, 판, 1).filter((q) => !있는글.has(q.prompt))];
 };
 
 export const generateLessonBank = (lesson: Lesson): Record<Difficulty, Question[]> => ({

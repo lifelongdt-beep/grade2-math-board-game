@@ -2,6 +2,7 @@ import type { G5Family } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
 import type { 수준표 } from './index';
 import { 바르게말한, 사고, 지식 } from './common';
+import { 따옴표 } from '../expand/common';
 
 // ════════════════════════════════════════════════════════════════════
 // 1학년 — 상 수준 사고력 문항
@@ -45,7 +46,7 @@ const 상황읽기 = (두자리: boolean): G5Family => ({
     const 고른 = 상황[next(상황.length)];
     const 다른 = 상황.filter((x) => x !== 고른);
     return 사고({
-      prompt: `'${고른.글}'을(를) 바르게 읽은 것은 어느 것일까요?`,
+      prompt: `${따옴표(고른.글)} 바르게 읽은 것은 어느 것일까요?`,
       answer: 고른.바른,
       wrongs: [고른.틀린, ...다른.map((x) => x.틀린)].filter((w, k, all) => w !== 고른.바른 && all.indexOf(w) === k).slice(0, 3).concat(두자리 ? [`${우리}${한}`] : [`${고유[n]} 개`]).slice(0, 3),
       tag: 'number',
@@ -418,7 +419,7 @@ const 몇십읽기: G5Family = {
     const 바른 = 개수 ? `${우리} ${단위}` : `${한} 번 버스`;
     const 틀린 = 개수 ? [`${한} ${단위}`, `${한자[t]}영 ${단위}`, `${우리} 번`] : [`${우리} 번 버스`, `${한자[t]}영 번 버스`, `${우리}째 버스`];
     return 사고({
-      prompt: `'${글}'을(를) 바르게 읽은 것은 어느 것일까요?`,
+      prompt: `${따옴표(글)} 바르게 읽은 것은 어느 것일까요?`,
       answer: 바른,
       wrongs: 틀린.filter((w, k, all) => w !== 바른 && all.indexOf(w) === k).slice(0, 3),
       tag: 'number',
