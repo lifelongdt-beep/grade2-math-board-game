@@ -104,6 +104,8 @@ export type G5Family = {
   // 수준을 받으면 수의 크기도 수준에 맞춥니다(3학년). 받지 않는 뭉치는
   // 문항 갈래로만 수준을 나눕니다.
   make: (seed: number, difficulty?: Difficulty) => G5Spec | null;
+  // 한 판에 이 뭉치가 낼 수 있는 가장 많은 문항 수입니다. 융합 문항처럼 한 차시를 다 차지하면 안 되는 뭉치에 씁니다.
+  최대?: number;
 };
 
 const difficultyDesign: Record<Difficulty, { label: string; solutionLead: string }> = {
@@ -382,7 +384,8 @@ export const buildGrade5Questions = (
   const 도는차례 = [...families].sort((a, b) => 선호.get(b)! - 선호.get(a)!);
   // 뭉치가 넉넉하면(다섯 넘게) 가장 덜 바라는 뭉치는 첫 바퀴에서 한 문항만
   // 냅니다 — 하에 '어떤 수'가, 상에 '바로 계산'이 몰리지 않게.
-  const 몫 = (family: G5Family, 바퀴: number) => {
+  const 몫 = (family: G5Family, 바퀴: number) => Math.min(family.최대 ?? SLOTS_PER_LESSON, 원래몫(family, 바퀴));
+  const 원래몫 = (family: G5Family, 바퀴: number) => {
     // 셋째 바퀴부터는 낼 수 있는 문항이 적은 뭉치들 때문에 서른 자리가 모자랄 때만 돕니다.
     if (바퀴 >= 4) return SLOTS_PER_LESSON;
     if (바퀴 >= 3) return mostPerFamily * 2 + 5;

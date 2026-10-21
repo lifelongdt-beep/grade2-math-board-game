@@ -4,6 +4,9 @@ import { 채점, type ManipState } from './check';
 import type { 조작갈래 } from './common';
 import { 길이합차긋기 } from './hands3';
 import { 고쳐보기 } from './higher';
+import { 정답모습 as 바른모습 } from './check';
+import { 고칠움직임 as 움직임글 } from './fixSignature';
+import { 조작표, 수준갈래들 } from './index';
 import { 자로긋기, 자로재기 } from './measure';
 
 // ════════════════════════════════════════════════════════════════════
@@ -54,4 +57,30 @@ describe('친구 실수 고치기의 다양성', () => {
   살피기('자로 긋기(0에서 시작)', 자로긋기(true, [2, 8]));
   살피기('두 길이의 합만큼 긋기', 길이합차긋기(false));
   살피기('두 길이의 차만큼 긋기', 길이합차긋기(true));
+});
+
+// 모든 학년·차시의 상 수준 '친구 실수 고치기' 문항을 봅니다. 한 가지 움직임(같은 칸 수·같은 방향으로
+// 옮기기, 같은 수만큼 더 놓기 등)으로 고쳐지는 문항이 그 갈래의 60%를 넘으면 안 됩니다.
+describe('모든 차시의 친구 실수 고치기', () => {
+  it('한 가지 움직임으로 고쳐지는 문항이 갈래마다 60%를 넘지 않습니다', () => {
+    const 넘친: string[] = [];
+    for (const 열쇠 of Object.keys(조작표)) {
+      for (const g of 수준갈래들(열쇠, '상')) {
+        if (!g.id.startsWith('fix-')) continue;
+        const 셈 = new Map<string, number>();
+        let 모두 = 0;
+        for (let seed = 1; seed <= 200; seed += 1) {
+          const t = g.make(seed, 2);
+          if (!t?.manipulate.friend) continue;
+          모두 += 1;
+          const k = 움직임글(바른모습(t.manipulate), t.manipulate.friend.state as ManipState);
+          셈.set(k, (셈.get(k) ?? 0) + 1);
+        }
+        if (모두 < 15) continue;
+        const [글, 수] = [...셈.entries()].sort((a, b) => b[1] - a[1])[0];
+        if (수 / 모두 > 0.6) 넘친.push(`${열쇠} ${g.id}: ${Math.round((수 / 모두) * 100)}% ${글.slice(0, 80)}`);
+      }
+    }
+    expect(넘친.join("\n")).toBe("");
+  }, 120000);
 });
