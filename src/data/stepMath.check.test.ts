@@ -135,6 +135,25 @@ describe('풀이 걸음', () => {
     expect(틀림.slice(0, 20)).toEqual([]);
   });
 
+  it('힌트와 풀이가 문제와 어긋나지 않습니다', () => {
+    const 틀림: string[] = [];
+    for (const { q, 열쇠 } of 문항들) {
+      const h = q.support.studentHint;
+      // 풀이 걸음은 아이에게 되묻지 않고 풀어 보입니다('…몇이 되나요?'가 걸음에 들어가면 안 됩니다).
+      for (const s of q.support.steps) if (/[가-힣]\?(?!['"’”])/.test(s.replace(/'[^']*'|"[^"]*"|‘[^’]*’|“[^”]*”/g, ''))) 틀림.push(`${열쇠} 묻는 걸음: ${s}`);
+      // '8×7과 8×7을 각각 구해'처럼 같은 식을 두 번 견주라고 하지 않습니다.
+      if (/(\d+[×÷+-]\d+)[과와] \1[을를]/.test(h)) 틀림.push(`${열쇠} 같은 식 둘: ${h}`);
+      // '몇 개 더 많을까요'에 '모두 더해 보세요'가 붙으면 아이는 반대로 셈합니다.
+      if (/몇 개 더 (?:많|적|썼)/.test(q.prompt) && /모두 더해/.test(h)) 틀림.push(`${열쇠} 차를 묻는데 더하라는 힌트: ${q.prompt} / ${h}`);
+      // '5가 5 이상이므로'를 '55가 5 이상이므로'로 숫자를 겹쳐 쓰지 않습니다.
+      for (const s of q.support.steps) if (/(?<!\d)(\d)\1[이가] 5 (?:이상|미만)/.test(s)) 틀림.push(`${열쇠} 숫자 겹침: ${s}`);
+      // 평균 힌트가 세운 식의 수는 모두 문제에 늘어놓은 자료여야 합니다.
+      const 평균 = /자료 (\d+)개를 모두 더한 뒤 \d+(?:으로|로) 나누어요: \(([\d+]+)\)/.exec(h);
+      if (평균 && 평균[2].split('+').some((x) => !new RegExp(`(?<!\\d)${x}(?!\\d)`).test(q.prompt.replace(/평균은 \d+/g, '')))) 틀림.push(`${열쇠} 평균 식: ${h}`);
+    }
+    expect([...new Set(틀림)].slice(0, 30)).toEqual([]);
+  });
+
   it('풀이 걸음이 비어 있지 않습니다', () => {
     const 빈 = 문항들.filter(({ q }) => !q.support.steps.length || q.support.steps.some((s) => !s.trim())).map(({ q, 열쇠 }) => `${열쇠}: ${q.prompt}`);
     expect(빈.slice(0, 20)).toEqual([]);
