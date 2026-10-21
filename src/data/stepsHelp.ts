@@ -71,6 +71,8 @@ const 서술로 = (글: string) => 서술끝.reduce((t, [꼴, 바꿈]) => t.repl
  */
 export const 방법붙이기 = (steps: string[], hint: string, answer: string): string[] => {
   if (steps.length >= 2 || !hint.trim()) return steps;
+  // 갈래마다 같이 쓰는 일반 안내는 이 문항을 푸는 까닭이 되지 못하므로 풀이에 넣지 않습니다.
+  if (/자리로 갈라 적어|일의 자리끼리 먼저 더하고, 10이 넘으면|일의 자리를 뺄 수 없으면 십의 자리에서 하나 빌려|물건의 한쪽 끝이 어느 눈금|물건의 두 끝이 자의|재는 단위 하나가 얼마만큼|같은 단위로 맞추어 놓고|곧은 선\(변\)과 뾰족한 곳|수의 길 그림|처음 수와 덜어 낸 수를 적으세요|모으는 두 수를 문장에서|묻는 것이 어느 줄, 어느 칸|한 묶음에 몇 개씩인지, 그런 묶음이|되풀이되는 한 묶음이 어디서|무엇으로 나눌지 먼저 정하세요|각 자리 숫자가 얼마를 나타내는지/.test(hint)) return steps;
   const 답 = answer.trim();
   const 방법 = 서술로(hint);
   if ((답.length >= 2 && 방법.includes(답)) || /세요|요\.?$/.test(방법)) return steps;

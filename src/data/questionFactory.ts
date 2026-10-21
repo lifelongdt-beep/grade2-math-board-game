@@ -499,6 +499,15 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
     if (/(\d+)뼘/.test(prompt) && /더 긴 쪽|더 짧은 쪽/.test(prompt)) {
       return '두 쪽의 뼘 수를 견주어 보세요. 같은 뼘으로 재었으니 뼘 수가 더 많은 쪽이 더 깁니다.';
     }
+    if (/옮길 수 없는/.test(prompt) && tag === 'measurement') {
+      return '두 물건을 직접 맞대어 볼 수 없으면 끈이나 종이띠에 한쪽 길이를 옮겨 표시하세요. 그 끈을 다른 물건에 대어 보면 됩니다.';
+    }
+    if (/(클립|뼘|걸음|지우개|연필)(?:으로|로) \d+번/.test(prompt) && /더 긴|더 짧은/.test(prompt)) {
+      return '같은 단위로 재었으니 몇 번인지만 견주면 됩니다. 더 많이 잰 쪽이 더 깁니다.';
+    }
+    if ((m = /삼각형 조각 (\d+)개와 사각형 조각 (\d+)개/.exec(prompt)) && /변|꼭짓점/.test(prompt)) {
+      return r(`삼각형 한 개의 변은 3개, 사각형 한 개의 변은 4개입니다. 3을 ${m[1]}번, 4를 ${m[2]}번 더해 모두 몇 개인지 구해 보세요.`);
+    }
     if (/받아내리면 십의 자리 숫자는/.test(prompt)) {
       return '받아내림은 십의 자리에서 10을 일의 자리로 빌려 오는 것입니다. 10을 빌려 준 십의 자리 숫자가 어떻게 되는지 생각해 보세요.';
     }
@@ -571,12 +580,34 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
   }
 
   // 덧셈과 뺄셈: 어느 수에서 어느 수를 셈하는지 짚어 줍니다.
-  const plus = /(\d+)\s*\+\s*(\d+)/.exec(prompt);
+  // 다만 계산 결과가 아니라 방법·식 바꾸기·한 자리만을 묻는 문항에는 맞지 않습니다
+  // ('42+39를 쉽게 계산하려고 … 다음에 할 일은?', '38+13=51을 뺄셈식으로').
+  const 셈을묻나 = !/쉽게|방법|다음에|무엇을 해야|뺄셈식으로|덧셈식으로|이용하면|나타낸 것|바르게|옳은 것|옳지 않은|자리끼리|자리에서|어떻게/.test(prompt);
+  {
+    const r = resolveParticles;
+    const 한자리 = /(\d+)\s?([+-])\s?(\d+)에서 (십|일|백)의 자리끼리 (더하|빼)/.exec(prompt);
+    if (한자리) {
+      const 자리 = 한자리[4];
+      const k = { 일: 0, 십: 1, 백: 2 }[자리]!;
+      const 숫자 = (n: string) => n.split('').reverse()[k] ?? '0';
+      return r(`${한자리[1]}의 ${자리}의 자리 숫자 ${숫자(한자리[1])}과(와) ${한자리[3]}의 ${자리}의 자리 숫자 ${숫자(한자리[3])}을(를) 찾아 ${한자리[5] === '더하' ? '더해' : '빼'} 보세요.`);
+    }
+    const 바꾼식 = /(\d+)\s?([+-])\s?(\d+)\s?=\s?(\d+)(?:을|를|입니다)/.exec(prompt);
+    if (바꾼식 && /뺄셈식|덧셈식|이용하면/.test(prompt)) {
+      return 바꾼식[2] === '+'
+        ? r(`${바꾼식[1]}과(와) ${바꾼식[3]}을(를) 모으면 ${바꾼식[4]}입니다. 전체 ${바꾼식[4]}에서 한 부분을 빼면 다른 한 부분이 남는다는 것을 떠올려 보세요.`)
+        : r(`${바꾼식[1]}에서 ${바꾼식[3]}을(를) 빼면 ${바꾼식[4]}이(가) 남습니다. 남은 수와 뺀 수를 모으면 처음 수가 된다는 것을 떠올려 보세요.`);
+    }
+    if (/더 쉽게 계산|쉽게 계산하려고/.test(prompt)) {
+      return '수를 몇십과 몇으로 가르거나, 몇십에 가까운 수로 보고 계산한 뒤 더하거나 덜 한 만큼을 바로잡는다는 것을 떠올려 보세요.';
+    }
+  }
+  const plus = 셈을묻나 ? /(\d+)\s*\+\s*(\d+)/.exec(prompt) : null;
   if (plus) {
     return `${plus[1]}과 ${plus[2]}의 일의 자리끼리 먼저 더하고, 10이 넘으면 십의 자리로 하나 올립니다.`;
   }
 
-  const minus = /(\d+)\s*-\s*(\d+)/.exec(prompt);
+  const minus = 셈을묻나 ? /(\d+)\s*-\s*(\d+)/.exec(prompt) : null;
   if (minus) {
     return `${minus[1]}에서 ${minus[2]}만큼 덜어 냅니다. 일의 자리를 뺄 수 없으면 십의 자리에서 하나 빌려 옵니다.`;
   }
@@ -687,16 +718,28 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
   // 수의 크기 견주기: 어느 자리부터 보아야 하는지가 핵심입니다.
   // 길이·무게를 견주는 문항까지 끌어오지 않도록 갈래를 함께 봅니다.
   if (
-    /가장 큰|가장 작은|더 큰 수|더 작은 수|비교/.test(prompt) &&
+    /가장 큰|가장 작은|더 큰 수|더 작은 수|비교|차례로 놓|부터 차례로/.test(prompt) &&
     (tag === 'number' || tag === 'placeValue')
   ) {
     return '가장 높은 자리부터 견줍니다. 그 자리가 같으면 그다음 자리를 보세요.';
   }
 
-  // 뛰어 세기·수의 자리: 첫 수를 자리별로 갈라 적게 합니다.
-  const firstNumber = /(\d{2,4})/.exec(prompt);
-  if (firstNumber && (tag === 'placeValue' || tag === 'number')) {
-    return `${firstNumber[1]}을 천·백·십·일의 자리로 갈라 적어 보세요. 어느 자리가 바뀌는지 보입니다.`;
+  // 뛰어 세기·수의 자리: 문제가 묻는 것에 맞추어 첫 걸음을 적습니다.
+  if (tag === 'placeValue' || tag === 'number') {
+    const r = resolveParticles;
+    let m: RegExpExecArray | null;
+    if ((m = /(\d+)[은는] (\d+)이 몇 개인 수/.exec(prompt))) return r(`${m[2]}이(가) 10개이면 ${Number(m[2]) * 10}입니다. ${m[1]}에 ${m[2]}이(가) 몇 번 들어가는지 ${m[2]}씩 묶어 세어 보세요.`);
+    if ((m = /(\d+)을 (\d+)씩 묶으면 몇 묶음/.exec(prompt))) return r(`${m[2]}씩 몇 번 뛰어 세면 ${m[1]}이(가) 되는지 세어 보세요.`);
+    if ((m = /(\d+), (\d+), (\d+)/.exec(prompt))) {
+      const 차 = Number(m[2]) - Number(m[1]);
+      if (차 !== 0 && Number(m[3]) - Number(m[2]) === 차) return r(`${m[1]}에서 ${m[2]}(으)로 ${Math.abs(차)}만큼 ${차 > 0 ? '커졌' : '작아졌'}습니다. 같은 만큼 ${차 > 0 ? '커지는' : '작아지는'}지 확인하며 다음 수를 구해 보세요.`);
+    }
+    if ((m = /(\d{3,4})에 대한 설명/.exec(prompt))) return r(`${m[1]}을(를) 자리마다 숫자로 나누어 적고(예: 백의 자리, 십의 자리, 일의 자리), 보기의 말을 하나씩 맞추어 보세요.`);
+    const firstNumber = /(\d{2,4})/.exec(prompt);
+    if (firstNumber && /뛰어|씩|커지|작아지/.test(prompt)) {
+      return r(`${firstNumber[1]}을(를) 자리마다 나누어 적고, 뛰어 셀 때 어느 자리 숫자가 바뀌는지 보세요.`);
+    }
+    if (firstNumber) return r(`${firstNumber[1]}의 각 자리 숫자가 얼마를 나타내는지 적어 보세요. 백의 자리 숫자 3은 300, 십의 자리 숫자 3은 30을 나타냅니다.`);
   }
 
   // 시각: 분을 5분 묶음으로 세게 합니다.
