@@ -1,5 +1,8 @@
 import { deriveGrade2Walk } from './walkthrough';
 import { 힌트다듬기 } from './hintUpgrade';
+import { 시간도움 } from './timeHelp';
+import { 과정걸음, 방법붙이기 } from './stepsHelp';
+import { resolveParticles } from './grade5/util';
 import {
   pickBySeed,
   pickSome,
@@ -35,6 +38,8 @@ import { questionBank } from './questionBank';
 import { 도입복습차시 } from './introReview';
 import { 그림추론 } from './autoFigure';
 import { generateGrade5Questions } from './grade5';
+import { buildGrade5Questions } from './grade5/build';
+import { 늘림뭉치 } from './expand';
 import { generateGrade51Questions } from './grade51';
 import { generateGrade31Questions } from './grade31';
 import { generateGrade11Questions } from './grade11';
@@ -458,6 +463,141 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
     return '두 물건을 나란히 놓아 보세요. 어느 쪽이 어긋나 있으면 길이를 잘못 재게 되는지 보면 됩니다.';
   }
 
+  // ── 낱말 하나로 갈래를 짐작하면 빗나가는 문항 ───────────────────
+  // '95보다 5만큼 더 큰 수'에 '가장 높은 자리부터 견줍니다'가, 그림 없는
+  // '삼각형 5개의 변은 모두 몇 개'에 '곧은 선을 하나씩 짚으며 세어 보세요'가,
+  // 표가 없는 '빨강 7개, 파랑 3개'에 '어느 줄, 어느 칸인지 짚으세요'가 붙었습니다.
+  // 문제의 모양을 먼저 보고, 그 문제를 푸는 첫 걸음을 적습니다.
+  {
+    const r = resolveParticles;
+    let m: RegExpExecArray | null;
+    // 풀이 과정(① ② … □) 문항: 문제 글의 첫 식이 아니라 □가 있는 걸음의 셈을 봅니다.
+    // '① 25-21=4이므로 4씩 커집니다. ② 25에 4를 더하면 □'에 받아내림 안내가 붙었습니다.
+    if (/[①②③④]/.test(prompt) && prompt.includes('□')) {
+      const 조각 = prompt.split(/[①②③④⑤]/);
+      const 자리 = 조각.findIndex((s, k) => k > 0 && s.includes('□'));
+      const 걸음 = 자리 > 0 ? 조각[자리] : '';
+      const 앞 = 자리 > 1 ? ' 앞 걸음에서 이 두 수가 어디서 나왔는지 확인하고' : '';
+      const 큰수 = /(\d+)보다 (\d+)만큼 큰 □/.exec(걸음);
+      const 더 = /(\d+)\s?\+\s?(\d+)\s?=\s?□/.exec(걸음) ?? /(\d+)에 (\d+)[을를] 더하면 □/.exec(걸음) ?? 큰수;
+      const 빼 = /(\d+)\s?-\s?(\d+)\s?=\s?□/.exec(걸음);
+      const 곱 = /(\d+)\s?×\s?(\d+)\s?=\s?□/.exec(걸음);
+      if (더) {
+        const 올림 = (Number(더[1]) % 10) + (Number(더[2]) % 10) >= 10;
+        return r(`□가 있는 걸음은 ${더[1]}+${더[2]}입니다.${앞} 더해 보세요.${올림 ? ' 일의 자리끼리 더해 10이 넘으면 십의 자리로 1을 올립니다.' : ''}`);
+      }
+      if (빼) {
+        const 내림 = Number(빼[1]) % 10 < Number(빼[2]) % 10;
+        return r(`□가 있는 걸음은 ${빼[1]}-${빼[2]}입니다.${앞} 빼 보세요.${내림 ? ' 일의 자리끼리 뺄 수 없으면 십의 자리에서 10을 받아내립니다.' : ''}`);
+      }
+      const 몇번 = /(\d+)씩 □번/.exec(걸음);
+      if (몇번) { const k = Number(몇번[1]); return r(`앞 걸음에서 구한 수에 ${k}이(가) 몇 번 들어가는지 보면 됩니다. ${k}, ${k * 2}, ${k * 3}…으로 세어 그 수에 닿을 때까지 몇 번인지 세어 보세요.`); }
+      if (곱) return r(`□가 있는 걸음은 ${곱[1]}×${곱[2]}입니다. ${곱[1]}을(를) ${곱[2]}번 더한 것과 같으니 ${곱[1]}단을 떠올려 보세요.`);
+      if (/덧셈표|곱셈표|뛰어 세|쌓기나무|이어집니다|되풀이|다음에 올 수|씩 커지/.test(prompt)) return '①부터 차례로 읽어 보세요. □가 있는 걸음은 바로 앞 걸음에서 알아낸 수를 이어 받아 셈하면 됩니다.';
+    }
+    if (/풀이 단계가 뒤섞였습니다/.test(prompt) && /덧셈표|곱셈표|뛰어 세|쌓기나무|이어집니다|되풀이/.test(prompt)) {
+      return '맨 먼저 할 일을 찾으세요. 알고 있는 칸이나 수를 먼저 적고, 규칙을 말한 뒤, 그 규칙으로 □를 구하는 차례인지 보세요.';
+    }
+    if ((m = /(덧셈표|곱셈표)에서 (\d+)([+×])(\d+)=(\d+)입니다\. (\d+)[+×](\d+)/.exec(prompt))) {
+      const 바뀐 = Number(m[2]) === Number(m[6]) ? [m[4], m[7]] : [m[2], m[6]];
+      return m[1] === '덧셈표'
+        ? r(`${m[5]}을(를) 알고 있습니다. 두 식에서 바뀐 수가 ${바뀐[0]}에서 ${바뀐[1]}(으)로 얼마만큼 바뀌었는지 보고, 합도 그만큼 바뀐다고 생각해 보세요.`)
+        : r(`${m[5]}을(를) 알고 있습니다. 두 식에서 바뀐 수가 ${바뀐[0]}에서 ${바뀐[1]}(으)로 바뀌었습니다. 묶음이 몇 개 늘거나 줄었는지 보고, 그만큼 더하거나 빼 보세요.`);
+    }
+    if ((m = /곱셈표의 (\d+)단 줄을 오른쪽으로 한 칸 갈 때마다 수가 얼마씩/.exec(prompt))) {
+      return r(`${m[1]}단 줄에서 이웃한 두 칸의 수를 구해 보세요. 오른쪽 칸은 곱하는 수가 1 큰 칸이니, 두 수의 차가 얼마인지 보면 됩니다.`);
+    }
+    if ((m = /(\d+)에서 몇씩 뛰어 세었더니 (\d+)이?가? ?되었습니다\. (\d+)번 뛰었다면/.exec(prompt))) {
+      return r(`먼저 ${m[1]}에서 ${m[2]}까지 얼마나 커졌는지 빼어 구하세요. 같은 수를 ${m[3]}번 더해 그만큼이 되는 수를 찾으면 됩니다.`);
+    }
+    if (tag === 'solid' && /몇 개 더 (?:썼|많|적)|몇 개 더 적게/.test(prompt) && !/필요|층에/.test(prompt)) {
+      return '두 사람이 쓴 쌓기나무의 수를 문장에서 찾으세요. 많은 쪽에서 적은 쪽을 빼면 몇 개 더 썼는지 나옵니다.';
+    }
+    if (/앞에서 본 칸이 \d+칸이고 위에서 본 칸이 \d+칸/.test(prompt)) {
+      return '앞과 위에서 본 모양만으로는 뒤에 숨은 쌓기나무를 다 알 수 없습니다. 어느 쪽에서 본 모양을 더 보면 숨은 것까지 확실해지는지 생각해 보세요.';
+    }
+    if ((m = /(\d+)원이 들어 있습니다\. 매주 (\d+)원씩 넣어 왔다면 (\d+)주 전/.exec(prompt))) {
+      return r(`한 주 전으로 갈 때마다 ${m[2]}원씩 작아집니다. ${m[1]}에서 ${m[2]}씩 ${m[3]}번 거꾸로 뛰어 세어 보세요.`);
+    }
+    if (/^1m는 몇 cm/.test(prompt)) return '1m 자를 떠올려 보세요. 0부터 끝까지 1cm 눈금이 몇 번 있는지, 끝 눈금에 적힌 수를 읽어 보면 됩니다.';
+    if (/표를 만든 까닭/.test(prompt)) return '표로 모으면 무엇을 한눈에 알 수 있는지 생각해 보세요. 그것을 알면 무엇을 정할 수 있을지 보기에서 찾으세요.';
+    if (/어떻게 조사하면/.test(prompt)) return '친구들의 생각을 빠짐없이, 한 사람에 한 번씩만 셀 수 있는 방법인지 보기마다 따져 보세요.';
+    if ((m = /(\d+)보다 (\d+)만큼 더 (큰|작은) 수/.exec(prompt))) {
+      const 큰 = m[3] === '큰';
+      return r(`${m[1]}보다 ${m[2]}만큼 더 ${m[3]} 수는 ${m[1]}에 ${m[2]}을(를) ${큰 ? '더한' : '뺀'} 수입니다. ${m[1]}에서 ${m[2]}만큼 ${큰 ? '앞으로' : '거꾸로'} 뛰어 세어 보세요.`);
+    }
+    if (/(\d+)[을를]? ?(?:바르게 )?읽(?:은|는|으면)|읽는 방법/.test(prompt) && (tag === 'number' || tag === 'placeValue')) {
+      return '높은 자리부터 숫자와 자리 이름(천, 백, 십)을 함께 읽으세요. 숫자가 0인 자리는 읽지 않고, 숫자가 1인 자리는 자리 이름만 읽으세요.';
+    }
+    if ((m = /1\s?cm가 (\d+)번/.exec(prompt))) {
+      return '1cm가 한 번이면 1cm, 두 번이면 2cm입니다. 1cm가 몇 번 이어졌는지 세어 보세요.';
+    }
+    if ((m = /^(삼각형|사각형) (\d+)개의 (변|꼭짓점)/.exec(prompt))) {
+      return r(`${m[1]} 한 개의 ${m[3]}이(가) 몇 개인지 먼저 떠올리고, 그 수를 ${m[2]}번 더해 보세요.`);
+    }
+    if ((m = /(\d+)층에 (\d+)개/.exec(prompt)) && !/그림/.test(prompt) && tag === 'solid') {
+      if (/더 많을|더 적을/.test(prompt)) return '두 층에 쌓은 쌓기나무의 수를 문장에서 찾으세요. 많은 쪽에서 적은 쪽을 빼면 몇 개 더 많은지 나옵니다.';
+      if (/친구도 똑같은/.test(prompt)) return '먼저 한 사람이 쌓은 쌓기나무를 층마다 더해 세어 보세요. 친구도 똑같이 쌓았으니 그 수를 두 번 더해 보세요.';
+      return '층마다 쌓은 쌓기나무의 수를 문장에서 찾아 모두 더해 보세요.';
+    }
+    if (!/표|그래프|그림/.test(prompt)) {
+      const 셈 = [...prompt.matchAll(/([가-힣]+) (\d+)개/g)];
+      if (셈.length >= 2 && /더 많을까요|더 적을까요/.test(prompt)) {
+        return r(`두 수 ${셈[0][2]}과(와) ${셈[1][2]}을(를) 견주어, 큰 수에서 작은 수를 빼 보세요.`);
+      }
+      if (셈.length >= 2 && /모두 몇/.test(prompt) && (tag === 'classification' || tag === 'data')) {
+        return r(`문장에 나온 수 ${셈.map((x) => x[2]).join(', ')}을(를) 모두 더해 보세요.`);
+      }
+    }
+    if (/(\d+)뼘/.test(prompt) && /더 긴 쪽|더 짧은 쪽/.test(prompt)) {
+      return '두 쪽의 뼘 수를 견주어 보세요. 같은 뼘으로 재었으니 뼘 수가 더 많은 쪽이 더 깁니다.';
+    }
+    if (/옮길 수 없는/.test(prompt) && tag === 'measurement') {
+      return '두 물건을 직접 맞대어 볼 수 없으면 끈이나 종이띠에 한쪽 길이를 옮겨 표시하세요. 그 끈을 다른 물건에 대어 보면 됩니다.';
+    }
+    if (/(클립|뼘|걸음|지우개|연필)(?:으로|로) \d+번/.test(prompt) && /더 긴|더 짧은/.test(prompt)) {
+      return '같은 단위로 재었으니 몇 번인지만 견주면 됩니다. 더 많이 잰 쪽이 더 깁니다.';
+    }
+    if ((m = /삼각형 조각 (\d+)개와 사각형 조각 (\d+)개/.exec(prompt)) && /변|꼭짓점/.test(prompt)) {
+      return r(`삼각형 한 개의 변은 3개, 사각형 한 개의 변은 4개입니다. 3을 ${m[1]}번, 4를 ${m[2]}번 더해 모두 몇 개인지 구해 보세요.`);
+    }
+    if (/어느 자리부터/.test(prompt) && (tag === 'addition' || tag === 'subtraction')) {
+      return '받아올림과 받아내림을 생각해 보세요. 낮은 자리에서 10이 넘거나 모자라면 윗자리와 주고받아야 하므로 낮은 자리부터 셈합니다.';
+    }
+    if (/뺄 수 없습니다\. 십의 자리에서 얼마/.test(prompt)) {
+      return '십의 자리 숫자 1은 10을 나타냅니다. 일의 자리로 빌려 오는 것이 얼마인지 생각해 보세요.';
+    }
+    if ((m = /(\d+)×(\d+)[은는] (\d+)[을를] 몇 번 더한/.exec(prompt))) {
+      return r(`${m[1]}씩 뛰어 세어 ${m[1]}×${m[2]}이(가) 될 때까지 몇 번 뛰었는지 세어 보세요.`);
+    }
+    // 자가 없는 길이 문장제: 눈금 읽기가 아니라 길이끼리 셈하는 문제입니다.
+    if (tag === 'measurement' && !/자의|눈금|자로 재|줄자/.test(prompt)) {
+      const 길이들 = [...prompt.matchAll(/(\d+)\s?cm/g)].map((x) => x[1]);
+      if (길이들.length >= 2 && !/\d+\s?m(?!m)/.test(prompt.replace(/cm/g, ''))) {
+        if (/차|더 길|더 짧|짧았|길었|모자/.test(prompt)) return r(`두 길이 ${길이들[0]}cm와 ${길이들[1]}cm 가운데 긴 것에서 짧은 것을 빼 보세요.`);
+        if (/모두|이었|이으|합/.test(prompt)) return r(`두 길이 ${길이들[0]}cm와 ${길이들[1]}cm를 더해 보세요. 단위는 그대로 cm입니다.`);
+      }
+      if ((m = /(\d+)\s?cm였습니다\. 1\s?cm(?:로|가) 몇 번/.exec(prompt))) return '1cm가 몇 번 들어가는지가 곧 몇 cm인지입니다. 잰 길이의 수를 보세요.';
+      if (/맞대어/.test(prompt)) return '두 물건의 한쪽 끝을 어떻게 놓아야 다른 쪽 끝만 보고 길이를 견줄 수 있을지 생각해 보세요.';
+      if (/뼘|걸음|클립|양팔/.test(prompt) && /까닭|다른/.test(prompt)) return '재는 단위의 길이가 사람이나 물건마다 같은지 생각해 보세요.';
+    }
+    // 표·그래프 없이 문장에 수가 나오는 분류·자료 문항입니다.
+    if ((tag === 'classification' || tag === 'data') && !/표를 보고|표에서|그래프/.test(prompt)) {
+      const 수들 = [...prompt.matchAll(/(\d+)\s?(?:개|명|장|권)/g)].map((x) => x[1]);
+      if (수들.length >= 2 && /가장 많은 .+ 가장 적은|차/.test(prompt)) return '가장 큰 수와 가장 작은 수를 먼저 찾은 다음, 큰 수에서 작은 수를 빼 보세요.';
+      if (수들.length >= 2 && /모두 몇|합계/.test(prompt)) return r(`문장에 나온 수 ${수들.join(', ')}을(를) 모두 더해 보세요.`);
+      if (수들.length >= 2 && /그중|가운데/.test(prompt) && /몇 명|몇 개/.test(prompt)) return '전체 수에서 아는 부분의 수를 빼면 모르는 부분의 수가 나옵니다.';
+      if (수들.length >= 2 && /가장/.test(prompt)) return '나온 수를 하나씩 견주어 가장 큰 수(작은 수)를 찾아보세요.';
+    }
+    if (tag === 'pattern' && !/되풀이|규칙|무늬|차례로|번째|째/.test(prompt) && /모두 몇/.test(prompt)) {
+      const 수들 = [...prompt.matchAll(/(\d+)\s?개/g)].map((x) => x[1]);
+      if (수들.length >= 2) return r(`나온 수 ${수들.join(', ')}을(를) 모두 더해 보세요.`);
+    }
+    if (/받아내리면 십의 자리 숫자는/.test(prompt)) {
+      return '받아내림은 십의 자리에서 10을 일의 자리로 빌려 오는 것입니다. 10을 빌려 준 십의 자리 숫자가 어떻게 되는지 생각해 보세요.';
+    }
+  }
+
   // 곱셈: 한 묶음의 크기와 묶음 수를 짚어 줍니다.
   const grouped = /(\d+)\s*[가-힣]{0,3}씩\s*(\d+)\s*[가-힣]{0,3}/.exec(prompt);
   if (grouped) {
@@ -508,10 +648,14 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
   // '㉠ 6×3, ㉡ 3×3 중 더 큰 것은?'에서 앞의 식만 설명하면, 견주어야
   // 할 두 식 가운데 하나만 알려 주는 셈이 됩니다. 둘 다 구해 보라고
   // 말해 주어야 아이가 견줄 수 있습니다.
-  const allTimes = [...prompt.matchAll(/(\d+)\s*×\s*(\d+)/g)];
+  // 같은 식이 여러 번 나오면('8×7에 대한 설명… ㄷ 8×7=56') 서로 다른 식만 봅니다.
+  const allTimes = [...new Set([...prompt.matchAll(/(\d+)\s*×\s*(\d+)/g)].map((one) => `${one[1]}×${one[2]}`))];
   if (allTimes.length >= 2) {
-    const shown = allTimes.slice(0, 2).map((one) => `${one[1]}×${one[2]}`);
-    return `${shown[0]}과 ${shown[1]}을 각각 구해 적어 보세요. 두 수를 나란히 놓고 견주면 됩니다.`;
+    return resolveParticles(`${allTimes[0]}과(와) ${allTimes[1]}을(를) 각각 구해 적어 보세요. 두 수를 나란히 놓고 견주면 됩니다.`);
+  }
+  if (allTimes.length === 1 && /옳은 것|옳지 않은 것|설명/.test(prompt)) {
+    const [a, b] = allTimes[0].split('×');
+    return resolveParticles(`먼저 ${allTimes[0]}의 값을 구해 두세요.${/한 묶음 더/.test(prompt) ? ` ${a}씩 한 묶음 더하면 ${a}×${Number(b) + 1}이(가) 됩니다.` : ''} 보기를 하나씩 그 값과 맞추어 보세요.`);
   }
 
   const times = /(\d+)\s*×\s*(\d+)/.exec(prompt);
@@ -525,12 +669,34 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
   }
 
   // 덧셈과 뺄셈: 어느 수에서 어느 수를 셈하는지 짚어 줍니다.
-  const plus = /(\d+)\s*\+\s*(\d+)/.exec(prompt);
+  // 다만 계산 결과가 아니라 방법·식 바꾸기·한 자리만을 묻는 문항에는 맞지 않습니다
+  // ('42+39를 쉽게 계산하려고 … 다음에 할 일은?', '38+13=51을 뺄셈식으로').
+  const 셈을묻나 = !/쉽게|방법|다음에|무엇을 해야|뺄셈식으로|덧셈식으로|이용하면|나타낸 것|바르게|옳은 것|옳지 않은|자리끼리|자리에서|어떻게/.test(prompt);
+  {
+    const r = resolveParticles;
+    const 한자리 = /(\d+)\s?([+-])\s?(\d+)에서 (십|일|백)의 자리끼리 (더하|빼)/.exec(prompt);
+    if (한자리) {
+      const 자리 = 한자리[4];
+      const k = { 일: 0, 십: 1, 백: 2 }[자리]!;
+      const 숫자 = (n: string) => n.split('').reverse()[k] ?? '0';
+      return r(`${한자리[1]}의 ${자리}의 자리 숫자 ${숫자(한자리[1])}과(와) ${한자리[3]}의 ${자리}의 자리 숫자 ${숫자(한자리[3])}을(를) 찾아 ${한자리[5] === '더하' ? '더해' : '빼'} 보세요.`);
+    }
+    const 바꾼식 = /(\d+)\s?([+-])\s?(\d+)\s?=\s?(\d+)(?:을|를|입니다)/.exec(prompt);
+    if (바꾼식 && /뺄셈식|덧셈식|이용하면/.test(prompt)) {
+      return 바꾼식[2] === '+'
+        ? r(`${바꾼식[1]}과(와) ${바꾼식[3]}을(를) 모으면 ${바꾼식[4]}입니다. 전체 ${바꾼식[4]}에서 한 부분을 빼면 다른 한 부분이 남는다는 것을 떠올려 보세요.`)
+        : r(`${바꾼식[1]}에서 ${바꾼식[3]}을(를) 빼면 ${바꾼식[4]}이(가) 남습니다. 남은 수와 뺀 수를 모으면 처음 수가 된다는 것을 떠올려 보세요.`);
+    }
+    if (/더 쉽게 계산|쉽게 계산하려고/.test(prompt)) {
+      return '수를 몇십과 몇으로 가르거나, 몇십에 가까운 수로 보고 계산한 뒤 더하거나 덜 한 만큼을 바로잡는다는 것을 떠올려 보세요.';
+    }
+  }
+  const plus = 셈을묻나 ? /(\d+)\s*\+\s*(\d+)/.exec(prompt) : null;
   if (plus) {
     return `${plus[1]}과 ${plus[2]}의 일의 자리끼리 먼저 더하고, 10이 넘으면 십의 자리로 하나 올립니다.`;
   }
 
-  const minus = /(\d+)\s*-\s*(\d+)/.exec(prompt);
+  const minus = 셈을묻나 ? /(\d+)\s*-\s*(\d+)/.exec(prompt) : null;
   if (minus) {
     return `${minus[1]}에서 ${minus[2]}만큼 덜어 냅니다. 일의 자리를 뺄 수 없으면 십의 자리에서 하나 빌려 옵니다.`;
   }
@@ -546,9 +712,84 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
     return `${bundle[1]}짜리 묶음이 ${bundle[2]}개입니다. ${bundle[1]}씩 ${bundle[2]}번 세어 보세요.`;
   }
 
+  // 규칙 문항: 덧셈표·곱셈표·쌓기나무·뛰어 세기마다 무엇이 얼마씩 바뀌는지 보게 합니다.
+  // '되풀이되는 한 묶음을 끊어 보세요'는 색이 되풀이되는 무늬에만 맞는 말입니다.
+  {
+    const r = resolveParticles;
+    const 원번호 = /[①②③④⑤]/.test(prompt);
+    const 표 = /(덧셈표|곱셈표)에서 (\d+)[과와] (\d+)[이가] 만나는 칸의 수는 (\d+)입니다\. (아래로|오른쪽으로) 한 칸/.exec(prompt);
+    if (표) {
+      const 셈 = 표[1] === '덧셈표' ? '더하는' : '곱하는';
+      return 표[1] === '덧셈표'
+        ? `${표[5]} 한 칸 가면 ${셈} 두 수 가운데 하나가 1 커집니다. 더하는 수가 1 커지면 합은 얼마만큼 커지는지 생각해 보세요.`
+        : r(`${표[5]} 한 칸 가면 ${셈} 두 수 가운데 하나가 1 커집니다. ${표[2]}×${표[3]}에서 어느 수가 1 커지는지 정하고, 그만큼 한 묶음이 더 붙는다고 생각해 보세요.`);
+    }
+    const 칸 = /(덧셈표|곱셈표)에서 (\d+)[과와] (\d+)[이가] 만나는 칸의 수는 얼마/.exec(prompt);
+    if (칸) {
+      return 칸[1] === '덧셈표'
+        ? r(`덧셈표에서 두 수가 만나는 칸에는 두 수를 더한 값이 들어갑니다. ${칸[2]}+${칸[3]}을(를) 계산해 보세요.`)
+        : r(`곱셈표에서 두 수가 만나는 칸에는 두 수를 곱한 값이 들어갑니다. ${칸[2]}×${칸[3]}을(를) 계산해 보세요.`);
+    }
+    if (/덧셈표에서 어떤 칸의 수가 \d+입니다\. 그 칸에서 오른쪽으로 한 칸/.test(prompt)) {
+      return '오른쪽으로 한 칸 가면 위쪽에 있는 더하는 수가 1 커집니다. 더하는 수가 1 커지면 합은 얼마만큼 커지는지 생각해 보세요.';
+    }
+    if (/덧셈표에서 \d+[이가] 있는 줄은 오른쪽으로 갈수록 몇씩/.test(prompt)) {
+      return '그 줄에서 옆 칸으로 갈 때 위쪽의 더하는 수가 얼마만큼 커지는지 보세요. 더하는 수가 커진 만큼 합도 커집니다.';
+    }
+    const 쌓기 = /쌓기나무[를가] (\d+)개, (\d+)개, (\d+)개로/.exec(prompt);
+    if (쌓기) {
+      return `${쌓기[1]}개에서 ${쌓기[2]}개로, ${쌓기[2]}개에서 ${쌓기[3]}개로 몇 개씩 늘었는지 세어 보세요. 늘어나는 수가 같으면 그것이 규칙입니다.`;
+    }
+    if (/쌓은 모양을 보고 몇 개씩 늘어나는/.test(prompt)) {
+      return '앞 모양과 다음 모양의 쌓기나무를 각각 세고, 몇 개가 더 놓였는지 견주어 보세요.';
+    }
+    const 두번 = /쌓기나무가 (\d+)개씩 늘어날 때 (두|세) 번 더 놓으면/.exec(prompt);
+    if (두번) return `한 번 놓을 때마다 ${두번[1]}개씩 늘어납니다. ${두번[2]} 번이면 ${두번[1]}개를 ${두번[2]} 번 더해 보세요.`;
+    const 되풀이수 = /색이 (\d+)개씩 되풀이됩니다\. 이 되풀이를 (\d+)번/.exec(prompt);
+    if (되풀이수) return r(`한 번 되풀이할 때 ${되풀이수[1]}개씩입니다. ${되풀이수[1]}개씩 ${되풀이수[2]}번이므로 곱셈식 ${되풀이수[1]}×${되풀이수[2]}을(를) 세워 계산해 보세요.`);
+    const 버스 = /(\d+)분마다 한 대씩 떠납니다\. 첫 버스가 떠난 뒤 (\d+)대가 더 떠날/.exec(prompt);
+    if (버스) return `한 대가 더 떠날 때마다 ${버스[1]}분이 지납니다. 첫 버스는 세지 않고, ${버스[1]}분씩 ${버스[2]}번 지나는 시간을 셈해 보세요.`;
+    const 횟수 = /(\d+)씩 뛰어 세어 (\d+)(?:이|가|까지)/.exec(prompt);
+    if (횟수 && /몇 번/.test(prompt) && !원번호) {
+      return r(`${횟수[1]}, ${Number(횟수[1]) * 2}, ${Number(횟수[1]) * 3}…처럼 ${횟수[1]}씩 뛰어 세면서 ${횟수[2]}이(가) 나올 때까지 몇 번 뛰었는지 손가락으로 세어 보세요.`);
+    }
+    const 자리 = /(?:(\d+)에서 )?(\d+)씩 뛰어 세면 어느 자리 숫자/.exec(prompt);
+    if (자리) return r(`${자리[2]}을(를) 더하면 어느 자리에 1이 더해지는지 생각해 보세요. ${자리[1] ?? '아무 수'}에 ${자리[2]}을(를) 한 번 더해 견주어 보면 바뀐 자리가 보입니다.`);
+    const 다음수 = /(\d+)에서 (\d+)씩 뛰어 세면 다음에 오는 수/.exec(prompt);
+    if (다음수) return r(`${다음수[2]}씩 뛰어 세면 ${다음수[2]}씩 커집니다. ${다음수[1]}에 ${다음수[2]}을(를) 더해 보세요. 받아올림이 있는지도 살펴보세요.`);
+    if (/옳은 것|옳지 않은 것/.test(prompt) && /뛰어 세/.test(prompt)) {
+      return '보기를 하나씩 읽고, 직접 세어 보며 맞는 말인지 따져 보세요. 세는 방법이 바뀌어도 전체 수가 바뀌는지 생각해 보세요.';
+    }
+    const 장 = /(\S+), (\S+) 순서로 색종이를 (\d+)장/.exec(prompt);
+    if (장) return `${장[1]}, ${장[2]} 2장이 한 묶음입니다. ${장[3]}장 안에 묶음이 몇 번 들어가는지, 남는 장이 있다면 무슨 색인지 보세요.`;
+    if (/^\d+, □, \d+로 이어집니다/.test(prompt)) return '□ 앞의 수에서 □를 지나 뒤의 수까지 똑같이 커져야 합니다. 두 수 사이를 똑같이 두 번에 걸쳐 가는 수를 찾아보세요.';
+    const 구간 = /(\d+)에서 (\d+)까지 (\d+)씩 뛰어 센 과정/.exec(prompt);
+    if (구간) return r(`먼저 ${구간[1]}에서 ${구간[2]}까지 얼마나 늘었는지 빼어 구하세요. 그만큼에 ${구간[3]}이(가) 몇 번 들어가는지 ${구간[3]}씩 세어 보세요.`);
+    const 거꾸로 = /(\d+)에서 (\d+)씩 거꾸로 뛰어 세면 바로 앞의 수/.exec(prompt);
+    if (거꾸로) return r(`거꾸로 뛰어 세면 ${거꾸로[2]}씩 작아집니다. ${거꾸로[1]}에서 ${거꾸로[2]}을(를) 빼 보세요. 받아내림이 있는지도 살펴보세요.`);
+    const 어떤수 = /어떤 수에서 (\d+)씩 (\d+)번 뛰어 세었더니 (\d+)이?가? ?되었습니다/.exec(prompt);
+    if (어떤수) return r(`거꾸로 생각해 보세요. ${어떤수[3]}에서 ${어떤수[1]}씩 ${어떤수[2]}번 거꾸로 뛰어 세면 처음 수가 나옵니다.`);
+    const 빈칸 = /^(\d+), (\d+), □, (\d+)(?:으로|로) 이어집니다/.exec(prompt);
+    if (빈칸) {
+      const 차 = Number(빈칸[2]) - Number(빈칸[1]);
+      if (차) return r(`${빈칸[1]}에서 ${빈칸[2]}(으)로 ${Math.abs(차)}만큼 ${차 > 0 ? '커졌' : '작아졌'}습니다. ${빈칸[2]}에서 같은 만큼 ${차 > 0 ? '커진' : '작아진'} 수가 □입니다. □ 다음 수가 ${빈칸[3]}인지도 확인해 보세요.`);
+    }
+    if (/쌓기나무 \d+개로 만든 모양에서 \d+개를 옆으로 옮겼/.test(prompt)) return '쌓기나무를 옆으로 옮기기만 했는지, 새로 더하거나 덜어 냈는지 보세요. 옮기기만 하면 모양은 바뀌어도 수는 그대로입니다.';
+    const 필요 = /쌓기나무 (\d+)개로 모양을 쌓았습니다\. (\d+)개를 쓴 모양을 만들려면 몇 개가 더 필요/.exec(prompt);
+    if (필요) return r(`만들 모양에 쓰는 ${필요[2]}개에서 지금 가진 ${필요[1]}개를 빼 보세요.`);
+    const 위에 = /쌓기나무 (\d+)개로 쌓은 모양 위에 (\d+)개를 더 쌓으면 모두/.exec(prompt);
+    if (위에) return r(`처음 모양의 ${위에[1]}개에 위에 더 쌓은 ${위에[2]}개를 더해 보세요.`);
+    const 칸채움 = /곱셈표에서 (\d+)[과와] (\d+)[이가] 만나는 칸(?:에 알맞은 수|을 채우는)/.exec(prompt);
+    if (칸채움 && !원번호) return r(`곱셈표에서 두 수가 만나는 칸에는 두 수를 곱한 값이 들어갑니다. ${칸채움[1]}×${칸채움[2]}을(를) 계산해 보세요.`);
+    const 번째 = /되풀이[되는됩니다될]*.*?(\d+)번째/.exec(prompt);
+    if (번째 && !원번호) return `되풀이되는 한 마디가 몇 개인지 먼저 세어 보세요. ${번째[1]}번째까지 한 마디씩 끊어 가며 세면 그 자리가 마디의 몇째인지 보입니다.`;
+  }
+
   // 뛰어 세기
   const jump = /(\d+)씩 뛰어 세/.exec(prompt);
-  if (jump) {
+  if (jump && !/옳은 것|옳지 않은/.test(prompt)) {
+    const s = Number(jump[1]);
+    if (![1, 10, 100, 1000].includes(s)) return `${s}, ${s * 2}, ${s * 3}…처럼 ${s}씩 더해 가며 세어 보세요. 한 번 뛸 때마다 ${s}씩 커집니다.`;
     return `${jump[1]}씩 커집니다. 어느 자리 숫자가 바뀌는지 보면서 세어 보세요.`;
   }
 
@@ -641,16 +882,28 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
   // 수의 크기 견주기: 어느 자리부터 보아야 하는지가 핵심입니다.
   // 길이·무게를 견주는 문항까지 끌어오지 않도록 갈래를 함께 봅니다.
   if (
-    /가장 큰|가장 작은|더 큰 수|더 작은 수|비교/.test(prompt) &&
+    /가장 큰|가장 작은|더 큰 수|더 작은 수|비교|차례로 놓|부터 차례로/.test(prompt) &&
     (tag === 'number' || tag === 'placeValue')
   ) {
     return '가장 높은 자리부터 견줍니다. 그 자리가 같으면 그다음 자리를 보세요.';
   }
 
-  // 뛰어 세기·수의 자리: 첫 수를 자리별로 갈라 적게 합니다.
-  const firstNumber = /(\d{2,4})/.exec(prompt);
-  if (firstNumber && (tag === 'placeValue' || tag === 'number')) {
-    return `${firstNumber[1]}을 천·백·십·일의 자리로 갈라 적어 보세요. 어느 자리가 바뀌는지 보입니다.`;
+  // 뛰어 세기·수의 자리: 문제가 묻는 것에 맞추어 첫 걸음을 적습니다.
+  if (tag === 'placeValue' || tag === 'number') {
+    const r = resolveParticles;
+    let m: RegExpExecArray | null;
+    if ((m = /(\d+)[은는] (\d+)이 몇 개인 수/.exec(prompt))) return r(`${m[2]}이(가) 10개이면 ${Number(m[2]) * 10}입니다. ${m[1]}에 ${m[2]}이(가) 몇 번 들어가는지 ${m[2]}씩 묶어 세어 보세요.`);
+    if ((m = /(\d+)을 (\d+)씩 묶으면 몇 묶음/.exec(prompt))) return r(`${m[2]}씩 몇 번 뛰어 세면 ${m[1]}이(가) 되는지 세어 보세요.`);
+    if ((m = /(\d+), (\d+), (\d+)/.exec(prompt))) {
+      const 차 = Number(m[2]) - Number(m[1]);
+      if (차 !== 0 && Number(m[3]) - Number(m[2]) === 차) return r(`${m[1]}에서 ${m[2]}(으)로 ${Math.abs(차)}만큼 ${차 > 0 ? '커졌' : '작아졌'}습니다. 같은 만큼 ${차 > 0 ? '커지는' : '작아지는'}지 확인하며 다음 수를 구해 보세요.`);
+    }
+    if ((m = /(\d{3,4})에 대한 설명/.exec(prompt))) return r(`${m[1]}을(를) 자리마다 숫자로 나누어 적고(예: 백의 자리, 십의 자리, 일의 자리), 보기의 말을 하나씩 맞추어 보세요.`);
+    const firstNumber = /(\d{2,4})/.exec(prompt);
+    if (firstNumber && /뛰어|씩|커지|작아지/.test(prompt)) {
+      return r(`${firstNumber[1]}을(를) 자리마다 나누어 적고, 뛰어 셀 때 어느 자리 숫자가 바뀌는지 보세요.`);
+    }
+    if (firstNumber) return r(`${firstNumber[1]}의 각 자리 숫자가 얼마를 나타내는지 적어 보세요. 백의 자리 숫자 3은 300, 십의 자리 숫자 3은 30을 나타냅니다.`);
   }
 
   // 시각: 분을 5분 묶음으로 세게 합니다.
@@ -727,6 +980,12 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
 //
 // 그럴 때는 방법만 말하는 갈래별 문장으로 바꿉니다. 틀린 뒤 화면에는
 // '정답' 줄이 따로 있으므로, 거기서 알아야 할 것은 그대로 알게 됩니다.
+/** 풀이 글을 문장마다 끊습니다. '2.5+1.2=3.7입니다.'처럼 소수점은 끊지 않습니다. */
+const 풀이걸음 = (solution: string): string[] => {
+  const 문장 = solution.split(/(?<=[.?!])\s+(?=\S)/).map((s) => s.trim()).filter(Boolean);
+  return 문장.length ? 문장 : [solution];
+};
+
 const hintWithoutAnswer = (tailored: string | null, guide: string, answer: string): string => {
   const target = answer.trim();
   // 한 글자 답(2, 3…)까지 막으면 멀쩡한 볼 곳이 거의 다 걸립니다.
@@ -769,18 +1028,24 @@ const buildLearningSupport = (
           selfCheck: selfCheckGuide[tag],
         };
 
+  // 이 문항의 수로 만든 볼 곳이 있으면 그것을 씁니다. 다만 그것이
+  // 답을 그대로 말해 버리면 쓰지 않습니다.
+  const studentHint = hintWithoutAnswer(specificHint(prompt, tag), guide.studentHint, answer);
   return {
     studentConcept: guide.studentConcept,
-    // 이 문항의 수로 만든 볼 곳이 있으면 그것을 씁니다. 다만 그것이
-    // 답을 그대로 말해 버리면 쓰지 않습니다.
-    studentHint: hintWithoutAnswer(specificHint(prompt, tag), guide.studentHint, answer),
+    studentHint,
     coreConcept: guide.coreConcept,
     readStrategy: `${strategy}: ${guide.readStrategy}`,
-    steps: [
-      '문제에서 무엇을 구하라고 했는지 먼저 찾습니다.',
-      guide.readStrategy,
-      solution,
-    ],
+    // 풀이 걸음은 이 문항의 풀이를 문장마다 끊어 둡니다. 예전에는 '문제에서
+    // 무엇을 구하라고 했는지 먼저 찾습니다', 갈래 공통 읽기 안내, 풀이 순으로
+    // 두어 힌트의 걸음이 문항과 상관없는 두 줄이었습니다(읽기 안내는
+    // readStrategy에 따로 있습니다).
+    steps: (() => {
+      const 걸음 = 풀이걸음(solution);
+      // 풀이 과정 문항(① ② ③ … □)은 문제에 적힌 과정을 □를 채워 걸음으로 펼칩니다.
+      // 그래도 한 줄이면 볼 곳(푸는 방법)을 풀이 말로 바꾸어 앞에 둡니다.
+      return 걸음.length < 2 ? 과정걸음(prompt, answer, solution) ?? 방법붙이기(걸음, studentHint, answer) : 걸음;
+    })(),
     misconceptionTip: guide.misconceptionTip,
     textbookConnection: `차시 목표 "${lesson.objective}"와 연결됩니다. 교과서 핵심은 ${lesson.textbookFocus} 익힘책 핵심은 ${lesson.workbookFocus}`,
     selfCheck: guide.selfCheck,
@@ -1301,7 +1566,12 @@ const tuneWrongsForDifficulty = (
   wrongs: Array<string | number>,
   difficulty: Difficulty,
   limit: number,
+  prompt = '',
 ) => {
+  // 보기 가운데에서 고르는 문항(가장 긴 것, 더 큰 것, 어느 것…)은 보기 하나하나가
+  // 문제의 일부입니다. 답 가까운 수로 바꿔 넣으면 '350cm, 3m 5cm, 340cm, 360cm
+  // 가운데 가장 긴 것'처럼 정답보다 긴 보기가 생겨 답이 틀린 문제가 됩니다.
+  if (/가장|어느 것|다음 중|고르|견주|비교|더 (?:긴|짧은|큰|작은|무거운|가벼운|많은|적은|넓은|좁은|높은|낮은|먼저|늦게|빠른|느린)/.test(prompt)) return wrongs;
   const answerText = String(answer);
   const match = answerText.match(/^(-?\d+)(.*)$/);
 
@@ -1310,6 +1580,10 @@ const tuneWrongsForDifficulty = (
   const value = Number(match[1]);
   const suffix = match[2];
   if (/[+\-=×÷]/.test(suffix)) return wrongs;
+  // 답이 '수+짧은 단위'(35cm, 12개, 3시간)일 때만 수를 흔듭니다. '50cm가 몇 번쯤
+  // 들어가는지 본다' 같은 문장의 앞 수만 바꾸면 '47cm가 몇 번쯤 들어가는지 본다'처럼
+  // 또 하나의 맞는 보기가 생깁니다.
+  if (!/^\s?[가-힣a-zA-Z²³%°]{0,4}(?: [가-힣]{1,2})?$/.test(suffix)) return wrongs;
   // '2시 5분 전', '1시간 33분', '3m 20cm'처럼 수가 둘인 답은 앞의 수만 흔들면
   // '17시 5분 전', '4시간 33분' 같은 엉뚱한 보기가 됩니다. 지어 준 오답을 씁니다.
   if (/\d/.test(suffix)) return wrongs;
@@ -1687,20 +1961,23 @@ const makeQuestion = (
   choicePictures?: Record<string, QuestionVisual>,
 ): Question => {
   const leveledStrategy = `${difficultyDesign[difficulty].label} · ${strategy}`;
-  const leveledSolution = `${difficultyDesign[difficulty].solutionLead} ${solution}`;
   const madeChoices = makeChoices(
     answer,
-    tuneWrongsForDifficulty(answer, wrongs, difficulty, lesson.scope.maxNumber),
+    tuneWrongsForDifficulty(answer, wrongs, difficulty, lesson.scope.maxNumber, prompt),
     lesson.unitNo * 101 + lesson.lessonNo * 17 + index * 19 + difficultyIndex[difficulty],
   );
-  const support = buildLearningSupport(
+  const 기본도움 = buildLearningSupport(
     lesson,
     tag,
-    leveledSolution,
+    solution,
     leveledStrategy,
     prompt,
     madeChoices.answer,
   );
+  // 시각과 시간 문항은 문제가 묻는 일(걸린 시간, 끝난 시각, 시간과 분 바꾸기…)에
+  // 맞춘 힌트와 풀이를 씁니다(timeHelp.ts).
+  const 시간 = tag === 'time' ? 시간도움(prompt, madeChoices.answer, visual) : null;
+  const support = 시간 ? { ...기본도움, studentHint: 시간.hint || 기본도움.studentHint, steps: 시간.steps ?? 기본도움.steps } : 기본도움;
   // 2학년 덧셈·뺄셈 문항은 자세히 보기에서 세로셈을 한 자리씩 따라갑니다.
   const walk = lesson.semester.startsWith('2') ? deriveGrade2Walk(prompt, madeChoices.answer, solution) : null;
   return enforceSecondGradeLanguage({
@@ -14039,6 +14316,26 @@ const rawQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number): Q
 // 옳은 것이 하나일 수도, 셋일 수도, 넷 다일 수도 있습니다.
 type Idea = { right: string; wrong: string };
 
+/**
+ * ㄱ·ㄴ·ㄷ·ㄹ 문항의 풀이입니다. 문장마다 옳은지 틀린지 하나씩 밝히고, 틀린
+ * 문장은 바르게 고친 문장(있으면)을 함께 보입니다. 예전 풀이는 'ㄱ과 ㄷ이 옳은
+ * 설명입니다' 한 줄이라, 틀린 아이가 어느 문장을 왜 잘못 보았는지 알 수 없었습니다.
+ */
+const 판정걸음 = (shown: Array<{ label: string; text: string; ok: boolean; fix?: string }>, askOk: boolean, answer: string): string[] => {
+  const 속말 = (t: string) => t.trim().replace(/\.$/, '');
+  const 조사 = (t: string) => resolveParticles(`${속말(t)}은(는)`).slice(속말(t).length);
+  return [
+    ...shown.map((one) => (one.ok
+      ? `${one.label} '${속말(one.text)}'${조사(one.text)} 옳은 설명입니다.`
+      : `${one.label} '${속말(one.text)}'${조사(one.text)} 틀린 설명입니다.${one.fix ? ` 바르게 고치면 '${속말(one.fix)}'입니다.` : ''}`)),
+    `그러므로 옳${askOk ? '은' : '지 않은'} 것을 모두 고르면 ${answer}입니다.`,
+  ];
+};
+const 걸음바꾸기 = (question: Question, steps: string[]): Question => {
+  const support = { ...question.support, steps };
+  return enforceSecondGradeLanguage({ ...question, support, explanation: lessonNote(support) });
+};
+
 // 네 문장을 주고 옳은 것(또는 옳지 않은 것)을 모두 고르게 합니다.
 //
 // 무엇을 묻는지는 문장 앞에 둡니다. 뒤에 두면 아이가 네 문장을 다 읽고
@@ -14073,6 +14370,7 @@ const judgeQuestion = (
     text: rightAt.has(at) ? idea.right : idea.wrong,
     ok: rightAt.has(at),
     label: labels[at],
+    fix: rightAt.has(at) ? undefined : idea.right,
   }));
 
   const wanted = shown.filter((one) => (askOk ? one.ok : !one.ok)).map((one) => one.label);
@@ -14093,7 +14391,7 @@ const judgeQuestion = (
   const listed = shown.map((one) => `${one.label} ${one.text}`).join(' ');
   const asking = `옳${askOk ? '은' : '지 않은'} 것을 모두 고른 것은?`;
 
-  return makeQuestion(
+  const question = makeQuestion(
     lesson, difficulty, index,
     `${lead ? `${lead} ` : ''}${asking} ${listed}`,
     answer, wrongs,
@@ -14102,6 +14400,7 @@ const judgeQuestion = (
     strategy ?? shapeStrategy(difficulty, '자료 해석 · 여러 설명을 하나씩 판단하기', '설명을 하나씩 판단하기'),
     visual,
   );
+  return 걸음바꾸기(question, 판정걸음(shown, askOk, answer));
 };
 
 // 문제은행에 데이터로 적은 판별 문항은 옳은 문장 둘, 옳지 않은 문장
@@ -14143,7 +14442,7 @@ const judgeFixedQuestion = (
 
   const listed = shown.map((one) => `${one.label} ${one.text}`).join(' ');
 
-  return makeQuestion(
+  const question = makeQuestion(
     lesson, difficulty, index,
     `${lead ? `${lead} ` : ''}옳${askOk ? '은' : '지 않은'} 것을 모두 고른 것은? ${listed}`,
     answer, wrongs,
@@ -14152,6 +14451,7 @@ const judgeFixedQuestion = (
     strategy ?? shapeStrategy(difficulty, '자료 해석 · 여러 설명을 하나씩 판단하기', '설명을 하나씩 판단하기'),
     visual,
   );
+  return 걸음바꾸기(question, 판정걸음(shown, askOk, answer));
 };
 
 // 차시 내용으로 생각의 짝을 만듭니다.
@@ -14782,15 +15082,20 @@ const wordStepQuestion = (
     }
 
     if (idea !== '걸린시간') return null;
+    // 상의 풀이 과정 자리입니다. 예전에는 '9시에 시작해 9시 40분에 마쳤다'처럼
+    // 시가 같아 분만 읽으면 되는 문항이라 하보다 쉬웠습니다. 정각을 넘는
+    // 걸린 시간을 시간 띠처럼 정각에서 끊어 세는 과정을 따라가게 합니다.
     const start = 1 + (seed % 9);
-    const mins = [20, 30, 40][seed % 3];
+    const from = [35, 40, 45, 50][seed % 4];
+    const after = [10, 15, 20, 25][Math.floor(seed / 4) % 4];
+    const toHour = 60 - from;
     return makeQuestion(
       lesson, difficulty, index,
-      `${start}시에 책을 읽기 시작해 ${start}시 ${mins}분에 마쳤습니다. 걸린 시간을 구하는 과정입니다. □에 알맞은 수는? ① 시작은 ${start}시입니다. ② 마친 때는 ${start}시 ${mins}분입니다. ③ 걸린 시간은 □분입니다.`,
-      `${mins}분`, [`${60 - mins}분`, `${start}분`, `${mins + 10}분`],
-      `같은 시각에서 ${mins}분이 지났으므로 걸린 시간은 ${mins}분입니다.`,
-      'time', '문장 상황의 풀이 한 곳 짚기',
-      clockVisualFor(start, 0, '시작과 끝', start, mins),
+      `${start}시 ${from}분에 책을 읽기 시작해 ${start + 1}시 ${after}분에 마쳤습니다. 걸린 시간을 구하는 과정입니다. □에 알맞은 수는? ① ${start}시 ${from}분에서 ${start + 1}시까지는 ${toHour}분입니다. ② ${start + 1}시에서 ${start + 1}시 ${after}분까지는 ${after}분입니다. ③ 걸린 시간은 모두 □분입니다.`,
+      `${toHour + after}분`, [`${toHour}분`, `${from + after}분`, `${after === 10 ? toHour + after + 10 : toHour + after - 10}분`],
+      `정각인 ${start + 1}시에서 끊어 셉니다. ${start + 1}시까지 ${toHour}분, ${start + 1}시부터 ${after}분이므로 모두 ${toHour}+${after}=${toHour + after}분입니다.`,
+      'time', '정각에서 끊어 걸린 시간 구하는 과정',
+      clockVisualFor(start, from, '시작과 끝', start + 1, after),
     );
   }
 
@@ -15855,8 +16160,10 @@ const sortShapes: Shape[] = [
 // ── 시각과 시간 ────────────────────────────────────────────────────
 const timeShapes: Shape[] = [
   // 1시간과 분 바꾸기 — 하 수준의 계산 문항
+  // 걸린 시간 차시에는 넣지 않습니다. 그 차시의 하에 '2시간은 몇 분일까요?'가
+  // 여러 자리를 차지해, 정작 걸린 시간을 구하는 문항이 줄었습니다.
   {
-    fits: (lesson) => /걸린 시간|1시간을 알아/.test(lesson.title),
+    fits: (lesson) => /1시간을 알아/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 31 + lesson.lessonNo;
       const hours = 1 + (seed % 3);
@@ -15876,6 +16183,7 @@ const timeShapes: Shape[] = [
   {
     fits: (lesson) => /걸린 시간/.test(lesson.title),
     make: (lesson, difficulty, index) => {
+      if (difficulty !== '하') return null;
       const seed = index * 37 + lesson.lessonNo;
       const hour = 1 + (seed % 9);
       const from = [10, 15, 20][seed % 3];
@@ -15925,10 +16233,12 @@ const timeShapes: Shape[] = [
       );
     } },
 
-  // 걸린 시간 문장 상황
+  // 걸린 시간 문장 상황 — 정각에 시작해 같은 시 안에 끝나는 하 수준 문항입니다.
+  // 중은 정각을 넘는 걸린 시간을 다룹니다(문제은행).
   {
     fits: (lesson) => /걸린 시간/.test(lesson.title),
     make: (lesson, difficulty, index) => {
+      if (difficulty !== '하') return null;
       const seed = index * 11 + lesson.lessonNo;
       const start = 1 + (seed % 9);
       const mins = [20, 30, 40, 50][seed % 4];
@@ -17521,12 +17831,17 @@ const 차시원문항 = (
     const dans = options?.castleDans?.length ? options.castleDans : ALL_CASTLE_DEFENSE_DANS;
     return 판매기기(generateCastleDefenseQuestions(lesson, difficulty, dans, 판), 판);
   }
-  if (difficulty !== '상') return questionsFor(lesson, difficulty, undefined, 판);
-
   // 피할 모양이 없으면 그대로 고르므로, 상에만 있는 문항이 모자란
   // 차시라도 문항 수는 줄지 않습니다.
-  const middleShapes = new Set(questionsFor(lesson, '중', undefined, 판).map((question) => shapeOfPrompt(question.prompt)));
-  return questionsFor(lesson, '상', middleShapes, 판);
+  const 기본 = difficulty !== '상'
+    ? questionsFor(lesson, difficulty, undefined, 판)
+    : questionsFor(lesson, '상', new Set(questionsFor(lesson, '중', undefined, 판).map((question) => shapeOfPrompt(question.prompt))), 판);
+  // 둘째 판부터는 문제집을 늘리는 뭉치(expand/)로 만든 문항을 더합니다.
+  // 2학년 생성기는 자리 번호로 수를 정해, 뒤 판에서 새 수가 금방 바닥납니다.
+  const 늘림 = 판 ? 늘림뭉치(lesson, difficulty) : [];
+  if (!늘림.length) return 기본;
+  const 있는글 = new Set(기본.map((q) => q.prompt));
+  return [...기본, ...buildGrade5Questions(lesson, difficulty, 늘림, 판, 1).filter((q) => !있는글.has(q.prompt))];
 };
 
 export const generateLessonBank = (lesson: Lesson): Record<Difficulty, Question[]> => ({

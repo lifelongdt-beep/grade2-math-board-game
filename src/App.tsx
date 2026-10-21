@@ -2421,7 +2421,7 @@ function App() {
                             ) : (
                               <p><span>정답</span><span><MathText text={question.answer} /></span></p>
                             )}
-                            <p className="quick-reason"><span>왜?</span><span><MathText text={question.support.steps[2]} /></span></p>
+                            <p className="quick-reason"><span>왜?</span><span><MathText text={question.support.steps.join(' ')} /></span></p>
                           </div>
                           <div className="wrong-feedback-actions">
                             {(question.visual || question.walkthrough) && (
