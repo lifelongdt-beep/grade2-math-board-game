@@ -88,6 +88,53 @@ describe('풀이 걸음', () => {
     expect(틀림).toEqual([]);
   });
 
+  it('수와 단위 뒤의 조사가 받침에 맞습니다', () => {
+    // '6시을 나타냅니다', '5점가 됩니다', '9시간가 알맞습니다'처럼 단위의 받침과 조사가 어긋난 곳을 찾습니다.
+    const 라틴: Record<string, boolean> = { cm: false, mm: false, km: false, m: false, g: true, kg: true, L: false, mL: false, 'cm²': false, 'm²': false, 'cm³': false, 'm³': false, '°': false, '%': false };
+    // 한글 단위는 수에 붙여 쓴 것만 봅니다('25 초과'의 '초과'는 단위가 아닙니다).
+    const 꼴 = /\d+(?:\.\d+)?(?:\s?(cm²|m²|cm³|m³|kg|km|cm|mm|mL|g|m|L|°|%)|(시간|시|분|초|일|개월|년|개|명|권|장|번|층|칸|원|점|쪽|살|배|송이|자루|마리|대|도|묶음|줄|조각|상자|봉지))(이|가|을|를|은|는|과|와)(?=[\s.,?!]|$)/g;
+    const 받침 = (u: string) => (u in 라틴 ? 라틴[u] : (u.charCodeAt(u.length - 1) - 0xac00) % 28 !== 0);
+    const 있어야 = new Set(['이', '을', '은', '과']);
+    const 틀림: string[] = [];
+    for (const { q, 열쇠 } of 문항들) {
+      for (const 글 of [q.prompt, q.answer, ...q.choices, q.support.studentHint, ...q.support.steps]) {
+        for (const m of 글.matchAll(꼴)) if (받침(m[1] ?? m[2]) !== 있어야.has(m[3])) 틀림.push(`${열쇠}: '${m[0]}' — ${글}`);
+      }
+    }
+    expect([...new Set(틀림)].slice(0, 30)).toEqual([]);
+  });
+
+  it('문장제 힌트가 세워 준 식을 셈하면 답이 나옵니다', () => {
+    // '곱셈식 12×4를 세워 계산하세요'처럼 힌트가 식을 세워 준 문항입니다. 식이 문장의 수를
+    // 잘못 꺼냈다면 아이는 힌트를 따라가다 틀립니다.
+    const 수값 = (t: string) => {
+      const x = t.replace(/[()]/g, '').trim();
+      const 대 = /^(\d+)[과와] (\d+)\/(\d+)$/.exec(x);
+      if (대) return Number(대[1]) + Number(대[2]) / Number(대[3]);
+      const 분 = /^(\d+)\/(\d+)$/.exec(x);
+      return 분 ? Number(분[1]) / Number(분[2]) : Number(x);
+    };
+    const 답값 = (t: string) => {
+      const 분 = /^(?:(\d+)[과와] )?(\d+)\/(\d+)/.exec(t.trim());
+      if (분) return Number(분[1] ?? 0) + Number(분[2]) / Number(분[3]);
+      const n = /^[\d.]+/.exec(t.trim());
+      return n ? Number(n[0]) : NaN;
+    };
+    const 틀림: string[] = [];
+    let 본 = 0;
+    for (const { q, 열쇠 } of 문항들) {
+      const m = /(?:곱셈식|나눗셈식) (\(?[\d./과와 ]+?\)?)([×÷])(\(?[\d./과와 ]+?\)?)(?:을|를|으로|로) /.exec(q.support.studentHint);
+      if (!m || /몫과 나머지|남/.test(q.prompt)) continue;
+      const 값 = m[2] === '×' ? 수값(m[1]) * 수값(m[3]) : 수값(m[1]) / 수값(m[3]);
+      const 답 = 답값(q.answer);
+      if (Number.isNaN(답)) continue;
+      본 += 1;
+      if (Math.abs(값 - 답) > 1e-6 * Math.max(1, 답)) 틀림.push(`${열쇠}: ${m[1]}${m[2]}${m[3]}=${값} 답 ${q.answer} — ${q.prompt}`);
+    }
+    expect(본).toBeGreaterThan(50);
+    expect(틀림.slice(0, 20)).toEqual([]);
+  });
+
   it('풀이 걸음이 비어 있지 않습니다', () => {
     const 빈 = 문항들.filter(({ q }) => !q.support.steps.length || q.support.steps.some((s) => !s.trim())).map(({ q, 열쇠 }) => `${열쇠}: ${q.prompt}`);
     expect(빈.slice(0, 20)).toEqual([]);
