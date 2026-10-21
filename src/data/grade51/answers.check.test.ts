@@ -462,6 +462,6 @@ describe('5-1 모든 차시', () => {
         if (!support.selfCheck.trim()) 빈것.push(`${lesson} ${level}: 확인 질문이 비었음`);
       }
     }
-    expect(빈것).toEqual([]);
+    expect(빈것.slice(0, 60)).toEqual([]);
   });
 });

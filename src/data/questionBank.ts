@@ -9573,7 +9573,8 @@ export const questionBank: Template[] = [
   },
   {
     id: 'time-hour-minute',
-    when: /걸린 시간/,
+    // 앞 차시(1시간을 알아볼까요)의 내용입니다. 걸린 시간 차시에 두면 하의 자리를 차지합니다.
+    when: /1시간을 알아/,
     demand: 'recall',
     tag: 'time',
     strategy: '몇 시간 몇 분을 분으로 바꾸기',
@@ -11810,11 +11811,13 @@ export const questionBank: Template[] = [
     demand: 'recall',
     tag: 'measurement',
     strategy: '1m를 넘는 눈금 읽기',
-    vars: { part: { from: 20, to: 80 } },
-    prompt: '줄자로 재었더니 1m 눈금을 지나 {part}cm 눈금에 닿았습니다. 이 길이는 얼마일까요?',
+    // '1m 눈금을 지나 60cm 눈금에 닿았다'고 적었더니 끝이 60cm 눈금이라고 읽혀
+    // 보기 60cm도 답처럼 보였습니다. 끝이 닿은 눈금을 그림과 같은 수로 적습니다.
+    vars: { part: { from: 20, to: 80 }, total: { calc: '100 + part' } },
+    prompt: '물건의 한쪽 끝을 눈금 0에 맞추고 줄자로 재었더니 다른 쪽 끝이 {total}cm 눈금에 닿았습니다. 이 길이는 몇 m 몇 cm일까요?',
     answer: '1m {part}cm',
-    wrongs: ['{part}cm', '1m', '{100 + part}m'],
-    solution: '1m를 지나 {part}cm 더 갔으므로 1m {part}cm입니다.',
+    wrongs: ['{part}cm', '1m', '{total}m'],
+    solution: '100cm는 1m입니다. {total}cm는 100cm와 {part}cm이므로 1m {part}cm입니다.',
   },
   {
     id: 'len-estimate-bed',
