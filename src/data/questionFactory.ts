@@ -1,5 +1,8 @@
 import { deriveGrade2Walk } from './walkthrough';
 import { 힌트다듬기 } from './hintUpgrade';
+import { 시간도움 } from './timeHelp';
+import { 과정걸음, 방법붙이기 } from './stepsHelp';
+import { resolveParticles } from './grade5/util';
 import {
   pickBySeed,
   pickSome,
@@ -729,6 +732,12 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
 //
 // 그럴 때는 방법만 말하는 갈래별 문장으로 바꿉니다. 틀린 뒤 화면에는
 // '정답' 줄이 따로 있으므로, 거기서 알아야 할 것은 그대로 알게 됩니다.
+/** 풀이 글을 문장마다 끊습니다. '2.5+1.2=3.7입니다.'처럼 소수점은 끊지 않습니다. */
+const 풀이걸음 = (solution: string): string[] => {
+  const 문장 = solution.split(/(?<=[.?!])\s+(?=\S)/).map((s) => s.trim()).filter(Boolean);
+  return 문장.length ? 문장 : [solution];
+};
+
 const hintWithoutAnswer = (tailored: string | null, guide: string, answer: string): string => {
   const target = answer.trim();
   // 한 글자 답(2, 3…)까지 막으면 멀쩡한 볼 곳이 거의 다 걸립니다.
@@ -771,18 +780,24 @@ const buildLearningSupport = (
           selfCheck: selfCheckGuide[tag],
         };
 
+  // 이 문항의 수로 만든 볼 곳이 있으면 그것을 씁니다. 다만 그것이
+  // 답을 그대로 말해 버리면 쓰지 않습니다.
+  const studentHint = hintWithoutAnswer(specificHint(prompt, tag), guide.studentHint, answer);
   return {
     studentConcept: guide.studentConcept,
-    // 이 문항의 수로 만든 볼 곳이 있으면 그것을 씁니다. 다만 그것이
-    // 답을 그대로 말해 버리면 쓰지 않습니다.
-    studentHint: hintWithoutAnswer(specificHint(prompt, tag), guide.studentHint, answer),
+    studentHint,
     coreConcept: guide.coreConcept,
     readStrategy: `${strategy}: ${guide.readStrategy}`,
-    steps: [
-      '문제에서 무엇을 구하라고 했는지 먼저 찾습니다.',
-      guide.readStrategy,
-      solution,
-    ],
+    // 풀이 걸음은 이 문항의 풀이를 문장마다 끊어 둡니다. 예전에는 '문제에서
+    // 무엇을 구하라고 했는지 먼저 찾습니다', 갈래 공통 읽기 안내, 풀이 순으로
+    // 두어 힌트의 걸음이 문항과 상관없는 두 줄이었습니다(읽기 안내는
+    // readStrategy에 따로 있습니다).
+    steps: (() => {
+      const 걸음 = 풀이걸음(solution);
+      // 풀이 과정 문항(① ② ③ … □)은 문제에 적힌 과정을 □를 채워 걸음으로 펼칩니다.
+      // 그래도 한 줄이면 볼 곳(푸는 방법)을 풀이 말로 바꾸어 앞에 둡니다.
+      return 걸음.length < 2 ? 과정걸음(prompt, answer, solution) ?? 방법붙이기(걸음, studentHint, answer) : 걸음;
+    })(),
     misconceptionTip: guide.misconceptionTip,
     textbookConnection: `차시 목표 "${lesson.objective}"와 연결됩니다. 교과서 핵심은 ${lesson.textbookFocus} 익힘책 핵심은 ${lesson.workbookFocus}`,
     selfCheck: guide.selfCheck,
@@ -1303,7 +1318,12 @@ const tuneWrongsForDifficulty = (
   wrongs: Array<string | number>,
   difficulty: Difficulty,
   limit: number,
+  prompt = '',
 ) => {
+  // 보기 가운데에서 고르는 문항(가장 긴 것, 더 큰 것, 어느 것…)은 보기 하나하나가
+  // 문제의 일부입니다. 답 가까운 수로 바꿔 넣으면 '350cm, 3m 5cm, 340cm, 360cm
+  // 가운데 가장 긴 것'처럼 정답보다 긴 보기가 생겨 답이 틀린 문제가 됩니다.
+  if (/가장|어느 것|다음 중|고르|견주|비교|더 (?:긴|짧은|큰|작은|무거운|가벼운|많은|적은|넓은|좁은|높은|낮은|먼저|늦게|빠른|느린)/.test(prompt)) return wrongs;
   const answerText = String(answer);
   const match = answerText.match(/^(-?\d+)(.*)$/);
 
@@ -1312,6 +1332,10 @@ const tuneWrongsForDifficulty = (
   const value = Number(match[1]);
   const suffix = match[2];
   if (/[+\-=×÷]/.test(suffix)) return wrongs;
+  // 답이 '수+짧은 단위'(35cm, 12개, 3시간)일 때만 수를 흔듭니다. '50cm가 몇 번쯤
+  // 들어가는지 본다' 같은 문장의 앞 수만 바꾸면 '47cm가 몇 번쯤 들어가는지 본다'처럼
+  // 또 하나의 맞는 보기가 생깁니다.
+  if (!/^\s?[가-힣a-zA-Z²³%°]{0,4}(?: [가-힣]{1,2})?$/.test(suffix)) return wrongs;
   // '2시 5분 전', '1시간 33분', '3m 20cm'처럼 수가 둘인 답은 앞의 수만 흔들면
   // '17시 5분 전', '4시간 33분' 같은 엉뚱한 보기가 됩니다. 지어 준 오답을 씁니다.
   if (/\d/.test(suffix)) return wrongs;
@@ -1689,20 +1713,23 @@ const makeQuestion = (
   choicePictures?: Record<string, QuestionVisual>,
 ): Question => {
   const leveledStrategy = `${difficultyDesign[difficulty].label} · ${strategy}`;
-  const leveledSolution = `${difficultyDesign[difficulty].solutionLead} ${solution}`;
   const madeChoices = makeChoices(
     answer,
-    tuneWrongsForDifficulty(answer, wrongs, difficulty, lesson.scope.maxNumber),
+    tuneWrongsForDifficulty(answer, wrongs, difficulty, lesson.scope.maxNumber, prompt),
     lesson.unitNo * 101 + lesson.lessonNo * 17 + index * 19 + difficultyIndex[difficulty],
   );
-  const support = buildLearningSupport(
+  const 기본도움 = buildLearningSupport(
     lesson,
     tag,
-    leveledSolution,
+    solution,
     leveledStrategy,
     prompt,
     madeChoices.answer,
   );
+  // 시각과 시간 문항은 문제가 묻는 일(걸린 시간, 끝난 시각, 시간과 분 바꾸기…)에
+  // 맞춘 힌트와 풀이를 씁니다(timeHelp.ts).
+  const 시간 = tag === 'time' ? 시간도움(prompt, madeChoices.answer, visual) : null;
+  const support = 시간 ? { ...기본도움, studentHint: 시간.hint || 기본도움.studentHint, steps: 시간.steps ?? 기본도움.steps } : 기본도움;
   // 2학년 덧셈·뺄셈 문항은 자세히 보기에서 세로셈을 한 자리씩 따라갑니다.
   const walk = lesson.semester.startsWith('2') ? deriveGrade2Walk(prompt, madeChoices.answer, solution) : null;
   return enforceSecondGradeLanguage({
@@ -14041,6 +14068,26 @@ const rawQuestionAt = (lesson: Lesson, difficulty: Difficulty, index: number): Q
 // 옳은 것이 하나일 수도, 셋일 수도, 넷 다일 수도 있습니다.
 type Idea = { right: string; wrong: string };
 
+/**
+ * ㄱ·ㄴ·ㄷ·ㄹ 문항의 풀이입니다. 문장마다 옳은지 틀린지 하나씩 밝히고, 틀린
+ * 문장은 바르게 고친 문장(있으면)을 함께 보입니다. 예전 풀이는 'ㄱ과 ㄷ이 옳은
+ * 설명입니다' 한 줄이라, 틀린 아이가 어느 문장을 왜 잘못 보았는지 알 수 없었습니다.
+ */
+const 판정걸음 = (shown: Array<{ label: string; text: string; ok: boolean; fix?: string }>, askOk: boolean, answer: string): string[] => {
+  const 속말 = (t: string) => t.trim().replace(/\.$/, '');
+  const 조사 = (t: string) => resolveParticles(`${속말(t)}은(는)`).slice(속말(t).length);
+  return [
+    ...shown.map((one) => (one.ok
+      ? `${one.label} '${속말(one.text)}'${조사(one.text)} 옳은 설명입니다.`
+      : `${one.label} '${속말(one.text)}'${조사(one.text)} 틀린 설명입니다.${one.fix ? ` 바르게 고치면 '${속말(one.fix)}'입니다.` : ''}`)),
+    `그러므로 옳${askOk ? '은' : '지 않은'} 것을 모두 고르면 ${answer}입니다.`,
+  ];
+};
+const 걸음바꾸기 = (question: Question, steps: string[]): Question => {
+  const support = { ...question.support, steps };
+  return enforceSecondGradeLanguage({ ...question, support, explanation: lessonNote(support) });
+};
+
 // 네 문장을 주고 옳은 것(또는 옳지 않은 것)을 모두 고르게 합니다.
 //
 // 무엇을 묻는지는 문장 앞에 둡니다. 뒤에 두면 아이가 네 문장을 다 읽고
@@ -14075,6 +14122,7 @@ const judgeQuestion = (
     text: rightAt.has(at) ? idea.right : idea.wrong,
     ok: rightAt.has(at),
     label: labels[at],
+    fix: rightAt.has(at) ? undefined : idea.right,
   }));
 
   const wanted = shown.filter((one) => (askOk ? one.ok : !one.ok)).map((one) => one.label);
@@ -14095,7 +14143,7 @@ const judgeQuestion = (
   const listed = shown.map((one) => `${one.label} ${one.text}`).join(' ');
   const asking = `옳${askOk ? '은' : '지 않은'} 것을 모두 고른 것은?`;
 
-  return makeQuestion(
+  const question = makeQuestion(
     lesson, difficulty, index,
     `${lead ? `${lead} ` : ''}${asking} ${listed}`,
     answer, wrongs,
@@ -14104,6 +14152,7 @@ const judgeQuestion = (
     strategy ?? shapeStrategy(difficulty, '자료 해석 · 여러 설명을 하나씩 판단하기', '설명을 하나씩 판단하기'),
     visual,
   );
+  return 걸음바꾸기(question, 판정걸음(shown, askOk, answer));
 };
 
 // 문제은행에 데이터로 적은 판별 문항은 옳은 문장 둘, 옳지 않은 문장
@@ -14145,7 +14194,7 @@ const judgeFixedQuestion = (
 
   const listed = shown.map((one) => `${one.label} ${one.text}`).join(' ');
 
-  return makeQuestion(
+  const question = makeQuestion(
     lesson, difficulty, index,
     `${lead ? `${lead} ` : ''}옳${askOk ? '은' : '지 않은'} 것을 모두 고른 것은? ${listed}`,
     answer, wrongs,
@@ -14154,6 +14203,7 @@ const judgeFixedQuestion = (
     strategy ?? shapeStrategy(difficulty, '자료 해석 · 여러 설명을 하나씩 판단하기', '설명을 하나씩 판단하기'),
     visual,
   );
+  return 걸음바꾸기(question, 판정걸음(shown, askOk, answer));
 };
 
 // 차시 내용으로 생각의 짝을 만듭니다.
@@ -14784,15 +14834,20 @@ const wordStepQuestion = (
     }
 
     if (idea !== '걸린시간') return null;
+    // 상의 풀이 과정 자리입니다. 예전에는 '9시에 시작해 9시 40분에 마쳤다'처럼
+    // 시가 같아 분만 읽으면 되는 문항이라 하보다 쉬웠습니다. 정각을 넘는
+    // 걸린 시간을 시간 띠처럼 정각에서 끊어 세는 과정을 따라가게 합니다.
     const start = 1 + (seed % 9);
-    const mins = [20, 30, 40][seed % 3];
+    const from = [35, 40, 45, 50][seed % 4];
+    const after = [10, 15, 20, 25][Math.floor(seed / 4) % 4];
+    const toHour = 60 - from;
     return makeQuestion(
       lesson, difficulty, index,
-      `${start}시에 책을 읽기 시작해 ${start}시 ${mins}분에 마쳤습니다. 걸린 시간을 구하는 과정입니다. □에 알맞은 수는? ① 시작은 ${start}시입니다. ② 마친 때는 ${start}시 ${mins}분입니다. ③ 걸린 시간은 □분입니다.`,
-      `${mins}분`, [`${60 - mins}분`, `${start}분`, `${mins + 10}분`],
-      `같은 시각에서 ${mins}분이 지났으므로 걸린 시간은 ${mins}분입니다.`,
-      'time', '문장 상황의 풀이 한 곳 짚기',
-      clockVisualFor(start, 0, '시작과 끝', start, mins),
+      `${start}시 ${from}분에 책을 읽기 시작해 ${start + 1}시 ${after}분에 마쳤습니다. 걸린 시간을 구하는 과정입니다. □에 알맞은 수는? ① ${start}시 ${from}분에서 ${start + 1}시까지는 ${toHour}분입니다. ② ${start + 1}시에서 ${start + 1}시 ${after}분까지는 ${after}분입니다. ③ 걸린 시간은 모두 □분입니다.`,
+      `${toHour + after}분`, [`${toHour}분`, `${from + after}분`, `${after === 10 ? toHour + after + 10 : toHour + after - 10}분`],
+      `정각인 ${start + 1}시에서 끊어 셉니다. ${start + 1}시까지 ${toHour}분, ${start + 1}시부터 ${after}분이므로 모두 ${toHour}+${after}=${toHour + after}분입니다.`,
+      'time', '정각에서 끊어 걸린 시간 구하는 과정',
+      clockVisualFor(start, from, '시작과 끝', start + 1, after),
     );
   }
 
@@ -15857,8 +15912,10 @@ const sortShapes: Shape[] = [
 // ── 시각과 시간 ────────────────────────────────────────────────────
 const timeShapes: Shape[] = [
   // 1시간과 분 바꾸기 — 하 수준의 계산 문항
+  // 걸린 시간 차시에는 넣지 않습니다. 그 차시의 하에 '2시간은 몇 분일까요?'가
+  // 여러 자리를 차지해, 정작 걸린 시간을 구하는 문항이 줄었습니다.
   {
-    fits: (lesson) => /걸린 시간|1시간을 알아/.test(lesson.title),
+    fits: (lesson) => /1시간을 알아/.test(lesson.title),
     make: (lesson, difficulty, index) => {
       const seed = index * 31 + lesson.lessonNo;
       const hours = 1 + (seed % 3);
@@ -15878,6 +15935,7 @@ const timeShapes: Shape[] = [
   {
     fits: (lesson) => /걸린 시간/.test(lesson.title),
     make: (lesson, difficulty, index) => {
+      if (difficulty !== '하') return null;
       const seed = index * 37 + lesson.lessonNo;
       const hour = 1 + (seed % 9);
       const from = [10, 15, 20][seed % 3];
@@ -15927,10 +15985,12 @@ const timeShapes: Shape[] = [
       );
     } },
 
-  // 걸린 시간 문장 상황
+  // 걸린 시간 문장 상황 — 정각에 시작해 같은 시 안에 끝나는 하 수준 문항입니다.
+  // 중은 정각을 넘는 걸린 시간을 다룹니다(문제은행).
   {
     fits: (lesson) => /걸린 시간/.test(lesson.title),
     make: (lesson, difficulty, index) => {
+      if (difficulty !== '하') return null;
       const seed = index * 11 + lesson.lessonNo;
       const start = 1 + (seed % 9);
       const mins = [20, 30, 40, 50][seed % 4];
