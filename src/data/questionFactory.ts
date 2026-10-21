@@ -508,6 +508,38 @@ const specificHint = (prompt: string, tag: ConceptTag): string | null => {
     if ((m = /삼각형 조각 (\d+)개와 사각형 조각 (\d+)개/.exec(prompt)) && /변|꼭짓점/.test(prompt)) {
       return r(`삼각형 한 개의 변은 3개, 사각형 한 개의 변은 4개입니다. 3을 ${m[1]}번, 4를 ${m[2]}번 더해 모두 몇 개인지 구해 보세요.`);
     }
+    if (/어느 자리부터/.test(prompt) && (tag === 'addition' || tag === 'subtraction')) {
+      return '받아올림과 받아내림을 생각해 보세요. 낮은 자리에서 10이 넘거나 모자라면 윗자리와 주고받아야 하므로 낮은 자리부터 셈합니다.';
+    }
+    if (/뺄 수 없습니다\. 십의 자리에서 얼마/.test(prompt)) {
+      return '십의 자리 숫자 1은 10을 나타냅니다. 일의 자리로 빌려 오는 것이 얼마인지 생각해 보세요.';
+    }
+    if ((m = /(\d+)×(\d+)[은는] (\d+)[을를] 몇 번 더한/.exec(prompt))) {
+      return r(`${m[1]}씩 뛰어 세어 ${m[1]}×${m[2]}이(가) 될 때까지 몇 번 뛰었는지 세어 보세요.`);
+    }
+    // 자가 없는 길이 문장제: 눈금 읽기가 아니라 길이끼리 셈하는 문제입니다.
+    if (tag === 'measurement' && !/자의|눈금|자로 재|줄자/.test(prompt)) {
+      const 길이들 = [...prompt.matchAll(/(\d+)\s?cm/g)].map((x) => x[1]);
+      if (길이들.length >= 2 && !/\d+\s?m(?!m)/.test(prompt.replace(/cm/g, ''))) {
+        if (/차|더 길|더 짧|짧았|길었|모자/.test(prompt)) return r(`두 길이 ${길이들[0]}cm와 ${길이들[1]}cm 가운데 긴 것에서 짧은 것을 빼 보세요.`);
+        if (/모두|이었|이으|합/.test(prompt)) return r(`두 길이 ${길이들[0]}cm와 ${길이들[1]}cm를 더해 보세요. 단위는 그대로 cm입니다.`);
+      }
+      if ((m = /(\d+)\s?cm였습니다\. 1\s?cm(?:로|가) 몇 번/.exec(prompt))) return '1cm가 몇 번 들어가는지가 곧 몇 cm인지입니다. 잰 길이의 수를 보세요.';
+      if (/맞대어/.test(prompt)) return '두 물건의 한쪽 끝을 어떻게 놓아야 다른 쪽 끝만 보고 길이를 견줄 수 있을지 생각해 보세요.';
+      if (/뼘|걸음|클립|양팔/.test(prompt) && /까닭|다른/.test(prompt)) return '재는 단위의 길이가 사람이나 물건마다 같은지 생각해 보세요.';
+    }
+    // 표·그래프 없이 문장에 수가 나오는 분류·자료 문항입니다.
+    if ((tag === 'classification' || tag === 'data') && !/표를 보고|표에서|그래프/.test(prompt)) {
+      const 수들 = [...prompt.matchAll(/(\d+)\s?(?:개|명|장|권)/g)].map((x) => x[1]);
+      if (수들.length >= 2 && /가장 많은 .+ 가장 적은|차/.test(prompt)) return '가장 큰 수와 가장 작은 수를 먼저 찾은 다음, 큰 수에서 작은 수를 빼 보세요.';
+      if (수들.length >= 2 && /모두 몇|합계/.test(prompt)) return r(`문장에 나온 수 ${수들.join(', ')}을(를) 모두 더해 보세요.`);
+      if (수들.length >= 2 && /그중|가운데/.test(prompt) && /몇 명|몇 개/.test(prompt)) return '전체 수에서 아는 부분의 수를 빼면 모르는 부분의 수가 나옵니다.';
+      if (수들.length >= 2 && /가장/.test(prompt)) return '나온 수를 하나씩 견주어 가장 큰 수(작은 수)를 찾아보세요.';
+    }
+    if (tag === 'pattern' && !/되풀이|규칙|무늬|차례로|번째|째/.test(prompt) && /모두 몇/.test(prompt)) {
+      const 수들 = [...prompt.matchAll(/(\d+)\s?개/g)].map((x) => x[1]);
+      if (수들.length >= 2) return r(`나온 수 ${수들.join(', ')}을(를) 모두 더해 보세요.`);
+    }
     if (/받아내리면 십의 자리 숫자는/.test(prompt)) {
       return '받아내림은 십의 자리에서 10을 일의 자리로 빌려 오는 것입니다. 10을 빌려 준 십의 자리 숫자가 어떻게 되는지 생각해 보세요.';
     }
