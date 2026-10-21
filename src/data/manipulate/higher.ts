@@ -15,6 +15,13 @@ import type { 조작갈래, 조작틀 } from './common';
 
 type 실수 = { state: ManipState; 말: string };
 
+/** 후보의 차례를 씨앗에 따라 돌립니다. 첫 후보가 늘 같으면 실수의 모양이 하나로 굳습니다. */
+const 섞기 = <T,>(후보: T[], seed: number): T[] => {
+  if (!후보.length) return 후보;
+  const 앞 = Math.abs(seed * 7 + 3) % 후보.length;
+  return [...후보.slice(앞), ...후보.slice(0, 앞)];
+};
+
 const 각 = (d: number) => ((d % 360) + 360) % 360;
 
 /** 조작마다 흔한 실수 후보를 차례로 냅니다. 채점에서 틀린 것으로 나오는 첫 후보를 씁니다. */
@@ -24,16 +31,33 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
   switch (m.kind) {
     case 'ruler-measure': {
       if (바른.kind !== 'ruler-measure') return [];
+      // 실수의 갈래·방향·칸 수를 씨앗마다 바꿉니다. 한 가지(늘 오른쪽으로 1 cm)만 쓰면
+      // 아이가 문제를 읽지 않고 '왼쪽으로 한 칸'만 옮겨도 맞히게 됩니다.
       const 끝 = 바른.endTick ?? m.objectMm;
-      return [
-        ...(m.objectStartMm >= 10 ? [{ state: { ...바른, rulerAt: m.objectStartMm - 10, endTick: 끝 + 10 }, 말: '자의 0이 아니라 1 눈금을 물건의 왼쪽 끝에 맞추고 오른쪽 끝의 눈금을 그대로 읽었습니다.' }] : []),
-        { state: { ...바른, endTick: 끝 + 10 }, 말: '물건의 오른쪽 끝을 지나 다음 눈금을 읽었습니다.' },
-      ];
+      const 끝눈금 = m.rulerCm * 10;
+      const k = 1 + (Math.floor(seed / 2) % 3); // 1~3 cm
+      const 후보: 실수[] = [];
+      // ① 자의 0이 아니라 k 눈금을 물건의 왼쪽 끝에 맞추고 오른쪽 끝의 눈금을 그대로 읽음(길게 잼)
+      if (m.objectStartMm - 10 * k >= -m.rulerCm * 5 && 끝 + 10 * k <= 끝눈금) 후보.push({ state: { ...바른, rulerAt: m.objectStartMm - 10 * k, endTick: 끝 + 10 * k }, 말: `자의 0이 아니라 ${k} 눈금을 물건의 왼쪽 끝에 맞추고 오른쪽 끝의 눈금을 그대로 읽어, ${k} cm 더 길게 재었습니다.` });
+      // ② 자의 0을 물건의 왼쪽 끝보다 k cm 안쪽에 두고 오른쪽 끝의 눈금을 읽음(짧게 잼)
+      if (끝 - 10 * k > 0) 후보.push({ state: { ...바른, rulerAt: m.objectStartMm + 10 * k, endTick: 끝 - 10 * k }, 말: `자의 0 눈금을 물건의 왼쪽 끝보다 ${k} cm 안쪽에 두어, 물건이 자 밖으로 삐져나온 채 ${k} cm 짧게 재었습니다.` });
+      // ③ 0은 바르게 맞추었지만 오른쪽 끝을 지나 읽음 / ④ 오른쪽 끝에 못 미쳐 읽음
+      if (끝 + 10 * k <= 끝눈금) 후보.push({ state: { ...바른, endTick: 끝 + 10 * k }, 말: `0 눈금은 바르게 맞추었지만 물건의 오른쪽 끝을 지나 ${k} 칸 더 간 눈금을 읽었습니다.` });
+      if (끝 - 10 * k > 0) 후보.push({ state: { ...바른, endTick: 끝 - 10 * k }, 말: `0 눈금은 바르게 맞추었지만 물건의 오른쪽 끝에 못 미친 눈금을 읽어 ${k} cm 짧게 재었습니다.` });
+      return 섞기(후보, seed);
     }
     case 'ruler-draw': {
       if (바른.kind !== 'ruler-draw') return [];
-      const 길게 = 바른.end + 10 <= m.rulerCm * 10;
-      return [{ state: { ...바른, end: 길게 ? 바른.end + 10 : 바른.end - 10 }, 말: 길게 ? (m.fromMm > 0 ? '시작한 눈금을 1로 세어 1 cm 더 길게 그었습니다.' : '0 눈금이 아니라 1 눈금부터 세어 1 cm 더 길게 그었습니다.') : '눈금 한 칸(1 cm)을 덜 세어 짧게 그었습니다.' }];
+      const 끝눈금 = m.rulerCm * 10;
+      const 단위 = m.unit === 'mm' ? 1 : 10;
+      const 단위말 = m.unit === 'mm' ? 'mm' : 'cm';
+      const k = 1 + (Math.floor(seed / 2) % 3);
+      const 후보: 실수[] = [];
+      // 시작 눈금을 잊고 0부터 센 것처럼 길이 눈금에서 멈춤(시작 눈금만큼 짧음)
+      if (m.fromMm > 0) 후보.push({ state: { ...바른, end: m.lengthMm }, 말: `시작한 눈금은 생각하지 않고 ${m.lengthMm / 단위} ${단위말} 눈금에서 멈추어, 시작한 눈금만큼 짧게 그었습니다.` });
+      if (바른.end + 단위 * k <= 끝눈금) 후보.push({ state: { ...바른, end: 바른.end + 단위 * k }, 말: `눈금을 ${k} 칸 더 세어 ${k} ${단위말} 더 길게 그었습니다.` });
+      if (바른.end - 단위 * k > m.fromMm) 후보.push({ state: { ...바른, end: 바른.end - 단위 * k }, 말: `눈금을 ${k} 칸 덜 세어 ${k} ${단위말} 짧게 그었습니다.` });
+      return 섞기(후보, seed);
     }
     case 'clock': {
       const 시 = (m.h % 12) * 30;
@@ -89,7 +113,7 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
         if (안(w)) out.push({ state: { kind: 'grid-point', pt: w }, 말: '원의 한가운데가 아니라 원 위의 점을 찍었습니다. 원의 중심은 원 위의 어느 점에서나 거리가 같은 한가운데 점입니다.' });
       }
       const 옆: GridPoint[] = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]];
-      return [...out, ...옆.filter(안).map((pt) => ({ state: { kind: 'grid-point' as const, pt }, 말: '칸을 하나 잘못 세어 바로 옆 점에 찍었습니다.' }))];
+      return [...out, ...섞기(옆.filter(안), seed).map((pt) => ({ state: { kind: 'grid-point' as const, pt }, 말: '칸을 하나 잘못 세어 바로 옆 점에 찍었습니다.' }))];
     }
     case 'grid-draw': {
       if (바른.kind !== 'grid-draw') return [];
@@ -110,7 +134,9 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
         { state: { ...바른, cells: 위아래뒤집기(바른.cells) }, 말: '뒤집는 방향을 반대로 생각했습니다. 위쪽(아래쪽)으로 뒤집으면 위와 아래가 바뀝니다.' },
       ];
       return [
-        ...(m.goal.place ? [{ state: { ...바른, offset: [x + 1, y] as GridPoint }, 말: '한 칸 더 옮겼습니다.' }, { state: { ...바른, offset: [x, y + 1] as GridPoint }, 말: '한 칸 더 옮겼습니다.' }] : []),
+        ...(m.goal.place
+          ? 섞기(([[1, 0], [-1, 0], [0, 1], [0, -1]] as GridPoint[]).filter(([dx, dy]) => 바른.cells.every(([a, b]) => a + x + dx >= 0 && a + x + dx < m.cols && b + y + dy >= 0 && b + y + dy < m.rows)), seed).map(([dx, dy]) => ({ state: { ...바른, offset: [x + dx, y + dy] as GridPoint }, 말: `${dx > 0 ? '오른쪽' : dx < 0 ? '왼쪽' : dy > 0 ? '아래쪽' : '위쪽'}으로 한 칸 어긋나게 옮겼습니다. 옮길 칸 수를 다시 세어 보아야 합니다.` }))
+          : []),
         ...모양실수,
       ];
     }
