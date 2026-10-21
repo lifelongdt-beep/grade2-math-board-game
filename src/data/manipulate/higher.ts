@@ -1,6 +1,7 @@
 import type { GridPoint, Manipulation } from '../../types';
 import { 채점, 정답모습, 조각들, 시계로돌리기, 반대로돌리기, 좌우뒤집기, 위아래뒤집기, type ManipState } from './check';
 import type { 조작갈래, 조작틀 } from './common';
+import { 고칠움직임 } from './fixSignature';
 
 // ════════════════════════════════════════════════════════════════════
 // 상 수준: 친구의 틀린 조작 고치기(오류 분석)
@@ -28,6 +29,7 @@ const 각 = (d: number) => ((d % 360) + 360) % 360;
 const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
   const 바른 = 정답모습(m);
   const 뒤집기 = seed % 2 === 1;
+
   switch (m.kind) {
     case 'ruler-measure': {
       if (바른.kind !== 'ruler-measure') return [];
@@ -66,7 +68,8 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
       const out: 실수[] = [];
       if (m.m >= 20) out.push({ state: { kind: 'clock', hourDeg: 시, minuteDeg: 분 }, 말: `${m.m}분인데 짧은바늘을 ${m.h}에 딱 맞추어 놓았습니다. 짧은바늘은 ${m.h}과(와) ${(m.h % 12) + 1} 사이에 있어야 합니다.` });
       out.push({ state: { kind: 'clock', hourDeg: 각(분), minuteDeg: 각(짧은) }, 말: '긴바늘과 짧은바늘을 바꾸어 놓았습니다. 긴바늘은 분, 짧은바늘은 시를 나타냅니다.' });
-      out.push({ state: { kind: 'clock', hourDeg: 짧은, minuteDeg: 각(분 - 30) }, 말: '긴바늘을 숫자 여섯 칸만큼 덜 돌려 놓았습니다.' });
+      for (const 칸 of [-6, -3, -1, 1, 2, 3]) out.push({ state: { kind: 'clock', hourDeg: 짧은, minuteDeg: 각(분 + 칸 * 30) }, 말: `긴바늘을 숫자 ${Math.abs(칸)}칸만큼 ${칸 < 0 ? '덜' : '더'} 돌려 놓았습니다. 긴바늘이 숫자 한 칸을 가면 5분입니다.` });
+      out.push({ state: { kind: 'clock', hourDeg: 각(짧은 + 30), minuteDeg: 분 }, 말: '짧은바늘을 한 시간 뒤의 숫자 쪽에 놓았습니다. 짧은바늘이 어느 숫자를 지났는지 보아야 합니다.' });
       return out;
     }
     case 'grid-point': {
@@ -145,7 +148,7 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
       const 안 = (k: number) => Number.isInteger(k) && k >= 0 && k <= m.ticks && !맞음.has(k);
       if (m.targets) {
         // 조건에 맞는 수가 여럿이면, 조건 하나만 보고 바로 밖의 수를 고른 실수로 만듭니다.
-        const 밖 = [m.target + 1, m.target - 1, Math.min(...맞음) - 1, Math.max(...맞음) + 1].filter(안);
+        const 밖 = [m.target + 1, m.target - 1, Math.min(...맞음) - 1, Math.max(...맞음) + 1, Math.min(...맞음) - 2, Math.max(...맞음) + 2].filter(안);
         return 밖.map((at) => ({ state: { kind: 'number-line' as const, at }, 말: '조건 가운데 하나만 보고 수를 골라, 다른 조건을 만족하지 않는 수에 점을 놓았습니다.' }));
       }
       const 수 = (t: string) => { const r = /^(\d+)\/(\d+)$/.exec(t); return r ? Number(r[1]) / Number(r[2]) : Number(t); };
@@ -186,6 +189,8 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
       // 처음 눈금을 1로 세기 시작해 한 칸 모자라게 가는 실수입니다.
       점(m.target - 1, '첫 눈금을 0이 아니라 1로 세기 시작해 한 칸 모자라게 갔습니다.');
       점(m.target + 1, '눈금을 한 칸 더 세어 점을 놓았습니다.');
+      점(m.target - 2, '눈금을 두 칸 덜 세어 점을 놓았습니다.');
+      점(m.target + 2, '눈금을 두 칸 더 세어 점을 놓았습니다.');
       return out;
     }
     case 'tap-fill': {
@@ -211,8 +216,10 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
       // 칠해야 할 만큼이 아니라 나머지(남는 칸)만큼 칠하는 실수입니다.
       const 나머지 = m.parts - m.target;
       if (!m.exact && !m.pre.length && 나머지 !== m.target && 놓아도(나머지)) out.push({ state: { ...바른, on: 앞에서(나머지) }, 말: '채워야 할 만큼이 아니라 남는 칸 수만큼 채웠습니다. 문제에서 무엇만큼 나타내라고 했는지 다시 보아야 합니다.' });
-      const 하나더 = 뒤집기 && 빈.length > 0 && (m.parts > 10 || m.pre.length + 바른.on.length + 1 <= 9);
-      if (바른.on.length) out.push({ state: { ...바른, on: 하나더 ? [...바른.on, 빈[0]] : 바른.on.slice(0, -1) }, 말: 하나더 ? '하나를 더 세어 한 칸을 더 채웠습니다.' : '하나를 덜 세어 한 칸이 모자랍니다.' });
+      for (const n of [1, 2]) {
+        if (빈.length >= n && (m.parts > 10 || m.pre.length + 바른.on.length + n <= 9)) out.push({ state: { ...바른, on: [...바른.on, ...빈.slice(0, n)] }, 말: `${n === 1 ? '하나를' : '둘을'} 더 세어 ${n}칸을 더 채웠습니다.` });
+        if (바른.on.length >= n) out.push({ state: { ...바른, on: 바른.on.slice(0, -n) }, 말: `${n === 1 ? '하나를' : '둘을'} 덜 세어 ${n}칸이 모자랍니다.` });
+      }
       return out;
     }
     case 'base-ten': {
@@ -232,7 +239,11 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
       const 바꾸기 = (i: number) => ({ state: { ...바른, counts: c.map((v, k) => (k === i ? c[i + 1] : k === i + 1 ? c[i] : v)) }, 말: '두 자리의 모형 수를 서로 바꾸어 놓았습니다. 자리마다 나타내는 크기가 달라요.' });
       const 둘 = [...(바꿀 >= 0 ? [바꾸기(바꿀)] : []), ...(위 >= 0 ? [풀기(위)] : [])];
       out.push(...(m.trade !== 뒤집기 ? 둘.reverse() : 둘));
-      out.push({ state: { ...바른, counts: c.map((v, k) => (k === c.length - 1 ? v + 1 : v)) }, 말: '가장 낮은 자리 모형을 하나 더 놓았습니다.' });
+      for (let 자리 = 0; 자리 < c.length; 자리 += 1) for (const d of [1, -1, 2]) {
+        const v = c[자리] + d;
+        if (v < 0 || v > 9) continue;
+        out.push({ state: { ...바른, counts: c.map((x, k) => (k === 자리 ? v : x)) }, 말: `한 자리의 모형을 ${Math.abs(d)}개 ${d > 0 ? '더' : '덜'} 놓았습니다. 자리마다 모형의 수를 다시 세어 보아야 합니다.` });
+      }
       return out;
     }
     case 'bars': {
@@ -251,31 +262,42 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
       // 표를 옮겨 적다가 두 항목의 값을 서로 바꾸어 그리는 실수입니다.
       const [i, j] = 칸들;
       if (j !== undefined && 바른.vals[i] !== 바른.vals[j]) out.push({ state: { ...바른, vals: 바른.vals.map((x, k) => (k === i ? 바른.vals[j] : k === j ? 바른.vals[i] : x)) }, 말: `${m.labels[i]}과(와) ${m.labels[j]}의 값을 서로 바꾸어 그렸습니다. 항목마다 자료의 값을 다시 확인해야 합니다.` });
-      const v = 바른.vals[i] ?? 0;
-      const 더 = v + m.step <= m.max;
-      out.push({ state: { ...바른, vals: 바른.vals.map((x, k) => (k === i ? (더 ? v + m.step : v - m.step) : x)) }, 말: `${m.labels[i]}의 막대를 눈금 한 칸만큼 ${더 ? '더' : '덜'} 그렸습니다.` });
+      for (const q of 칸들) for (const d of [1, -1, 2, -2]) {
+        const v = (바른.vals[q] ?? 0) + d * m.step;
+        if (v < 0 || v > m.max) continue;
+        out.push({ state: { ...바른, vals: 바른.vals.map((x, k) => (k === q ? v : x)) }, 말: `${m.labels[q]}의 막대를 눈금 ${Math.abs(d)}칸만큼 ${d > 0 ? '더' : '덜'} 그렸습니다.` });
+      }
       return out;
     }
     case 'angle': {
       if (m.target !== undefined) {
         const out: 실수[] = [];
         if (m.protractor && m.target !== 90 && m.target < 180) out.push({ state: { kind: 'angle', deg: 180 - m.target }, 말: `각도기의 반대쪽 눈금을 읽어 ${180 - m.target}°로 그렸습니다. 0에서 시작한 쪽의 눈금을 읽어야 합니다.` });
-        out.push({ state: { kind: 'angle', deg: m.target + 10 }, 말: '각을 10°만큼 더 벌렸습니다.' });
+        for (const d of [10, -10, 20, -20, 30, -30]) {
+          const deg = m.target + d;
+          if (deg > 0 && deg < 360) out.push({ state: { kind: 'angle', deg }, 말: `각을 ${Math.abs(d)}°만큼 ${d > 0 ? '더' : '덜'} 벌렸습니다. 각도기의 0에서 시작한 쪽 눈금을 다시 읽어야 합니다.` });
+        }
         return out;
       }
       const [lo, hi] = m.range!;
-      return [
-        { state: { kind: 'angle', deg: hi === 90 ? 90 : lo === 90 ? 90 : hi + 10 }, 말: '조건의 경계에 있는 각을 그렸습니다. 경계의 각은 조건에 들어가지 않습니다.' },
-        { state: { kind: 'angle', deg: hi + 10 }, 말: '조건보다 큰 각을 그렸습니다.' },
-      ];
+      const 밖각: 실수[] = [];
+      if (lo === 90 || hi === 90) 밖각.push({ state: { kind: 'angle', deg: 90 }, 말: '조건의 경계에 있는 각(직각)을 그렸습니다. 경계의 각은 조건에 들어가지 않습니다.' });
+      for (const d of [10, 20, 40]) {
+        if (hi + d < 360) 밖각.push({ state: { kind: 'angle', deg: hi + d }, 말: '조건보다 큰 각을 그렸습니다.' });
+        if (lo - d > 0) 밖각.push({ state: { kind: 'angle', deg: lo - d }, 말: '조건보다 작은 각을 그렸습니다.' });
+      }
+      return 밖각;
     }
     case 'sort-bins': {
       if (바른.kind !== 'sort-bins') return [];
-      const i = 바른.placed.findIndex((b) => b !== 바른.placed[0]);
-      if (i < 0) return [];
-      const placed = [...바른.placed];
-      [placed[0], placed[i]] = [placed[i], placed[0]];
-      return [{ state: { ...바른, placed }, 말: `${m.items[0].label}과(와) ${m.items[i].label}을(를) 서로 바뀐 곳에 넣었습니다.` }];
+      const out: 실수[] = [];
+      for (let a = 0; a < 바른.placed.length; a += 1) for (let b = a + 1; b < 바른.placed.length; b += 1) {
+        if (바른.placed[a] === 바른.placed[b]) continue;
+        const placed = [...바른.placed];
+        [placed[a], placed[b]] = [placed[b], placed[a]];
+        out.push({ state: { ...바른, placed }, 말: `${m.items[a].label}과(와) ${m.items[b].label}을(를) 서로 바뀐 곳에 넣었습니다.` });
+      }
+      return out;
     }
     case 'stack-build': {
       if (바른.kind !== 'stack-build') return [];
@@ -330,7 +352,12 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
         return 다른 ? [{ state: { ...바른, picked: 다른.name }, 말: '접었을 때 만나지 않는 점을 골랐습니다.' }] : [];
       }
       return m.mode === 'sides' && 바른.strip.length > 1
-        ? [{ state: { ...바른, strip: 바른.strip.slice(1) }, 말: '옆면 하나를 빠뜨렸습니다. 옆면의 수는 밑면의 변의 수와 같습니다.' }]
+        ? [
+          { state: { ...바른, strip: 바른.strip.slice(1) }, 말: '옆면 하나를 빠뜨렸습니다. 옆면의 수는 밑면의 변의 수와 같습니다.' },
+          ...(바른.strip.length > 3 ? [{ state: { ...바른, strip: 바른.strip.slice(2) }, 말: '옆면 두 개를 빠뜨렸습니다. 옆면의 수는 밑면의 변의 수와 같습니다.' }] : []),
+          { state: { ...바른, strip: [...바른.strip, 바른.strip[바른.strip.length - 1]] }, 말: '옆면을 하나 더 붙였습니다. 옆면의 수는 밑면의 변의 수와 같습니다.' },
+          { state: { ...바른, bases: 바른.bases.map((b) => ({ ...b, side: 'top' as const })) }, 말: '옆면은 바르게 붙였지만 두 밑면을 모두 같은 쪽에 붙였습니다. 접으면 두 밑면이 서로 마주 보아야 합니다.' },
+        ]
         : [{ state: { ...바른, bases: 바른.bases.map((b) => ({ ...b, side: 'top' as const })) }, 말: '두 밑면을 모두 같은 쪽에 붙였습니다.' }];
     }
     case 'order': {
@@ -341,6 +368,10 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
         const 앞부터 = m.items.map((_, i) => i).sort((a, b) => (m.items[a].at ?? a) - (m.items[b].at ?? b));
         if (앞부터.join() !== 바른.seq.join()) out.push({ state: { ...바른, seq: 앞부터 }, 말: '곱셈·나눗셈이나 괄호를 먼저 계산하지 않고, 앞에서부터 차례로 계산했습니다.' });
         out.push({ state: { ...바른, seq: [바른.seq[1], 바른.seq[0], ...바른.seq.slice(2)] }, 말: '앞의 두 계산의 순서를 바꾸었습니다.' });
+        if (바른.seq.length >= 3) {
+          out.push({ state: { ...바른, seq: [...바른.seq.slice(0, -2), 바른.seq[바른.seq.length - 1], 바른.seq[바른.seq.length - 2]] }, 말: '뒤의 두 계산의 순서를 바꾸었습니다.' });
+          out.push({ state: { ...바른, seq: [...바른.seq].reverse() }, 말: '뒤에서부터 거꾸로 계산했습니다.' });
+        }
         return out;
       }
       // 자릿수를 보지 않고 맨 앞 숫자부터 견주는 실수입니다(9가 12보다 크다고 봄).
@@ -373,20 +404,31 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
       }
       // 큰 눈금 하나를 덜(더) 읽는 실수입니다.
       if (m.target - m.major >= 0 && m.major !== m.minor) out.push({ state: { ...바른, value: m.target - m.major }, 말: `작은 눈금은 바르게 맞추었지만 큰 눈금을 하나 덜 읽어 ${m.major} ${단위}만큼 적게 맞추었습니다.` });
-      const 더 = 바른.value + m.minor <= m.max;
-      out.push({ state: { ...바른, value: 더 ? 바른.value + m.minor : 바른.value - m.minor }, 말: '작은 눈금 한 칸의 크기를 잘못 읽어 한 칸 어긋나게 맞추었습니다.' });
+      for (const d of [1, -1, 2, -2, 3]) {
+        const v = 바른.value + d * m.minor;
+        if (v >= 0 && v <= m.max) out.push({ state: { ...바른, value: v }, 말: `작은 눈금을 ${Math.abs(d)}칸 ${d > 0 ? '더' : '덜'} 세어 맞추었습니다. 작은 눈금 한 칸은 ${m.minor} ${단위}입니다.` });
+      }
+      if (m.target + m.major <= m.max && m.major !== m.minor) out.push({ state: { ...바른, value: m.target + m.major }, 말: `큰 눈금을 하나 더 읽어 ${m.major} ${단위}만큼 많게 맞추었습니다.` });
       return out;
     }
     case 'pictograph': {
       if (바른.kind !== 'pictograph') return [];
       const i = 바른.big.findIndex((b, k) => b !== 바른.small[k]);
-      if (i < 0) return [{ state: { ...바른, big: 바른.big.map((v, k) => (k === 0 ? v + 1 : v)) }, 말: '큰 그림을 하나 더 그렸습니다.' }];
-      return [{ state: { ...바른, big: 바른.big.map((v, k) => (k === i ? 바른.small[i] : v)), small: 바른.small.map((v, k) => (k === i ? 바른.big[i] : v)) }, 말: `${m.labels[i]}에서 큰 그림과 작은 그림의 수를 바꾸어 그렸습니다.` }];
+      const out: 실수[] = [];
+      if (i >= 0) out.push({ state: { ...바른, big: 바른.big.map((v, k) => (k === i ? 바른.small[i] : v)), small: 바른.small.map((v, k) => (k === i ? 바른.big[i] : v)) }, 말: `${m.labels[i]}에서 큰 그림과 작은 그림의 수를 바꾸어 그렸습니다.` });
+      바른.big.forEach((_, k) => {
+        out.push({ state: { ...바른, big: 바른.big.map((v, q) => (q === k ? v + 1 : v)) }, 말: `${m.labels[k]}에 큰 그림을 하나 더 그렸습니다.` });
+        if (바른.small[k] > 0) out.push({ state: { ...바른, small: 바른.small.map((v, q) => (q === k ? v - 1 : v)) }, 말: `${m.labels[k]}에 작은 그림을 하나 덜 그렸습니다.` });
+        if (바른.big[k] > 0) out.push({ state: { ...바른, big: 바른.big.map((v, q) => (q === k ? v - 1 : v)) }, 말: `${m.labels[k]}에 큰 그림을 하나 덜 그렸습니다.` });
+      });
+      return out;
     }
     case 'calendar': {
       if (바른.kind !== 'calendar') return [];
-      const 밀기 = 바른.picked.every((d) => d + 1 <= m.days);
-      return [{ state: { ...바른, picked: 바른.picked.map((d) => (밀기 ? d + 1 : d - 1)) }, 말: 밀기 ? '시작하는 날까지 넣어 세어 하루가 어긋났습니다.' : '하루를 덜 세었습니다.' }];
+      const out: 실수[] = [];
+      const 말들: Record<number, string> = { 1: '시작하는 날까지 넣어 세어 하루가 어긋났습니다.', [-1]: '하루를 덜 세었습니다.', 2: '이틀을 더 세었습니다.', [-2]: '이틀을 덜 세었습니다.', 7: '일주일을 한 번 더 세었습니다(같은 요일이 한 주 뒤로 밀렸습니다).', [-7]: '일주일을 한 번 덜 세었습니다(같은 요일이 한 주 앞으로 당겨졌습니다).' };
+      for (const d of [1, -1, 2, -2, 7, -7]) if (바른.picked.every((x) => x + d >= 1 && x + d <= m.days)) out.push({ state: { ...바른, picked: 바른.picked.map((x) => x + d) }, 말: 말들[d] });
+      return out;
     }
     case 'share': {
       if (바른.kind !== 'share') return [];
@@ -394,7 +436,11 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
       if (m.groups) {
         // 똑같이 나누기(등분제)를 몇 개씩 묶기(포함제)로 헷갈려, 접시 수만큼씩 담는 실수입니다.
         if (m.groups * m.groups <= m.total && m.groups !== 바른.plates[0]) out.push({ state: { ...바른, plates: 바른.plates.map(() => m.groups!) }, 말: `접시 ${m.groups}개에 똑같이 나누어야 하는데, 접시마다 ${m.groups}개씩 담았습니다. 나누는 수가 접시의 수인지, 한 접시에 담는 수인지 구별해야 합니다.` });
-        if (바른.plates.length > 1) out.push({ state: { ...바른, plates: 바른.plates.map((v, i) => (i === 0 ? v + 1 : i === 1 ? v - 1 : v)) }, 말: '모두 담았지만 접시마다 담은 수가 똑같지 않습니다.' });
+        // 어느 접시에서 어느 접시로 하나를 옮겼는지는 문항마다 다릅니다.
+        for (let i = 0; i < 바른.plates.length; i += 1) for (let j = 0; j < 바른.plates.length; j += 1) {
+          if (i === j || 바른.plates[j] < 1) continue;
+          out.push({ state: { ...바른, plates: 바른.plates.map((v, k) => (k === i ? v + 1 : k === j ? v - 1 : v)) }, 말: '모두 담았지만 접시마다 담은 수가 똑같지 않습니다.' });
+        }
         return out;
       }
       const 남음 = m.total - 바른.plates.reduce((a, b) => a + b, 0);
@@ -403,7 +449,8 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
       if (m.size && Number.isInteger(등분) && 등분 !== m.size && m.size !== 바른.plates.length) out.push({ state: { ...바른, plates: Array.from({ length: m.size }, () => 등분) }, 말: `${m.size}개씩 담아야 하는데, 접시 ${m.size}개에 똑같이 나누어 담았습니다. 한 접시에 담는 수와 접시의 수를 구별해야 합니다.` });
       // 남는 것까지 한 접시로 쳐서 몫을 하나 크게 보는 실수입니다.
       if (남음 > 0) out.push({ state: { ...바른, plates: [...바른.plates, 남음] }, 말: `남은 ${남음}개도 한 접시에 담아 접시 수를 하나 더 세었습니다. 똑같이 ${m.size}개씩 담을 수 없는 것은 남겨 두어야 합니다.` });
-      if (m.size && m.size + 1 <= m.total) out.push({ state: { ...바른, plates: 바른.plates.map((v, i) => (i === 0 ? v + 1 : v)) }, 말: `첫 접시에 ${m.size}개보다 하나를 더 담았습니다.` });
+      if (m.size && m.size + 1 <= m.total) 바른.plates.forEach((_, k) => out.push({ state: { ...바른, plates: 바른.plates.map((v, i) => (i === k ? v + 1 : v)) }, 말: `한 접시에 ${m.size}개보다 하나를 더 담았습니다.` }));
+      if (m.size && m.size > 1) 바른.plates.forEach((_, k) => out.push({ state: { ...바른, plates: 바른.plates.map((v, i) => (i === k ? v - 1 : v)) }, 말: `한 접시에 ${m.size}개보다 하나를 덜 담았습니다.` }));
       if (바른.plates.length > 1) out.push({ state: { ...바른, plates: 바른.plates.slice(0, -1) }, 말: '한 접시를 덜 담고 그만두었습니다.' });
       return out;
     }
@@ -412,15 +459,18 @@ const 실수후보 = (m: Manipulation, seed: number): 실수[] => {
       const out: 실수[] = [];
       // 한 줄에 놓을 수와 줄의 수를 바꾸어 놓는 실수입니다.
       if (바른.rows !== 바른.cols && 바른.cols <= m.maxRows && 바른.rows <= m.maxCols) out.push({ state: { ...바른, rows: 바른.cols, cols: 바른.rows }, 말: `한 줄에 ${바른.cols}개씩 놓아야 하는데 한 줄에 ${바른.rows}개씩 놓았습니다. 한 줄에 놓는 수와 줄의 수를 구별해야 합니다.` });
-      const 더 = 바른.rows < m.maxRows;
-      out.push({ state: { ...바른, rows: 더 ? 바른.rows + 1 : 바른.rows - 1 }, 말: `줄의 수를 하나 ${더 ? '더' : '덜'} 놓았습니다.` });
+      if (바른.rows < m.maxRows) out.push({ state: { ...바른, rows: 바른.rows + 1 }, 말: '줄의 수를 하나 더 놓았습니다.' });
+      if (바른.rows > 1) out.push({ state: { ...바른, rows: 바른.rows - 1 }, 말: '줄의 수를 하나 덜 놓았습니다.' });
+      if (바른.cols < m.maxCols) out.push({ state: { ...바른, cols: 바른.cols + 1 }, 말: '한 줄에 하나씩 더 놓았습니다.' });
+      if (바른.cols > 1) out.push({ state: { ...바른, cols: 바른.cols - 1 }, 말: '한 줄에 하나씩 덜 놓았습니다.' });
       return out;
     }
     case 'pattern': {
       if (바른.kind !== 'pattern') return [];
-      const i = m.given.findIndex((v) => v === null);
-      if (i < 0) return [];
-      return [{ state: { ...바른, fill: 바른.fill.map((v, k) => (k === i ? (v! + 1) % m.palette.length : v)) }, 말: '규칙을 이어 가다 한 칸을 잘못 채웠습니다.' }];
+      const 빈칸들 = m.given.map((v, k) => (v === null ? k : -1)).filter((k) => k >= 0);
+      const out: 실수[] = [];
+      for (const i of 빈칸들) for (let d = 1; d < m.palette.length; d += 1) out.push({ state: { ...바른, fill: 바른.fill.map((v, k) => (k === i ? (v! + d) % m.palette.length : v)) }, 말: '규칙을 이어 가다 한 칸을 잘못 채웠습니다. 되풀이되는 마디를 다시 찾아보아야 합니다.' });
+      return out;
     }
     default: return [];
   }
@@ -511,16 +561,73 @@ const 선실수 = (m: Extract<Manipulation, { kind: 'grid-draw' }>, 바른: Extr
     }
   }
   const k = seed % 바른.segs.length;
-  return [...나란히, ...옮긴, ...한줄, ...끝비낌, { state: { ...바른, segs: 바른.segs.filter((_, i) => i !== k) }, 말: '선분 하나를 빠뜨려 조건에 맞는 모양이 되지 않았습니다.' }];
+  const 모두 = [...나란히, ...옮긴, ...한줄, ...끝비낌, { state: { ...바른, segs: 바른.segs.filter((_, i) => i !== k) }, 말: '선분 하나를 빠뜨려 조건에 맞는 모양이 되지 않았습니다.' }];
+  // 자리와 상관없이 조건만 맞으면 되는 도형(아무 삼각형, 합동인 도형)은 바른 예가 늘 같은 자리에 있어,
+  // 친구의 그림도 늘 같은 자리·같은 모양이 됩니다. 친구의 그림을 모눈 위 다른 자리로 통째로 옮겨 둡니다.
+  if ((m.goal.type === 'polygon' || m.goal.type === 'congruent') && !m.fixed.length && !m.marks.length) {
+    const 점들모두 = 바른.segs.flat();
+    const [x0, x1] = [Math.min(...점들모두.map((p) => p[0])), Math.max(...점들모두.map((p) => p[0]))];
+    const [y0, y1] = [Math.min(...점들모두.map((p) => p[1])), Math.max(...점들모두.map((p) => p[1]))];
+    const 자리: GridPoint[] = [];
+    for (let dx = -x0; dx <= m.cols - x1; dx += 1) for (let dy = -y0; dy <= m.rows - y1; dy += 1) 자리.push([dx, dy]);
+    const [dx, dy] = 자리.length ? 자리[(seed * 2654435761 >>> 0) % 자리.length] : [0, 0];
+    const 옮기기 = (g: 실수): 실수 => {
+      if (g.state.kind !== 'grid-draw') return g;
+      const segs = g.state.segs.map(([a, b]) => [[a[0] + dx, a[1] + dy], [b[0] + dx, b[1] + dy]] as [GridPoint, GridPoint]);
+      return segs.flat().every(([x, y]) => x >= 0 && y >= 0 && x <= m.cols && y <= m.rows) ? { ...g, state: { ...g.state, segs } } : g;
+    };
+    return 모두.map(옮기기);
+  }
+  return 모두;
 };
 
 
 /** 그 조작에서 흔한 실수 하나(채점하면 틀린 것)를 고릅니다. 없으면 null입니다. */
-export const 친구실수 = (m: Manipulation, seed = 0): 실수 | null => {
-  for (const 후보 of 실수후보(m, seed)) {
-    if (!채점(m, 후보.state).ok) return 후보;
-  }
-  return null;
+export const 친구실수 = (m: Manipulation, seed = 0): 실수 | null => 움직임골라(m, 실수후보(m, seed).filter((후보) => !채점(m, 후보.state).ok), seed);
+
+/**
+ * 틀린 후보를 '고치는 데 필요한 움직임'별로 묶고, 묶음을 고르게 고른 다음 그 안에서 하나를 고릅니다.
+ * 같은 움직임(예: 한 칸 더 채우기)을 낳는 후보가 많아도 그 움직임만 자주 나오지 않습니다.
+ */
+const 움직임골라 = (m: Manipulation, 후보: 실수[], seed: number, 개념만 = false): 실수 | null => {
+  const 바른 = 정답모습(m);
+  const 묶기 = (xs: 실수[]) => {
+    const 묶음 = new Map<string, 실수[]>();
+    for (const x of xs) { const k = 고칠움직임(바른, x.state); 묶음.set(k, [...(묶음.get(k) ?? []), x]); }
+    return [...묶음.values()];
+  };
+  // 실수에도 차례가 있습니다. 개념을 따져야 고칠 수 있는 실수를 먼저 쓰고, 다시 세기만 하면 고쳐지는
+  // 한두 칸 차이는 개념 실수가 하나뿐일 때(같은 손놀림으로 굳지 않게) 섞거나, 개념 실수가 없을 때만 씁니다.
+  // 선분을 빠뜨린 그림은 다른 실수를 만들 수 없을 때에만 씁니다.
+  const 최후 = 후보.filter((x) => 빠뜨림말.test(x.말));
+  const 세기 = 후보.filter((x) => !빠뜨림말.test(x.말) && 세기말.test(x.말));
+  const 개념 = 후보.filter((x) => !빠뜨림말.test(x.말) && !세기말.test(x.말));
+  const [개념묶음, 세기묶음] = [묶기(개념), 묶기(세기)];
+  const 섞음 = 섞은수(seed * 13 + 5);
+  const 세기섞어도 = !개념만;
+  const 묶음들 = 개념묶음.length >= 2 ? 개념묶음
+    : 개념묶음.length === 1 ? (세기섞어도 && 세기묶음.length && 섞음 % 2 === 0 ? 세기묶음 : 개념묶음)
+      : 세기묶음.length ? 세기묶음 : 묶기(최후);
+  const 하나 = 고르기(묶음들, seed);
+  return 하나 && 고르기(하나, seed * 31 + 17);
+};
+
+/** 다시 세기만 하면 고쳐지는 한두 칸 차이의 실수입니다(눈금·칸·개수를 더/덜 셈). */
+const 세기말 = /눈금을 (한|두) 칸|(하나|둘)[을를] (덜|더) 세어|칸을 더 채웠|칸이 모자랍|가장 낮은 자리|줄의 수를 하나|한 줄에 하나씩|한 접시를 덜|한 칸 어긋나게|칸 어긋나게 옮겼|막대를 눈금|앞줄 쌓기나무를 빠뜨|칸을 하나 잘못 세어 바로 옆|첫 눈금을 0이 아니라|첫 접시에|한 접시에 \d+개보다 하나를|옆면 하나를 빠뜨|옆면 두 개를|옆면을 하나 더|층수를 잘못 세었|모형을 \d개 (더|덜)|칸만큼 (더|덜) 돌려|°만큼 (더|덜)|하루를|이틀을|작은 눈금을 \d칸|그림을 하나 (더|덜)|규칙을 이어 가다|거꾸로 늘어놓았/;
+const 빠뜨림말 = /선분 하나를 빠뜨려/;
+
+/** 틀린 후보 가운데 하나를 씨앗으로 고릅니다. 늘 첫 후보를 쓰면 실수가 한 모양으로 굳어, 같은 손놀림으로 모두 고쳐집니다. */
+export const 고르기 = <T,>(후보: T[], seed: number): T | null => (후보.length ? 후보[섞은수(seed) % 후보.length] : null);
+
+/**
+ * 씨앗을 고르게 흩뜨립니다(murmur3의 마무리 섞기). 곱하기 하나로만 흩뜨리면 작은 수로 나눈
+ * 나머지가 씨앗과 한 줄로 늘어서, 후보 목록을 씨앗으로 돌린 것(섞기)과 맞물려 늘 같은 후보가 뽑혔습니다.
+ */
+const 섞은수 = (seed: number): number => {
+  let h = (seed + 0x9e3779b9) >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
 };
 
 /** 실수를 해 둔 동물 친구들입니다. 아이는 친구의 실수를 찾아 고쳐 주는 '실수 탐정'이 됩니다. */
@@ -536,8 +643,13 @@ export const 고쳐보기 = (g: 조작갈래): 조작갈래 => ({
     const t = g.make(seed, lv);
     if (!t) return null;
     if (t.manipulate.friend) return t;
-    const 갈래실수 = (t.실수 ?? []).find((x) => !채점(t.manipulate, x.state as ManipState).ok);
-    const 실 = 갈래실수 ? { state: 갈래실수.state as ManipState, 말: 갈래실수.말 } : 친구실수(t.manipulate, seed);
+    // 갈래가 정해 둔 실수(그 차시의 핵심 오개념)와 조작의 흔한 실수를 함께 두고 씨앗으로 고릅니다.
+    const 갈래실수 = (t.실수 ?? []).filter((x) => !채점(t.manipulate, x.state as ManipState).ok).map((x) => ({ state: x.state as ManipState, 말: x.말 }));
+    const 일반실수 = 실수후보(t.manipulate, seed).filter((x) => !채점(t.manipulate, x.state).ok);
+    // 갈래가 그 차시의 오개념을 정해 두었으면 그것만 씁니다(흔한 세기 실수로 바꾸지 않습니다).
+    // 비와 비율·띠그래프·원그래프·비례식은 칠할 칸을 개념으로 따지는 차시라, 세기 실수를 섞지 않습니다.
+    const 개념만 = 갈래실수.length > 0 && (t.tag === 'ratio' || t.tag === 'data');
+    const 실 = 움직임골라(t.manipulate, [...갈래실수, ...일반실수.filter((x) => !빠뜨림말.test(x.말))], seed, 개념만);
     if (!실) {
       // 이미 틀린 모습을 고치는 조작(정육면체 전개도 고치기)은 그대로 고차 문항입니다.
       // 그 밖에 고칠 실수를 만들 수 없으면 이 씨앗은 버리고 다른 문항을 만듭니다.
