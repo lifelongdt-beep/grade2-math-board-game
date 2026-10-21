@@ -88,7 +88,7 @@ export const lesson567Easy = (mode: Rounding): G5Family[] => {
             ? `${placeName(exp)} 바로 아래 자리의 숫자는 ${digitAt(value, exp - 1)}입니다.`
             : `${placeName(exp)} 아래의 수를 ${mode === 'ceil' ? '올립니다' : '버립니다'}.`,
           mode === 'round'
-            ? `${digitAt(value, exp - 1)}${iJosa(String(digitAt(value, exp - 1)))} 5 ${digitAt(value, exp - 1) >= 5 ? '이상이므로 올립니다' : '미만이므로 버립니다'}.`
+            ? `${iJosa(String(digitAt(value, exp - 1)))} 5 ${digitAt(value, exp - 1) >= 5 ? '이상이므로 올립니다' : '미만이므로 버립니다'}.`
             : mode === 'ceil'
               ? '올림은 아래에 0이 아닌 수가 하나라도 있으면 구하려는 자리를 1 크게 합니다.'
               : '버림은 아래의 수를 모두 0으로 바꿉니다.',
@@ -551,7 +551,7 @@ export const lesson567Middle = (mode: Rounding): G5Family[] => {
           hint: `${placeName(exp)} 바로 아래 자리의 숫자 하나만 보세요. 그 숫자가 5보다 작은지 아닌지가 답을 정합니다.`,
           steps: [
             `${placeName(exp)} 바로 아래 자리의 숫자는 ${digitAt(String(사람), exp - 1)}입니다.`,
-            `${digitAt(String(사람), exp - 1)}${iJosa(String(digitAt(String(사람), exp - 1)))} 5 ${digitAt(String(사람), exp - 1) >= 5 ? '이상이므로 올립니다' : '미만이므로 버립니다'}.`,
+            `${iJosa(String(digitAt(String(사람), exp - 1)))} 5 ${digitAt(String(사람), exp - 1) >= 5 ? '이상이므로 올립니다' : '미만이므로 버립니다'}.`,
             `그러므로 약 ${answer}명입니다.`,
           ],
         };
@@ -578,7 +578,7 @@ export const lesson567Middle = (mode: Rounding): G5Family[] => {
           steps: [
             '가장 가깝게 어림하는 방법은 반올림입니다.',
             `몇천 몇백으로 나타내려면 백의 자리까지 반올림합니다. 십의 자리 숫자는 ${digitAt(String(대수), 1)}입니다.`,
-            `${digitAt(String(대수), 1)}${iJosa(String(digitAt(String(대수), 1)))} 5 ${digitAt(String(대수), 1) >= 5 ? '이상이므로 올려' : '미만이므로 버려'} 약 ${answer}대입니다.`,
+            `${iJosa(String(digitAt(String(대수), 1)))} 5 ${digitAt(String(대수), 1) >= 5 ? '이상이므로 올려' : '미만이므로 버려'} 약 ${answer}대입니다.`,
           ],
         };
       },
@@ -608,7 +608,7 @@ export const lesson567Middle = (mode: Rounding): G5Family[] => {
           hint: `${placeName(exp)} 바로 아래 자리의 숫자 하나에 동그라미를 치고 그것만 보세요.`,
           steps: [
             `${placeName(exp)} 바로 아래 자리의 숫자는 ${digitAt(섬.면적, exp - 1)}입니다.`,
-            `${digitAt(섬.면적, exp - 1)}${iJosa(String(digitAt(섬.면적, exp - 1)))} 5 ${digitAt(섬.면적, exp - 1) >= 5 ? '이상이므로 올립니다' : '미만이므로 버립니다'}.`,
+            `${iJosa(String(digitAt(섬.면적, exp - 1)))} 5 ${digitAt(섬.면적, exp - 1) >= 5 ? '이상이므로 올립니다' : '미만이므로 버립니다'}.`,
             `그러므로 ${answer} km²입니다.`,
           ],
         };
@@ -635,7 +635,7 @@ export const lesson567Middle = (mode: Rounding): G5Family[] => {
           hint: '키나 몸무게처럼 잰 값은 반올림하여 나타내는 일이 많습니다. 구하려는 자리 바로 아래 자리만 보세요.',
           steps: [
             `${placeName(exp)} 바로 아래 자리의 숫자는 ${digitAt(키, exp - 1)}입니다.`,
-            `${digitAt(키, exp - 1)}${iJosa(String(digitAt(키, exp - 1)))} 5 ${digitAt(키, exp - 1) >= 5 ? '이상이므로 올립니다' : '미만이므로 버립니다'}.`,
+            `${iJosa(String(digitAt(키, exp - 1)))} 5 ${digitAt(키, exp - 1) >= 5 ? '이상이므로 올립니다' : '미만이므로 버립니다'}.`,
             `그러므로 ${answer} cm입니다.`,
           ],
         };

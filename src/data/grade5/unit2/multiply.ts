@@ -18,6 +18,11 @@ import { kindName, methodText, modelFor, operandsFor, wrongAnswersFor, wrongMeth
 // 문장제 안에서 쓸 때는 마지막 '그러므로 답은 …' 줄을 빼고 씁니다.
 // 문장제는 단위를 붙여 자기 결론을 따로 내므로, 두면 같은 말을 두 번
 // 하게 됩니다.
+const 최대공약수 = (a: number, b: number): number => (b ? 최대공약수(b, a % b) : a);
+/** 한쪽 분자와 다른 쪽 분모(또는 같은 분수의 분자·분모)를 곱하기 전에 약분할 수 있는지 봅니다. */
+const 미리약분 = ({ left, right }: Operands) =>
+  [[left.n, right.d], [right.n, left.d], [left.n, left.d], [right.n, right.d]].some(([n, d]) => d > 1 && 최대공약수(n, d) > 1);
+
 const 곱한과정 = (operands: Operands, 결론까지 = true): string[] => {
   const { kind, left, right, leftParts, rightParts, leftText, rightText } = operands;
   const answer = mul(left, right);
@@ -94,7 +99,11 @@ const 계산문항 = (kind: Kind, index: number): G5Family => ({
         // 보이는 바른 방법입니다(2와 2/7 × 3 = 2×3 + 2/7×3). 빠뜨리는
         // 것이 잘못이지 나누는 것이 잘못은 아닙니다.
         ? '대분수가 있으면 먼저 가분수로 고쳐 적으세요. 자연수 부분과 분수 부분으로 나누어 곱할 때는 두 부분 모두에 곱해야 합니다.'
-        : '곱하기 전에 약분할 수 있는지 먼저 살펴보세요. 미리 약분하면 수가 작아져 계산이 쉬워집니다.',
+        : 미리약분(operands)
+          ? '곱하기 전에 약분할 수 있는지 먼저 살펴보세요. 미리 약분하면 수가 작아져 계산이 쉬워집니다.'
+          : operands.left.d === 1 || operands.right.d === 1
+            ? '분모는 그대로 두고 분자와 자연수를 곱하세요. 곱이 가분수이면 대분수로 고쳐 보세요.'
+            : '분자는 분자끼리, 분모는 분모끼리 곱하세요. 곱이 가분수이면 대분수로 고쳐 보세요.',
       steps: 곱한과정(operands),
       visual: modelFor(operands),
     };

@@ -124,7 +124,7 @@ export const unit2Lesson1 = (difficulty: 수준): G5Family[] => {
         concept: '몇 배 한 수는 곱셈으로 구합니다.',
         strategy: '몇 배 한 수 구하기',
         hint: '"몇 배"는 곱하라는 말입니다. 더하는 것이 아닙니다.',
-        steps: [`${base}×${k}=${base * k}`],
+        steps: [`${base}${particleOf(String(base), '을')} ${k}배 한다는 것은 ${base}${particleOf(String(base), '을')} ${k}번 더한다는 뜻이므로 곱셈 ${base}×${k}로 구합니다.`, `${base}×${k}=${base * k}`],
         misconceptionTip: '"몇 배"와 "몇 더"를 바꾸어 읽지 마세요. 배는 곱셈입니다.',
         selfCheck: '구한 수를 처음 수로 나누면 몇 배 했는지가 나오나요?',
       };

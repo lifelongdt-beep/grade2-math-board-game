@@ -1,7 +1,10 @@
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, Question, QuestionVisual } from '../../types';
+import { 시간도움 } from '../timeHelp';
+import { 과정걸음, 방법붙이기 } from '../stepsHelp';
 import { parse as parseFraction } from './fraction';
 import { rand, resolveParticles } from './util';
 import { deriveWalkthrough } from '../walkthrough';
+import { 늘림뭉치 } from '../expand';
 import { 난도점수, 뭉치선호, 사고단계, 수번거로움, 후보고르기 } from './levelPick';
 import { 수준뭉치 } from '../levels';
 import {
@@ -248,15 +251,21 @@ const toQuestion = (
       : { student: g3StudentConcept, core: g3CoreConcept, read: g3ReadStrategy, mis: g3Misconception, check: g3SelfCheck, label: g3TagLabel }
     : { student: g5StudentConcept, core: g5CoreConcept, read: g5ReadStrategy, mis: g5Misconception, check: g5SelfCheck, label: tagLabel };
 
+  // 시각과 시간 문항은 문제가 묻는 일에 맞춘 풀이를 씁니다(timeHelp.ts). 문항이
+  // 스스로 적은 힌트가 있으므로, 문제 글을 읽어 풀이까지 다시 쓸 수 있을 때만 바꿉니다.
+  const 시간 = spec.tag === 'time' ? 시간도움(spec.prompt, spec.answer, spec.visual) : null;
+  const 시간풀이 = 시간?.steps && 시간.steps.length >= 2 ? 시간 : null;
   const support: LearningSupport = {
     studentConcept: spec.concept ?? 도움.student[spec.tag] ?? '문제에서 무엇을 구하라고 했는지 먼저 찾으세요.',
-    studentHint: spec.hint,
+    studentHint: 시간풀이?.hint || spec.hint,
     coreConcept: 도움.core[spec.tag] ?? lesson.objective,
     readStrategy: `${strategy}: ${도움.read[spec.tag] ?? '문제에 주어진 조건을 하나씩 표시합니다.'}`,
-    steps: [
-      '문제에서 무엇을 구하라고 했는지 먼저 찾습니다.',
-      ...spec.steps,
-    ],
+    // 풀이 걸음은 이 문항의 풀이만 둡니다. 예전에는 모든 문항 앞에 '문제에서
+    // 무엇을 구하라고 했는지 먼저 찾습니다'를 붙여, 힌트의 첫 걸음이 늘 같은
+    // 말이었고 틀린 뒤 '왜?'에는 풀이 가운데 한 줄만 나왔습니다.
+    steps: 시간풀이?.steps ? 시간풀이.steps : spec.steps.length >= 2
+      ? [...spec.steps]
+      : 과정걸음(spec.prompt, spec.answer, spec.steps[0] ?? '') ?? 방법붙이기(spec.steps.length ? [...spec.steps] : [`답은 ${spec.answer}입니다.`], spec.hint, spec.answer),
     misconceptionTip: spec.misconceptionTip ?? 도움.mis[spec.tag] ?? '답을 고른 까닭을 한 줄로 말해 보세요.',
     textbookConnection: `차시 목표 "${lesson.objective}"와 연결됩니다. 교과서 핵심은 ${lesson.textbookFocus} 익힘책 핵심은 ${lesson.workbookFocus}`,
     selfCheck: spec.selfCheck ?? 도움.check[spec.tag] ?? '답을 문제에 다시 넣어 말이 되는지 확인했나요?',
@@ -313,18 +322,22 @@ export const buildGrade5Questions = (
   // 몇째 판인지입니다. 판마다 씨앗을 바꾸어 같은 틀에 다른 수가 들어간
   // 문항 서른 개를 새로 만듭니다(0이 처음 판).
   판 = 0,
+  // 앞 판을 어디서부터 셀지입니다. 2학년은 처음 판을 2학년 생성기가 만들고
+  // 이 뭉치는 둘째 판부터 쓰므로 1을 넘겨줍니다.
+  시작판 = 0,
 ): Question[] => {
   if (!families.length) return [];
   // 수준마다 덧붙이는 문항 뭉치(levels/)입니다. 상에는 사고력 문항을,
   // 하에는 단순한 지식 문항을 더합니다.
-  families = [...families, ...수준뭉치(lesson, difficulty)];
+  // 둘째 판부터는 문제집을 늘리는 뭉치(expand/)를 더합니다. 2학년은 2학년 경로가 따로 넘겨줍니다.
+  families = [...families, ...수준뭉치(lesson, difficulty), ...(판 && !lesson.semester.startsWith('2') ? 늘림뭉치(lesson, difficulty) : [])];
 
   const made: Question[] = [];
   const seenPrompt = new Set<string>();
   // 뒤 판은 앞 판들에서 낸 문항을 피합니다. 그래야 판마다 새 수, 새 답이 나옵니다.
-  for (let 앞판 = 0; 앞판 < 판; 앞판 += 1) {
+  for (let 앞판 = 시작판; 앞판 < 판; 앞판 += 1) {
     const 열쇠 = `${lesson.id}|${difficulty}|${앞판}`;
-    if (!판에서낸것.has(열쇠)) buildGrade5Questions(lesson, difficulty, families, 앞판);
+    if (!판에서낸것.has(열쇠)) buildGrade5Questions(lesson, difficulty, families, 앞판, 시작판);
     for (const k of 판에서낸것.get(열쇠) ?? []) seenPrompt.add(k);
   }
   const 이판에서낸것 = new Set<string>();

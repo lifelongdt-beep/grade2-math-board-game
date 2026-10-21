@@ -23,7 +23,7 @@ describe('틀렸을 때 주는 볼 곳', () => {
       }
     }
 
-    expect(vague.slice(0, 5)).toEqual([]);
+    expect(vague.slice(0, 40)).toEqual([]);
   });
 
   it('그 문항의 수를 쓴 볼 곳이 충분히 많다', () => {

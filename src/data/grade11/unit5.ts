@@ -201,7 +201,7 @@ const 수읽기 = (id: string, lo: number, hi: number, onlyTens = false): G5Fami
     const 이웃 = 우리 ? 우리말로(n + 1 <= 50 ? n + 1 : n - 1) : 한자어로(n + 1 <= 50 ? n + 1 : n - 1);
     const 바꿈 = o === 0 || o === t ? (우리 ? 우리말로(n - 1) : 한자어로(n - 1)) : 우리 ? 우리말로(o * 10 + t <= 50 ? o * 10 + t : n + 2) : 한자어로(o * 10 + t <= 50 ? o * 10 + t : n + 2);
     return {
-      prompt: `${eul(String(n))} ${우리 ? '하나, 둘처럼 세는 말로' : '일, 이처럼 세는 말로'} 바르게 읽은 것은 어느 것일까요?`,
+      prompt: `${eul(String(n))} ${우리 ? '하나, 둘처럼 세는 말로' : '일, 이처럼 읽는 말로'} 바르게 읽은 것은 어느 것일까요?`,
       answer: ans,
       wrongs: [섞기, 이웃, 바꿈],
       tag: 'number',

@@ -263,7 +263,7 @@ const 고치기문항 = (kind: Kind): G5Family => ({
       tag: 'division',
       concept: 핵심[kind],
       strategy: `${꼴이름[kind]}에서 잘못 계산한 것 고치기`,
-      hint: '나누는 수와 몫을 곱하고 나머지를 더해 나누어지는 수가 되는지, 나머지가 나누는 수보다 작은지 확인해 보세요.',
+      hint: `${who}의 답을 확인해 보세요. ${one.d}에 ${who}이(가) 구한 몫을 곱하고 나머지를 더하면 ${one.a}이(가) 되나요? 나머지는 ${one.d}보다 작은가요? 어긋나면 ${식(one)}을(를) 높은 자리부터 다시 나누어 보세요.`,
       steps: [...divSteps(one), `확인: ${확인식(one)}입니다.`],
       misconceptionTip: 오개념[kind],
       ...(one.r > 0 ? { sameValueOk: true } : {}),

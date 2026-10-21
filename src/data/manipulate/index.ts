@@ -604,6 +604,9 @@ const 조작열쇠 = (q: Question) => `${q.prompt}|${JSON.stringify(q.manipulate
 
 export const 조작섞기 = (lesson: Lesson, difficulty: Difficulty, questions: Question[], 판 = 0): Question[] => {
   if (!questions.length) return questions;
+  // 몬스터 막기 놀이 차시는 단순 곱셈(나눗셈) 계산만 냅니다. 몬스터가 내려오는 동안
+  // 조작 문항을 풀 수 없고, 놀이의 목적이 빠른 셈이기 때문입니다.
+  if (/몬스터를 막아라/.test(lesson.title)) return questions;
   // 둘에 하나를 손으로 조작하는 문항으로 바꿉니다(조작 문항이 모자라면 있는 만큼).
   // 판마다 씨앗을 비켜 같은 조작에 다른 수가 들어가게 합니다.
   const 몫 = Math.max(1, Math.round(questions.length / 2));
