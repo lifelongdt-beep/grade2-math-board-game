@@ -1,5 +1,5 @@
 import type { G5Family } from '../build';
-import { estimate, eul, i as iJosa, pick, placeName, rand, roundingName, type Rounding } from '../util';
+import { estimate, eul, euro, i as iJosa, pick, placeName, rand, roundingName, type Rounding } from '../util';
 import { lesson567Easy, lesson567Hard, lesson567Middle } from './lesson567';
 
 // ════════════════════════════════════════════════════════════════════
@@ -61,7 +61,7 @@ export const lesson8Easy: G5Family[] = [
       const 값들 = 모든방법.map((m) => estimate(String(참값), exp, m));
       if (값들.filter((v) => v === answer).length !== 1) return null;
       return {
-        prompt: `${eul(String(참값))} 어림하여 ${answer}(으)로 나타내었습니다. 올림, 버림, 반올림 중 어떤 방법으로 어림한 것일까요?`,
+        prompt: `${eul(String(참값))} 어림하여 ${euro(String(answer))} 나타내었습니다. 올림, 버림, 반올림 중 어떤 방법으로 어림한 것일까요?`,
         answer: roundingName[mode],
         wrongs: [...모든방법.filter((m) => m !== mode).map((m) => roundingName[m]), '세 방법 모두입니다.'],
         tag: 'rounding',
