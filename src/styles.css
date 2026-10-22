@@ -8350,7 +8350,8 @@ body::before {
 .lane-toast {
   position: absolute;
   z-index: 4;
-  top: 50px;
+  /* '정답!' 알림(success-burst) 바로 아래에 둡니다. 겹치면 둘 다 읽히지 않습니다. */
+  top: 104px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -8382,7 +8383,11 @@ body::before {
 .student-result-list .star-result {
   flex-wrap: wrap;
 }
-.student-result-list .star-result strong { color: #ffd86b; }
+.student-result-list .star-result strong {
+  color: #ffd86b;
+  font-size: clamp(20px, 1.8vw, 30px);
+  white-space: nowrap;
+}
 .student-result-list .star-result small {
   flex-basis: 100%;
   color: #ffe9a6;
@@ -8393,4 +8398,31 @@ body::before {
 .reward-reset {
   margin-top: 8px;
   font-size: 13px;
+}
+
+/* ── '처음 해냈다' 배지 ─────────────────────────────────────────────── */
+.student-result-list .badge-result {
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+}
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.badge-row i {
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+.badge-row i.have {
+  opacity: 1;
+  filter: none;
+}
+.badge-row i.new {
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #ffd86b, 0 0 12px rgba(255, 216, 107, 0.8);
+  animation: gentle-beat 1.2s ease-in-out infinite;
 }
