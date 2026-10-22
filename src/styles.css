@@ -8537,3 +8537,83 @@ body::before {
   from { background-position: 0% 50%; }
   to { background-position: 300% 50%; }
 }
+
+/* ── 반 전체 협동 목표: 몬스터 대왕 ──────────────────────────────────── */
+.class-boss {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px 3px 6px;
+  border-left: 2px solid rgba(120, 190, 255, 0.35);
+}
+.class-boss-face {
+  font-size: 30px;
+  line-height: 1;
+  animation: boss-hit 0.45s ease;
+}
+.class-boss-info {
+  display: grid;
+  gap: 3px;
+}
+.class-boss-info span {
+  color: #ffc9c9;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.class-boss-hp {
+  width: 120px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.class-boss-hp div {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff5a5a, #ff9a3d);
+  transition: width 0.5s ease;
+}
+.class-goal .class-boss strong {
+  color: #ffd86b;
+  font-size: 15px;
+}
+
+@keyframes boss-hit {
+  0% { transform: translateX(0) scale(1); }
+  30% { transform: translateX(-4px) scale(0.92) rotate(-8deg); filter: brightness(1.8); }
+  60% { transform: translateX(3px) rotate(6deg); }
+  100% { transform: none; }
+}
+
+.boss-win {
+  position: fixed;
+  z-index: 60;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 28px 44px;
+  border-radius: 20px;
+  border: 3px solid #ffd86b;
+  background: #170a2c;
+  color: #fff3c4;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(255, 200, 60, 0.6);
+  animation: boss-win-life 4.2s ease forwards;
+  pointer-events: none;
+}
+.boss-win span { font-size: 64px; }
+.boss-win strong { font-size: 30px; }
+.boss-win small { font-size: 18px; color: #ffe9a6; }
+
+@keyframes boss-win-life {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  10% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  18% { transform: translate(-50%, -50%) scale(1); }
+  88% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+}

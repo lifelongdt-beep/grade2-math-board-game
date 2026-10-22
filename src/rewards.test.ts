@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { 꾸미개들, 다음꾸미개, 받을별, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 배지들, 황금문제인가 } from './rewards';
+import { 꾸미개들, 다음꾸미개, 받을별, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 배지들, 황금문제인가, 대왕때리기, 지금대왕, 대왕들 } from './rewards';
 
 describe('캐릭터 키우기', () => {
   it('별이 모이면 자리마다 가장 좋은 꾸미개가 붙습니다', () => {
@@ -84,5 +84,18 @@ describe('황금 문제', () => {
     expect(판1.length / ids.length).toBeLessThan(0.13);
     const 겹침 = 판1.filter((id) => 판2.includes(id)).length;
     expect(겹침 / 판1.length).toBeLessThan(0.3);
+  });
+});
+
+describe('몬스터 대왕', () => {
+  it('우리 반이 모은 별이 대왕의 힘을 깎고, 남은 별은 다음 대왕에게 넘어갑니다', () => {
+    expect(대왕때리기({ round: 0, damage: 0 }, 10)).toEqual({ 싸움: { round: 0, damage: 10 }, 물리친: [] });
+    const 끝 = 대왕때리기({ round: 0, damage: 295 }, 12);
+    expect(끝.물리친.map((one) => one.name)).toEqual([대왕들[0].name]);
+    expect(끝.싸움).toEqual({ round: 1, damage: 7 });
+  });
+
+  it('대왕을 다 물리치면 처음 대왕이 더 세게 돌아옵니다', () => {
+    expect(지금대왕({ round: 대왕들.length, damage: 0 }).hp).toBe(대왕들[0].hp + 100);
   });
 });
