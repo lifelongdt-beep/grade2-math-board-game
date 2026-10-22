@@ -8350,10 +8350,10 @@ body::before {
 .lane-toast {
   position: absolute;
   z-index: 4;
-  /* '정답!' 알림(success-burst) 바로 아래에 둡니다. 겹치면 둘 다 읽히지 않습니다. */
-  top: 104px;
-  left: 50%;
-  transform: translateX(-50%);
+  /* 머리 줄 바로 아래 오른쪽에 둡니다. 가운데의 '정답!' 알림(success-burst)과 겹치지 않고,
+     문제 글도 덜 가립니다. */
+  top: 50px;
+  right: 8px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -8373,11 +8373,11 @@ body::before {
 .lane-toast strong { overflow: hidden; text-overflow: ellipsis; }
 
 @keyframes lane-toast-life {
-  0% { opacity: 0; transform: translate(-50%, -8px) scale(0.85); }
-  12% { opacity: 1; transform: translate(-50%, 0) scale(1.05); }
-  20% { transform: translate(-50%, 0) scale(1); }
+  0% { opacity: 0; transform: translateY(-8px) scale(0.85); }
+  12% { opacity: 1; transform: translateY(0) scale(1.05); }
+  20% { transform: translateY(0) scale(1); }
   85% { opacity: 1; }
-  100% { opacity: 0; transform: translate(-50%, -6px); }
+  100% { opacity: 0; transform: translateY(-6px); }
 }
 
 .student-result-list .star-result {
@@ -8470,3 +8470,19 @@ body::before {
 /* 큰 불꽃은 자리 둘레도 따뜻하게 물듭니다. 정답·오답 색을 덮지 않게 바깥 빛만 씁니다. */
 .player-lane.lane-fire-2 { outline: 2px solid rgba(255, 140, 40, 0.45); }
 .player-lane.lane-fire-3 { outline: 3px solid rgba(255, 120, 30, 0.75); box-shadow: 0 0 28px rgba(255, 110, 20, 0.5); }
+
+/* ── 황금 문제 ───────────────────────────────────────────────────────── */
+.player-lane.golden-question .student-question-body {
+  border-color: #ffcf4a !important;
+  box-shadow: 0 0 0 2px rgba(255, 207, 74, 0.55), 0 0 26px rgba(255, 196, 40, 0.45);
+  background-image: linear-gradient(180deg, rgba(255, 207, 74, 0.12), transparent 40%);
+}
+.student-question-meta span.golden-tag {
+  font-size: 13px;
+  color: #2b1c00 !important;
+  background: linear-gradient(90deg, #ffe58a, #ffc53d);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-weight: 900;
+  animation: gentle-beat 1.1s ease-in-out infinite;
+}

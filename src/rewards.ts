@@ -65,6 +65,22 @@ export const 새로붙은 = (before: number, after: number): 꾸미개[] =>
  */
 export const 받을별 = (o: { golden: boolean; fever: boolean }) => (o.golden ? 2 : 1) + (o.fever ? 1 : 0);
 
+// ── 황금 문제 ──────────────────────────────────────────────────────────
+
+/**
+ * 융합 문항은 늘 황금 문제입니다. 어려운 문제가 벌이 아니라 상으로 느껴지게 합니다.
+ * 나머지는 열에 하나쯤, 판(seed)마다 다른 문제가 황금이 됩니다. 되돌아온 문제는 황금이 아닙니다
+ * (틀린 문제를 다시 풀어 별을 두 배로 받으면, 일부러 틀리는 편이 낫게 됩니다).
+ */
+export const 황금문제인가 = (o: { questionId: string; seed: number; fusion?: boolean; retry: boolean }) => {
+  if (o.retry) return false;
+  if (o.fusion) return true;
+  let h = (o.seed ^ 0x9e3779b9) >>> 0;
+  for (const ch of o.questionId) h = Math.imul(h ^ ch.charCodeAt(0), 0x01000193) >>> 0;
+  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b) >>> 0;
+  return (h ^ (h >>> 13)) % 10 === 0;
+};
+
 // ── 연속 정답 불꽃 ────────────────────────────────────────────────────
 
 /** 3·5·10연속에서 불꽃이 한 단계씩 커집니다. */

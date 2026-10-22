@@ -12,7 +12,17 @@ import { 결로, 글오답, 물건들, 뭉치 as 그냥뭉치, 사람들, 사이
 // ════════════════════════════════════════════════════════════════════
 
 /** 융합 문항은 한 판(서른 문항)에 여섯 문항까지만 냅니다. 그 차시의 개념을 익히는 문항이 먼저입니다. */
-const 뭉치 = (...a: Parameters<typeof 그냥뭉치>): G5Family => ({ ...그냥뭉치(...a), 최대: 6 });
+const 뭉치 = (...a: Parameters<typeof 그냥뭉치>): G5Family => {
+  const family = 그냥뭉치(...a);
+  return {
+    ...family,
+    최대: 6,
+    make: (seed, lv) => {
+      const spec = family.make(seed, lv);
+      return spec && { ...spec, 융합: true };
+    },
+  };
+};
 
 const 글 = (x: number) => String(Math.round(x * 1000) / 1000);
 const 시각글 = (h: number, m: number) => (m ? `${h}시 ${m}분` : `${h}시`);
