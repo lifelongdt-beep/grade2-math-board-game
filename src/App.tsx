@@ -67,6 +67,7 @@ import type { ManipResult } from './data/manipulate/check';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
+import { 동물이름, 명단쓰기, 명단읽기, 명단풀기, 방식쓰기, 방식읽기, 주인공바꾸기, type 이름바꾸기방식 } from './data/nameSwap';
 import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 황금문제인가, 대왕때리기, 대왕읽기, 대왕쓰기, 지금대왕, type 기록장, type 대왕, type 대왕싸움 } from './rewards';
 import { TeacherPanel, downloadAnalysisFile } from './components/TeacherPanel';
 import { curriculum as curriculum2 } from './data/curriculum';
@@ -806,6 +807,19 @@ function App() {
   const [laneToasts, setLaneToasts] = useState<Record<number, Array<{ id: number; look: string; text: string }>>>({});
   // 자리마다 이어서 맞힌 수입니다. fire는 연속 정답 불꽃, noHint는 힌트 없이 이어서 맞힌 수입니다.
   const [runs, setRuns] = useState<Record<number, { fire: number; noHint: number }>>({});
+  // 문제 속 주인공 이름을 바꿀지입니다. 선생님이 정하고, 이 컴퓨터에 남습니다(기본은 끔).
+  const [nameMode, setNameMode] = useState<이름바꾸기방식>(() => 방식읽기());
+  const [roster, setRoster] = useState(() => 명단읽기());
+  const rosterNames = useMemo(() => 명단풀기(roster), [roster]);
+  // 그 자리 아이가 주인공으로 나올 이름입니다. 동물 친구면 고른 캐릭터, 우리 반 이름이면 명단의 그 번호입니다.
+  const heroOf = (player: Player): string | null =>
+    nameMode === 'animals' ? 동물이름[player.avatar] ?? null : nameMode === 'class' ? rosterNames[player.attendanceNo] ?? null : null;
+  // 문제에 둘째·셋째 사람이 나오면 함께 푸는 친구들, 그다음 나머지 이름을 차례로 씁니다.
+  const friendNamesFor = (player: Player): string[] => {
+    const 함께 = players.filter((other) => other.id !== player.id).map(heroOf).filter((one): one is string => Boolean(one));
+    const 나머지 = nameMode === 'animals' ? Object.values(동물이름) : Object.values(rosterNames);
+    return [...new Set([...함께, ...나머지])];
+  };
   // 우리 반이 함께 싸우는 몬스터 대왕입니다. 모은 별만큼 힘이 깎이고, 판이 끝나도 이어집니다.
   // 휴대폰으로 들어온 아이는 자기 기기에서 혼자 푸므로 반 목표를 보여 주지 않습니다.
   const [boss, setBoss] = useState<대왕싸움>(() => 대왕읽기());
@@ -1780,6 +1794,43 @@ function App() {
             </button>
           )}
         </section>
+        {/* 문제의 '민준, 서연' 자리에 아이의 동물 친구나 우리 반 이름을 넣습니다. */}
+        {!isMobileEntry && (
+          <section>
+            <h3>문제 속 주인공</h3>
+            <div className="big-segmented name-swap-options">
+              {([['off', '그대로'], ['animals', '동물 친구'], ['class', '우리 반 이름']] as const).map(([value, label]) => (
+                <button
+                  type="button"
+                  key={value}
+                  className={nameMode === value ? 'active' : ''}
+                  aria-pressed={nameMode === value}
+                  onClick={() => {
+                    setNameMode(value);
+                    방식쓰기(value);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {nameMode === 'class' && (
+              <label className="name-roster">
+                <span>출석 번호 차례로 한 줄에 한 명씩 적으세요(성은 떼고 부릅니다). 이 컴퓨터에만 저장됩니다.</span>
+                <textarea
+                  rows={4}
+                  value={roster}
+                  placeholder={'김민준\n이서연\n박하은'}
+                  onChange={(event) => {
+                    setRoster(event.target.value);
+                    명단쓰기(event.target.value);
+                  }}
+                />
+                <small>{Object.keys(rosterNames).length}명 읽음</small>
+              </label>
+            )}
+          </section>
+        )}
         {isCastleDefense && (
           <section>
             <h3>{isCastleDivide ? '출제할 나누는 수' : '출제할 구구단'}</h3>
@@ -2223,7 +2274,7 @@ function App() {
             {players.map((player) => {
               const state = playerStates[player.id] ?? fallbackStates[player.id];
               const playerQuestions = questionBanks[state.activeRetry?.level ?? state.level];
-              const question = getPlayerQuestion(questionBanks, state);
+              const question = 주인공바꾸기(getPlayerQuestion(questionBanks, state), heroOf(player), friendNamesFor(player));
               const result = playerResults[player.id] ?? { total: 0, correct: 0, wrong: 0 };
               const successActive = Boolean(successSignals[player.id]);
               const wrongActive = Boolean(wrongSignals[player.id]);
