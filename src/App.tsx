@@ -66,7 +66,7 @@ import type { ManipResult } from './data/manipulate/check';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
-import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, type 기록장 } from './rewards';
+import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, type 기록장 } from './rewards';
 import { TeacherPanel, downloadAnalysisFile } from './components/TeacherPanel';
 import { curriculum as curriculum2 } from './data/curriculum';
 import { curriculum5 } from './data/curriculum5';
@@ -555,16 +555,18 @@ const SandTimer = ({ remaining, total }: { remaining: number; total: number }) =
 
 // 모은 별로 붙은 모자·망토가 캐릭터에 함께 그려집니다(rewards.ts). 별을 모르는 자리(번호를
 // 고르기 전)에는 맨몸 캐릭터만 보입니다.
-const PlayerAvatar = ({ player, active = false, stars }: { player: Player; active?: boolean; stars?: number }) => {
+// 연속 정답 불꽃(fire, 0~3단계)은 캐릭터 발치에 붙습니다.
+const PlayerAvatar = ({ player, active = false, stars, fire = 0 }: { player: Player; active?: boolean; stars?: number; fire?: number }) => {
   const 옷 = stars === undefined ? {} : 차림새(stars);
   return (
     <span
-      className={`player-avatar ${active ? 'success' : ''} ${옷.cape ? `has-cape ${옷.cape.look}` : ''}`.trim()}
+      className={`player-avatar ${active ? 'success' : ''} ${옷.cape ? `has-cape ${옷.cape.look}` : ''} ${fire ? `on-fire fire-${fire}` : ''}`.trim()}
       style={{ borderColor: player.color }}
       aria-hidden="true"
     >
       {player.avatar}
       {옷.hat && <span className="avatar-hat">{옷.hat.look}</span>}
+      {fire > 0 && <span className="avatar-flame">🔥</span>}
     </span>
   );
 };
@@ -1446,6 +1448,11 @@ function App() {
       { ...o, noHintRun: run.noHint, fireCount: run.fire, totalStars: stars },
       new Set(장.badges),
     );
+    // 불꽃이 커지면 알리고, 틀려서 작아지면 '한 단계만' 줄었다고 다독입니다.
+    const 앞불꽃 = 불꽃단계(앞.fire);
+    const 새불꽃 = 불꽃단계(run.fire);
+    if (새불꽃 > 앞불꽃) showLaneToast(player.id, '🔥', `${run.fire}연속! 불꽃이 커졌어요`);
+    else if (새불꽃 < 앞불꽃 && 새불꽃 > 0) showLaneToast(player.id, '🔥', '불꽃이 조금만 작아졌어요. 다시 키워요!');
     if (gain === 0 && 받은.length === 0) return;
     const next: 기록장 = { stars, badges: [...장.badges, ...받은.map((one) => one.id)] };
     기록장쓰기(player.attendanceNo, next);
@@ -2137,7 +2144,7 @@ function App() {
               const wrongActive = Boolean(wrongSignals[player.id]);
               return (
                 <article
-                  className={`player-lane student-question ${mode === 'finished' ? 'finished-result' : state.feedback} ${successActive ? 'success-signal' : ''} ${wrongActive ? 'wrong-signal' : ''}`}
+                  className={`player-lane student-question ${mode === 'finished' ? 'finished-result' : state.feedback} ${successActive ? 'success-signal' : ''} ${wrongActive ? 'wrong-signal' : ''} ${mode === 'playing' && 불꽃단계(runs[player.id]?.fire ?? 0) ? `lane-fire-${불꽃단계(runs[player.id]?.fire ?? 0)}` : ''}`}
                   key={player.id}
                   ref={(node) => {
                     laneRefs.current[player.id] = node;
@@ -2145,8 +2152,13 @@ function App() {
                   style={laneStyleFor(player.id)}
                 >
                   <header className={`lane-head ${차림새(profileOf(player.attendanceNo).stars).bg?.look ?? ''}`.trim()}>
-                    <PlayerAvatar player={player} active={successActive} stars={profileOf(player.attendanceNo).stars} />
+                    <PlayerAvatar player={player} active={successActive} stars={profileOf(player.attendanceNo).stars} fire={mode === 'playing' ? 불꽃단계(runs[player.id]?.fire ?? 0) : 0} />
                     <strong>{player.name}</strong>
+                    {mode === 'playing' && 불꽃단계(runs[player.id]?.fire ?? 0) > 0 && (
+                      <span className={`fire-chip fire-${불꽃단계(runs[player.id]?.fire ?? 0)}`} aria-label={`${runs[player.id]?.fire}문제 연속 정답`}>
+                        🔥 {runs[player.id]?.fire}
+                      </span>
+                    )}
                     <span className="lane-stars" aria-label={`모은 별 ${profileOf(player.attendanceNo).stars}개`}>⭐ {profileOf(player.attendanceNo).stars}</span>
                     <small>{state.level} · {formatMs(state.responseMs)}</small>
                   </header>

@@ -8426,3 +8426,47 @@ body::before {
   box-shadow: 0 0 0 2px #ffd86b, 0 0 12px rgba(255, 216, 107, 0.8);
   animation: gentle-beat 1.2s ease-in-out infinite;
 }
+
+/* ── 연속 정답 불꽃 (3·5·10연속) ─────────────────────────────────────── */
+.avatar-flame {
+  position: absolute;
+  right: -7px;
+  bottom: -6px;
+  font-size: 13px;
+  line-height: 1;
+  pointer-events: none;
+  transform-origin: 50% 100%;
+  animation: flame-flicker 0.7s ease-in-out infinite alternate;
+}
+.player-avatar.fire-2 .avatar-flame { font-size: 17px; }
+.player-avatar.fire-3 .avatar-flame { font-size: 21px; right: -10px; bottom: -8px; }
+.player-avatar.fire-3 {
+  box-shadow: 0 0 0 3px rgba(255, 140, 40, 0.9), 0 0 18px rgba(255, 110, 20, 0.9);
+}
+
+@keyframes flame-flicker {
+  from { transform: scale(1) rotate(-4deg); }
+  to { transform: scale(1.15) rotate(5deg); }
+}
+
+.fire-chip {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #fff4dc;
+  background: linear-gradient(90deg, #ff9a2e, #ff5a1f);
+  box-shadow: 0 0 10px rgba(255, 120, 30, 0.6);
+  white-space: nowrap;
+}
+.fire-chip.fire-2 { font-size: 14px; }
+.fire-chip.fire-3 {
+  font-size: 15px;
+  background: linear-gradient(90deg, #ffd23f, #ff7a1a, #ff3d2e);
+  animation: gentle-beat 0.9s ease-in-out infinite;
+}
+
+/* 큰 불꽃은 자리 둘레도 따뜻하게 물듭니다. 정답·오답 색을 덮지 않게 바깥 빛만 씁니다. */
+.player-lane.lane-fire-2 { outline: 2px solid rgba(255, 140, 40, 0.45); }
+.player-lane.lane-fire-3 { outline: 3px solid rgba(255, 120, 30, 0.75); box-shadow: 0 0 28px rgba(255, 110, 20, 0.5); }
