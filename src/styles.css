@@ -8753,3 +8753,41 @@ body::before {
   flex: none;
   font-weight: 800;
 }
+
+/* ── 성 지키기 차시의 구구단·나누는 수 고르기 ─────────────────────────
+   학습 시간 칸 아래 한 줄에 작은 단추로 둡니다. 칸을 따로 쓰면 아래 출석 번호판이
+   화면 밖으로 밀립니다. */
+.castle-dan-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.castle-dan-label {
+  flex: none;
+  font-size: 14px;
+  font-weight: 800;
+}
+.castle-dan-row .castle-dan-options {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 5px;
+}
+.castle-dan-row .castle-dan-options button {
+  min-height: 34px;
+  padding: 2px 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(14, 116, 144, 0.12);
+  color: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.castle-dan-row .castle-dan-options button.active {
+  background: #0ea5e9;
+  border-color: #38bdf8;
+  color: #fff;
+}
