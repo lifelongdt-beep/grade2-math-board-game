@@ -1753,6 +1753,41 @@ function App() {
                 </button>
               ))}
             </div>
+            {/* 문제의 '민준, 서연' 자리에 아이의 동물 친구나 우리 반 이름을 넣습니다. 칸을 따로 쓰면
+                아래 번호 고르는 자리가 좁아지므로, 인원수 칸 아래 한 줄에 둡니다. */}
+            <div className="name-swap-row">
+              <span className="name-swap-label">문제 속 주인공</span>
+              <div className="name-swap-options" role="group" aria-label="문제 속 주인공">
+                {([['off', '그대로'], ['animals', '동물 친구'], ['class', '우리 반 이름']] as const).map(([value, label]) => (
+                  <button
+                    type="button"
+                    key={value}
+                    className={nameMode === value ? 'active' : ''}
+                    aria-pressed={nameMode === value}
+                    onClick={() => {
+                      setNameMode(value);
+                      방식쓰기(value);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {nameMode === 'class' && (
+              <label className="name-roster">
+                <input
+                  type="text"
+                  value={roster}
+                  placeholder="출석 번호 차례로 쉼표로 적기: 김민준, 이서연, 박하은 (이 컴퓨터에만 저장)"
+                  onChange={(event) => {
+                    setRoster(event.target.value);
+                    명단쓰기(event.target.value);
+                  }}
+                />
+                <small>{Object.keys(rosterNames).length}명</small>
+              </label>
+            )}
           </section>
         )}
         <section>
@@ -1769,68 +1804,32 @@ function App() {
               </button>
             ))}
           </div>
+          {/* 별과 꾸미개, 배지는 출석 번호마다 이 컴퓨터에 남습니다. 새 반을 맡으면 지웁니다.
+              자동 다운로드와 한 줄에 두어 칸 높이를 늘리지 않습니다. */}
           {!isMobileEntry && (
-            <label className="auto-download-option">
-              <input
-                type="checkbox"
-                checked={autoDownloadAnalysis}
-                onChange={(event) => toggleAutoDownloadAnalysis(event.target.checked)}
-              />
-              <span>학습이 끝나면 교사용 분석 파일 자동 다운로드</span>
-            </label>
-          )}
-          {/* 별과 꾸미개, 배지는 출석 번호마다 이 컴퓨터에 남습니다. 새 반을 맡으면 지웁니다. */}
-          {!isMobileEntry && (
-            <button
-              type="button"
-              className="secondary-button reward-reset"
-              onClick={() => {
-                if (!window.confirm('이 컴퓨터에 모아 둔 별·꾸미개·배지를 모든 번호에서 지울까요?')) return;
-                기록장모두지우기();
-                setProfiles({});
-              }}
-            >
-              별·꾸미개·배지 기록 지우기
-            </button>
+            <div className="setup-option-row">
+              <label className="auto-download-option">
+                <input
+                  type="checkbox"
+                  checked={autoDownloadAnalysis}
+                  onChange={(event) => toggleAutoDownloadAnalysis(event.target.checked)}
+                />
+                <span>학습이 끝나면 교사용 분석 파일 자동 다운로드</span>
+              </label>
+              <button
+                type="button"
+                className="secondary-button reward-reset"
+                onClick={() => {
+                  if (!window.confirm('이 컴퓨터에 모아 둔 별·꾸미개·배지를 모든 번호에서 지울까요?')) return;
+                  기록장모두지우기();
+                  setProfiles({});
+                }}
+              >
+                별·꾸미개·배지 기록 지우기
+              </button>
+            </div>
           )}
         </section>
-        {/* 문제의 '민준, 서연' 자리에 아이의 동물 친구나 우리 반 이름을 넣습니다. */}
-        {!isMobileEntry && (
-          <section>
-            <h3>문제 속 주인공</h3>
-            <div className="big-segmented name-swap-options">
-              {([['off', '그대로'], ['animals', '동물 친구'], ['class', '우리 반 이름']] as const).map(([value, label]) => (
-                <button
-                  type="button"
-                  key={value}
-                  className={nameMode === value ? 'active' : ''}
-                  aria-pressed={nameMode === value}
-                  onClick={() => {
-                    setNameMode(value);
-                    방식쓰기(value);
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            {nameMode === 'class' && (
-              <label className="name-roster">
-                <span>출석 번호 차례로 한 줄에 한 명씩 적으세요(성은 떼고 부릅니다). 이 컴퓨터에만 저장됩니다.</span>
-                <textarea
-                  rows={4}
-                  value={roster}
-                  placeholder={'김민준\n이서연\n박하은'}
-                  onChange={(event) => {
-                    setRoster(event.target.value);
-                    명단쓰기(event.target.value);
-                  }}
-                />
-                <small>{Object.keys(rosterNames).length}명 읽음</small>
-              </label>
-            )}
-          </section>
-        )}
         {isCastleDefense && (
           <section>
             <h3>{isCastleDivide ? '출제할 나누는 수' : '출제할 구구단'}</h3>

@@ -8395,9 +8395,24 @@ body::before {
   font-weight: 800;
 }
 
+/* 자동 다운로드와 기록 지우기는 한 줄에 둡니다. 줄을 늘리면 아래 번호 고르는 자리가 좁아집니다. */
+.setup-option-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 10px;
+}
+.setup-option-row .auto-download-option {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+  padding: 6px 10px;
+  font-size: 14px;
+}
 .reward-reset {
-  margin-top: 8px;
+  flex: none;
   font-size: 13px;
+  padding: 6px 10px;
 }
 
 /* ── '처음 해냈다' 배지 ─────────────────────────────────────────────── */
@@ -8686,20 +8701,55 @@ body::before {
 .long-question .unit-monster small { display: none; }
 
 /* ── 문제 속 주인공 이름 설정 ─────────────────────────────────────────── */
-.name-roster {
-  display: grid;
-  gap: 6px;
-  margin-top: 8px;
-  font-size: 13px;
+/* 인원수 칸 아래 한 줄에 작은 단추로 둡니다. */
+.name-swap-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
 }
-.name-roster textarea {
-  width: 100%;
-  min-height: 84px;
-  resize: vertical;
-  padding: 8px;
+.name-swap-label {
+  flex: none;
+  font-size: 14px;
+  font-weight: 800;
+}
+.name-swap-options {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.name-swap-options button {
+  min-height: 34px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(14, 116, 144, 0.12);
+  color: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.name-swap-options button.active {
+  background: #0ea5e9;
+  border-color: #38bdf8;
+  color: #fff;
+}
+.name-roster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.name-roster input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
   border-radius: 6px;
   font: inherit;
+  font-size: 13px;
 }
 .name-roster small {
+  flex: none;
   font-weight: 800;
 }
