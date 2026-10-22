@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { 꾸미개들, 다음꾸미개, 받을별, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 배지들 } from './rewards';
+import { 꾸미개들, 다음꾸미개, 받을별, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 배지들, 황금문제인가 } from './rewards';
 
 describe('캐릭터 키우기', () => {
   it('별이 모이면 자리마다 가장 좋은 꾸미개가 붙습니다', () => {
@@ -67,5 +67,22 @@ describe("'처음 해냈다' 배지", () => {
 
   it('배지는 빠르기나 등수를 말하지 않습니다', () => {
     for (const one of 배지들) expect(one.says).not.toMatch(/빨리|빠르|등|1위|이겼/);
+  });
+});
+
+describe('황금 문제', () => {
+  it('융합 문항은 늘 황금이고, 되돌아온 문제는 황금이 아닙니다', () => {
+    expect(황금문제인가({ questionId: 'a', seed: 1, fusion: true, retry: false })).toBe(true);
+    expect(황금문제인가({ questionId: 'a', seed: 1, fusion: true, retry: true })).toBe(false);
+  });
+
+  it('나머지는 열에 하나쯤이고, 판마다 다른 문제가 황금이 됩니다', () => {
+    const ids = Array.from({ length: 3000 }, (_, at) => `2-2-u3-l3-상-${at + 1}`);
+    const 판1 = ids.filter((id) => 황금문제인가({ questionId: id, seed: 101, retry: false }));
+    const 판2 = ids.filter((id) => 황금문제인가({ questionId: id, seed: 202, retry: false }));
+    expect(판1.length / ids.length).toBeGreaterThan(0.07);
+    expect(판1.length / ids.length).toBeLessThan(0.13);
+    const 겹침 = 판1.filter((id) => 판2.includes(id)).length;
+    expect(겹침 / 판1.length).toBeLessThan(0.3);
   });
 });

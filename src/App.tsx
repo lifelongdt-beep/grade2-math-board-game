@@ -66,7 +66,7 @@ import type { ManipResult } from './data/manipulate/check';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
-import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, type 기록장 } from './rewards';
+import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 황금문제인가, type 기록장 } from './rewards';
 import { TeacherPanel, downloadAnalysisFile } from './components/TeacherPanel';
 import { curriculum as curriculum2 } from './data/curriculum';
 import { curriculum5 } from './data/curriculum5';
@@ -1323,7 +1323,8 @@ function App() {
   // 닿는 그 순간에 '+2초'가 뜹니다.
   const STAR_FLIGHT_MS = 700;
 
-  const addBonusTime = (fromPlayerId?: number) => {
+  // stars는 날아가는 별의 수입니다. 황금 문제나 피버 타임에는 별이 여럿 날아갑니다(붙는 시간은 같습니다).
+  const addBonusTime = (fromPlayerId?: number, stars = 1) => {
     if (bonusUsed >= bonusCap) return;
     const giving = Math.min(BONUS_SECONDS, bonusCap - bonusUsed);
     // 시간은 곧바로 붙입니다. 별이 닿을 때까지 미루면, 그 사이에 시계가
@@ -1340,19 +1341,19 @@ function App() {
 
     const from = lane.getBoundingClientRect();
     const to = timer.getBoundingClientRect();
-    const id = Date.now() + Math.random();
-    setFlyingStars((stars) => [
-      ...stars,
-      {
+    const ids = Array.from({ length: stars }, (_, at) => ({ id: Date.now() + Math.random(), spread: (at - (stars - 1) / 2) * 46 }));
+    setFlyingStars((flying) => [
+      ...flying,
+      ...ids.map(({ id, spread }) => ({
         id,
-        left: from.left + from.width / 2,
+        left: from.left + from.width / 2 + spread,
         top: from.top + 28,
-        dx: to.left + to.width / 2 - (from.left + from.width / 2),
+        dx: to.left + to.width / 2 - (from.left + from.width / 2 + spread),
         dy: to.top + to.height / 2 - (from.top + 28),
-      },
+      })),
     ]);
     window.setTimeout(() => {
-      setFlyingStars((stars) => stars.filter((star) => star.id !== id));
+      setFlyingStars((flying) => flying.filter((star) => !ids.some((one) => one.id === star.id)));
       setBonusFlash(Date.now());
     }, STAR_FLIGHT_MS);
   };
@@ -1470,6 +1471,7 @@ function App() {
     if (manip) setManipTips((prev) => ({ ...prev, [player.id]: manip.ok ? '' : manip.tip ?? '' }));
 
     const isCorrect = choiceIndex === question.answerIndex;
+    const golden = 황금문제인가({ questionId: question.id, seed: bankSeed, fusion: question.fusion, retry: state.activeRetry !== null });
     const responseMs = Date.now() - state.questionStartedAt;
     const record: AnswerRecord = {
       id: `${question.id}-${player.id}-${Date.now()}`,
@@ -1512,14 +1514,14 @@ function App() {
 
     if (isCorrect) {
       triggerSuccessSignal(player.id, question.difficulty);
-      addBonusTime(player.id);
+      addBonusTime(player.id, golden ? 2 : 1);
     } else {
       triggerWrongSignal(player.id);
     }
 
     rewardAnswer(player, {
       correct: isCorrect,
-      golden: false,
+      golden,
       fever: false,
       hintUsed: Boolean(hintUsedThisQuestion[player.id] || hintTextOpen[player.id]),
       friendFix: Boolean(question.manipulate?.friend),
@@ -2142,9 +2144,10 @@ function App() {
               const result = playerResults[player.id] ?? { total: 0, correct: 0, wrong: 0 };
               const successActive = Boolean(successSignals[player.id]);
               const wrongActive = Boolean(wrongSignals[player.id]);
+              const golden = mode === 'playing' && 황금문제인가({ questionId: question.id, seed: bankSeed, fusion: question.fusion, retry: state.activeRetry !== null });
               return (
                 <article
-                  className={`player-lane student-question ${mode === 'finished' ? 'finished-result' : state.feedback} ${successActive ? 'success-signal' : ''} ${wrongActive ? 'wrong-signal' : ''} ${mode === 'playing' && 불꽃단계(runs[player.id]?.fire ?? 0) ? `lane-fire-${불꽃단계(runs[player.id]?.fire ?? 0)}` : ''}`}
+                  className={`player-lane student-question ${mode === 'finished' ? 'finished-result' : state.feedback} ${successActive ? 'success-signal' : ''} ${wrongActive ? 'wrong-signal' : ''} ${mode === 'playing' && 불꽃단계(runs[player.id]?.fire ?? 0) ? `lane-fire-${불꽃단계(runs[player.id]?.fire ?? 0)}` : ''} ${golden ? 'golden-question' : ''}`}
                   key={player.id}
                   ref={(node) => {
                     laneRefs.current[player.id] = node;
@@ -2398,6 +2401,8 @@ function App() {
                               모르고 다시 틀리는 것과, 알고 다시 푸는 것은
                               아이에게 완전히 다른 일입니다. */}
                           {state.activeRetry !== null && <span className="retry-tag">다시 도전</span>}
+                          {/* 황금 문제는 맞히면 별을 두 배로 받습니다. 융합 문항은 늘 황금입니다. */}
+                          {golden && <span className="golden-tag">🌟 황금 문제 · 별 2배</span>}
                           <span>{question.strategy}</span>
                         </div>
                         {isCastleDefense ? (

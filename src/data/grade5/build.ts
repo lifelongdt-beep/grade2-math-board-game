@@ -97,6 +97,8 @@ export type G5Spec = {
   // 보기가 뺄셈식('475-328')인 문항입니다. 이 값이 없으면 '-' 뒤에
   // 숫자가 오는 보기를 음수로 보고 거릅니다.
   minusIsOperator?: boolean;
+  // 앞 단원·앞 학년 개념을 함께 쓰는 융합 문항입니다(expand/fusion.ts). 화면에서 황금 문제로 냅니다.
+  융합?: boolean;
 };
 
 export type G5Family = {
@@ -292,6 +294,7 @@ const toQuestion = (
     support,
     ...(spec.visual ? { visual: spec.visual } : {}),
     ...(walk ? { walkthrough: walk } : {}),
+    ...(spec.융합 ? { fusion: true } : {}),
   };
 };
 
