@@ -58,6 +58,7 @@ import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
 import { HighlightedPrompt } from './components/HighlightedPrompt';
 import { MathText } from './components/MathText';
 import { CastleDefenseScene } from './components/CastleDefenseScene';
+import { MONSTER_HP, UnitMonster, 단원몬스터찾기 } from './components/UnitMonster';
 import { InteractiveHintModal } from './components/InteractiveHintModal';
 import { ManipulateTask } from './components/Manipulate';
 import { 조작섞기, 조작칭찬 } from './data/manipulate';
@@ -809,6 +810,8 @@ function App() {
   // 휴대폰으로 들어온 아이는 자기 기기에서 혼자 푸므로 반 목표를 보여 주지 않습니다.
   const [boss, setBoss] = useState<대왕싸움>(() => 대왕읽기());
   const [bossWin, setBossWin] = useState<{ id: number; boss: 대왕 } | null>(null);
+  // 성 지키기가 아닌 차시에서 문제 위에 서 있는 단원 몬스터입니다. 맞힐 때마다 한 대씩 맞습니다.
+  const [monsters, setMonsters] = useState<Record<number, { hits: number; defeated: number }>>({});
   // 이번 판에 받은 배지입니다(판 결과에 보여 줍니다).
   const [sessionBadges, setSessionBadges] = useState<Record<number, string[]>>({});
   // 이번 판에 모은 별입니다(판 결과에 보여 줍니다).
@@ -1214,6 +1217,7 @@ function App() {
     setLaneToasts({});
     setRuns({});
     setSessionBadges({});
+    setMonsters({});
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
     setPlayerStates(createQuestionState(players, now, checkLevel));
     setRemainingSeconds(sessionDuration);
@@ -1314,6 +1318,7 @@ function App() {
     setLaneToasts({});
     setRuns({});
     setSessionBadges({});
+    setMonsters({});
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
     setPlayerStates(createQuestionState(players, undefined, checkLevel));
     setRemainingSeconds(sessionDuration);
@@ -1546,6 +1551,19 @@ function App() {
           })()),
     };
 
+    if (isCorrect && !isCastleDefense) {
+      // 단원 몬스터가 한 대 맞습니다. 세 대를 맞으면 쓰러지고 다음 몬스터가 나옵니다.
+      const 앞몬스터 = monsters[player.id] ?? { hits: 0, defeated: 0 };
+      const 쓰러짐 = 앞몬스터.hits + 1 >= MONSTER_HP;
+      setMonsters((prev) => ({
+        ...prev,
+        [player.id]: 쓰러짐 ? { hits: 0, defeated: 앞몬스터.defeated + 1 } : { ...앞몬스터, hits: 앞몬스터.hits + 1 },
+      }));
+      if (쓰러짐) {
+        const 몬스터 = 단원몬스터찾기(lesson.tags[0] ?? question.type);
+        showLaneToast(player.id, 몬스터.look, `${몬스터.name}를 쓰러뜨렸어요!`);
+      }
+    }
     if (isCorrect) {
       triggerSuccessSignal(player.id, question.difficulty);
       addBonusTime(player.id, (golden ? 2 : 1) + (feverOn ? 1 : 0));
@@ -2470,6 +2488,16 @@ function App() {
                           {golden && <span className="golden-tag">🌟 황금 문제 · 별 2배</span>}
                           <span>{question.strategy}</span>
                         </div>
+                        {/* 틀린 뒤 도움말이 열리면 몬스터는 비켜 섭니다. 이 칸은 높이가 정해져 있어,
+                            몬스터가 남아 있으면 문제 글이 밀려 가려집니다. */}
+                        {!isCastleDefense && state.feedback !== 'explain' && (
+                          <UnitMonster
+                            tag={lesson.tags[0] ?? question.type}
+                            hits={monsters[player.id]?.hits ?? 0}
+                            defeated={monsters[player.id]?.defeated ?? 0}
+                            taunting={wrongActive}
+                          />
+                        )}
                         {isCastleDefense ? (
                           <CastleDefenseScene
                             questionKey={question.id}

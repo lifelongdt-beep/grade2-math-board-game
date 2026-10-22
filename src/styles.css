@@ -8350,9 +8350,9 @@ body::before {
 .lane-toast {
   position: absolute;
   z-index: 4;
-  /* 머리 줄 바로 아래 오른쪽에 둡니다. 가운데의 '정답!' 알림(success-burst)과 겹치지 않고,
-     문제 글도 덜 가립니다. */
-  top: 50px;
+  /* 오른쪽에 둡니다. 가운데의 '정답!' 알림(success-burst)과 겹치지 않고,
+     문제 글도 덜 가립니다. '정답!' 알림보다 한 줄 아래에 둡니다. */
+  top: 98px;
   right: 8px;
   display: flex;
   align-items: center;
@@ -8617,3 +8617,70 @@ body::before {
   88% { opacity: 1; }
   100% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
 }
+
+/* ── 단원 몬스터 (UnitMonster.tsx) ───────────────────────────────────── */
+.unit-monster {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px dashed rgba(255, 150, 200, 0.55);
+  background: rgba(70, 20, 60, 0.45);
+  color: #ffd6ec;
+  font-size: 13px;
+  font-weight: 800;
+  width: fit-content;
+  max-width: 100%;
+}
+.unit-monster-face {
+  position: relative;
+  font-size: 20px;
+  line-height: 1;
+  animation: monster-hit 0.5s ease;
+}
+.unit-monster-face i {
+  position: absolute;
+  right: -8px;
+  bottom: -4px;
+  font-size: 13px;
+  font-style: normal;
+}
+.unit-monster-hp b { font-size: 14px; margin-right: 1px; }
+.unit-monster-hp b.full { color: #ff5a8a; }
+.unit-monster-hp b.lost { color: rgba(255, 255, 255, 0.22); }
+.unit-monster small {
+  color: #ffb6d8;
+  font-size: 12px;
+  font-weight: 700;
+}
+.unit-monster-count {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 216, 107, 0.2);
+  color: #ffd86b;
+  font-size: 12px;
+}
+.unit-monster.taunt .unit-monster-face {
+  animation: monster-taunt 0.6s ease;
+}
+
+@keyframes monster-hit {
+  0% { transform: scale(1); }
+  25% { transform: scale(0.8) rotate(-15deg); filter: brightness(2); }
+  55% { transform: scale(1.1) rotate(8deg); }
+  100% { transform: none; }
+}
+@keyframes monster-taunt {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-5px) rotate(-10deg); }
+  50% { transform: translateY(0) rotate(10deg); }
+  75% { transform: translateY(-3px); }
+}
+
+.players-5 .unit-monster small,
+.players-4 .unit-monster small,
+.long-question .unit-monster small { display: none; }
