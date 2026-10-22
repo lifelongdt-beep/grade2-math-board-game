@@ -66,6 +66,7 @@ import type { ManipResult } from './data/manipulate/check';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
+import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 새로붙은, 차림새, type 기록장 } from './rewards';
 import { TeacherPanel, downloadAnalysisFile } from './components/TeacherPanel';
 import { curriculum as curriculum2 } from './data/curriculum';
 import { curriculum5 } from './data/curriculum5';
@@ -552,15 +553,21 @@ const SandTimer = ({ remaining, total }: { remaining: number; total: number }) =
   );
 };
 
-const PlayerAvatar = ({ player, active = false }: { player: Player; active?: boolean }) => (
-  <span
-    className={`player-avatar ${active ? 'success' : ''}`}
-    style={{ borderColor: player.color }}
-    aria-hidden="true"
-  >
-    {player.avatar}
-  </span>
-);
+// 모은 별로 붙은 모자·망토가 캐릭터에 함께 그려집니다(rewards.ts). 별을 모르는 자리(번호를
+// 고르기 전)에는 맨몸 캐릭터만 보입니다.
+const PlayerAvatar = ({ player, active = false, stars }: { player: Player; active?: boolean; stars?: number }) => {
+  const 옷 = stars === undefined ? {} : 차림새(stars);
+  return (
+    <span
+      className={`player-avatar ${active ? 'success' : ''} ${옷.cape ? `has-cape ${옷.cape.look}` : ''}`.trim()}
+      style={{ borderColor: player.color }}
+      aria-hidden="true"
+    >
+      {player.avatar}
+      {옷.hat && <span className="avatar-hat">{옷.hat.look}</span>}
+    </span>
+  );
+};
 
 const ClassroomQrCode = ({ value }: { value: string }) => {
   const [qrImageUrl, setQrImageUrl] = useState('');
@@ -789,6 +796,13 @@ function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenFallback, setFullscreenFallback] = useState(false);
   const [successSignals, setSuccessSignals] = useState<Record<number, number>>({});
+  // 출석 번호마다 모은 별과 받은 배지입니다. 이 컴퓨터에 남아 다음 시간에도 이어집니다.
+  const [profiles, setProfiles] = useState<Record<number, 기록장>>({});
+  const profileOf = (attendanceNo: number) => profiles[attendanceNo] ?? 기록장읽기(attendanceNo);
+  // 자리마다 잠깐 떠오르는 알림(새 꾸미개, 새 배지)입니다.
+  const [laneToasts, setLaneToasts] = useState<Record<number, { id: number; look: string; text: string }>>({});
+  // 이번 판에 모은 별입니다(판 결과에 보여 줍니다).
+  const [sessionStars, setSessionStars] = useState<Record<number, number>>({});
   const [wrongSignals, setWrongSignals] = useState<Record<number, number>>({});
 
   useEffect(() => {
@@ -1168,6 +1182,8 @@ function App() {
     setBonusFlash(0);
     setRecords([]);
     setSuccessSignals({});
+    setSessionStars({});
+    setLaneToasts({});
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
     setPlayerStates(createQuestionState(players, now, checkLevel));
     setRemainingSeconds(sessionDuration);
@@ -1264,6 +1280,8 @@ function App() {
     setBonusFlash(0);
     setSuccessSignals({});
     setWrongSignals({});
+    setSessionStars({});
+    setLaneToasts({});
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
     setPlayerStates(createQuestionState(players, undefined, checkLevel));
     setRemainingSeconds(sessionDuration);
@@ -1380,6 +1398,33 @@ function App() {
     }, successHoldMs);
   };
 
+  // 자리 위에 잠깐 떠오르는 알림입니다. 하나가 떠 있을 때 새것이 오면 새것으로 바꿉니다.
+  const showLaneToast = (playerId: number, look: string, text: string) => {
+    const id = Date.now() + Math.random();
+    setLaneToasts((prev) => ({ ...prev, [playerId]: { id, look, text } }));
+    window.setTimeout(() => {
+      setLaneToasts((prev) => {
+        if (prev[playerId]?.id !== id) return prev;
+        const { [playerId]: _removed, ...rest } = prev;
+        return rest;
+      });
+    }, 2600);
+  };
+
+  // 맞힌 문제 하나에 별을 줍니다. 모은 별은 출석 번호마다 이 컴퓨터에 남고,
+  // 별이 문턱을 넘으면 캐릭터에 새 꾸미개가 붙습니다.
+  const rewardCorrect = (player: Player, o: { golden: boolean; fever: boolean }) => {
+    const 장 = profileOf(player.attendanceNo);
+    const gain = 받을별(o);
+    const next: 기록장 = { ...장, stars: 장.stars + gain };
+    기록장쓰기(player.attendanceNo, next);
+    setProfiles((prev) => ({ ...prev, [player.attendanceNo]: next }));
+    setSessionStars((prev) => ({ ...prev, [player.id]: (prev[player.id] ?? 0) + gain }));
+    const 붙은 = 새로붙은(장.stars, next.stars).at(-1);
+    if (붙은) showLaneToast(player.id, 붙은.icon, `새 꾸미개: ${붙은.name}!`);
+    return next;
+  };
+
   const answerQuestion = (player: Player, question: Question, choiceIndex: number, manip?: ManipResult) => {
     const state = playerStates[player.id];
     if (!state || state.locked || mode !== 'playing') return;
@@ -1429,6 +1474,7 @@ function App() {
     if (isCorrect) {
       triggerSuccessSignal(player.id, question.difficulty);
       addBonusTime(player.id);
+      rewardCorrect(player, { golden: false, fever: false });
     } else {
       triggerWrongSignal(player.id);
     }
@@ -1618,6 +1664,20 @@ function App() {
               <span>학습이 끝나면 교사용 분석 파일 자동 다운로드</span>
             </label>
           )}
+          {/* 별과 꾸미개, 배지는 출석 번호마다 이 컴퓨터에 남습니다. 새 반을 맡으면 지웁니다. */}
+          {!isMobileEntry && (
+            <button
+              type="button"
+              className="secondary-button reward-reset"
+              onClick={() => {
+                if (!window.confirm('이 컴퓨터에 모아 둔 별·꾸미개·배지를 모든 번호에서 지울까요?')) return;
+                기록장모두지우기();
+                setProfiles({});
+              }}
+            >
+              별·꾸미개·배지 기록 지우기
+            </button>
+          )}
         </section>
         {isCastleDefense && (
           <section>
@@ -1673,7 +1733,8 @@ function App() {
                 style={laneStyleFor(player.id)}
               >
                 <header>
-                  <PlayerAvatar player={player} />
+                  {/* 번호를 고르면 그 번호로 모아 둔 꾸미개가 붙어 나옵니다. */}
+                  <PlayerAvatar player={player} stars={step === 'attendance' ? undefined : profileOf(config.attendanceNo).stars} />
                   <strong>{player.id}번 자리</strong>
                   <small>{step === 'attendance' ? '번호 선택' : `${config.attendanceNo}번 · 준비 완료`}</small>
                 </header>
@@ -2043,11 +2104,18 @@ function App() {
                   }}
                   style={laneStyleFor(player.id)}
                 >
-                  <header>
-                    <PlayerAvatar player={player} active={successActive} />
+                  <header className={`lane-head ${차림새(profileOf(player.attendanceNo).stars).bg?.look ?? ''}`.trim()}>
+                    <PlayerAvatar player={player} active={successActive} stars={profileOf(player.attendanceNo).stars} />
                     <strong>{player.name}</strong>
+                    <span className="lane-stars" aria-label={`모은 별 ${profileOf(player.attendanceNo).stars}개`}>⭐ {profileOf(player.attendanceNo).stars}</span>
                     <small>{state.level} · {formatMs(state.responseMs)}</small>
                   </header>
+                  {laneToasts[player.id] && (
+                    <div className="lane-toast" key={laneToasts[player.id].id} aria-live="polite">
+                      <span aria-hidden="true">{laneToasts[player.id].look}</span>
+                      <strong>{laneToasts[player.id].text}</strong>
+                    </div>
+                  )}
                   {/* 하에서 중으로 올라간 그 순간입니다. 지금까지는 조용히
                       바뀌어서 아이가 자기가 올라간 것을 몰랐습니다. */}
                   {state.justMoved === 'up' && mode === 'playing' && (
@@ -2098,6 +2166,15 @@ function App() {
                           <div className="share-result">
                             <span>우리 반에 보탬</span>
                             <strong>{result.correct}개</strong>
+                          </div>
+                          {/* 이번 판에 모은 별과, 다음 꾸미개까지 남은 별입니다. */}
+                          <div className="star-result">
+                            <span>모은 별</span>
+                            <strong>⭐ {sessionStars[player.id] ?? 0}개</strong>
+                            {(() => {
+                              const 다음 = 다음꾸미개(profileOf(player.attendanceNo).stars);
+                              return <small>{다음 ? `${다음.item.icon} ${다음.item.name}까지 ${다음.left}개` : '꾸미개를 모두 모았어요!'}</small>;
+                            })()}
                           </div>
                         </div>
                       )}
