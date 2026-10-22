@@ -111,6 +111,8 @@ export interface Question {
   id: string;
   lessonId: string;
   difficulty: Difficulty;
+  // 앞 단원·앞 학년 개념을 함께 쓰는 융합 문항이면 true입니다. 늘 황금 문제로 냅니다.
+  fusion?: boolean;
   prompt: string;
   // 같은 문제가 여러 번 만들어지면 뒤에 다른 안내 문구를 붙여 구별합니다.
   // 그러면 글자는 달라도 학생에게는 같은 문제라, 겹치는지 보려면 붙이기

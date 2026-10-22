@@ -8295,3 +8295,411 @@ body::before {
   font-size: 12px;
   font-weight: 800;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   캐릭터 키우기 — 모은 별로 붙는 모자·망토·배경 (rewards.ts)
+   ════════════════════════════════════════════════════════════════════ */
+.player-avatar {
+  position: relative;
+}
+
+/* 모자는 캐릭터 머리 위에 살짝 기울여 얹습니다. */
+.avatar-hat {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-8deg);
+  font-size: 19px;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
+}
+
+/* 망토는 캐릭터 뒤로 퍼지는 고리 빛입니다. */
+.player-avatar.has-cape {
+  border-width: 3px;
+}
+.player-avatar.cape-red { box-shadow: 0 0 0 4px #e0414b, 0 0 14px rgba(224, 65, 75, 0.7); }
+.player-avatar.cape-blue { box-shadow: 0 0 0 4px #3b7bff, 0 0 14px rgba(59, 123, 255, 0.75); }
+.player-avatar.cape-gold { box-shadow: 0 0 0 4px #f2b632, 0 0 16px rgba(242, 182, 50, 0.85); }
+.player-avatar.cape-rainbow {
+  box-shadow: 0 0 0 4px #ff6fae, 0 0 0 7px #ffd34f, 0 0 0 10px #59d68a, 0 0 18px rgba(120, 180, 255, 0.8);
+}
+
+/* 배경은 자리 이름 줄에 깔립니다. 글씨가 묻히지 않게 옅게 둡니다. */
+.player-lane .lane-head {
+  border-radius: 6px;
+  /* 위를 넉넉히 두어 모자가 자리 테두리에 잘리지 않게 합니다. */
+  padding: 12px 6px 3px;
+  margin: -4px -6px 0;
+}
+.lane-head.bg-rainbow { background: linear-gradient(90deg, rgba(255, 99, 99, 0.28), rgba(255, 214, 79, 0.28), rgba(89, 214, 138, 0.28), rgba(91, 156, 255, 0.28), rgba(186, 104, 255, 0.28)); }
+.lane-head.bg-sea { background: linear-gradient(180deg, rgba(64, 190, 255, 0.3), rgba(20, 90, 170, 0.35)); }
+.lane-head.bg-space { background: radial-gradient(circle at 20% 40%, rgba(255, 255, 255, 0.5) 0 1px, transparent 2px), radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.45) 0 1px, transparent 2px), linear-gradient(90deg, rgba(76, 40, 160, 0.55), rgba(16, 20, 70, 0.6)); }
+.lane-head.bg-castle { background: linear-gradient(180deg, rgba(255, 214, 120, 0.3), rgba(160, 90, 200, 0.35)); }
+
+.lane-stars {
+  flex: none;
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffd86b;
+  white-space: nowrap;
+}
+
+/* 새 꾸미개·새 배지 알림입니다. 문제를 가리지 않게 머리 줄 바로 아래에 잠깐만 뜹니다. */
+.lane-toast {
+  position: absolute;
+  z-index: 4;
+  /* 오른쪽에 둡니다. 가운데의 '정답!' 알림(success-burst)과 겹치지 않고,
+     문제 글도 덜 가립니다. '정답!' 알림보다 한 줄 아래에 둡니다. */
+  top: 98px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 16px);
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 2px solid #ffd86b;
+  background: rgba(40, 28, 0, 0.92);
+  color: #fff3c4;
+  font-size: 14px;
+  white-space: nowrap;
+  box-shadow: 0 0 18px rgba(255, 216, 107, 0.55);
+  animation: lane-toast-life 2.6s ease forwards;
+  pointer-events: none;
+}
+.lane-toast span { font-size: 20px; }
+.lane-toast strong { overflow: hidden; text-overflow: ellipsis; }
+
+@keyframes lane-toast-life {
+  0% { opacity: 0; transform: translateY(-8px) scale(0.85); }
+  12% { opacity: 1; transform: translateY(0) scale(1.05); }
+  20% { transform: translateY(0) scale(1); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+
+.student-result-list .star-result {
+  flex-wrap: wrap;
+}
+.student-result-list .star-result strong {
+  color: #ffd86b;
+  font-size: clamp(20px, 1.8vw, 30px);
+  white-space: nowrap;
+}
+.student-result-list .star-result small {
+  flex-basis: 100%;
+  color: #ffe9a6;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.reward-reset {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+/* ── '처음 해냈다' 배지 ─────────────────────────────────────────────── */
+.student-result-list .badge-result {
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+}
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.badge-row i {
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+.badge-row i.have {
+  opacity: 1;
+  filter: none;
+}
+.badge-row i.new {
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #ffd86b, 0 0 12px rgba(255, 216, 107, 0.8);
+  animation: gentle-beat 1.2s ease-in-out infinite;
+}
+
+/* ── 연속 정답 불꽃 (3·5·10연속) ─────────────────────────────────────── */
+.avatar-flame {
+  position: absolute;
+  right: -7px;
+  bottom: -6px;
+  font-size: 13px;
+  line-height: 1;
+  pointer-events: none;
+  transform-origin: 50% 100%;
+  animation: flame-flicker 0.7s ease-in-out infinite alternate;
+}
+.player-avatar.fire-2 .avatar-flame { font-size: 17px; }
+.player-avatar.fire-3 .avatar-flame { font-size: 21px; right: -10px; bottom: -8px; }
+.player-avatar.fire-3 {
+  box-shadow: 0 0 0 3px rgba(255, 140, 40, 0.9), 0 0 18px rgba(255, 110, 20, 0.9);
+}
+
+@keyframes flame-flicker {
+  from { transform: scale(1) rotate(-4deg); }
+  to { transform: scale(1.15) rotate(5deg); }
+}
+
+.fire-chip {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #fff4dc;
+  background: linear-gradient(90deg, #ff9a2e, #ff5a1f);
+  box-shadow: 0 0 10px rgba(255, 120, 30, 0.6);
+  white-space: nowrap;
+}
+.fire-chip.fire-2 { font-size: 14px; }
+.fire-chip.fire-3 {
+  font-size: 15px;
+  background: linear-gradient(90deg, #ffd23f, #ff7a1a, #ff3d2e);
+  animation: gentle-beat 0.9s ease-in-out infinite;
+}
+
+/* 큰 불꽃은 자리 둘레도 따뜻하게 물듭니다. 정답·오답 색을 덮지 않게 바깥 빛만 씁니다. */
+.player-lane.lane-fire-2 { outline: 2px solid rgba(255, 140, 40, 0.45); }
+.player-lane.lane-fire-3 { outline: 3px solid rgba(255, 120, 30, 0.75); box-shadow: 0 0 28px rgba(255, 110, 20, 0.5); }
+
+/* ── 황금 문제 ───────────────────────────────────────────────────────── */
+.player-lane.golden-question .student-question-body {
+  border-color: #ffcf4a !important;
+  box-shadow: 0 0 0 2px rgba(255, 207, 74, 0.55), 0 0 26px rgba(255, 196, 40, 0.45);
+  background-image: linear-gradient(180deg, rgba(255, 207, 74, 0.12), transparent 40%);
+}
+.student-question-meta span.golden-tag {
+  font-size: 13px;
+  color: #2b1c00 !important;
+  background: linear-gradient(90deg, #ffe58a, #ffc53d);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-weight: 900;
+  animation: gentle-beat 1.1s ease-in-out infinite;
+}
+
+/* ── 마지막 피버 타임 ──────────────────────────────────────────────────
+   화면 둘레가 무지개빛으로 돌고, 위에 띠가 뜹니다. 띠는 화면 위에 얹혀
+   문제 자리를 밀어내지 않습니다. */
+.fever-banner {
+  position: fixed;
+  z-index: 40;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  color: #2a1200;
+  background: linear-gradient(90deg, #ffd23f, #ff8a2b, #ff4f7a, #ffd23f);
+  background-size: 300% 100%;
+  box-shadow: 0 0 22px rgba(255, 120, 40, 0.75);
+  font-weight: 900;
+  pointer-events: none;
+  animation: fever-slide 1.6s linear infinite, level-up-pop 0.4s ease;
+}
+.fever-banner strong { font-size: 20px; }
+.fever-banner span:first-child { font-size: 22px; }
+
+.game-layout.fever .playfield {
+  position: relative;
+}
+.game-layout.fever .playfield::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 4px;
+  background: linear-gradient(90deg, #ffd23f, #ff8a2b, #ff4f7a, #8a5cff, #3fd2ff, #ffd23f);
+  background-size: 300% 100%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: fever-slide 2s linear infinite;
+}
+.game-layout.fever .player-lane:not(.correct):not(.explain) {
+  box-shadow: 0 0 22px rgba(255, 120, 60, 0.35);
+}
+
+@keyframes fever-slide {
+  from { background-position: 0% 50%; }
+  to { background-position: 300% 50%; }
+}
+
+/* ── 반 전체 협동 목표: 몬스터 대왕 ──────────────────────────────────── */
+.class-boss {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px 3px 6px;
+  border-left: 2px solid rgba(120, 190, 255, 0.35);
+}
+.class-boss-face {
+  font-size: 30px;
+  line-height: 1;
+  animation: boss-hit 0.45s ease;
+}
+.class-boss-info {
+  display: grid;
+  gap: 3px;
+}
+.class-boss-info span {
+  color: #ffc9c9;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.class-boss-hp {
+  width: 120px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.class-boss-hp div {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff5a5a, #ff9a3d);
+  transition: width 0.5s ease;
+}
+.class-goal .class-boss strong {
+  color: #ffd86b;
+  font-size: 15px;
+}
+
+@keyframes boss-hit {
+  0% { transform: translateX(0) scale(1); }
+  30% { transform: translateX(-4px) scale(0.92) rotate(-8deg); filter: brightness(1.8); }
+  60% { transform: translateX(3px) rotate(6deg); }
+  100% { transform: none; }
+}
+
+.boss-win {
+  position: fixed;
+  z-index: 60;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 28px 44px;
+  border-radius: 20px;
+  border: 3px solid #ffd86b;
+  background: #170a2c;
+  color: #fff3c4;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(255, 200, 60, 0.6);
+  animation: boss-win-life 4.2s ease forwards;
+  pointer-events: none;
+}
+.boss-win span { font-size: 64px; }
+.boss-win strong { font-size: 30px; }
+.boss-win small { font-size: 18px; color: #ffe9a6; }
+
+@keyframes boss-win-life {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  10% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  18% { transform: translate(-50%, -50%) scale(1); }
+  88% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+}
+
+/* ── 단원 몬스터 (UnitMonster.tsx) ───────────────────────────────────── */
+.unit-monster {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px dashed rgba(255, 150, 200, 0.55);
+  background: rgba(70, 20, 60, 0.45);
+  color: #ffd6ec;
+  font-size: 13px;
+  font-weight: 800;
+  width: fit-content;
+  max-width: 100%;
+}
+.unit-monster-face {
+  position: relative;
+  font-size: 20px;
+  line-height: 1;
+  animation: monster-hit 0.5s ease;
+}
+.unit-monster-face i {
+  position: absolute;
+  right: -8px;
+  bottom: -4px;
+  font-size: 13px;
+  font-style: normal;
+}
+.unit-monster-hp b { font-size: 14px; margin-right: 1px; }
+.unit-monster-hp b.full { color: #ff5a8a; }
+.unit-monster-hp b.lost { color: rgba(255, 255, 255, 0.22); }
+.unit-monster small {
+  color: #ffb6d8;
+  font-size: 12px;
+  font-weight: 700;
+}
+.unit-monster-count {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 216, 107, 0.2);
+  color: #ffd86b;
+  font-size: 12px;
+}
+.unit-monster.taunt .unit-monster-face {
+  animation: monster-taunt 0.6s ease;
+}
+
+@keyframes monster-hit {
+  0% { transform: scale(1); }
+  25% { transform: scale(0.8) rotate(-15deg); filter: brightness(2); }
+  55% { transform: scale(1.1) rotate(8deg); }
+  100% { transform: none; }
+}
+@keyframes monster-taunt {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-5px) rotate(-10deg); }
+  50% { transform: translateY(0) rotate(10deg); }
+  75% { transform: translateY(-3px); }
+}
+
+.players-5 .unit-monster small,
+.players-4 .unit-monster small,
+.long-question .unit-monster small { display: none; }
+
+/* ── 문제 속 주인공 이름 설정 ─────────────────────────────────────────── */
+.name-roster {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+.name-roster textarea {
+  width: 100%;
+  min-height: 84px;
+  resize: vertical;
+  padding: 8px;
+  border-radius: 6px;
+  font: inherit;
+}
+.name-roster small {
+  font-weight: 800;
+}

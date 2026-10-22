@@ -42,7 +42,7 @@ import {
 import {
   isMuted,
   playAnimalSound,
-  playFinishSound,
+  playFeverBeat, playFeverStart, playFinishSound,
   playGoalFanfare,
   playReadySound,
   playSuccessSound,
@@ -58,6 +58,7 @@ import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
 import { HighlightedPrompt } from './components/HighlightedPrompt';
 import { MathText } from './components/MathText';
 import { CastleDefenseScene } from './components/CastleDefenseScene';
+import { MONSTER_HP, UnitMonster, 단원몬스터찾기 } from './components/UnitMonster';
 import { InteractiveHintModal } from './components/InteractiveHintModal';
 import { ManipulateTask } from './components/Manipulate';
 import { 조작섞기, 조작칭찬 } from './data/manipulate';
@@ -66,6 +67,8 @@ import type { ManipResult } from './data/manipulate/check';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
+import { 동물이름, 명단쓰기, 명단읽기, 명단풀기, 방식쓰기, 방식읽기, 주인공바꾸기, type 이름바꾸기방식 } from './data/nameSwap';
+import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 황금문제인가, 대왕때리기, 대왕읽기, 대왕쓰기, 지금대왕, type 기록장, type 대왕, type 대왕싸움 } from './rewards';
 import { TeacherPanel, downloadAnalysisFile } from './components/TeacherPanel';
 import { curriculum as curriculum2 } from './data/curriculum';
 import { curriculum5 } from './data/curriculum5';
@@ -552,15 +555,23 @@ const SandTimer = ({ remaining, total }: { remaining: number; total: number }) =
   );
 };
 
-const PlayerAvatar = ({ player, active = false }: { player: Player; active?: boolean }) => (
-  <span
-    className={`player-avatar ${active ? 'success' : ''}`}
-    style={{ borderColor: player.color }}
-    aria-hidden="true"
-  >
-    {player.avatar}
-  </span>
-);
+// 모은 별로 붙은 모자·망토가 캐릭터에 함께 그려집니다(rewards.ts). 별을 모르는 자리(번호를
+// 고르기 전)에는 맨몸 캐릭터만 보입니다.
+// 연속 정답 불꽃(fire, 0~3단계)은 캐릭터 발치에 붙습니다.
+const PlayerAvatar = ({ player, active = false, stars, fire = 0 }: { player: Player; active?: boolean; stars?: number; fire?: number }) => {
+  const 옷 = stars === undefined ? {} : 차림새(stars);
+  return (
+    <span
+      className={`player-avatar ${active ? 'success' : ''} ${옷.cape ? `has-cape ${옷.cape.look}` : ''} ${fire ? `on-fire fire-${fire}` : ''}`.trim()}
+      style={{ borderColor: player.color }}
+      aria-hidden="true"
+    >
+      {player.avatar}
+      {옷.hat && <span className="avatar-hat">{옷.hat.look}</span>}
+      {fire > 0 && <span className="avatar-flame">🔥</span>}
+    </span>
+  );
+};
 
 const ClassroomQrCode = ({ value }: { value: string }) => {
   const [qrImageUrl, setQrImageUrl] = useState('');
@@ -789,6 +800,36 @@ function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenFallback, setFullscreenFallback] = useState(false);
   const [successSignals, setSuccessSignals] = useState<Record<number, number>>({});
+  // 출석 번호마다 모은 별과 받은 배지입니다. 이 컴퓨터에 남아 다음 시간에도 이어집니다.
+  const [profiles, setProfiles] = useState<Record<number, 기록장>>({});
+  const profileOf = (attendanceNo: number) => profiles[attendanceNo] ?? 기록장읽기(attendanceNo);
+  // 자리마다 잠깐 떠오르는 알림(새 꾸미개, 새 배지)입니다. 한꺼번에 생기면 차례로 띄웁니다.
+  const [laneToasts, setLaneToasts] = useState<Record<number, Array<{ id: number; look: string; text: string }>>>({});
+  // 자리마다 이어서 맞힌 수입니다. fire는 연속 정답 불꽃, noHint는 힌트 없이 이어서 맞힌 수입니다.
+  const [runs, setRuns] = useState<Record<number, { fire: number; noHint: number }>>({});
+  // 문제 속 주인공 이름을 바꿀지입니다. 선생님이 정하고, 이 컴퓨터에 남습니다(기본은 끔).
+  const [nameMode, setNameMode] = useState<이름바꾸기방식>(() => 방식읽기());
+  const [roster, setRoster] = useState(() => 명단읽기());
+  const rosterNames = useMemo(() => 명단풀기(roster), [roster]);
+  // 그 자리 아이가 주인공으로 나올 이름입니다. 동물 친구면 고른 캐릭터, 우리 반 이름이면 명단의 그 번호입니다.
+  const heroOf = (player: Player): string | null =>
+    nameMode === 'animals' ? 동물이름[player.avatar] ?? null : nameMode === 'class' ? rosterNames[player.attendanceNo] ?? null : null;
+  // 문제에 둘째·셋째 사람이 나오면 함께 푸는 친구들, 그다음 나머지 이름을 차례로 씁니다.
+  const friendNamesFor = (player: Player): string[] => {
+    const 함께 = players.filter((other) => other.id !== player.id).map(heroOf).filter((one): one is string => Boolean(one));
+    const 나머지 = nameMode === 'animals' ? Object.values(동물이름) : Object.values(rosterNames);
+    return [...new Set([...함께, ...나머지])];
+  };
+  // 우리 반이 함께 싸우는 몬스터 대왕입니다. 모은 별만큼 힘이 깎이고, 판이 끝나도 이어집니다.
+  // 휴대폰으로 들어온 아이는 자기 기기에서 혼자 푸므로 반 목표를 보여 주지 않습니다.
+  const [boss, setBoss] = useState<대왕싸움>(() => 대왕읽기());
+  const [bossWin, setBossWin] = useState<{ id: number; boss: 대왕 } | null>(null);
+  // 성 지키기가 아닌 차시에서 문제 위에 서 있는 단원 몬스터입니다. 맞힐 때마다 한 대씩 맞습니다.
+  const [monsters, setMonsters] = useState<Record<number, { hits: number; defeated: number }>>({});
+  // 이번 판에 받은 배지입니다(판 결과에 보여 줍니다).
+  const [sessionBadges, setSessionBadges] = useState<Record<number, string[]>>({});
+  // 이번 판에 모은 별입니다(판 결과에 보여 줍니다).
+  const [sessionStars, setSessionStars] = useState<Record<number, number>>({});
   const [wrongSignals, setWrongSignals] = useState<Record<number, number>>({});
 
   useEffect(() => {
@@ -856,6 +897,24 @@ function App() {
     setPlayerStates(createQuestionState(players, undefined, checkLevel));
     setRemainingSeconds(sessionDuration);
   }, [players, sessionDuration, mode]);
+
+  // ── 마지막 피버 타임 ──
+  // 남은 시간이 30초(30초 수업은 10초)가 되면 시작합니다. 맞혀서 시간이 다시 늘어나도 한번 시작한
+  // 피버는 그 판이 끝날 때까지 이어집니다 — 꺼졌다 켜지면 신호가 거듭 울려 어수선합니다.
+  const feverSeconds = sessionDuration >= 60 ? 30 : 10;
+  const [feverOn, setFeverOn] = useState(false);
+  useEffect(() => {
+    if (mode !== 'playing') {
+      setFeverOn(false);
+      return;
+    }
+    if (!feverOn && remainingSeconds > 0 && remainingSeconds <= feverSeconds) {
+      setFeverOn(true);
+      playFeverStart();
+    } else if (feverOn && remainingSeconds > 0 && remainingSeconds <= feverSeconds) {
+      playFeverBeat(remainingSeconds);
+    }
+  }, [mode, remainingSeconds, feverSeconds, feverOn]);
 
   useEffect(() => {
     if (mode !== 'playing') return;
@@ -1168,6 +1227,11 @@ function App() {
     setBonusFlash(0);
     setRecords([]);
     setSuccessSignals({});
+    setSessionStars({});
+    setLaneToasts({});
+    setRuns({});
+    setSessionBadges({});
+    setMonsters({});
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
     setPlayerStates(createQuestionState(players, now, checkLevel));
     setRemainingSeconds(sessionDuration);
@@ -1264,6 +1328,11 @@ function App() {
     setBonusFlash(0);
     setSuccessSignals({});
     setWrongSignals({});
+    setSessionStars({});
+    setLaneToasts({});
+    setRuns({});
+    setSessionBadges({});
+    setMonsters({});
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
     setPlayerStates(createQuestionState(players, undefined, checkLevel));
     setRemainingSeconds(sessionDuration);
@@ -1295,7 +1364,8 @@ function App() {
   // 닿는 그 순간에 '+2초'가 뜹니다.
   const STAR_FLIGHT_MS = 700;
 
-  const addBonusTime = (fromPlayerId?: number) => {
+  // stars는 날아가는 별의 수입니다. 황금 문제나 피버 타임에는 별이 여럿 날아갑니다(붙는 시간은 같습니다).
+  const addBonusTime = (fromPlayerId?: number, stars = 1) => {
     if (bonusUsed >= bonusCap) return;
     const giving = Math.min(BONUS_SECONDS, bonusCap - bonusUsed);
     // 시간은 곧바로 붙입니다. 별이 닿을 때까지 미루면, 그 사이에 시계가
@@ -1312,19 +1382,19 @@ function App() {
 
     const from = lane.getBoundingClientRect();
     const to = timer.getBoundingClientRect();
-    const id = Date.now() + Math.random();
-    setFlyingStars((stars) => [
-      ...stars,
-      {
+    const ids = Array.from({ length: stars }, (_, at) => ({ id: Date.now() + Math.random(), spread: (at - (stars - 1) / 2) * 46 }));
+    setFlyingStars((flying) => [
+      ...flying,
+      ...ids.map(({ id, spread }) => ({
         id,
-        left: from.left + from.width / 2,
+        left: from.left + from.width / 2 + spread,
         top: from.top + 28,
-        dx: to.left + to.width / 2 - (from.left + from.width / 2),
+        dx: to.left + to.width / 2 - (from.left + from.width / 2 + spread),
         dy: to.top + to.height / 2 - (from.top + 28),
-      },
+      })),
     ]);
     window.setTimeout(() => {
-      setFlyingStars((stars) => stars.filter((star) => star.id !== id));
+      setFlyingStars((flying) => flying.filter((star) => !ids.some((one) => one.id === star.id)));
       setBonusFlash(Date.now());
     }, STAR_FLIGHT_MS);
   };
@@ -1380,12 +1450,81 @@ function App() {
     }, successHoldMs);
   };
 
+  // 자리 위에 잠깐 떠오르는 알림입니다. 하나가 떠 있을 때 새것이 오면 새것으로 바꿉니다.
+  const LANE_TOAST_MS = 2600;
+  const dropLaneToast = (playerId: number, id: number) => {
+    setLaneToasts((prev) => {
+      const 줄 = prev[playerId] ?? [];
+      if (줄[0]?.id !== id) return prev;
+      const 남은 = 줄.slice(1);
+      // 다음 알림이 있으면 그것도 제 시간만큼 띄웁니다.
+      if (남은[0]) window.setTimeout(() => dropLaneToast(playerId, 남은[0].id), LANE_TOAST_MS);
+      return { ...prev, [playerId]: 남은 };
+    });
+  };
+  const showLaneToast = (playerId: number, look: string, text: string) => {
+    const id = Date.now() + Math.random();
+    setLaneToasts((prev) => {
+      const 줄 = prev[playerId] ?? [];
+      if (줄.length === 0) window.setTimeout(() => dropLaneToast(playerId, id), LANE_TOAST_MS);
+      return { ...prev, [playerId]: [...줄, { id, look, text }] };
+    });
+  };
+
+  // 맞힌 문제 하나에 별을 줍니다. 모은 별은 출석 번호마다 이 컴퓨터에 남고,
+  // 별이 문턱을 넘으면 캐릭터에 새 꾸미개가 붙습니다.
+  // 배지는 빠르기가 아니라 처음 해낸 일에 줍니다(rewards.ts의 배지들).
+  const rewardAnswer = (
+    player: Player,
+    o: { correct: boolean; golden: boolean; fever: boolean; hintUsed: boolean; friendFix: boolean; retry: boolean; levelAfter: Difficulty },
+  ) => {
+    const 장 = profileOf(player.attendanceNo);
+    const 앞 = runs[player.id] ?? { fire: 0, noHint: 0 };
+    const run = o.correct
+      ? { fire: 앞.fire + 1, noHint: o.hintUsed ? 0 : 앞.noHint + 1 }
+      : { fire: 틀린뒤불꽃(앞.fire), noHint: 0 };
+    setRuns((prev) => ({ ...prev, [player.id]: run }));
+    const gain = o.correct ? 받을별(o) : 0;
+    const stars = 장.stars + gain;
+    const 받은 = 새배지(
+      { ...o, noHintRun: run.noHint, fireCount: run.fire, totalStars: stars },
+      new Set(장.badges),
+    );
+    // 불꽃이 커지면 알리고, 틀려서 작아지면 '한 단계만' 줄었다고 다독입니다.
+    const 앞불꽃 = 불꽃단계(앞.fire);
+    const 새불꽃 = 불꽃단계(run.fire);
+    if (새불꽃 > 앞불꽃) showLaneToast(player.id, '🔥', `${run.fire}연속! 불꽃이 커졌어요`);
+    else if (새불꽃 < 앞불꽃 && 새불꽃 > 0) showLaneToast(player.id, '🔥', '불꽃이 조금만 작아졌어요. 다시 키워요!');
+    if (gain === 0 && 받은.length === 0) return;
+    const next: 기록장 = { stars, badges: [...장.badges, ...받은.map((one) => one.id)] };
+    기록장쓰기(player.attendanceNo, next);
+    setProfiles((prev) => ({ ...prev, [player.attendanceNo]: next }));
+    if (gain) setSessionStars((prev) => ({ ...prev, [player.id]: (prev[player.id] ?? 0) + gain }));
+    if (gain && !isMobileEntry) {
+      const 결과 = 대왕때리기(boss, gain);
+      대왕쓰기(결과.싸움);
+      setBoss(결과.싸움);
+      const 진 = 결과.물리친.at(-1);
+      if (진) {
+        const id = Date.now();
+        setBossWin({ id, boss: 진 });
+        playGoalFanfare();
+        window.setTimeout(() => setBossWin((now) => (now?.id === id ? null : now)), 4200);
+      }
+    }
+    if (받은.length) setSessionBadges((prev) => ({ ...prev, [player.id]: [...(prev[player.id] ?? []), ...받은.map((one) => one.id)] }));
+    const 붙은 = 새로붙은(장.stars, stars).at(-1);
+    if (붙은) showLaneToast(player.id, 붙은.icon, `새 꾸미개: ${붙은.name}!`);
+    for (const one of 받은) showLaneToast(player.id, one.look, `배지: ${one.name}`);
+  };
+
   const answerQuestion = (player: Player, question: Question, choiceIndex: number, manip?: ManipResult) => {
     const state = playerStates[player.id];
     if (!state || state.locked || mode !== 'playing') return;
     if (manip) setManipTips((prev) => ({ ...prev, [player.id]: manip.ok ? '' : manip.tip ?? '' }));
 
     const isCorrect = choiceIndex === question.answerIndex;
+    const golden = 황금문제인가({ questionId: question.id, seed: bankSeed, fusion: question.fusion, retry: state.activeRetry !== null });
     const responseMs = Date.now() - state.questionStartedAt;
     const record: AnswerRecord = {
       id: `${question.id}-${player.id}-${Date.now()}`,
@@ -1426,13 +1565,35 @@ function App() {
           })()),
     };
 
+    if (isCorrect && !isCastleDefense) {
+      // 단원 몬스터가 한 대 맞습니다. 세 대를 맞으면 쓰러지고 다음 몬스터가 나옵니다.
+      const 앞몬스터 = monsters[player.id] ?? { hits: 0, defeated: 0 };
+      const 쓰러짐 = 앞몬스터.hits + 1 >= MONSTER_HP;
+      setMonsters((prev) => ({
+        ...prev,
+        [player.id]: 쓰러짐 ? { hits: 0, defeated: 앞몬스터.defeated + 1 } : { ...앞몬스터, hits: 앞몬스터.hits + 1 },
+      }));
+      if (쓰러짐) {
+        const 몬스터 = 단원몬스터찾기(lesson.tags[0] ?? question.type);
+        showLaneToast(player.id, 몬스터.look, `${몬스터.name}를 쓰러뜨렸어요!`);
+      }
+    }
     if (isCorrect) {
       triggerSuccessSignal(player.id, question.difficulty);
-      addBonusTime(player.id);
+      addBonusTime(player.id, (golden ? 2 : 1) + (feverOn ? 1 : 0));
     } else {
       triggerWrongSignal(player.id);
     }
 
+    rewardAnswer(player, {
+      correct: isCorrect,
+      golden,
+      fever: feverOn,
+      hintUsed: Boolean(hintUsedThisQuestion[player.id] || hintTextOpen[player.id]),
+      friendFix: Boolean(question.manipulate?.friend),
+      retry: state.activeRetry !== null,
+      levelAfter: isCorrect ? advancePlayerState(state, players.length, false, questionBanks.하.length).level : state.level,
+    });
     setRecords((prev) => [...prev, record]);
     // 큐알로 들어온 폰은 선생님 화면과 다른 기기입니다. 로컬 상태만으로는
     // 선생님이 볼 수 없으므로 연결된 곳에도 올려 둡니다. 연결할 곳이 없는
@@ -1618,7 +1779,58 @@ function App() {
               <span>학습이 끝나면 교사용 분석 파일 자동 다운로드</span>
             </label>
           )}
+          {/* 별과 꾸미개, 배지는 출석 번호마다 이 컴퓨터에 남습니다. 새 반을 맡으면 지웁니다. */}
+          {!isMobileEntry && (
+            <button
+              type="button"
+              className="secondary-button reward-reset"
+              onClick={() => {
+                if (!window.confirm('이 컴퓨터에 모아 둔 별·꾸미개·배지를 모든 번호에서 지울까요?')) return;
+                기록장모두지우기();
+                setProfiles({});
+              }}
+            >
+              별·꾸미개·배지 기록 지우기
+            </button>
+          )}
         </section>
+        {/* 문제의 '민준, 서연' 자리에 아이의 동물 친구나 우리 반 이름을 넣습니다. */}
+        {!isMobileEntry && (
+          <section>
+            <h3>문제 속 주인공</h3>
+            <div className="big-segmented name-swap-options">
+              {([['off', '그대로'], ['animals', '동물 친구'], ['class', '우리 반 이름']] as const).map(([value, label]) => (
+                <button
+                  type="button"
+                  key={value}
+                  className={nameMode === value ? 'active' : ''}
+                  aria-pressed={nameMode === value}
+                  onClick={() => {
+                    setNameMode(value);
+                    방식쓰기(value);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {nameMode === 'class' && (
+              <label className="name-roster">
+                <span>출석 번호 차례로 한 줄에 한 명씩 적으세요(성은 떼고 부릅니다). 이 컴퓨터에만 저장됩니다.</span>
+                <textarea
+                  rows={4}
+                  value={roster}
+                  placeholder={'김민준\n이서연\n박하은'}
+                  onChange={(event) => {
+                    setRoster(event.target.value);
+                    명단쓰기(event.target.value);
+                  }}
+                />
+                <small>{Object.keys(rosterNames).length}명 읽음</small>
+              </label>
+            )}
+          </section>
+        )}
         {isCastleDefense && (
           <section>
             <h3>{isCastleDivide ? '출제할 나누는 수' : '출제할 구구단'}</h3>
@@ -1673,7 +1885,8 @@ function App() {
                 style={laneStyleFor(player.id)}
               >
                 <header>
-                  <PlayerAvatar player={player} />
+                  {/* 번호를 고르면 그 번호로 모아 둔 꾸미개가 붙어 나옵니다. */}
+                  <PlayerAvatar player={player} stars={step === 'attendance' ? undefined : profileOf(config.attendanceNo).stars} />
                   <strong>{player.id}번 자리</strong>
                   <small>{step === 'attendance' ? '번호 선택' : `${config.attendanceNo}번 · 준비 완료`}</small>
                 </header>
@@ -2019,9 +2232,40 @@ function App() {
             ? `목표 달성! 다음은 ${runnerNameFor(goalStage)} 🎉`
             : `${goalStage}단계 · 다음 목표 ${goalTarget}개`}
         </small>
+        {/* 우리 반이 모은 별로 물리치는 몬스터 대왕입니다. 이 판만이 아니라 지난 시간의 별도 쌓여 있습니다. */}
+        {!isMobileEntry && (() => {
+          const 대왕지금 = 지금대왕(boss);
+          const 남은힘 = Math.max(0, 대왕지금.hp - boss.damage);
+          return (
+            <div className="class-boss" aria-label={`${대왕지금.name}의 남은 힘 ${남은힘}`}>
+              <span className="class-boss-face" key={boss.damage} aria-hidden="true">{대왕지금.look}</span>
+              <div className="class-boss-info">
+                <span>{대왕지금.name}</span>
+                <div className="class-boss-hp" aria-hidden="true">
+                  <div style={{ width: `${Math.round((남은힘 / 대왕지금.hp) * 100)}%` }} />
+                </div>
+              </div>
+              <strong>남은 ⭐{남은힘}</strong>
+            </div>
+          );
+        })()}
       </div>
+      {bossWin && (
+        <div className="boss-win" key={bossWin.id} aria-live="assertive">
+          <span aria-hidden="true">{bossWin.boss.look}💥</span>
+          <strong>우리 반이 {bossWin.boss.name}을 물리쳤어요!</strong>
+          <small>모두가 모은 별 덕분이에요 🎉</small>
+        </div>
+      )}
 
-      <section className={`game-layout individual players-${playerCount}`}>
+      {feverOn && mode === 'playing' && (
+        <div className="fever-banner" aria-live="polite">
+          <span aria-hidden="true">🔥</span>
+          <strong>피버 타임!</strong>
+          <span>맞히면 별 +1</span>
+        </div>
+      )}
+      <section className={`game-layout individual players-${playerCount} ${feverOn && mode === 'playing' ? 'fever' : ''}`}>
         <section className="playfield" style={{ backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(./assets/math-adventure-bg.png)' }}>
           <div
             className="player-lanes individual"
@@ -2030,24 +2274,37 @@ function App() {
             {players.map((player) => {
               const state = playerStates[player.id] ?? fallbackStates[player.id];
               const playerQuestions = questionBanks[state.activeRetry?.level ?? state.level];
-              const question = getPlayerQuestion(questionBanks, state);
+              const question = 주인공바꾸기(getPlayerQuestion(questionBanks, state), heroOf(player), friendNamesFor(player));
               const result = playerResults[player.id] ?? { total: 0, correct: 0, wrong: 0 };
               const successActive = Boolean(successSignals[player.id]);
               const wrongActive = Boolean(wrongSignals[player.id]);
+              const golden = mode === 'playing' && 황금문제인가({ questionId: question.id, seed: bankSeed, fusion: question.fusion, retry: state.activeRetry !== null });
               return (
                 <article
-                  className={`player-lane student-question ${mode === 'finished' ? 'finished-result' : state.feedback} ${successActive ? 'success-signal' : ''} ${wrongActive ? 'wrong-signal' : ''}`}
+                  className={`player-lane student-question ${mode === 'finished' ? 'finished-result' : state.feedback} ${successActive ? 'success-signal' : ''} ${wrongActive ? 'wrong-signal' : ''} ${mode === 'playing' && 불꽃단계(runs[player.id]?.fire ?? 0) ? `lane-fire-${불꽃단계(runs[player.id]?.fire ?? 0)}` : ''} ${golden ? 'golden-question' : ''}`}
                   key={player.id}
                   ref={(node) => {
                     laneRefs.current[player.id] = node;
                   }}
                   style={laneStyleFor(player.id)}
                 >
-                  <header>
-                    <PlayerAvatar player={player} active={successActive} />
+                  <header className={`lane-head ${차림새(profileOf(player.attendanceNo).stars).bg?.look ?? ''}`.trim()}>
+                    <PlayerAvatar player={player} active={successActive} stars={profileOf(player.attendanceNo).stars} fire={mode === 'playing' ? 불꽃단계(runs[player.id]?.fire ?? 0) : 0} />
                     <strong>{player.name}</strong>
+                    {mode === 'playing' && 불꽃단계(runs[player.id]?.fire ?? 0) > 0 && (
+                      <span className={`fire-chip fire-${불꽃단계(runs[player.id]?.fire ?? 0)}`} aria-label={`${runs[player.id]?.fire}문제 연속 정답`}>
+                        🔥 {runs[player.id]?.fire}
+                      </span>
+                    )}
+                    <span className="lane-stars" aria-label={`모은 별 ${profileOf(player.attendanceNo).stars}개`}>⭐ {profileOf(player.attendanceNo).stars}</span>
                     <small>{state.level} · {formatMs(state.responseMs)}</small>
                   </header>
+                  {laneToasts[player.id]?.[0] && (
+                    <div className="lane-toast" key={laneToasts[player.id][0].id} aria-live="polite">
+                      <span aria-hidden="true">{laneToasts[player.id][0].look}</span>
+                      <strong>{laneToasts[player.id][0].text}</strong>
+                    </div>
+                  )}
                   {/* 하에서 중으로 올라간 그 순간입니다. 지금까지는 조용히
                       바뀌어서 아이가 자기가 올라간 것을 몰랐습니다. */}
                   {state.justMoved === 'up' && mode === 'playing' && (
@@ -2098,6 +2355,30 @@ function App() {
                           <div className="share-result">
                             <span>우리 반에 보탬</span>
                             <strong>{result.correct}개</strong>
+                          </div>
+                          {/* 이번 판에 모은 별과, 다음 꾸미개까지 남은 별입니다. */}
+                          <div className="star-result">
+                            <span>모은 별</span>
+                            <strong>⭐ {sessionStars[player.id] ?? 0}개</strong>
+                            {(() => {
+                              const 다음 = 다음꾸미개(profileOf(player.attendanceNo).stars);
+                              return <small>{다음 ? `${다음.item.icon} ${다음.item.name}까지 ${다음.left}개` : '꾸미개를 모두 모았어요!'}</small>;
+                            })()}
+                          </div>
+                          {/* 받은 배지입니다. 이번 판에 새로 받은 것은 빛나게 합니다. */}
+                          <div className="badge-result">
+                            <span>배지 {profileOf(player.attendanceNo).badges.length}/{배지들.length}</span>
+                            <span className="badge-row">
+                              {배지들.map((one) => {
+                                const 가짐 = profileOf(player.attendanceNo).badges.includes(one.id);
+                                const 새것 = (sessionBadges[player.id] ?? []).includes(one.id);
+                                return (
+                                  <i key={one.id} className={`${가짐 ? 'have' : ''} ${새것 ? 'new' : ''}`.trim()} title={가짐 ? `${one.name}: ${one.says}` : '아직 받지 않은 배지'}>
+                                    {가짐 ? one.look : '◌'}
+                                  </i>
+                                );
+                              })}
+                            </span>
                           </div>
                         </div>
                       )}
@@ -2254,8 +2535,20 @@ function App() {
                               모르고 다시 틀리는 것과, 알고 다시 푸는 것은
                               아이에게 완전히 다른 일입니다. */}
                           {state.activeRetry !== null && <span className="retry-tag">다시 도전</span>}
+                          {/* 황금 문제는 맞히면 별을 두 배로 받습니다. 융합 문항은 늘 황금입니다. */}
+                          {golden && <span className="golden-tag">🌟 황금 문제 · 별 2배</span>}
                           <span>{question.strategy}</span>
                         </div>
+                        {/* 틀린 뒤 도움말이 열리면 몬스터는 비켜 섭니다. 이 칸은 높이가 정해져 있어,
+                            몬스터가 남아 있으면 문제 글이 밀려 가려집니다. */}
+                        {!isCastleDefense && state.feedback !== 'explain' && (
+                          <UnitMonster
+                            tag={lesson.tags[0] ?? question.type}
+                            hits={monsters[player.id]?.hits ?? 0}
+                            defeated={monsters[player.id]?.defeated ?? 0}
+                            taunting={wrongActive}
+                          />
+                        )}
                         {isCastleDefense ? (
                           <CastleDefenseScene
                             questionKey={question.id}
