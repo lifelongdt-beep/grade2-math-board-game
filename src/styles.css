@@ -8684,3 +8684,22 @@ body::before {
 .players-5 .unit-monster small,
 .players-4 .unit-monster small,
 .long-question .unit-monster small { display: none; }
+
+/* ── 문제 속 주인공 이름 설정 ─────────────────────────────────────────── */
+.name-roster {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+.name-roster textarea {
+  width: 100%;
+  min-height: 84px;
+  resize: vertical;
+  padding: 8px;
+  border-radius: 6px;
+  font: inherit;
+}
+.name-roster small {
+  font-weight: 800;
+}
