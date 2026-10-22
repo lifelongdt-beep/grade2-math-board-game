@@ -1832,33 +1832,35 @@ function App() {
               </button>
             </div>
           )}
-        </section>
-        {isCastleDefense && (
-          <section>
-            <h3>{isCastleDivide ? '출제할 나누는 수' : '출제할 구구단'}</h3>
-            <div className="big-segmented castle-dan-options">
-              {ALL_CASTLE_DEFENSE_DANS.map((dan) => (
+          {/* 성 지키기 차시에서 낼 단입니다. 칸을 따로 쓰면 아래 번호 고르는 자리가 밀려
+              보이지 않으므로, 학습 시간 칸 아래 한 줄에 작은 단추로 둡니다. */}
+          {isCastleDefense && (
+            <div className="castle-dan-row">
+              <span className="castle-dan-label">{isCastleDivide ? '나누는 수' : '구구단'}</span>
+              <div className="castle-dan-options" role="group" aria-label={isCastleDivide ? '출제할 나누는 수' : '출제할 구구단'}>
+                {ALL_CASTLE_DEFENSE_DANS.map((dan) => (
+                  <button
+                    type="button"
+                    className={castleDans.includes(dan) ? 'active' : ''}
+                    key={dan}
+                    onClick={() => toggleCastleDan(dan)}
+                    aria-pressed={castleDans.includes(dan)}
+                  >
+                    {isCastleDivide ? `÷${dan}` : `${dan}단`}
+                  </button>
+                ))}
                 <button
                   type="button"
-                  className={castleDans.includes(dan) ? 'active' : ''}
-                  key={dan}
-                  onClick={() => toggleCastleDan(dan)}
-                  aria-pressed={castleDans.includes(dan)}
+                  className={castleDans.length === ALL_CASTLE_DEFENSE_DANS.length ? 'active' : ''}
+                  onClick={toggleAllCastleDans}
+                  aria-pressed={castleDans.length === ALL_CASTLE_DEFENSE_DANS.length}
                 >
-                  {isCastleDivide ? `÷${dan}` : `${dan}단`}
+                  전체
                 </button>
-              ))}
-              <button
-                type="button"
-                className={castleDans.length === ALL_CASTLE_DEFENSE_DANS.length ? 'active' : ''}
-                onClick={toggleAllCastleDans}
-                aria-pressed={castleDans.length === ALL_CASTLE_DEFENSE_DANS.length}
-              >
-                전체
-              </button>
+              </div>
             </div>
-          </section>
-        )}
+          )}
+        </section>
       </div>
 
       <section
