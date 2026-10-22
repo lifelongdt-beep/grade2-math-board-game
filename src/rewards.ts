@@ -199,7 +199,75 @@ export const 기록장쓰기 = (attendanceNo: number, 장: 기록장) => {
 export const 기록장모두지우기 = () => {
   try {
     window.localStorage.removeItem(저장열쇠);
+    window.localStorage.removeItem(대왕열쇠);
   } catch {
     // 지울 수 없는 환경이면 그대로 둡니다.
+  }
+};
+
+// ── 반 전체 협동 목표: 몬스터 대왕 ───────────────────────────────────
+// 우리 반이 모은 별이 몬스터 대왕의 힘을 깎습니다. 등수가 아니라 합계라 별을 하나만 모은 아이도
+// 한 몫을 합니다. 판이 끝나도 이어지도록 이 컴퓨터에 남깁니다(교실 컴퓨터 한 대 = 한 반).
+
+export interface 대왕 {
+  look: string;
+  name: string;
+  hp: number;
+}
+
+export const 대왕들: 대왕[] = [
+  // 이름은 모두 '대왕'으로 끝납니다(화면에서 '…대왕을 물리쳤어요'로 씁니다).
+  { look: '👹', name: '도깨비 대왕', hp: 300 },
+  { look: '🐉', name: '불꽃 용 대왕', hp: 300 },
+  { look: '🦑', name: '바다 괴물 대왕', hp: 300 },
+  { look: '🤖', name: '고장 난 로봇 대왕', hp: 300 },
+  { look: '👾', name: '우주 괴물 대왕', hp: 300 },
+];
+
+export interface 대왕싸움 {
+  /** 몇 번째 대왕과 싸우는지입니다(0부터). 다 물리치면 처음 대왕이 더 세게 돌아옵니다. */
+  round: number;
+  /** 지금 대왕에게 입힌 별의 수입니다. */
+  damage: number;
+}
+
+export const 지금대왕 = (싸움: 대왕싸움): 대왕 => {
+  const base = 대왕들[싸움.round % 대왕들.length];
+  // 한 바퀴를 다 돌면 힘이 100씩 늘어납니다.
+  return { ...base, hp: base.hp + Math.floor(싸움.round / 대왕들.length) * 100 };
+};
+
+/** 별을 더해 대왕의 힘을 깎습니다. 남는 별은 다음 대왕에게 넘어갑니다. */
+export const 대왕때리기 = (싸움: 대왕싸움, stars: number): { 싸움: 대왕싸움; 물리친: 대왕[] } => {
+  const 물리친: 대왕[] = [];
+  let { round, damage } = 싸움;
+  damage += Math.max(0, stars);
+  while (damage >= 지금대왕({ round, damage }).hp) {
+    const 진 = 지금대왕({ round, damage });
+    물리친.push(진);
+    damage -= 진.hp;
+    round += 1;
+  }
+  return { 싸움: { round, damage }, 물리친 };
+};
+
+const 대왕열쇠 = 'mathClassBoss:v1';
+
+export const 대왕읽기 = (): 대왕싸움 => {
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(대왕열쇠) ?? 'null');
+    const round = Number.isInteger(raw?.round) && raw.round >= 0 ? raw.round : 0;
+    const damage = Number.isFinite(raw?.damage) && raw.damage >= 0 ? Math.floor(raw.damage) : 0;
+    return { round, damage };
+  } catch {
+    return { round: 0, damage: 0 };
+  }
+};
+
+export const 대왕쓰기 = (싸움: 대왕싸움) => {
+  try {
+    window.localStorage.setItem(대왕열쇠, JSON.stringify(싸움));
+  } catch {
+    // 저장할 수 없으면 이번 수업 동안만 이어집니다.
   }
 };

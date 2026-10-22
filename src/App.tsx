@@ -66,7 +66,7 @@ import type { ManipResult } from './data/manipulate/check';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
-import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 황금문제인가, type 기록장 } from './rewards';
+import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 황금문제인가, 대왕때리기, 대왕읽기, 대왕쓰기, 지금대왕, type 기록장, type 대왕, type 대왕싸움 } from './rewards';
 import { TeacherPanel, downloadAnalysisFile } from './components/TeacherPanel';
 import { curriculum as curriculum2 } from './data/curriculum';
 import { curriculum5 } from './data/curriculum5';
@@ -805,6 +805,10 @@ function App() {
   const [laneToasts, setLaneToasts] = useState<Record<number, Array<{ id: number; look: string; text: string }>>>({});
   // 자리마다 이어서 맞힌 수입니다. fire는 연속 정답 불꽃, noHint는 힌트 없이 이어서 맞힌 수입니다.
   const [runs, setRuns] = useState<Record<number, { fire: number; noHint: number }>>({});
+  // 우리 반이 함께 싸우는 몬스터 대왕입니다. 모은 별만큼 힘이 깎이고, 판이 끝나도 이어집니다.
+  // 휴대폰으로 들어온 아이는 자기 기기에서 혼자 푸므로 반 목표를 보여 주지 않습니다.
+  const [boss, setBoss] = useState<대왕싸움>(() => 대왕읽기());
+  const [bossWin, setBossWin] = useState<{ id: number; boss: 대왕 } | null>(null);
   // 이번 판에 받은 배지입니다(판 결과에 보여 줍니다).
   const [sessionBadges, setSessionBadges] = useState<Record<number, string[]>>({});
   // 이번 판에 모은 별입니다(판 결과에 보여 줍니다).
@@ -1477,6 +1481,18 @@ function App() {
     기록장쓰기(player.attendanceNo, next);
     setProfiles((prev) => ({ ...prev, [player.attendanceNo]: next }));
     if (gain) setSessionStars((prev) => ({ ...prev, [player.id]: (prev[player.id] ?? 0) + gain }));
+    if (gain && !isMobileEntry) {
+      const 결과 = 대왕때리기(boss, gain);
+      대왕쓰기(결과.싸움);
+      setBoss(결과.싸움);
+      const 진 = 결과.물리친.at(-1);
+      if (진) {
+        const id = Date.now();
+        setBossWin({ id, boss: 진 });
+        playGoalFanfare();
+        window.setTimeout(() => setBossWin((now) => (now?.id === id ? null : now)), 4200);
+      }
+    }
     if (받은.length) setSessionBadges((prev) => ({ ...prev, [player.id]: [...(prev[player.id] ?? []), ...받은.map((one) => one.id)] }));
     const 붙은 = 새로붙은(장.stars, stars).at(-1);
     if (붙은) showLaneToast(player.id, 붙은.icon, `새 꾸미개: ${붙은.name}!`);
@@ -2147,7 +2163,31 @@ function App() {
             ? `목표 달성! 다음은 ${runnerNameFor(goalStage)} 🎉`
             : `${goalStage}단계 · 다음 목표 ${goalTarget}개`}
         </small>
+        {/* 우리 반이 모은 별로 물리치는 몬스터 대왕입니다. 이 판만이 아니라 지난 시간의 별도 쌓여 있습니다. */}
+        {!isMobileEntry && (() => {
+          const 대왕지금 = 지금대왕(boss);
+          const 남은힘 = Math.max(0, 대왕지금.hp - boss.damage);
+          return (
+            <div className="class-boss" aria-label={`${대왕지금.name}의 남은 힘 ${남은힘}`}>
+              <span className="class-boss-face" key={boss.damage} aria-hidden="true">{대왕지금.look}</span>
+              <div className="class-boss-info">
+                <span>{대왕지금.name}</span>
+                <div className="class-boss-hp" aria-hidden="true">
+                  <div style={{ width: `${Math.round((남은힘 / 대왕지금.hp) * 100)}%` }} />
+                </div>
+              </div>
+              <strong>남은 ⭐{남은힘}</strong>
+            </div>
+          );
+        })()}
       </div>
+      {bossWin && (
+        <div className="boss-win" key={bossWin.id} aria-live="assertive">
+          <span aria-hidden="true">{bossWin.boss.look}💥</span>
+          <strong>우리 반이 {bossWin.boss.name}을 물리쳤어요!</strong>
+          <small>모두가 모은 별 덕분이에요 🎉</small>
+        </div>
+      )}
 
       {feverOn && mode === 'playing' && (
         <div className="fever-banner" aria-live="polite">
