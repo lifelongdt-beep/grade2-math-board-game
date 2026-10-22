@@ -42,7 +42,7 @@ import {
 import {
   isMuted,
   playAnimalSound,
-  playFinishSound,
+  playFeverBeat, playFeverStart, playFinishSound,
   playGoalFanfare,
   playReadySound,
   playSuccessSound,
@@ -877,6 +877,24 @@ function App() {
     setRemainingSeconds(sessionDuration);
   }, [players, sessionDuration, mode]);
 
+  // ── 마지막 피버 타임 ──
+  // 남은 시간이 30초(30초 수업은 10초)가 되면 시작합니다. 맞혀서 시간이 다시 늘어나도 한번 시작한
+  // 피버는 그 판이 끝날 때까지 이어집니다 — 꺼졌다 켜지면 신호가 거듭 울려 어수선합니다.
+  const feverSeconds = sessionDuration >= 60 ? 30 : 10;
+  const [feverOn, setFeverOn] = useState(false);
+  useEffect(() => {
+    if (mode !== 'playing') {
+      setFeverOn(false);
+      return;
+    }
+    if (!feverOn && remainingSeconds > 0 && remainingSeconds <= feverSeconds) {
+      setFeverOn(true);
+      playFeverStart();
+    } else if (feverOn && remainingSeconds > 0 && remainingSeconds <= feverSeconds) {
+      playFeverBeat(remainingSeconds);
+    }
+  }, [mode, remainingSeconds, feverSeconds, feverOn]);
+
   useEffect(() => {
     if (mode !== 'playing') return;
     const timerId = window.setInterval(() => {
@@ -1514,7 +1532,7 @@ function App() {
 
     if (isCorrect) {
       triggerSuccessSignal(player.id, question.difficulty);
-      addBonusTime(player.id, golden ? 2 : 1);
+      addBonusTime(player.id, (golden ? 2 : 1) + (feverOn ? 1 : 0));
     } else {
       triggerWrongSignal(player.id);
     }
@@ -1522,7 +1540,7 @@ function App() {
     rewardAnswer(player, {
       correct: isCorrect,
       golden,
-      fever: false,
+      fever: feverOn,
       hintUsed: Boolean(hintUsedThisQuestion[player.id] || hintTextOpen[player.id]),
       friendFix: Boolean(question.manipulate?.friend),
       retry: state.activeRetry !== null,
@@ -2131,7 +2149,14 @@ function App() {
         </small>
       </div>
 
-      <section className={`game-layout individual players-${playerCount}`}>
+      {feverOn && mode === 'playing' && (
+        <div className="fever-banner" aria-live="polite">
+          <span aria-hidden="true">🔥</span>
+          <strong>피버 타임!</strong>
+          <span>맞히면 별 +1</span>
+        </div>
+      )}
+      <section className={`game-layout individual players-${playerCount} ${feverOn && mode === 'playing' ? 'fever' : ''}`}>
         <section className="playfield" style={{ backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(./assets/math-adventure-bg.png)' }}>
           <div
             className="player-lanes individual"

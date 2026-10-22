@@ -8486,3 +8486,54 @@ body::before {
   font-weight: 900;
   animation: gentle-beat 1.1s ease-in-out infinite;
 }
+
+/* ── 마지막 피버 타임 ──────────────────────────────────────────────────
+   화면 둘레가 무지개빛으로 돌고, 위에 띠가 뜹니다. 띠는 화면 위에 얹혀
+   문제 자리를 밀어내지 않습니다. */
+.fever-banner {
+  position: fixed;
+  z-index: 40;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  color: #2a1200;
+  background: linear-gradient(90deg, #ffd23f, #ff8a2b, #ff4f7a, #ffd23f);
+  background-size: 300% 100%;
+  box-shadow: 0 0 22px rgba(255, 120, 40, 0.75);
+  font-weight: 900;
+  pointer-events: none;
+  animation: fever-slide 1.6s linear infinite, level-up-pop 0.4s ease;
+}
+.fever-banner strong { font-size: 20px; }
+.fever-banner span:first-child { font-size: 22px; }
+
+.game-layout.fever .playfield {
+  position: relative;
+}
+.game-layout.fever .playfield::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 4px;
+  background: linear-gradient(90deg, #ffd23f, #ff8a2b, #ff4f7a, #8a5cff, #3fd2ff, #ffd23f);
+  background-size: 300% 100%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: fever-slide 2s linear infinite;
+}
+.game-layout.fever .player-lane:not(.correct):not(.explain) {
+  box-shadow: 0 0 22px rgba(255, 120, 60, 0.35);
+}
+
+@keyframes fever-slide {
+  from { background-position: 0% 50%; }
+  to { background-position: 300% 50%; }
+}
