@@ -45,7 +45,7 @@ import {
   playFeverBeat, playFeverStart, playFinishSound,
   playGoalFanfare,
   playReadySound,
-  playAnimalGrowl,
+  playAnimalOops,
   playAnimalHappy,
   playDifficultySound,
   playTapSound,
@@ -1424,12 +1424,12 @@ function App() {
     });
   };
 
-  // 틀리면 그 자리 아이가 고른 동물이 으르렁거리고, 맞히면 기뻐합니다(sound.ts).
+  // 맞히면 그 자리 아이가 고른 동물이 기뻐하고, 틀리면 고개를 갸웃합니다(sound.ts).
   const avatarOf = (playerId: number) => players.find((one) => one.id === playerId)?.avatar ?? '';
 
   const triggerWrongSignal = (playerId: number) => {
     const token = Date.now();
-    playAnimalGrowl(avatarOf(playerId));
+    playAnimalOops(avatarOf(playerId));
     setWrongSignals((prev) => ({ ...prev, [playerId]: token }));
     window.setTimeout(() => {
       setWrongSignals((prev) => {
