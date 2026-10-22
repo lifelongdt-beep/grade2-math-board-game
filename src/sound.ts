@@ -517,3 +517,26 @@ export const playReadySound = () => {
 export const playDifficultySound = (difficulty: Difficulty) => {
   playBlips(difficultyBlips[difficulty]);
 };
+
+// ── 피버 타임 ────────────────────────────────────────────────────────
+// 마지막 30초가 시작되는 순간의 신호입니다. 올라가는 짧은 나팔로 '이제부터 별이 더 붙는다'를 알립니다.
+export const playFeverStart = () => {
+  playBlips([
+    { frequency: 392, at: 0, length: 0.1, volume: 0.1, type: 'square' },
+    { frequency: 523.25, at: 0.1, length: 0.1, volume: 0.1, type: 'square' },
+    { frequency: 659.25, at: 0.2, length: 0.1, volume: 0.105, type: 'square' },
+    { frequency: 783.99, at: 0.3, length: 0.32, volume: 0.11, type: 'square' },
+    { frequency: 1567.98, at: 0.32, length: 0.3, volume: 0.04, type: 'sine', slideTo: 2093 },
+  ]);
+};
+
+// 피버 타임 동안 1초마다 울리는 박자입니다. 낮은 북과 높은 반짝임을 번갈아 울려 음악이 바뀐 것처럼 들리게 합니다.
+// 아이들 답 소리를 덮지 않게 작게 둡니다.
+export const playFeverBeat = (tick: number) => {
+  const 높음 = tick % 2 === 0;
+  playBlips([
+    { frequency: 110, at: 0, length: 0.12, volume: 0.07, type: 'sine', slideTo: 60 },
+    { frequency: 높음 ? 1318.51 : 1046.5, at: 0.25, length: 0.07, volume: 0.03, type: 'triangle' },
+    { frequency: 높음 ? 1567.98 : 1318.51, at: 0.5, length: 0.07, volume: 0.03, type: 'triangle' },
+  ]);
+};
