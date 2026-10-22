@@ -8295,3 +8295,102 @@ body::before {
   font-size: 12px;
   font-weight: 800;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   캐릭터 키우기 — 모은 별로 붙는 모자·망토·배경 (rewards.ts)
+   ════════════════════════════════════════════════════════════════════ */
+.player-avatar {
+  position: relative;
+}
+
+/* 모자는 캐릭터 머리 위에 살짝 기울여 얹습니다. */
+.avatar-hat {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-8deg);
+  font-size: 19px;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
+}
+
+/* 망토는 캐릭터 뒤로 퍼지는 고리 빛입니다. */
+.player-avatar.has-cape {
+  border-width: 3px;
+}
+.player-avatar.cape-red { box-shadow: 0 0 0 4px #e0414b, 0 0 14px rgba(224, 65, 75, 0.7); }
+.player-avatar.cape-blue { box-shadow: 0 0 0 4px #3b7bff, 0 0 14px rgba(59, 123, 255, 0.75); }
+.player-avatar.cape-gold { box-shadow: 0 0 0 4px #f2b632, 0 0 16px rgba(242, 182, 50, 0.85); }
+.player-avatar.cape-rainbow {
+  box-shadow: 0 0 0 4px #ff6fae, 0 0 0 7px #ffd34f, 0 0 0 10px #59d68a, 0 0 18px rgba(120, 180, 255, 0.8);
+}
+
+/* 배경은 자리 이름 줄에 깔립니다. 글씨가 묻히지 않게 옅게 둡니다. */
+.player-lane .lane-head {
+  border-radius: 6px;
+  /* 위를 넉넉히 두어 모자가 자리 테두리에 잘리지 않게 합니다. */
+  padding: 12px 6px 3px;
+  margin: -4px -6px 0;
+}
+.lane-head.bg-rainbow { background: linear-gradient(90deg, rgba(255, 99, 99, 0.28), rgba(255, 214, 79, 0.28), rgba(89, 214, 138, 0.28), rgba(91, 156, 255, 0.28), rgba(186, 104, 255, 0.28)); }
+.lane-head.bg-sea { background: linear-gradient(180deg, rgba(64, 190, 255, 0.3), rgba(20, 90, 170, 0.35)); }
+.lane-head.bg-space { background: radial-gradient(circle at 20% 40%, rgba(255, 255, 255, 0.5) 0 1px, transparent 2px), radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.45) 0 1px, transparent 2px), linear-gradient(90deg, rgba(76, 40, 160, 0.55), rgba(16, 20, 70, 0.6)); }
+.lane-head.bg-castle { background: linear-gradient(180deg, rgba(255, 214, 120, 0.3), rgba(160, 90, 200, 0.35)); }
+
+.lane-stars {
+  flex: none;
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffd86b;
+  white-space: nowrap;
+}
+
+/* 새 꾸미개·새 배지 알림입니다. 문제를 가리지 않게 머리 줄 바로 아래에 잠깐만 뜹니다. */
+.lane-toast {
+  position: absolute;
+  z-index: 4;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 16px);
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 2px solid #ffd86b;
+  background: rgba(40, 28, 0, 0.92);
+  color: #fff3c4;
+  font-size: 14px;
+  white-space: nowrap;
+  box-shadow: 0 0 18px rgba(255, 216, 107, 0.55);
+  animation: lane-toast-life 2.6s ease forwards;
+  pointer-events: none;
+}
+.lane-toast span { font-size: 20px; }
+.lane-toast strong { overflow: hidden; text-overflow: ellipsis; }
+
+@keyframes lane-toast-life {
+  0% { opacity: 0; transform: translate(-50%, -8px) scale(0.85); }
+  12% { opacity: 1; transform: translate(-50%, 0) scale(1.05); }
+  20% { transform: translate(-50%, 0) scale(1); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -6px); }
+}
+
+.student-result-list .star-result {
+  flex-wrap: wrap;
+}
+.student-result-list .star-result strong { color: #ffd86b; }
+.student-result-list .star-result small {
+  flex-basis: 100%;
+  color: #ffe9a6;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.reward-reset {
+  margin-top: 8px;
+  font-size: 13px;
+}
