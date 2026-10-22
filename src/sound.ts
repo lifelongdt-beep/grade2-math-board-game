@@ -408,6 +408,96 @@ export const playAnimalSound = (avatar: string) => {
   playTapSound();
 };
 
+// ── 맞혔을 때 기뻐하는 소리, 틀렸을 때 으르렁거리는 소리 ──────────────
+// 정답과 오답 소리를 아이가 고른 동물이 냅니다. 옆자리와 소리가 달라서,
+// 화면을 보지 않아도 "내 여우가 웃었다"를 압니다. 다섯이 한꺼번에 낼 수
+// 있으므로 모두 짧고(0.6초 안쪽) 작게 둡니다.
+//
+// 기뻐하는 소리는 짧게 두 번 깡충 올라간 뒤 길게 한 번 더 올라갑니다.
+// 수준이 높을수록 같은 소리를 조금 높여, 어느 수준을 맞혔는지도 들립니다.
+// 으르렁은 혼내는 소리가 아니라 장난스러운 투정입니다. 낮은 떨림에 배음을
+// 얹어 교실 스피커에서도 들리게 하되, 크지 않게 둡니다.
+type 목소리 = {
+  /** 기뻐하는 소리의 바탕 높이와 결입니다. */
+  happy: number;
+  happyType: OscillatorType;
+  /** 으르렁거리는 소리의 바탕 높이와 결입니다. 120Hz 밑은 교실 스피커가 거의 내지 못합니다. */
+  growl: number;
+  growlType: OscillatorType;
+  /** 떨림의 빠르기입니다. 개구리는 빠르게, 거북이는 느리게 떱니다. */
+  shake: number;
+};
+
+const 목소리들: Record<string, 목소리> = {
+  '🐶': { happy: 560, happyType: 'triangle', growl: 150, growlType: 'sawtooth', shake: 26 },
+  '🐱': { happy: 880, happyType: 'sine', growl: 190, growlType: 'sawtooth', shake: 30 },
+  '🦊': { happy: 820, happyType: 'triangle', growl: 175, growlType: 'sawtooth', shake: 28 },
+  '🐰': { happy: 1050, happyType: 'sine', growl: 230, growlType: 'triangle', shake: 22 },
+  '🐼': { happy: 420, happyType: 'triangle', growl: 135, growlType: 'sawtooth', shake: 18 },
+  '🐯': { happy: 330, happyType: 'sawtooth', growl: 125, growlType: 'sawtooth', shake: 20 },
+  '🐸': { happy: 520, happyType: 'square', growl: 165, growlType: 'square', shake: 34 },
+  '🐧': { happy: 720, happyType: 'triangle', growl: 210, growlType: 'triangle', shake: 24 },
+  '🦁': { happy: 280, happyType: 'sawtooth', growl: 120, growlType: 'sawtooth', shake: 18 },
+  '🐢': { happy: 480, happyType: 'sine', growl: 160, growlType: 'triangle', shake: 9 },
+};
+
+const 수준높이: Record<Difficulty, number> = { 하: 1, 중: 1.12, 상: 1.26 };
+
+// 모난 결(square·sawtooth)은 같은 세기에서 더 크게 들리므로 조금 줄입니다.
+const 결세기 = (type: OscillatorType) => (type === 'square' || type === 'sawtooth' ? 0.6 : 1);
+
+export const animalHappyBlips = (avatar: string, difficulty: Difficulty): Blip[] | null => {
+  const v = 목소리들[avatar];
+  if (!v) return null;
+  const f = v.happy * 수준높이[difficulty];
+  const w = 결세기(v.happyType);
+  return [
+    // 깡!
+    { frequency: f, at: 0, length: 0.09, volume: 0.08 * w, type: v.happyType, attack: 0.012, glide: [f * 1.3, f * 1.45] },
+    // 충!
+    { frequency: f * 1.08, at: 0.12, length: 0.09, volume: 0.085 * w, type: v.happyType, attack: 0.012, glide: [f * 1.4, f * 1.55] },
+    // 야호— 하고 길게 올라갑니다.
+    {
+      frequency: f * 1.15, at: 0.25, length: 0.3, volume: 0.09 * w, type: v.happyType, attack: 0.02,
+      glide: [f * 1.5, f * 1.9, f * 1.75], vibrato: { rate: Math.max(6, v.shake / 3), depth: f * 0.025 },
+    },
+    // 위에서 반짝이는 배음입니다.
+    { frequency: f * 3, at: 0.27, length: 0.28, volume: 0.018, type: 'sine', glide: [f * 3.8, f * 3.5] },
+  ];
+};
+
+export const animalGrowlBlips = (avatar: string): Blip[] | null => {
+  const v = 목소리들[avatar];
+  if (!v) return null;
+  const f = v.growl;
+  // 둥근 결(triangle)의 으르렁은 배음과 겹쳐 다른 동물보다 크게 들려 조금 줄입니다.
+  const w = v.growlType === 'triangle' ? 0.72 : 결세기(v.growlType);
+  return [
+    // 그르— 하고 목에서 떨립니다.
+    {
+      frequency: f, at: 0, length: 0.5, volume: 0.1 * w, type: v.growlType, attack: 0.05,
+      glide: [f * 1.12, f * 1.05, f * 0.9], vibrato: { rate: v.shake, depth: f * 0.07 },
+    },
+    // 배음을 얹어야 작은 스피커에서도 '으르렁'으로 들립니다.
+    { frequency: f * 2, at: 0.02, length: 0.46, volume: 0.04, type: 'triangle', glide: [f * 2.2, f * 2.05, f * 1.8], vibrato: { rate: v.shake, depth: f * 0.12 } },
+    { frequency: f * 3, at: 0.04, length: 0.4, volume: 0.016, type: 'sine', glide: [f * 3.2, f * 2.8] },
+  ];
+};
+
+/** 맞혔을 때 그 동물이 기뻐합니다. 동물이 없으면 원래 정답 소리를 냅니다. */
+export const playAnimalHappy = (avatar: string, difficulty: Difficulty, fallback?: () => void) => {
+  const blips = animalHappyBlips(avatar, difficulty);
+  if (blips) playBlips(blips, fallback);
+  else playSuccessSound(difficulty, fallback);
+};
+
+/** 틀렸을 때 그 동물이 으르렁거립니다. 동물이 없으면 원래 오답 소리를 냅니다. */
+export const playAnimalGrowl = (avatar: string) => {
+  const blips = animalGrowlBlips(avatar);
+  if (blips) playBlips(blips);
+  else playWrongSound();
+};
+
 // 수업이 끝났을 때 울리는 팡파레입니다. 한 번만 울리므로 길어도 됩니다.
 export const playFinishSound = () => {
   playBlips([
