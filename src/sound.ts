@@ -411,15 +411,17 @@ export const playAnimalSound = (avatar: string) => {
 // ── 맞혔을 때, 틀렸을 때 내 동물이 내는 소리 ─────────────────────────
 // 정답과 오답 소리를 아이가 고른 동물이 냅니다. 소리만 들어도 강아지인지
 // 개구리인지 알 수 있게 동물마다 그 동물다운 소리를 따로 지었습니다.
-// 맞히면 신나게(멍멍!, 개굴개굴!, 삐약삐약!), 틀리면 고개를 갸웃하듯 끝을
-// 올려 "다시 해 볼까?"로 들리게 합니다(낑?, 냐?, 개굴?). 틀린 소리도 혼내는
-// 소리가 아니라 듣기 좋은 소리여야 합니다 — 그래서 거친 결(sawtooth)은 쓰지
-// 않고 둥근 결로만 짓습니다.
+// 맞히면 신나게(멍멍!, 개굴개굴!, 삐약삐약!) 높이 올라가며 '도미솔' 반짝임으로
+// 끝나고, 틀리면 화가 나서 으르렁거립니다(으르르 컹!, 하악!, 크르릉 어흥!).
+// 둘을 귀로 바로 가를 수 있게, 정답은 높고 둥근 결로 위로 올라가고 오답은 낮고
+// 거친 결(sawtooth·square)로 빠르게 떨며 아래로 떨어집니다.
 // 다섯 자리가 한꺼번에 울릴 수 있으므로 모두 0.6초 안쪽으로 짧고 작게 둡니다.
 
-/** 맞혔을 때 위에 얹는 작은 반짝임입니다. 동물이 달라도 '맞았다'는 같은 신호로 들립니다. */
+/** 맞혔을 때 위에 얹는 '도미솔' 반짝임입니다. 동물이 달라도 '맞았다, 신난다'는 같은 신호로 들립니다. */
 const 반짝 = (at: number): Blip[] => [
-  { frequency: 2093, at, length: 0.18, volume: 0.02, type: 'sine', glide: [2637] },
+  { frequency: 1568, at, length: 0.08, volume: 0.03, type: 'sine' },
+  { frequency: 1975.53, at: at + 0.045, length: 0.08, volume: 0.03, type: 'sine' },
+  { frequency: 2349.32, at: at + 0.09, length: 0.08, volume: 0.032, type: 'sine', glide: [2637] },
 ];
 
 const 기쁨소리: Record<string, Blip[]> = {
@@ -471,10 +473,10 @@ const 기쁨소리: Record<string, Blip[]> = {
   ],
   // 개굴개굴! — 짧은 울음 넷이 계단처럼 올라갑니다.
   '🐸': [
-    { frequency: 470, at: 0, length: 0.08, volume: 0.075, type: 'square', attack: 0.012, glide: [520], vibrato: { rate: 34, depth: 22 } },
-    { frequency: 500, at: 0.1, length: 0.08, volume: 0.075, type: 'square', attack: 0.012, glide: [560], vibrato: { rate: 34, depth: 22 } },
-    { frequency: 540, at: 0.2, length: 0.08, volume: 0.077, type: 'square', attack: 0.012, glide: [610], vibrato: { rate: 34, depth: 24 } },
-    { frequency: 600, at: 0.3, length: 0.16, volume: 0.081, type: 'square', attack: 0.012, glide: [700, 760], vibrato: { rate: 30, depth: 24 } },
+    { frequency: 470, at: 0, length: 0.08, volume: 0.086, type: 'triangle', attack: 0.012, glide: [520], vibrato: { rate: 34, depth: 22 } },
+    { frequency: 500, at: 0.1, length: 0.08, volume: 0.086, type: 'triangle', attack: 0.012, glide: [560], vibrato: { rate: 34, depth: 22 } },
+    { frequency: 540, at: 0.2, length: 0.08, volume: 0.089, type: 'triangle', attack: 0.012, glide: [610], vibrato: { rate: 34, depth: 24 } },
+    { frequency: 600, at: 0.3, length: 0.16, volume: 0.09, type: 'triangle', attack: 0.012, glide: [700, 760], vibrato: { rate: 30, depth: 24 } },
     ...반짝(0.4),
   ],
   // 삐약삐약! — 동글동글한 소리로 셋째 울음만 높이 올립니다.
@@ -501,57 +503,72 @@ const 기쁨소리: Record<string, Blip[]> = {
   ],
 };
 
-const 갸웃소리: Record<string, Blip[]> = {
-  // 낑? — 고개를 갸웃하며 끝을 올립니다.
+// 화가 나서 으르렁거리는 소리입니다. 낮고 거칠게, 빠르게 떨며 아래로 떨어집니다.
+// 입을 다문 채 목으로 으르르 하는 떨림(vibrato가 빠른 sawtooth)이 바탕이고, 동물마다
+// 마지막에 그 동물다운 성난 한마디를 붙입니다.
+const 으르르 = (f: number, at: number, length: number, volume = 0.06): Blip[] => [
+  { frequency: f, at, length, volume, type: 'sawtooth', attack: 0.03, glide: [f * 1.08, f * 0.95, f * 0.85], vibrato: { rate: 28, depth: f * 0.09 } },
+  { frequency: f * 2, at: at + 0.01, length: length - 0.02, volume: volume * 0.45, type: 'square', glide: [f * 2.1, f * 1.7], vibrato: { rate: 28, depth: f * 0.14 } },
+];
+
+const 화남소리: Record<string, Blip[]> = {
+  // 으르르… 컹! — 이를 드러내고 으르렁거리다 크게 한 번 짖습니다.
   '🐶': [
-    { frequency: 560, at: 0, length: 0.22, volume: 0.06, type: 'triangle', attack: 0.03, glide: [520, 480, 600], vibrato: { rate: 9, depth: 10 } },
-    { frequency: 520, at: 0.28, length: 0.2, volume: 0.055, type: 'triangle', attack: 0.03, glide: [500, 640] },
+    ...으르르(150, 0, 0.3),
+    { frequency: 360, at: 0.34, length: 0.16, volume: 0.07, type: 'square', attack: 0.01, glide: [420, 230] },
+    { frequency: 180, at: 0.34, length: 0.16, volume: 0.04, type: 'sawtooth', glide: [200, 120] },
   ],
-  // 냐? — 짧게 한 번 묻습니다.
+  // 하악! 으르릉 — 털을 세우고 하악거린 뒤 낮게 웁니다.
   '🐱': [
-    { frequency: 900, at: 0, length: 0.3, volume: 0.06, type: 'sine', attack: 0.03, glide: [840, 800, 1020], vibrato: { rate: 7, depth: 12 } },
-    { frequency: 450, at: 0.02, length: 0.26, volume: 0.02, type: 'sine', glide: [420, 520] },
+    { frequency: 2400, at: 0, length: 0.16, volume: 0.022, type: 'sawtooth', attack: 0.005, glide: [2100, 1800], vibrato: { rate: 70, depth: 900 } },
+    { frequency: 1200, at: 0, length: 0.16, volume: 0.02, type: 'square', glide: [1050, 900], vibrato: { rate: 63, depth: 500 } },
+    ...으르르(230, 0.2, 0.34, 0.055),
   ],
-  // 꺙? — 여우도 가늘게 한 번 묻습니다.
+  // 크르르 캉! — 여우는 날카롭게 짖으며 화를 냅니다.
   '🦊': [
-    { frequency: 1000, at: 0, length: 0.28, volume: 0.06, type: 'triangle', attack: 0.02, glide: [920, 860, 1080], vibrato: { rate: 10, depth: 14 } },
-    { frequency: 500, at: 0.02, length: 0.24, volume: 0.02, type: 'sine', glide: [470, 540] },
+    ...으르르(190, 0, 0.28),
+    { frequency: 900, at: 0.32, length: 0.18, volume: 0.06, type: 'square', attack: 0.008, glide: [1000, 520] },
+    { frequency: 450, at: 0.32, length: 0.18, volume: 0.03, type: 'sawtooth', glide: [500, 260] },
   ],
-  // 킁킁? — 코를 두 번 찡긋하고 끝을 올립니다.
+  // 쿵! 쿵! 끄응 — 토끼는 화가 나면 뒷발을 굴러 쿵쿵거립니다.
   '🐰': [
-    { frequency: 1000, at: 0, length: 0.08, volume: 0.05, type: 'sine', glide: [900] },
-    { frequency: 950, at: 0.12, length: 0.08, volume: 0.05, type: 'sine', glide: [880] },
-    { frequency: 900, at: 0.26, length: 0.18, volume: 0.055, type: 'sine', glide: [1150] },
+    { frequency: 160, at: 0, length: 0.1, volume: 0.08, type: 'triangle', attack: 0.004, glide: [70] },
+    { frequency: 160, at: 0.15, length: 0.1, volume: 0.08, type: 'triangle', attack: 0.004, glide: [70] },
+    ...으르르(260, 0.3, 0.26, 0.05),
   ],
-  // 음메? — 판다가 둥글게 묻습니다.
+  // 으어엉! — 판다가 낮게 성을 냅니다.
   '🐼': [
-    { frequency: 380, at: 0, length: 0.36, volume: 0.06, type: 'triangle', attack: 0.04, glide: [350, 330, 410], vibrato: { rate: 12, depth: 16 } },
-    { frequency: 760, at: 0.03, length: 0.3, volume: 0.018, type: 'sine', glide: [700, 820] },
+    ...으르르(160, 0, 0.5, 0.065),
+    { frequency: 320, at: 0.05, length: 0.4, volume: 0.025, type: 'triangle', glide: [300, 220] },
   ],
-  // 흐응? — 아기 호랑이가 코로 짧게 묻습니다.
+  // 크르릉 어흥! — 호랑이가 화나서 으르렁거린 뒤 크게 어흥 합니다.
   '🐯': [
-    { frequency: 320, at: 0, length: 0.34, volume: 0.065, type: 'triangle', attack: 0.05, glide: [300, 280, 360], vibrato: { rate: 12, depth: 12 } },
-    { frequency: 640, at: 0.02, length: 0.3, volume: 0.022, type: 'sine', glide: [600, 720] },
+    ...으르르(125, 0, 0.26),
+    { frequency: 230, at: 0.28, length: 0.3, volume: 0.075, type: 'sawtooth', attack: 0.03, glide: [290, 210, 150], vibrato: { rate: 18, depth: 20 } },
+    { frequency: 460, at: 0.29, length: 0.28, volume: 0.03, type: 'square', glide: [560, 380, 280] },
   ],
-  // 개굴? — 한 번만 울고 끝을 올립니다.
+  // 꽥꽥! — 개구리가 성나서 거칠게 웁니다.
   '🐸': [
-    { frequency: 480, at: 0, length: 0.08, volume: 0.05, type: 'square', attack: 0.012, glide: [520], vibrato: { rate: 34, depth: 20 } },
-    { frequency: 420, at: 0.1, length: 0.2, volume: 0.05, type: 'square', attack: 0.012, glide: [400, 540], vibrato: { rate: 28, depth: 18 } },
+    { frequency: 330, at: 0, length: 0.14, volume: 0.06, type: 'square', attack: 0.01, glide: [300, 220], vibrato: { rate: 45, depth: 40 } },
+    { frequency: 320, at: 0.2, length: 0.2, volume: 0.06, type: 'square', attack: 0.01, glide: [280, 180], vibrato: { rate: 45, depth: 40 } },
+    { frequency: 160, at: 0.2, length: 0.2, volume: 0.035, type: 'sawtooth', glide: [140, 95] },
   ],
-  // 삐? — 펭귄이 고개를 갸웃합니다.
+  // 꽉! 꽉! — 펭귄이 날개를 퍼덕이며 꽥꽥댑니다.
   '🐧': [
-    { frequency: 820, at: 0, length: 0.28, volume: 0.06, type: 'triangle', attack: 0.03, glide: [760, 720, 920], vibrato: { rate: 8, depth: 12 } },
-    { frequency: 1640, at: 0.02, length: 0.24, volume: 0.014, type: 'sine', glide: [1500, 1800] },
+    { frequency: 700, at: 0, length: 0.12, volume: 0.055, type: 'square', attack: 0.01, glide: [620, 430], vibrato: { rate: 38, depth: 50 } },
+    { frequency: 680, at: 0.17, length: 0.14, volume: 0.055, type: 'square', attack: 0.01, glide: [600, 380], vibrato: { rate: 38, depth: 50 } },
+    ...으르르(230, 0.34, 0.22, 0.045),
   ],
-  // 으응? — 사자가 낮고 부드럽게 묻습니다.
+  // 크아앙! — 사자가 낮게 으르렁거리다 크게 포효합니다.
   '🦁': [
-    { frequency: 280, at: 0, length: 0.36, volume: 0.058, type: 'triangle', attack: 0.05, glide: [260, 245, 320], vibrato: { rate: 11, depth: 10 } },
-    { frequency: 560, at: 0.02, length: 0.32, volume: 0.024, type: 'sine', glide: [520, 640] },
+    ...으르르(115, 0, 0.22),
+    { frequency: 200, at: 0.22, length: 0.36, volume: 0.08, type: 'sawtooth', attack: 0.04, glide: [270, 240, 170, 120], vibrato: { rate: 16, depth: 18 } },
+    { frequency: 400, at: 0.23, length: 0.34, volume: 0.032, type: 'square', glide: [520, 460, 320] },
   ],
-  // 음…? — 거북이는 느릿하게 생각하며 끝을 올립니다.
+  // 쉬익! 끄응 — 거북이는 목을 쏙 넣으며 쉬익거리고 낮게 툴툴댑니다.
   '🐢': [
-    { frequency: 460, at: 0, length: 0.44, volume: 0.06, type: 'sine', attack: 0.1, glide: [430, 410, 500], vibrato: { rate: 4, depth: 10 } },
-    { frequency: 920, at: 0.05, length: 0.36, volume: 0.016, type: 'sine', glide: [860, 1000] },
+    { frequency: 2000, at: 0, length: 0.2, volume: 0.022, type: 'sawtooth', attack: 0.01, glide: [1800, 1500], vibrato: { rate: 66, depth: 800 } },
+    ...으르르(170, 0.24, 0.34, 0.055),
   ],
 };
 
@@ -571,7 +588,7 @@ export const animalHappyBlips = (avatar: string, difficulty: Difficulty): Blip[]
   return blips ? 높이기(blips, 수준높이[difficulty]) : null;
 };
 
-export const animalOopsBlips = (avatar: string): Blip[] | null => 갸웃소리[avatar] ?? null;
+export const animalAngryBlips = (avatar: string): Blip[] | null => 화남소리[avatar] ?? null;
 
 /** 맞혔을 때 그 동물이 기뻐합니다. 동물이 없으면 원래 정답 소리를 냅니다. */
 export const playAnimalHappy = (avatar: string, difficulty: Difficulty, fallback?: () => void) => {
@@ -580,9 +597,9 @@ export const playAnimalHappy = (avatar: string, difficulty: Difficulty, fallback
   else playSuccessSound(difficulty, fallback);
 };
 
-/** 틀렸을 때 그 동물이 고개를 갸웃합니다. 동물이 없으면 원래 오답 소리를 냅니다. */
-export const playAnimalOops = (avatar: string) => {
-  const blips = animalOopsBlips(avatar);
+/** 틀렸을 때 그 동물이 화가 나서 으르렁거립니다. 동물이 없으면 원래 오답 소리를 냅니다. */
+export const playAnimalAngry = (avatar: string) => {
+  const blips = animalAngryBlips(avatar);
   if (blips) playBlips(blips);
   else playWrongSound();
 };
