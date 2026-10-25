@@ -1467,12 +1467,9 @@ button:disabled {
   to { top: 78%; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .castle-monster-card {
-    animation: none;
-    top: 30%;
-  }
-}
+/* 컴퓨터에 '움직임 줄이기'(애니메이션 효과 끄기)가 켜져 있어도 몬스터는 내려옵니다.
+   이 내려옴은 꾸밈이 아니라 놀이의 시계입니다 — 멈춰 두면 몬스터가 화면 가운데 서 있기만
+   하고, 다 내려왔을 때(onAnimationEnd) 놓친 것으로 치는 규칙도 사라집니다. */
 
 .student-answer-dock {
   align-self: end;
