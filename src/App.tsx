@@ -42,7 +42,7 @@ import {
 import {
   isMuted,
   playAnimalSound,
-  playFeverBeat, playFeverStart, playFinishSound,
+  playFeverBeat, playFeverStart, playFinishSound, setGameMusicFast, startGameMusic, stopGameMusic, 놀이배경곡,
   playGoalFanfare,
   playReadySound,
   playAnimalAngry,
@@ -909,6 +909,16 @@ function App() {
   // 피버는 그 판이 끝날 때까지 이어집니다 — 꺼졌다 켜지면 신호가 거듭 울려 어수선합니다.
   const feverSeconds = sessionDuration >= 60 ? 30 : 10;
   const [feverOn, setFeverOn] = useState(false);
+  // 놀이 차시(단원 놀이·성 지키기)에는 오락실 배경음악이 돕니다. 피버 타임에는 박자 소리 대신 음악이 빨라집니다.
+  const 놀이곡 = 놀이찾기(lesson) ? 놀이배경곡[놀이찾기(lesson)!.mode] : isCastleLesson(lesson.title) ? 'adventure' : null;
+  useEffect(() => {
+    if (mode === 'playing' && 놀이곡) startGameMusic(놀이곡);
+    else stopGameMusic();
+  }, [mode, 놀이곡]);
+  useEffect(() => () => stopGameMusic(), []);
+  useEffect(() => {
+    setGameMusicFast(feverOn && mode === 'playing');
+  }, [feverOn, mode]);
   useEffect(() => {
     if (mode !== 'playing') {
       setFeverOn(false);
@@ -917,10 +927,10 @@ function App() {
     if (!feverOn && remainingSeconds > 0 && remainingSeconds <= feverSeconds) {
       setFeverOn(true);
       playFeverStart();
-    } else if (feverOn && remainingSeconds > 0 && remainingSeconds <= feverSeconds) {
+    } else if (feverOn && remainingSeconds > 0 && remainingSeconds <= feverSeconds && !놀이곡) {
       playFeverBeat(remainingSeconds);
     }
-  }, [mode, remainingSeconds, feverSeconds, feverOn]);
+  }, [mode, remainingSeconds, feverSeconds, feverOn, 놀이곡]);
 
   useEffect(() => {
     if (mode !== 'playing') return;
