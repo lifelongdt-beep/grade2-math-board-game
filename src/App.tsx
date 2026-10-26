@@ -2563,6 +2563,8 @@ function App() {
                             total={playerQuestions.length}
                             level={state.activeRetry?.level ?? state.level}
                             sharedScreen={!isMobileEntry}
+                            // 틀린 뒤 도움말을 보는 동안에는 몬스터가 더 내려올 까닭이 없습니다. 제자리에 세워 둡니다.
+                            stopped={state.feedback === 'explain'}
                             onTimeout={() => answerQuestion(player, question, -1)}
                           />
                         ) : (
