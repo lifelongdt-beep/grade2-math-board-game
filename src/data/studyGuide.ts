@@ -1,4 +1,4 @@
-import { demandOfStrategy } from './questionFactory';
+import { demandOfStrategy } from './lessonKinds';
 import type { AnswerRecord } from '../types';
 
 // ════════════════════════════════════════════════════════════════════

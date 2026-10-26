@@ -26,7 +26,9 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,ico,woff2}'],
+        // 화면 구상용 그림(ui-concept.png, 1.2MB)은 앱에서 쓰지 않으므로 미리 받아 두지 않습니다.
+        globIgnores: ['**/ui-concept.png'],
         // 문항이 모두 코드 안에 들어 있어 번들이 큽니다. 워크박스는
         // 기본으로 2 MiB가 넘는 파일을 프리캐시에서 빼는데, 그러면
         // 교실에서 인터넷이 끊겼을 때 앱이 열리지 않습니다. 오프라인이
