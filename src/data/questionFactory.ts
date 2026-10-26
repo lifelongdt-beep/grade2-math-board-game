@@ -34,6 +34,7 @@ import {
   SORTING_BAD_GOOD,
 } from './lifeContexts';
 import type { ConceptTag, Difficulty, LearningSupport, Lesson, PlaneShapeKind, PlaneShapeVisualItem, Question, QuestionVisual } from '../types';
+import { ALL_CASTLE_DEFENSE_DANS, CASTLE_DIVIDE_TITLE, CASTLE_MULTIPLY_TITLE, demandOfStrategy, isCastleLesson, type Demand } from './lessonKinds';
 import { questionBank } from './questionBank';
 import { 도입복습차시 } from './introReview';
 import { 그림추론 } from './autoFigure';
@@ -16624,18 +16625,7 @@ const shapesForLesson = (lesson: Lesson): Shape[] => {
 //            예: 상자 3개, 봉지 4개, 낱개 6개면 모두 몇 개?
 //   reason   풀이를 이해하고 판단하거나 거꾸로 생각해야 함
 //            예: 112를 다른 방법으로 나타내면? 이 풀이에서 빠진 곳은?
-type Demand = 'recall' | 'connect' | 'reason';
-
-// 문항이 스스로 밝히는 전략 이름에서 요구 수준을 읽습니다.
-export const demandOfStrategy = (strategy: string): Demand => {
-  if (/판단|옳은|비교|견주|거꾸로|다른 방법|틀린|빠진|차례 정하기|확인하기|규칙|쓰임|바꾸어/.test(strategy)) {
-    return 'reason';
-  }
-  if (/문장|묶음|상황|남은|받고|모두|합|차 구하기|해결/.test(strategy)) {
-    return 'connect';
-  }
-  return 'recall';
-};
+// 요구 수준을 읽는 함수는 화면(학습 안내)도 쓰므로 가벼운 lessonKinds.ts에 둡니다.
 
 // 난이도마다 어떤 요구 수준을 내보낼지입니다. 앞에 적은 것이 중심이고
 // 뒤는 곁들이는 것입니다. 하에 reason이 없고 상에 recall이 없는 것이
@@ -17647,15 +17637,12 @@ const 판매기기 = (qs: Question[], 판: number) => (판 ? qs.map((q) => ({ ..
 // 이 차시의 난이도(하/중/상)는 몬스터가 내려오는 빠르기입니다(App.tsx의
 // CastleDefenseScene 참고). 어느 단을 낼지는 학생이 직접 고르고, 아무 것도
 // 고르지 않았거나 모두 고르면 2~9단이 전부 나옵니다.
-export const ALL_CASTLE_DEFENSE_DANS = [2, 3, 4, 5, 6, 7, 8, 9];
 
 // 3-1 3단원 나눗셈의 마지막 차시는 같은 게임을 나눗셈으로 합니다.
 // 단원 수준 그대로 곱셈구구 안에서 나누어떨어지는 나눗셈만 냅니다:
 // 나누는 수 2~9(학생이 고름), 몫 1~9, 나누어지는 수 81 이하, 나머지 없음,
 // 0 없음. 나누는 수를 고르는 단추는 구구단 단추를 그대로 씁니다.
-export const CASTLE_MULTIPLY_TITLE = '구구단, 몬스터를 막아라!';
-export const CASTLE_DIVIDE_TITLE = '나눗셈, 몬스터를 막아라!';
-export const isCastleLesson = (title: string) => title === CASTLE_MULTIPLY_TITLE || title === CASTLE_DIVIDE_TITLE;
+// (성 지키기 차시 이름과 단 목록은 lessonKinds.ts에 있습니다.)
 
 const generateCastleDivisionQuestions = (lesson: Lesson, difficulty: Difficulty, divisors: number[], 판 = 0): Question[] => {
   const combos: Array<[number, number]> = [];
@@ -17849,3 +17836,6 @@ export const generateLessonBank = (lesson: Lesson): Record<Difficulty, Question[
   중: generateQuestions(lesson, '중'),
   상: generateQuestions(lesson, '상'),
 });
+
+// 예전 경로로 부르던 곳을 위해 그대로 내보냅니다.
+export { ALL_CASTLE_DEFENSE_DANS, CASTLE_DIVIDE_TITLE, CASTLE_MULTIPLY_TITLE, demandOfStrategy, isCastleLesson };
