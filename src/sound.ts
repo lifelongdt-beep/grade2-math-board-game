@@ -927,3 +927,216 @@ export const 놀이스테이지소리: Blip[] = [
 
 export const playGameReady = () => playBlips(놀이준비소리);
 export const playGameStage = () => playBlips(놀이스테이지소리);
+
+// ── 놀이 배경음악 ────────────────────────────────────────────────────
+// 오락실 게임처럼 놀이 내내 신나는 8비트 음악이 돕니다. 네모파 가락, 세모파 베이스,
+// 그리고 북(킥)·작은북(스네어)·하이햇 박자가 8마디를 되풀이합니다. 놀이마다 곡이
+// 다르고(모험·통통·질주), 마지막 피버 타임에는 같은 곡이 빨라집니다.
+//
+// 효과음과 동물 소리가 잘 들리도록 아주 작게 깔고, 소리를 끄면 바로 멈췄다가
+// 다시 켜면 이어서 납니다. 소리는 화면이 하나뿐이라 학생이 여럿이어도 한 곡만 돕니다.
+
+export type 배경곡 = 'adventure' | 'bouncy' | 'dash';
+
+/** 음 이름(C4, F#5…)을 주파수로 바꿉니다. null은 쉼표입니다. */
+const 음높이 = (name: string): number => {
+  const m = /^([A-G])(#?)(\d)$/.exec(name);
+  if (!m) throw new Error(`음 이름이 이상합니다: ${name}`);
+  const 자리 = { C: -9, D: -7, E: -5, F: -4, G: -2, A: 0, B: 2 }[m[1] as 'A'] + (m[2] ? 1 : 0);
+  return 440 * 2 ** ((자리 + (Number(m[3]) - 4) * 12) / 12);
+};
+
+export interface 곡 {
+  bpm: number;
+  /** 8분음표 하나에 한 칸입니다(8마디 = 64칸). */
+  가락: (string | null)[];
+  /** 4분음표 하나에 한 칸입니다(8마디 = 32칸). */
+  베이스: string[];
+}
+
+// 마디마다 8분음표 8칸입니다. '-'는 앞 음을 이어서 끌지 않고 쉽니다.
+const 칸 = (text: string) => text.trim().split(/\s+/).map((one) => (one === '-' ? null : one));
+
+export const 배경곡들: Record<배경곡, 곡> = {
+  // 모험: 다장조, C–G–Am–F를 두 번. 뒤 네 마디는 가락이 한 옥타브 위로 뛰어오릅니다.
+  adventure: {
+    bpm: 150,
+    가락: 칸(`
+      E5 G5 C6 G5 E5 G5 C6 D6   B5 G5 D5 G5 B5 D6 B5 G5
+      C6 A5 E5 A5 C6 E6 D6 C6   A5 F5 C5 F5 A5 C6 B5 G5
+      C6 -  C6 D6 E6 -  D6 C6   D6 -  B5 -  G5 A5 B5 D6
+      E6 -  C6 -  A5 B5 C6 E6   F6 E6 D6 C6 B5 G5 A5 B5`),
+    베이스: 칸(`C3 C3 G2 C3  G2 G2 D3 G2  A2 A2 E3 A2  F2 F2 C3 G2
+               C3 E3 G2 C3  G2 B2 D3 G2  A2 C3 E3 A2  F2 A2 G2 G2`) as string[],
+  },
+  // 통통: 바장조, 통통 튀는 엇박 가락(F–Bb–C–F).
+  bouncy: {
+    bpm: 140,
+    가락: 칸(`
+      F5 -  A5 F5 C6 -  A5 -    D6 -  A#5 F5 D6 -  C6 -
+      C6 -  E5 G5 C6 -  E6 -    F6 E6 C6 A5 F5 -  -  -
+      A5 C6 -  A5 F5 -  A5 C6   A#5 D6 -  A#5 F5 -  D6 -
+      C6 -  G5 C6 E6 -  D6 C6   F5 A5 C6 F6 -  -  F5 -`),
+    베이스: 칸(`F2 C3 F2 C3  A#2 F2 A#2 F2  C3 G2 C3 G2  F2 C3 F2 F2
+               F2 A2 C3 A2  A#2 D3 F3 D3  C3 E3 G3 E3  F2 C3 F2 C3`) as string[],
+  },
+  // 질주: 가단조, 쉬지 않고 내달리는 가락(Am–F–G–Am).
+  dash: {
+    bpm: 164,
+    가락: 칸(`
+      A5 E5 A5 B5 C6 B5 A5 E5   F5 A5 C6 A5 F5 A5 C6 D6
+      D6 B5 G5 B5 D6 E6 D6 B5   C6 B5 A5 G#5 A5 -  E5 -
+      A5 -  C6 -  E6 D6 C6 B5   C6 -  A5 -  F5 G5 A5 C6
+      B5 -  G5 -  D6 C6 B5 G5   A5 E5 A5 C6 E6 -  A5 -`),
+    베이스: 칸(`A2 A2 A3 A2  F2 F2 F3 F2  G2 G2 G3 G2  A2 A2 E3 A2
+               A2 E3 A2 E3  F2 C3 F2 C3  G2 D3 G2 D3  A2 E3 A2 E3`) as string[],
+  },
+};
+
+/** 놀이 방법마다 어울리는 곡입니다. */
+export const 놀이배경곡: Record<놀이소리모드, 배경곡> = {
+  monster: 'adventure', tunnel3d: 'adventure', rocket: 'adventure',
+  balloon: 'bouncy', mole: 'bouncy', dice3d: 'bouncy',
+  race: 'dash', treasure: 'dash',
+};
+
+const 배경 = {
+  곡: null as 배경곡 | null,
+  빠르게: false,
+  시계: 0 as number,
+  다음칸: 0,
+  다음때: 0,
+  출력: null as GainNode | null,
+  소음: null as AudioBuffer | null,
+};
+
+// 하이햇·작은북에 쓰는 흰 소음입니다. 한 번 만들어 계속 씁니다.
+const 소음버퍼 = (ready: AudioContext) => {
+  if (배경.소음) return 배경.소음;
+  const buffer = ready.createBuffer(1, Math.floor(ready.sampleRate * 0.2), ready.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
+  배경.소음 = buffer;
+  return buffer;
+};
+
+const 음하나 = (ready: AudioContext, out: AudioNode, type: OscillatorType, frequency: number, at: number, length: number, volume: number, slideTo?: number) => {
+  const osc = ready.createOscillator();
+  const gain = ready.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(frequency, at);
+  if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, at + length);
+  gain.gain.setValueAtTime(0.0001, at);
+  gain.gain.exponentialRampToValueAtTime(volume, at + 0.008);
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + length);
+  osc.connect(gain);
+  gain.connect(out);
+  osc.start(at);
+  osc.stop(at + length + 0.02);
+  osc.onended = () => { osc.disconnect(); gain.disconnect(); };
+};
+
+const 소음하나 = (ready: AudioContext, out: AudioNode, at: number, length: number, volume: number, 높이: number) => {
+  const src = ready.createBufferSource();
+  src.buffer = 소음버퍼(ready);
+  const filter = ready.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.setValueAtTime(높이, at);
+  const gain = ready.createGain();
+  gain.gain.setValueAtTime(volume, at);
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + length);
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(out);
+  src.start(at);
+  src.stop(at + length + 0.02);
+  src.onended = () => { src.disconnect(); filter.disconnect(); gain.disconnect(); };
+};
+
+/** 8분음표 한 칸에 들어갈 소리를 예약합니다. 칸은 0부터 63까지 돕니다. */
+const 칸예약 = (ready: AudioContext, out: AudioNode, 노래: 곡, 칸번호: number, at: number, 한칸: number) => {
+  const 가락 = 노래.가락[칸번호 % 노래.가락.length];
+  if (가락) 음하나(ready, out, 'square', 음높이(가락), at, 한칸 * 0.9, 0.05);
+  if (칸번호 % 2 === 0) {
+    const 베이스 = 노래.베이스[(칸번호 / 2) % 노래.베이스.length];
+    if (베이스) 음하나(ready, out, 'triangle', 음높이(베이스), at, 한칸 * 1.8, 0.11);
+    // 북: 1·3박에 쿵, 2·4박에 탁.
+    const 박 = (칸번호 / 2) % 4;
+    if (박 === 0 || 박 === 2) 음하나(ready, out, 'sine', 140, at, 0.16, 0.16, 45);
+    else 소음하나(ready, out, at, 0.11, 0.07, 1500);
+  }
+  // 하이햇: 8분음표마다 칙.
+  소음하나(ready, out, at, 0.035, 칸번호 % 2 ? 0.025 : 0.035, 7000);
+};
+
+const 배경돌기 = () => {
+  const ready = context;
+  if (!ready || !배경.곡 || !배경.출력) return;
+  const 노래 = 배경곡들[배경.곡];
+  const 한칸 = 60 / (노래.bpm * (배경.빠르게 ? 1.25 : 1)) / 2;
+  // 0.2초 앞까지 미리 예약해 둡니다. 화면이 잠깐 멈춰도 박자가 흔들리지 않습니다.
+  if (배경.다음때 < ready.currentTime) 배경.다음때 = ready.currentTime + 0.05;
+  while (배경.다음때 < ready.currentTime + 0.2) {
+    칸예약(ready, 배경.출력, 노래, 배경.다음칸, 배경.다음때, 한칸);
+    배경.다음칸 = (배경.다음칸 + 1) % 64;
+    배경.다음때 += 한칸;
+  }
+};
+
+const 배경멈추기 = () => {
+  window.clearInterval(배경.시계);
+  배경.시계 = 0;
+  if (배경.출력 && context) {
+    // 뚝 끊기지 않게 살짝 줄이며 끕니다.
+    const out = 배경.출력;
+    out.gain.setTargetAtTime(0.0001, context.currentTime, 0.05);
+    window.setTimeout(() => out.disconnect(), 400);
+  }
+  배경.출력 = null;
+};
+
+const 배경켜기 = () => {
+  if (muted || !배경.곡 || 배경.시계) return;
+  const ready = audioContext();
+  if (!ready) return;
+  if (ready.state === 'suspended') void ready.resume();
+  const out = ready.createGain();
+  // 전체 크기입니다. 효과음보다 확실히 작게 둡니다.
+  out.gain.setValueAtTime(0.0001, ready.currentTime);
+  out.gain.setTargetAtTime(배경음크기, ready.currentTime, 0.2);
+  out.connect(ready.destination);
+  배경.출력 = out;
+  배경.다음때 = ready.currentTime + 0.1;
+  배경돌기();
+  배경.시계 = window.setInterval(배경돌기, 50);
+};
+
+/** 배경음악 전체 크기입니다. */
+export const 배경음크기 = 0.45;
+
+/** 놀이 배경음악을 틉니다. 같은 곡이 이미 돌고 있으면 그대로 둡니다. */
+export const startGameMusic = (곡이름: 배경곡) => {
+  if (배경.곡 === 곡이름 && 배경.시계) return;
+  if (배경.시계) 배경멈추기();
+  배경.곡 = 곡이름;
+  배경.다음칸 = 0;
+  배경켜기();
+};
+
+/** 배경음악을 멈춥니다. */
+export const stopGameMusic = () => {
+  배경.곡 = null;
+  배경.빠르게 = false;
+  배경멈추기();
+};
+
+/** 피버 타임에는 같은 곡을 1.25배 빠르게 돌립니다. */
+export const setGameMusicFast = (빠르게: boolean) => {
+  배경.빠르게 = 빠르게;
+};
+
+// 소리를 끄면 배경음악도 멈추고, 다시 켜면 이어서 납니다.
+watchMuted((value) => {
+  if (value) 배경멈추기();
+  else 배경켜기();
+});
