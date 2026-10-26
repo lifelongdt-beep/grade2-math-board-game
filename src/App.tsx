@@ -58,6 +58,8 @@ import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
 import { HighlightedPrompt } from './components/HighlightedPrompt';
 import { MathText } from './components/MathText';
 import { CastleDefenseScene } from './components/CastleDefenseScene';
+import { GameScene } from './components/GameScene';
+import { 놀이문항, 놀이차시붙이기, 놀이차시인가, 놀이찾기 } from './data/games';
 import { MONSTER_HP, UnitMonster, 단원몬스터찾기 } from './components/UnitMonster';
 import { InteractiveHintModal } from './components/InteractiveHintModal';
 import { ManipulateTask } from './components/Manipulate';
@@ -156,7 +158,8 @@ type InitialRoute = {
 // 2학년 차시와 5학년 차시를 한 앱에서 씁니다. 2학년 문항을 지키는
 // 시험들이 curriculum만 훑도록, 두 학기는 파일을 따로 두고 여기서만
 // 이어 붙입니다.
-const curriculum: Unit[] = [...curriculum11, ...curriculum12, ...curriculum2, ...curriculum31, ...curriculum32, ...curriculum41, ...curriculum42, ...curriculum51, ...curriculum5, ...curriculum61, ...curriculum62];
+// 단원마다 맨 앞에 놀이 차시를 붙입니다(data/games). 교과 차시 자료는 그대로 둡니다.
+const curriculum: Unit[] = 놀이차시붙이기([...curriculum11, ...curriculum12, ...curriculum2, ...curriculum31, ...curriculum32, ...curriculum41, ...curriculum42, ...curriculum51, ...curriculum5, ...curriculum61, ...curriculum62]);
 
 const isSemesterValue = (value: string | null): value is Unit['semester'] =>
   value === '1-1' || value === '1-2' || value === '2-1' || value === '2-2' || value === '3-1' || value === '3-2' || value === '4-1' || value === '4-2' || value === '5-1' || value === '5-2' || value === '6-1' || value === '6-2';
@@ -385,6 +388,8 @@ const buildScopedQuestions = (
   // 판을 여러 벌 이어 붙입니다. 판마다 같은 틀에 다른 수가 들어가므로, 한
   // 판(차시마다 서른 문항쯤)을 다 풀어도 바로 같은 문제가 되풀이되지 않습니다.
   // 판끼리 우연히 같은 문항은 한 번만 둡니다.
+  // 단원 놀이 차시는 그 단원 차시들에서 놀이에 맞는 문항을 골라 냅니다(data/games).
+  if (lessons.length === 1 && 놀이차시인가(lessons[0])) return 놀이문항(lessons[0], difficulty, bankSeed);
   const 본 = new Set<string>();
   // 여러 차시를 함께 고르면 한 판만으로도 문제집이 넉넉하므로, 문제집이
   // 백오십 문항쯤 되는 데까지만 판을 더합니다(만드는 시간을 아낍니다).
@@ -669,7 +674,8 @@ function App() {
     () => {
       // 단원·학기 종합은 그 단원 차시의 내용만 냅니다. 단원 도입 차시는 앞
       // 학기·앞 학년 단원을 복습하므로(introReview.ts) 종합에서는 뺍니다.
-      const 이단원차시 = (unit: (typeof semesterUnits)[number]) => unit.lessons.filter((item) => !도입차시인가(item));
+      // 놀이 차시는 그 단원 문항을 다시 쓰는 것이라 종합에 넣지 않습니다.
+      const 이단원차시 = (unit: (typeof semesterUnits)[number]) => unit.lessons.filter((item) => !도입차시인가(item) && !놀이차시인가(item));
       if (reviewScope === 'semester') return semesterUnits.flatMap(이단원차시);
       if (reviewScope === 'unit') return 이단원차시(selectedUnit);
       return [selectedLesson];
@@ -683,7 +689,7 @@ function App() {
     },
     [reviewScope, selectedLesson, selectedUnit, semester, semesterUnits],
   );
-  const lessonHeading = reviewScope === 'lesson' ? `${lesson.lessonNo}차시 · ${lesson.title}` : lesson.title;
+  const lessonHeading = reviewScope !== 'lesson' ? lesson.title : 놀이차시인가(lesson) ? `🎮 놀이 · ${lesson.title}` : `${lesson.lessonNo}차시 · ${lesson.title}`;
   const lessonContextLabel =
     reviewScope === 'semester'
       ? `${semester} · 학기 종합`
@@ -1057,6 +1063,9 @@ function App() {
   // 정답을 고르고 다음 문제로 넘어가는 방식은 다른 차시와 똑같습니다.
   // 3-1 '나눗셈, 몬스터를 막아라!'도 같은 그림을 씁니다(단추는 나누는 수).
   const isCastleDefense = isCastleLesson(lesson.title);
+  // 단원 맨 앞의 놀이 차시입니다. 성 지키기처럼 문제 자리를 놀이 그림이 차지합니다.
+  const game = 놀이찾기(lesson);
+  const isPlayScene = isCastleDefense || Boolean(game);
   const isCastleDivide = lesson.title === CASTLE_DIVIDE_TITLE;
   const CASTLE_HEARTS_MAX = 8;
 
@@ -1568,7 +1577,7 @@ function App() {
           })()),
     };
 
-    if (isCorrect && !isCastleDefense) {
+    if (isCorrect && !isPlayScene) {
       // 단원 몬스터가 한 대 맞습니다. 세 대를 맞으면 쓰러지고 다음 몬스터가 나옵니다.
       const 앞몬스터 = monsters[player.id] ?? { hits: 0, defeated: 0 };
       const 쓰러짐 = 앞몬스터.hits + 1 >= MONSTER_HP;
@@ -1727,7 +1736,7 @@ function App() {
           ) : (
             <select value={lesson.id} onChange={(event) => setLessonId(event.target.value)}>
               {selectedUnit.lessons.map((item) => (
-                <option value={item.id} key={item.id}>{item.lessonNo}차시 · {item.title}</option>
+                <option value={item.id} key={item.id}>{놀이차시인가(item) ? '🎮 놀이' : `${item.lessonNo}차시`} · {item.title}</option>
               ))}
               <option value={unitReviewId}>단원 종합 · {selectedUnit.title} 전체</option>
             </select>
@@ -2545,7 +2554,7 @@ function App() {
                         </div>
                         {/* 틀린 뒤 도움말이 열리면 몬스터는 비켜 섭니다. 이 칸은 높이가 정해져 있어,
                             몬스터가 남아 있으면 문제 글이 밀려 가려집니다. */}
-                        {!isCastleDefense && state.feedback !== 'explain' && (
+                        {!isPlayScene && state.feedback !== 'explain' && (
                           <UnitMonster
                             tag={lesson.tags[0] ?? question.type}
                             hits={monsters[player.id]?.hits ?? 0}
@@ -2553,7 +2562,21 @@ function App() {
                             taunting={wrongActive}
                           />
                         )}
-                        {isCastleDefense ? (
+                        {game ? (
+                          <GameScene
+                            game={game}
+                            questionKey={question.id}
+                            prompt={question.prompt}
+                            visual={question.visual}
+                            level={state.activeRetry?.level ?? state.level}
+                            correct={result.correct}
+                            wrong={result.wrong}
+                            avatar={player.avatar}
+                            sharedScreen={!isMobileEntry}
+                            stopped={state.feedback === 'explain'}
+                            onTimeout={() => answerQuestion(player, question, -1)}
+                          />
+                        ) : isCastleDefense ? (
                           <CastleDefenseScene
                             questionKey={question.id}
                             prompt={question.prompt}
@@ -2563,6 +2586,8 @@ function App() {
                             total={playerQuestions.length}
                             level={state.activeRetry?.level ?? state.level}
                             sharedScreen={!isMobileEntry}
+                            // 틀린 뒤 도움말을 보는 동안에는 몬스터가 더 내려올 까닭이 없습니다. 제자리에 세워 둡니다.
+                            stopped={state.feedback === 'explain'}
                             onTimeout={() => answerQuestion(player, question, -1)}
                           />
                         ) : (
@@ -2608,7 +2633,7 @@ function App() {
                             {/* 고학년 계산은 암산으로 되지 않습니다. 적을
                                 자리가 없으면 아이는 머릿속으로 하다 틀리거나
                                 찍습니다. 손으로 풀 자리를 문제 옆에 둡니다. */}
-                            {!isCastleDefense && (
+                            {!isPlayScene && (
                               <button
                                 type="button"
                                 className="scratch-toggle-button"
@@ -2678,7 +2703,7 @@ function App() {
                             넣어, 다음 문제로 넘어가면 쓴 것이 지워집니다.
                             성 지키기는 몬스터가 내려오는 화면이라 덮지
                             않습니다. */}
-                        {!isCastleDefense && (
+                        {!isPlayScene && (
                           <ScratchPad
                             key={`${player.id}-${question.id}-${state.answered}`}
                             open={Boolean(scratchOpen[player.id])}
@@ -2709,7 +2734,7 @@ function App() {
 
                       {state.feedback === 'explain' && (
                         <div className="student-feedback wrong-feedback">
-                          <strong><XCircle size={18} /> {isCastleDefense ? '성벽이 흔들렸어요!' : '짧은 도움'}</strong>
+                          <strong><XCircle size={18} /> {game ? game.missTitle : isCastleDefense ? '성벽이 흔들렸어요!' : '짧은 도움'}</strong>
                           <div className="support-card quick-support-card" aria-label={`${player.name} 오답 도움`}>
                             <p className="quick-core"><span>핵심</span><span><MathText text={question.support.studentConcept} /></span></p>
                             <p><span>볼 곳</span><span><MathText text={question.support.studentHint} /></span></p>
