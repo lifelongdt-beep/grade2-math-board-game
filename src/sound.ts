@@ -736,3 +736,194 @@ export const playFeverBeat = (tick: number) => {
     { frequency: 높음 ? 1567.98 : 1318.51, at: 0.5, length: 0.07, volume: 0.03, type: 'triangle' },
   ]);
 };
+
+// ── 단원 놀이 효과음 ─────────────────────────────────────────────────
+// 놀이마다 맞힌 소리·놓친 소리·문제가 나오는 소리가 다릅니다. 몬스터는 광선이
+// '퓨웅' 나가 '쾅' 터지고, 풍선은 '팡', 두더지는 망치로 '뿅', 로켓은 '슈우웅'
+// 올라가고, 보물 상자는 동전이 '짤랑'거립니다. 연달아 맞히면 맞힐 때마다 한 칸씩
+// 높아지는 콤보 소리가 뒤따르고, 시간이 3초 남으면 '똑딱'으로 서두르게 합니다.
+//
+// 동물 친구의 기쁨·화남 소리와 함께 울리므로, 하나하나는 짧고(0.6초 안쪽)
+// 작게(0.1 이하) 둡니다. 다섯이 한꺼번에 내도 시끄럽지 않아야 합니다.
+
+export type 놀이소리모드 = 'monster' | 'balloon' | 'mole' | 'rocket' | 'race' | 'treasure' | 'tunnel3d' | 'dice3d';
+
+// 터지는 소리입니다. 거친 톱니파를 빠르게 떨며 낮게 떨어뜨리면 '쾅'처럼 들립니다.
+const 쾅 = (at: number, volume = 0.07): Blip[] => [
+  { frequency: 150, at, length: 0.32, volume, type: 'sawtooth', slideTo: 40, vibrato: { rate: 47, depth: 38 } },
+  { frequency: 90, at, length: 0.3, volume: volume * 0.8, type: 'sine', slideTo: 35 },
+];
+
+const 맞힘효과: Record<놀이소리모드, Blip[]> = {
+  // 퓨웅 — 쾅!
+  monster: [
+    { frequency: 1900, at: 0, length: 0.16, volume: 0.05, type: 'square', slideTo: 320 },
+    ...쾅(0.12),
+  ],
+  // 팡! — 그리고 색종이가 반짝반짝
+  balloon: [
+    { frequency: 1500, at: 0, length: 0.06, volume: 0.09, type: 'triangle', slideTo: 180 },
+    { frequency: 220, at: 0, length: 0.08, volume: 0.06, type: 'sawtooth', slideTo: 70 },
+    { frequency: 2349.32, at: 0.1, length: 0.12, volume: 0.035, type: 'sine' },
+    { frequency: 3135.96, at: 0.18, length: 0.16, volume: 0.03, type: 'sine' },
+  ],
+  // 딱(망치) — 뿅!
+  mole: [
+    { frequency: 260, at: 0, length: 0.08, volume: 0.09, type: 'triangle', slideTo: 110 },
+    { frequency: 1800, at: 0, length: 0.03, volume: 0.05, type: 'square' },
+    { frequency: 600, at: 0.08, length: 0.14, volume: 0.07, type: 'sine', slideTo: 1500 },
+  ],
+  // 슈우우웅 — 위로 솟구칩니다.
+  rocket: [
+    { frequency: 180, at: 0, length: 0.45, volume: 0.05, type: 'sawtooth', slideTo: 1400, vibrato: { rate: 33, depth: 45 } },
+    { frequency: 400, at: 0.05, length: 0.4, volume: 0.05, type: 'sine', slideTo: 2200 },
+  ],
+  // 쌩 — 다다닥 달려 나갑니다.
+  race: [
+    { frequency: 500, at: 0, length: 0.18, volume: 0.06, type: 'triangle', glide: [900, 1600] },
+    { frequency: 330, at: 0.16, length: 0.05, volume: 0.07, type: 'square' },
+    { frequency: 392, at: 0.23, length: 0.05, volume: 0.07, type: 'square' },
+    { frequency: 494, at: 0.3, length: 0.05, volume: 0.07, type: 'square' },
+  ],
+  // 끼익(상자 열림) — 짤랑짤랑(동전)
+  treasure: [
+    { frequency: 300, at: 0, length: 0.12, volume: 0.04, type: 'square', slideTo: 520 },
+    { frequency: 1975.53, at: 0.12, length: 0.07, volume: 0.06, type: 'square' },
+    { frequency: 2637.02, at: 0.18, length: 0.2, volume: 0.06, type: 'square' },
+    { frequency: 1975.53, at: 0.3, length: 0.06, volume: 0.04, type: 'square' },
+    { frequency: 2637.02, at: 0.36, length: 0.18, volume: 0.04, type: 'square' },
+  ],
+  // 지이잉(빔) — 콰광!
+  tunnel3d: [
+    { frequency: 2600, at: 0, length: 0.14, volume: 0.045, type: 'sawtooth', slideTo: 700 },
+    { frequency: 1300, at: 0.02, length: 0.12, volume: 0.04, type: 'square', slideTo: 400 },
+    ...쾅(0.11, 0.075),
+  ],
+  // 다그르르 — 띵!
+  dice3d: [
+    { frequency: 1300, at: 0, length: 0.025, volume: 0.06, type: 'square' },
+    { frequency: 1100, at: 0.05, length: 0.025, volume: 0.06, type: 'square' },
+    { frequency: 1450, at: 0.09, length: 0.025, volume: 0.06, type: 'square' },
+    { frequency: 1200, at: 0.13, length: 0.025, volume: 0.06, type: 'square' },
+    { frequency: 1567.98, at: 0.2, length: 0.3, volume: 0.07, type: 'triangle' },
+    { frequency: 2349.32, at: 0.22, length: 0.28, volume: 0.03, type: 'sine' },
+  ],
+};
+
+const 놓침효과: Record<놀이소리모드, Blip[]> = {
+  // 쿵! 성벽에 부딪힙니다.
+  monster: [
+    ...쾅(0, 0.08),
+    { frequency: 200, at: 0.12, length: 0.3, volume: 0.05, type: 'triangle', slideTo: 90 },
+  ],
+  // 휘이잉 — 풍선이 하늘로 날아가 버립니다.
+  balloon: [
+    { frequency: 700, at: 0, length: 0.5, volume: 0.05, type: 'sine', glide: [1100, 1700, 2400], vibrato: { rate: 9, depth: 40 } },
+  ],
+  // 쏘옥 — 두더지가 숨어 버립니다.
+  mole: [
+    { frequency: 1000, at: 0, length: 0.22, volume: 0.07, type: 'sine', slideTo: 180 },
+    { frequency: 150, at: 0.2, length: 0.08, volume: 0.05, type: 'triangle' },
+  ],
+  // 피시식 — 연료가 새어 버립니다.
+  rocket: [
+    { frequency: 320, at: 0, length: 0.5, volume: 0.05, type: 'sawtooth', slideTo: 60, vibrato: { rate: 60, depth: 80 } },
+  ],
+  // 뚜벅뚜벅 — 거북이가 한 걸음 앞섭니다.
+  race: [
+    { frequency: 330, at: 0, length: 0.12, volume: 0.07, type: 'triangle' },
+    { frequency: 262, at: 0.16, length: 0.12, volume: 0.07, type: 'triangle' },
+    { frequency: 196, at: 0.32, length: 0.22, volume: 0.06, type: 'triangle', slideTo: 165 },
+  ],
+  // 철컥 — 상자가 잠겨 버립니다.
+  treasure: [
+    { frequency: 220, at: 0, length: 0.05, volume: 0.08, type: 'square' },
+    { frequency: 150, at: 0.07, length: 0.09, volume: 0.08, type: 'square' },
+    { frequency: 110, at: 0.1, length: 0.25, volume: 0.04, type: 'triangle', slideTo: 80 },
+  ],
+  // 콰앙! — 운석에 부딪혀 우주선이 흔들립니다.
+  tunnel3d: [
+    ...쾅(0, 0.085),
+    { frequency: 500, at: 0.05, length: 0.4, volume: 0.04, type: 'square', slideTo: 120, vibrato: { rate: 18, depth: 60 } },
+  ],
+  // 딸깍 — 와아앙(주사위가 멈춰 버렸어요)
+  dice3d: [
+    { frequency: 900, at: 0, length: 0.03, volume: 0.07, type: 'square' },
+    { frequency: 600, at: 0.05, length: 0.04, volume: 0.07, type: 'square' },
+    { frequency: 392, at: 0.12, length: 0.36, volume: 0.06, type: 'triangle', slideTo: 196 },
+  ],
+};
+
+// 새 문제가 나올 때의 작은 신호입니다. 매 문제 울리므로 가장 작게 둡니다.
+const 등장효과: Record<놀이소리모드, Blip[]> = {
+  monster: [{ frequency: 1600, at: 0, length: 0.32, volume: 0.03, type: 'sine', slideTo: 600 }],
+  balloon: [{ frequency: 300, at: 0, length: 0.24, volume: 0.035, type: 'sine', slideTo: 760 }],
+  mole: [{ frequency: 500, at: 0, length: 0.08, volume: 0.045, type: 'sine', slideTo: 1200 }],
+  rocket: [
+    { frequency: 880, at: 0, length: 0.05, volume: 0.035, type: 'triangle' },
+    { frequency: 1174.66, at: 0.08, length: 0.06, volume: 0.035, type: 'triangle' },
+  ],
+  race: [{ frequency: 700, at: 0, length: 0.05, volume: 0.04, type: 'square' }],
+  treasure: [{ frequency: 2800, at: 0, length: 0.16, volume: 0.018, type: 'sawtooth', vibrato: { rate: 70, depth: 500 } }],
+  tunnel3d: [{ frequency: 180, at: 0, length: 0.4, volume: 0.035, type: 'sine', slideTo: 900 }],
+  dice3d: [
+    { frequency: 1250, at: 0, length: 0.02, volume: 0.03, type: 'square' },
+    { frequency: 1050, at: 0.05, length: 0.02, volume: 0.03, type: 'square' },
+    { frequency: 1350, at: 0.1, length: 0.02, volume: 0.03, type: 'square' },
+  ],
+};
+
+// 콤보 소리는 도 레 미 솔 라(5음 음계)를 따라 맞힐 때마다 한 칸씩 올라갑니다.
+const 콤보계단 = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+
+/** 연달아 맞힌 수(2 이상)에 따라 높아지는 콤보 소리입니다. 다섯 번째마다 화음을 얹어 크게 축하합니다. */
+export const 콤보소리 = (연속: number): Blip[] => {
+  if (연속 < 2) return [];
+  const 칸 = 콤보계단[Math.min(연속 - 2, 콤보계단.length - 1)];
+  const 바탕 = 783.99 * 2 ** (칸 / 12);
+  const blips: Blip[] = [
+    { frequency: 바탕, at: 0.2, length: 0.08, volume: 0.06, type: 'triangle' },
+    { frequency: 바탕 * 1.5, at: 0.27, length: 0.16, volume: 0.06, type: 'triangle' },
+  ];
+  if (연속 % 5 === 0) {
+    blips.push(
+      { frequency: 바탕 * 1.25, at: 0.34, length: 0.22, volume: 0.045, type: 'square' },
+      { frequency: 바탕 * 2, at: 0.36, length: 0.22, volume: 0.035, type: 'sine', slideTo: 바탕 * 3 },
+    );
+  }
+  return blips;
+};
+
+export const 놀이맞힘소리 = (mode: 놀이소리모드, 연속: number): Blip[] => [...맞힘효과[mode], ...콤보소리(연속)];
+export const 놀이놓침소리 = (mode: 놀이소리모드): Blip[] => 놓침효과[mode];
+export const 놀이등장소리 = (mode: 놀이소리모드): Blip[] => 등장효과[mode];
+
+/** 시간이 얼마 남지 않았을 때의 '똑딱'입니다. 마지막(남은 1초)은 더 높게 울립니다. */
+export const 놀이똑딱소리 = (남은초: number): Blip[] => [
+  { frequency: 남은초 <= 1 ? 1760 : 1318.51, at: 0, length: 0.04, volume: 0.04, type: 'square' },
+];
+
+export const playGameHit = (mode: 놀이소리모드, 연속: number) => playBlips(놀이맞힘소리(mode, 연속));
+export const playGameMiss = (mode: 놀이소리모드) => playBlips(놀이놓침소리(mode));
+export const playGameSpawn = (mode: 놀이소리모드) => playBlips(놀이등장소리(mode));
+export const playGameTick = (남은초: number) => playBlips(놀이똑딱소리(남은초));
+
+// 오락실 출발 신호입니다 — 삐, 삐, 뿌우! 두 번 낮게 울린 뒤 한 옥타브 높게 길게 울립니다.
+export const 놀이준비소리: Blip[] = [
+  { frequency: 523.25, at: 0.15, length: 0.12, volume: 0.06, type: 'square' },
+  { frequency: 523.25, at: 0.55, length: 0.12, volume: 0.06, type: 'square' },
+  { frequency: 1046.5, at: 0.95, length: 0.35, volume: 0.07, type: 'square' },
+  { frequency: 1567.98, at: 0.97, length: 0.33, volume: 0.03, type: 'sine' },
+];
+
+// 스테이지가 오를 때의 짧은 팡파르입니다. 맞힌 소리 뒤에 이어 울립니다.
+export const 놀이스테이지소리: Blip[] = [
+  { frequency: 523.25, at: 0.45, length: 0.08, volume: 0.06, type: 'square' },
+  { frequency: 659.25, at: 0.53, length: 0.08, volume: 0.06, type: 'square' },
+  { frequency: 783.99, at: 0.61, length: 0.08, volume: 0.06, type: 'square' },
+  { frequency: 1046.5, at: 0.69, length: 0.3, volume: 0.07, type: 'square' },
+  { frequency: 2093, at: 0.71, length: 0.28, volume: 0.025, type: 'sine', slideTo: 3135.96 },
+];
+
+export const playGameReady = () => playBlips(놀이준비소리);
+export const playGameStage = () => playBlips(놀이스테이지소리);

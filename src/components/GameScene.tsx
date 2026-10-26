@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import type { Difficulty, QuestionVisual } from '../types';
 import { QuestionVisualGraphic } from './QuestionVisualGraphic';
 import { 놀이시간, type GameInfo, type GameMode } from '../data/games';
+import { playGameHit, playGameMiss, playGameReady, playGameSpawn, playGameStage, playGameTick } from '../sound';
 
 // ════════════════════════════════════════════════════════════════════
 // 단원 놀이 화면
@@ -16,6 +17,14 @@ import { 놀이시간, type GameInfo, type GameMode } from '../data/games';
 // 튀고, 연달아 맞히면 콤보가 붙고 놀이가 조금씩 빨라집니다. 놓치면 화면이
 // 흔들리고 콤보가 끊깁니다. 배경(별·구름·길·터널)은 늘 움직여 멈춘 그림처럼
 // 보이지 않게 합니다.
+//
+// 소리도 놀이마다 다릅니다(sound.ts의 단원 놀이 효과음). 문제가 나올 때 작은
+// 신호, 맞히면 놀이에 맞는 효과음과 높아지는 콤보 소리, 놓치면 놓친 소리, 시간이
+// 3초 남으면 똑딱 소리가 납니다.
+//
+// 화면은 오락실 게임처럼 꾸밉니다. 처음에 READY? GO!가 뜨고, 위에는 점수판(SCORE)과
+// 스테이지가 있습니다. 맞히면 +100이 튀어 오르고, 연달아 맞히면 배율(×2, ×3…)이 붙어
+// 점수가 크게 오릅니다. 10문제를 맞힐 때마다 STAGE가 올라가며 조금 더 빨라집니다.
 //
 // 내려오고 날아오는 움직임은 꾸밈이 아니라 놀이의 시계이므로, 컴퓨터의
 // '움직임 줄이기' 설정과 상관없이 움직입니다.
@@ -42,25 +51,35 @@ const 터짐: Record<GameMode, { 큰: string; 말: string[]; 조각: string[] }>
   dice3d: { 큰: '🎲', 말: ['데구르르!', '착!', '굴렸다!'], 조각: ['⭐', '✨', '🎯'] },
 };
 
-/** 연달아 맞힐 때마다 시간이 조금씩 줄어 놀이가 빨라집니다. 아무리 빨라도 처음의 4분의 3까지만 줄입니다. */
-const 빨라짐 = (연속: number) => Math.max(0.75, 1 - 연속 * 0.04);
+/**
+ * 연달아 맞힐 때마다, 그리고 스테이지가 오를 때마다 시간이 조금씩 줄어 놀이가 빨라집니다.
+ * 아무리 빨라도 처음 시간의 70%까지만 줄입니다.
+ */
+const 빨라짐 = (연속: number, 스테이지: number) => Math.max(0.7, 1 - 연속 * 0.04 - (스테이지 - 1) * 0.03);
+
+/** 한 스테이지는 10문제입니다. */
+const 스테이지문제 = 10;
+/** 연속 세 번마다 배율이 1씩 오릅니다(최대 ×5). */
+export const 점수배율 = (연속: number) => Math.min(5, 1 + Math.floor(Math.max(0, 연속 - 1) / 3));
 
 /** 맞힘·놓침이 새로 생긴 순간을 알아챕니다. 처음 그릴 때 이미 있던 기록으로는 터지지 않습니다. */
 function use놀이사건(correct: number, wrong: number) {
   const 앞 = useRef({ correct, wrong });
-  const [사건, set사건] = useState({ 맞힘: 0, 놓침: 0, 연속: 0, 최고: 0 });
+  const 처음 = { 맞힘: 0, 놓침: 0, 연속: 0, 최고: 0, 점수: 0, 얻은: 0 };
+  const [사건, set사건] = useState(처음);
   useEffect(() => {
     const 전 = 앞.current;
     if (correct > 전.correct) {
       set사건((one) => {
         const 연속 = one.연속 + (correct - 전.correct);
-        return { ...one, 맞힘: one.맞힘 + 1, 연속, 최고: Math.max(one.최고, 연속) };
+        const 얻은 = 100 * 점수배율(연속);
+        return { ...one, 맞힘: one.맞힘 + 1, 연속, 최고: Math.max(one.최고, 연속), 점수: one.점수 + 얻은, 얻은 };
       });
     } else if (wrong > 전.wrong) {
       set사건((one) => ({ ...one, 놓침: one.놓침 + 1, 연속: 0 }));
     } else if (correct < 전.correct || wrong < 전.wrong) {
       // 다시 시작했습니다.
-      set사건({ 맞힘: 0, 놓침: 0, 연속: 0, 최고: 0 });
+      set사건(처음);
     }
     앞.current = { correct, wrong };
   }, [correct, wrong]);
@@ -84,10 +103,43 @@ interface GameSceneProps {
 }
 
 export function GameScene({ game, questionKey, prompt, visual, level, correct, wrong, avatar, sharedScreen, stopped, onTimeout }: GameSceneProps) {
-  const { 맞힘, 놓침, 연속 } = use놀이사건(correct, wrong);
-  const 초 = (놀이시간[level] + (sharedScreen && level === '상' ? 함께쓰는화면덤 : 0)) * 빨라짐(연속);
+  const { 맞힘, 놓침, 연속, 점수, 얻은 } = use놀이사건(correct, wrong);
+  const 스테이지 = 1 + Math.floor(맞힘 / 스테이지문제);
+  const 배율 = 점수배율(연속);
+  const 초 = (놀이시간[level] + (sharedScreen && level === '상' ? 함께쓰는화면덤 : 0)) * 빨라짐(연속, 스테이지);
+
+  // 처음 화면에 들어오면 READY? GO!를 띄우고 출발 신호를 울립니다.
+  const [준비, set준비] = useState(true);
+  useEffect(() => {
+    playGameReady();
+    const 끝 = window.setTimeout(() => set준비(false), 1500);
+    return () => window.clearTimeout(끝);
+  }, []);
   const 시계: CSSProperties | undefined = stopped ? undefined : { animationDuration: `${초.toFixed(2)}s` };
   const 끝나면 = stopped ? undefined : onTimeout;
+
+  // 맞힘·놓침이 새로 생기면 그 놀이의 효과음을 냅니다.
+  const 소리낸 = useRef({ 맞힘, 놓침 });
+  useEffect(() => {
+    if (맞힘 > 소리낸.current.맞힘) {
+      playGameHit(game.mode, 연속);
+      if (맞힘 % 스테이지문제 === 0) playGameStage();
+    }
+    else if (놓침 > 소리낸.current.놓침) playGameMiss(game.mode);
+    소리낸.current = { 맞힘, 놓침 };
+  }, [맞힘, 놓침, 연속, game.mode]);
+
+  // 새 문제가 나오면 작은 신호를 내고, 시간이 3초 남으면 1초마다 똑딱입니다.
+  // 맞힌 소리와 겹치지 않게 등장 신호는 조금 늦게 냅니다.
+  useEffect(() => {
+    if (stopped) return undefined;
+    const 시계들 = [window.setTimeout(() => playGameSpawn(game.mode), 380)];
+    for (const 남은 of [3, 2, 1]) {
+      const 언제 = (초 - 남은) * 1000;
+      if (언제 > 600) 시계들.push(window.setTimeout(() => playGameTick(남은), 언제));
+    }
+    return () => 시계들.forEach((one) => window.clearTimeout(one));
+  }, [questionKey, stopped, 초, game.mode]);
   const h = 해시(questionKey);
   const 문제 = (
     <div className={`game-card ${visual ? 'with-visual' : ''}`.trim()}>
@@ -118,7 +170,23 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
           ))}
         </div>
       )}
-      {놓침 > 0 && <div className="game-missflash" key={`miss-${놓침}`} aria-hidden="true" />}
+      {맞힘 > 0 && (
+        <b className={`arcade-points ${배율 > 1 ? 'multi' : ''}`.trim()} key={`pts-${맞힘}`} aria-hidden="true">
+          +{얻은}{배율 > 1 && <small> ×{배율}</small>}
+        </b>
+      )}
+      {놓침 > 0 && <div className="game-missflash" key={`miss-${놓침}`} aria-hidden="true"><b>MISS!</b></div>}
+      <div className="arcade-hud" aria-label={`점수 ${점수}점, 스테이지 ${스테이지}`}>
+        <span className="arcade-score">SCORE <b key={점수} className={점수 > 0 ? 'bump' : ''}>{String(점수).padStart(6, '0')}</b></span>
+        {배율 > 1 && <span className="arcade-multi" key={`x-${배율}`}>×{배율}</span>}
+        <span className="arcade-stage">STAGE <b>{스테이지}</b></span>
+      </div>
+      {준비 && (
+        <div className="arcade-banner ready" aria-hidden="true"><b>READY?</b><b>GO!</b></div>
+      )}
+      {맞힘 > 0 && 맞힘 % 스테이지문제 === 0 && (
+        <div className="arcade-banner stage" key={`stage-${스테이지}`} aria-hidden="true"><b>STAGE {스테이지}!</b><small>SPEED UP</small></div>
+      )}
       {연속 >= 2 && (
         <div className={`game-combo ${연속 >= 5 ? 'hot' : ''}`.trim()} key={`combo-${연속}`}>
           🔥 {연속} 콤보!{연속 >= 3 && <small>속도 UP</small>}
