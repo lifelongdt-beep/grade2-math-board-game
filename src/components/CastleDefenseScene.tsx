@@ -44,6 +44,11 @@ interface CastleDefenseSceneProps {
    * 큐알로 들어온 아이의 폰은 한 사람이 혼자 쓰므로 false입니다.
    */
   sharedScreen: boolean;
+  /**
+   * 틀린 뒤 도움말을 보는 동안이면 true입니다. 이때는 몬스터가 내려오지 않고 제자리에 서 있어
+   * 아이가 식을 차분히 다시 볼 수 있고, 다 내려와 한 번 더 놓친 것으로 치는 일도 없습니다.
+   */
+  stopped?: boolean;
   // 몬스터가 답을 만나지 못한 채 성벽까지 다 내려왔을 때 부릅니다.
   onTimeout: () => void;
 }
@@ -57,6 +62,7 @@ export function CastleDefenseScene({
   total,
   level,
   sharedScreen,
+  stopped = false,
   onTimeout,
 }: CastleDefenseSceneProps) {
   const heartsLeft = Math.max(0, heartsMax - heartsLost);
@@ -83,10 +89,10 @@ export function CastleDefenseScene({
       </div>
       <div className="castle-monster-track">
         <div
-          className="castle-monster-card"
+          className={`castle-monster-card ${stopped ? 'stopped' : ''}`.trim()}
           key={questionKey}
-          style={{ animationDuration: `${fallSeconds}s` }}
-          onAnimationEnd={onTimeout}
+          style={stopped ? undefined : { animationDuration: `${fallSeconds}s` }}
+          onAnimationEnd={stopped ? undefined : onTimeout}
         >
           <span className="castle-monster-emoji" aria-hidden="true">{monster}</span>
           <strong className="castle-monster-fact">{fact}</strong>
