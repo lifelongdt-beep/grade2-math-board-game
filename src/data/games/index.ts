@@ -1,6 +1,7 @@
 import type { ConceptTag, Difficulty, Lesson, Question, Unit } from '../../types';
 import { 도입차시인가 } from '../introReview';
 import { generateQuestions, isCastleLesson } from '../questionFactory';
+import { 단순문항, 단순문항있나 } from './quick';
 
 // ════════════════════════════════════════════════════════════════════
 // 단원 맨 앞의 놀이 차시
@@ -11,10 +12,10 @@ import { generateQuestions, isCastleLesson } from '../questionFactory';
 // 3D 우주 터널, 3D 주사위), 단원마다 돌아가며 붙여 학년이 바뀌어도 같은
 // 놀이만 되풀이되지 않게 합니다.
 //
-// 문제는 새로 짓지 않고, 그 단원 차시들의 하·중 문항 가운데 놀이에 맞는 것만
-// 고릅니다 — 이미 답과 풀이를 검사한 문항이라 놀이 때문에 틀린 문제가 끼지
-// 않습니다. 놀이에 맞는 문항은 손으로 조작하지 않아도 풀리고, 글과 보기가
-// 짧아 몇 초 안에 읽히는 문항입니다. 그림이 있는 문항은 놀이 카드 안에 그림을 함께 띄웁니다.
+// 문제는 단원마다 새로 짓습니다(quick.ts) — 그 단원의 핵심 개념을 묻는 한 줄
+// 질문이나 한 번에 끝나는 단순 계산입니다. 차시 문항을 다시 내면 이미 풀어 본
+// 긴 문제라 지겹기 때문입니다. 단순 문항이 없는 단원만 그 단원 차시들의 하·중
+// 문항 가운데 짧고 조작이 없는 것을 골라 씁니다.
 //
 // 놀이 차시는 화면(App)에서만 단원 앞에 붙습니다. 교과 차시 자료(curriculum*.ts)는
 // 그대로 두어, 차시 번호로 짝지어 둔 다른 표들이 어긋나지 않습니다.
@@ -118,6 +119,7 @@ export const 놀이문항수 = 60;
 export const 놀이문항 = (game: Lesson, difficulty: Difficulty, seed: number): Question[] => {
   const 자료 = 놀이표.get(game.id);
   if (!자료) return [];
+  if (단순문항있나(game)) return 단순문항(game, difficulty, seed, 놀이문항수);
   const 수준들: Difficulty[] = difficulty === '하' ? ['하'] : ['하', '중'];
   const 모두 = 자료.sources.flatMap((one) => 수준들.flatMap((lv) => {
     try {
