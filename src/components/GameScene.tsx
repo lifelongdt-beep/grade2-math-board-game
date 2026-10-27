@@ -87,48 +87,60 @@ function use놀이사건(correct: number, wrong: number) {
   return 사건;
 }
 
-/** 달리기 결승선까지의 칸 수입니다. */
+/** 라이벌과 먼저 이만큼 점수를 내는 쪽이 한 판을 이깁니다. 달리기에서는 결승선까지의 칸 수입니다. */
 const 결승칸 = 10;
 /**
- * 달리기의 거북이는 문제와 상관없이 시간이 흐르면 슬금슬금 기어갑니다. 그 문제 시간의 70%마다
- * 한 칸쯤 가므로, 꾸준히 맞히면 이기고 머뭇거리면 따라잡힙니다. 틀리면 한 칸 더 갑니다.
- * 너무 뒤처지면 조금 빨라지고, 앞서면 조금 느려져서 늘 엎치락뒤치락하게 둡니다.
+ * 놀이마다 맞서는 라이벌이 있습니다(달리기는 거북이, 풍선은 참새…). 라이벌은 문제와 상관없이
+ * 시간이 흐르면 슬금슬금 점수를 냅니다. 그 문제 시간의 70%마다 1점쯤 내므로, 꾸준히 맞히면 이기고
+ * 머뭇거리면 따라잡힙니다. 틀리면 라이벌이 1점 더 얻습니다. 너무 뒤처지면 라이벌이 조금 빨라지고,
+ * 앞서면 조금 느려져서 늘 엎치락뒤치락하게 둡니다. 먼저 10점을 낸 쪽이 그 판을 이기고 새 판을 합니다.
  */
-const 거북한칸 = 0.7;
-const 거북걸음간격 = 200;
+const 라이벌한점 = 0.7;
+const 라이벌걸음간격 = 200;
 
-function use거북경주(켜짐: boolean, 맞힘: number, 놓침: number, 기본초: number, 멈춤: boolean) {
-  const 처음 = { 출발맞힘: 0, 거북: 0, 내우승: 0, 거북우승: 0, 판: 0 };
+/** 놀이마다 맞서는 라이벌입니다. 글에 바로 붙여 쓰도록 조사까지 함께 적어 둡니다. */
+const 라이벌들: Record<GameMode, { 얼굴: string; 이름: string; 이가: string; 을를: string }> = {
+  monster: { 얼굴: '👿', 이름: '몬스터 대장', 이가: '몬스터 대장이', 을를: '몬스터 대장을' },
+  balloon: { 얼굴: '🐦', 이름: '참새', 이가: '참새가', 을를: '참새를' },
+  tunnel3d: { 얼굴: '👽', 이름: '외계인', 이가: '외계인이', 을를: '외계인을' },
+  mole: { 얼굴: '🐱', 이름: '고양이', 이가: '고양이가', 을를: '고양이를' },
+  rocket: { 얼굴: '🤖', 이름: '로봇', 이가: '로봇이', 을를: '로봇을' },
+  race: { 얼굴: '🐢', 이름: '거북이', 이가: '거북이가', 을를: '거북이를' },
+  treasure: { 얼굴: '🏴‍☠️', 이름: '해적', 이가: '해적이', 을를: '해적을' },
+  soccer3d: { 얼굴: '🧤', 이름: '골키퍼', 이가: '골키퍼가', 을를: '골키퍼를' },
+};
+
+function use라이벌(맞힘: number, 놓침: number, 기본초: number, 멈춤: boolean) {
+  const 처음 = { 출발맞힘: 0, 상대: 0, 내승: 0, 상대승: 0, 판: 0 };
   const [경주, set경주] = useState(처음);
   const 맞힘지금 = useRef(맞힘);
   맞힘지금.current = 맞힘;
-  // 한 판이 끝나면 둘 다 출발선으로 돌아갑니다.
-  const 새판 = (one: typeof 처음, 누가: '나' | '거북') => ({
+  // 한 판이 끝나면 둘 다 0점에서 다시 시작합니다.
+  const 새판 = (one: typeof 처음, 누가: '나' | '상대') => ({
     출발맞힘: 맞힘지금.current,
-    거북: 0,
-    내우승: one.내우승 + (누가 === '나' ? 1 : 0),
-    거북우승: one.거북우승 + (누가 === '거북' ? 1 : 0),
+    상대: 0,
+    내승: one.내승 + (누가 === '나' ? 1 : 0),
+    상대승: one.상대승 + (누가 === '상대' ? 1 : 0),
     판: one.판 + 1,
   });
   useEffect(() => {
-    if (!켜짐 || 멈춤) return undefined;
+    if (멈춤) return undefined;
     const 시계 = window.setInterval(() => set경주((one) => {
       const 나 = 맞힘지금.current - one.출발맞힘;
-      const 차이 = 나 - one.거북;
+      const 차이 = 나 - one.상대;
       const 빠르기 = 차이 > 3 ? 1.6 : 차이 < -1 ? 0.6 : 1;
-      const 거북 = one.거북 + (거북걸음간격 / (기본초 * 거북한칸 * 1000)) * 빠르기;
-      return 거북 >= 결승칸 ? 새판(one, '거북') : { ...one, 거북 };
-    }), 거북걸음간격);
+      const 상대 = one.상대 + (라이벌걸음간격 / (기본초 * 라이벌한점 * 1000)) * 빠르기;
+      return 상대 >= 결승칸 ? 새판(one, '상대') : { ...one, 상대 };
+    }), 라이벌걸음간격);
     return () => window.clearInterval(시계);
-  }, [켜짐, 멈춤, 기본초]);
+  }, [멈춤, 기본초]);
   useEffect(() => {
-    if (!켜짐) return;
     set경주((one) => (맞힘 - one.출발맞힘 >= 결승칸 ? 새판(one, '나') : one));
-  }, [켜짐, 맞힘]);
+  }, [맞힘]);
   useEffect(() => {
-    if (!켜짐 || 놓침 === 0) return;
-    set경주((one) => (one.거북 + 1 >= 결승칸 ? 새판(one, '거북') : { ...one, 거북: one.거북 + 1 }));
-  }, [켜짐, 놓침]);
+    if (놓침 === 0) return;
+    set경주((one) => (one.상대 + 1 >= 결승칸 ? 새판(one, '상대') : { ...one, 상대: one.상대 + 1 }));
+  }, [놓침]);
   // 다시 시작하면 경주도 처음부터 합니다.
   useEffect(() => {
     if (맞힘 === 0 && 놓침 === 0) set경주(처음);
@@ -166,7 +178,23 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     const 끝 = window.setTimeout(() => set준비(false), 1500);
     return () => window.clearTimeout(끝);
   }, []);
-  const 경주 = use거북경주(game.mode === 'race', 맞힘, 놓침, 기본초, stopped || 준비);
+  const 경주 = use라이벌(맞힘, 놓침, 기본초, stopped || 준비);
+  const 라이벌 = 라이벌들[game.mode];
+  // 바로 앞 판이 끝났을 때의 승패를 기억해, 이번 판을 누가 이겼는지 알아냅니다.
+  const 지난판 = useRef({ 판: 0, 내승: 0, 상대승: 0 });
+  const 판기억 = useRef({ 판: 0, 내승: 0, 상대승: 0 });
+  if (판기억.current.판 !== 경주.판) {
+    지난판.current = 판기억.current;
+    판기억.current = { 판: 경주.판, 내승: 경주.내승, 상대승: 경주.상대승 };
+  }
+  // 라이벌을 이기면 스테이지 소리처럼 올라가는 소리를 냅니다(10문제째와 겹치면 이미 울리므로 건너뜁니다).
+  const 소리낸판 = useRef(경주.판);
+  useEffect(() => {
+    if (경주.판 === 소리낸판.current) return;
+    소리낸판.current = 경주.판;
+    if (game.mode !== 'race' && 경주.내승 > 지난판.current.내승 && 맞힘 % 스테이지문제 !== 0) playGameStage();
+    else if (경주.상대승 > 지난판.current.상대승) playGameMiss(game.mode);
+  }, [경주.판, 경주.내승, 경주.상대승, 맞힘, game.mode]);
   const 시계: CSSProperties | undefined = stopped ? undefined : { animationDuration: `${초.toFixed(2)}s` };
   const 끝나면 = stopped ? undefined : onTimeout;
 
@@ -235,6 +263,29 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     </div>
   );
 
+  // 라이벌과의 줄다리기입니다. 가운데 깃발이 앞선 쪽으로 끌려가고, 라이벌이 점수를 낼 때마다 숫자가 튑니다.
+  // 달리기는 길 위에서 거북이와 직접 겨루므로 줄다리기를 따로 두지 않습니다.
+  const 상대점수 = Math.floor(경주.상대);
+  const 앞섬 = 경주.나 - 경주.상대;
+  const 라이벌줄 = game.mode === 'race' ? null : (
+    <span
+      className={`rival-bar ${앞섬 <= -0.5 ? 'behind' : 앞섬 >= 1 ? 'ahead' : ''}`.trim()}
+      aria-label={`나 ${경주.나}점, ${라이벌.이름} ${상대점수}점, 먼저 ${결승칸}점 내기`}
+    >
+      <b className="rival-me">{avatar}{경주.나}</b>
+      <span className="rival-rope" aria-hidden="true"><i style={{ left: `${50 + Math.max(-44, Math.min(44, 앞섬 * 4.4))}%` }} /></span>
+      <b className="rival-them" key={`them-${경주.판}-${상대점수}`}>{상대점수}{라이벌.얼굴}</b>
+      {경주.내승 + 경주.상대승 > 0 && <small>{경주.내승}승 {경주.상대승}패</small>}
+    </span>
+  );
+  // 한 판이 끝난 순간의 알림입니다. 판이 바뀌면(판 수가 늘면) 누가 이겼는지 띄웁니다.
+  const 방금이김 = 경주.판 > 0 && 경주.나 === 0 && 경주.출발맞힘 === 맞힘 && 경주.내승 > 0 && 지난판.current.내승 < 경주.내승;
+  const 판끝알림 = game.mode === 'race' || 경주.판 === 0 ? null : 지난판.current.상대승 < 경주.상대승 ? (
+    <div className="arcade-banner stage rival lose" key={`rival-${경주.판}`} aria-hidden="true"><b>{라이벌.얼굴} {라이벌.이가} 먼저 {결승칸}점!</b><small>다시 도전!</small></div>
+  ) : 방금이김 ? (
+    <div className="arcade-banner stage rival win" key={`rival-${경주.판}`} aria-hidden="true"><b>🏆 {라이벌.을를} 이겼다!</b><small>{경주.내승}승 {경주.상대승}패</small></div>
+  ) : null;
+
   // 맞힌 순간의 펑, 놓친 순간의 번쩍임, 연속 콤보입니다. key가 바뀔 때마다 움직임이 처음부터 다시 납니다.
   const 터짐모양 = 터짐[game.mode];
   const 효과 = (
@@ -259,12 +310,14 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
       <div className="arcade-hud" aria-label={`점수 ${점수}점, 스테이지 ${스테이지}`}>
         <span className="arcade-score">SCORE <b key={점수} className={점수 > 0 ? 'bump' : ''}>{String(점수).padStart(6, '0')}</b></span>
         {배율 > 1 && <span className="arcade-multi" key={`x-${배율}`}>×{배율}</span>}
+        {라이벌줄}
         <span className="arcade-stage">STAGE <b>{스테이지}</b></span>
       </div>
       {준비 && (
         <div className="arcade-banner ready" aria-hidden="true"><b>READY?</b><b>GO!</b></div>
       )}
-      {맞힘 > 0 && 맞힘 % 스테이지문제 === 0 && (
+      {판끝알림}
+      {맞힘 > 0 && 맞힘 % 스테이지문제 === 0 && !방금이김 && (
         <div className="arcade-banner stage" key={`stage-${스테이지}`} aria-hidden="true"><b>STAGE {스테이지}!</b><small>SPEED UP</small></div>
       )}
       {연속 >= 2 && (
@@ -386,7 +439,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
       );
     }
     case 'race': {
-      const { 나, 거북, 내우승, 거북우승, 판: 판수 } = 경주;
+      const { 나, 상대: 거북, 내승: 내우승, 상대승: 거북우승, 판: 판수 } = 경주;
       // 거북이가 반 칸 넘게 앞서야 '서둘러!'를 띄웁니다. 출발선에서 조금 기어 나간 것만으로는 띄우지 않습니다.
       const 거북앞섬 = 거북 >= 나 + 0.5;
       return (
