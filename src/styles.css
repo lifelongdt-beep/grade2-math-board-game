@@ -180,6 +180,8 @@ button:disabled {
   justify-content: flex-end;
   gap: 8px;
 }
+/* 놀이 제목이 길어도 '소리 켜짐'·'전체화면' 단추 글자가 두 줄로 깨지지 않게 합니다. 줄어드는 쪽은 제목입니다. */
+.header-actions > * { flex-shrink: 0; white-space: nowrap; }
 
 .teacher-button,
 .primary-button,
@@ -755,6 +757,19 @@ button:disabled {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* 태블릿처럼 좁은 화면에서는 오른쪽 단추에 자리를 내주느라 제목이 '놀이 · 길…'처럼
+   거의 다 잘립니다. 이때는 글자를 조금 줄이고 두 줄까지 보입니다. */
+@media (max-width: 1279px) {
+  .app-shell.playing .game-topbar h2,
+  .app-shell.finished .game-topbar h2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+    font-size: clamp(16px, 2vw, 22px);
+    line-height: 1.2;
+  }
 }
 
 .lesson-objective-inline {
@@ -8869,7 +8884,7 @@ body::before {
 .game-faller {
   position: absolute;
   left: 50%;
-  top: -30%;
+  top: 6%;
   width: 92%;
   transform: translateX(-50%);
   display: grid;
@@ -8878,7 +8893,8 @@ body::before {
   animation: game-fall 12s linear forwards;
 }
 .game-faller.stopped { animation: none; top: 4px; }
-@keyframes game-fall { from { top: -30%; } to { top: 70%; } }
+/* 처음부터 문제 글이 보이도록 점수판 바로 아래에서 내려오기 시작합니다. */
+@keyframes game-fall { from { top: 6%; } to { top: 72%; } }
 .game-ground {
   position: absolute;
   left: 0;
@@ -9035,9 +9051,10 @@ body::before {
 .tunnel-card span { font-size: 34px; }
 .tunnel-card.stopped { animation: none; transform: translateZ(0); }
 @keyframes tunnel-fly {
-  from { transform: translateZ(-340px) rotateZ(-6deg); opacity: 0.4; }
+  /* 글이 기울면 2학년이 읽기 어렵습니다. 기울이지 않고, 처음부터 읽을 만한 크기로 다가옵니다. */
+  from { transform: translateZ(-200px); opacity: 0.75; }
   8% { opacity: 1; }
-  to { transform: translateZ(240px) rotateZ(4deg); opacity: 1; }
+  to { transform: translateZ(240px); opacity: 1; }
 }
 .tunnel-ship { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); font-size: 30px; animation: gentle-beat 1.2s ease-in-out infinite; }
 
@@ -9659,7 +9676,9 @@ body::before {
   85% { transform: translate(calc(-50% + min(9vw, 110px)), calc(-1 * min(22vh, 190px))) scale(0.42) rotate(540deg); opacity: 1; }
   100% { transform: translate(calc(-50% + min(9vw, 110px)), calc(-1 * min(21vh, 182px))) scale(0.4) rotate(560deg); opacity: 0; }
 }
-.game-soccer .game-center { padding-top: 22%; padding-bottom: 40px; }
+/* 문제 카드는 공 바로 위에 둡니다. 예전에는 padding-top을 %로 주었는데, %는 판의 '너비'를 따르므로
+   태블릿처럼 판이 넓고 낮으면 카드가 판 아래로 밀려 아예 보이지 않았습니다. */
+.game-soccer .game-center { place-items: end center; padding-bottom: 46px; }
 .game-fuel.soccer > div { background: linear-gradient(90deg, #ff5a3d, #ffd84a, #6be08a); }
 
 /* ── 맞힌 물체가 그 자리에서 부서지는 장면(몬스터·풍선) ── */

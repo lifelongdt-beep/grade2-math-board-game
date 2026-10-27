@@ -205,8 +205,8 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     앞문제.current = { key: questionKey, 구멍: h % 3, 해시: h, 시작: performance.now(), 초 };
   }
   const 직전구멍 = { current: 직전.current.구멍 };
-  // 맞힌 물체가 있던 높이(%)입니다. game-fall은 -30%→70%, game-rise는 2%→78%로 움직입니다.
-  const 몬스터높이 = Math.max(-10, -30 + 100 * 직전.current.진행);
+  // 맞힌 물체가 있던 높이(%)입니다. game-fall은 6%→72%, game-rise는 2%→78%로 움직입니다.
+  const 몬스터높이 = 6 + 66 * 직전.current.진행;
   const 풍선높이 = 2 + 76 * 직전.current.진행;
   // 펑 터지는 자리입니다. 몬스터·풍선·보물은 그 물체 자리에서, 나머지는 가운데에서 터집니다.
   // 로켓은 지금 고도, 달리기는 내 캐릭터 자리, 두더지는 맞힌 구멍, 승부차기는 골문입니다.
