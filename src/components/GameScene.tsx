@@ -109,6 +109,10 @@ const 라이벌들: Record<GameMode, { 얼굴: string; 이름: string; 이가: s
   soccer3d: { 얼굴: '🧤', 이름: '골키퍼', 이가: '골키퍼가', 을를: '골키퍼를' },
 };
 
+/** 놀이 설명의 'OO보다 먼저 10점!'을 친구들과 겨루는 말로 바꿉니다. 달리기는 거북이 대신 친구들이 따라옵니다. */
+const 친구설명 = (how: string) =>
+  how.replace(/^\S+(?: \S+)?보다 먼저/, '친구들보다 먼저').replace('거북이도 슬금슬금 따라와요. 먼저 결승선에!', '친구들보다 먼저 결승선에!');
+
 function use라이벌(맞힘: number, 놓침: number, 기본초: number, 멈춤: boolean, 결승칸: number) {
   const 처음 = { 출발맞힘: 0, 상대: 0, 내승: 0, 상대승: 0, 판: 0 };
   const [경주, set경주] = useState(처음);
@@ -163,9 +167,22 @@ interface GameSceneProps {
   onTimeout: () => void;
   /** 라이벌과 먼저 몇 점을 내면 이기는지입니다(결승점수로 수업 시간에 맞춰 정합니다). */
   goal?: number;
+  /**
+   * 전자칠판에서 친구들과 함께 하면 컴퓨터 라이벌 대신 친구들과 겨룹니다(friendRace.ts).
+   * 판을 넘기고 판 끝 알림을 띄우는 일은 모두가 함께 보도록 바깥(App)이 맡습니다.
+   */
+  friends?: 친구겨루기;
 }
 
-export function GameScene({ game, questionKey, prompt, visual, level, correct, wrong, avatar, sharedScreen, stopped, onTimeout, goal = 기본결승 }: GameSceneProps) {
+export interface 친구겨루기 {
+  /** 이번 판에서 낸 내 점수입니다. */
+  나: number;
+  /** 끝난 판 수입니다. 판이 바뀌면 달리기 길의 캐릭터들이 출발선으로 돌아갑니다. */
+  판: number;
+  친구들: { 얼굴: string; 이름: string; 점수: number }[];
+}
+
+export function GameScene({ game, questionKey, prompt, visual, level, correct, wrong, avatar, sharedScreen, stopped, onTimeout, goal = 기본결승, friends }: GameSceneProps) {
   const { 맞힘, 놓침, 연속, 점수, 얻은 } = use놀이사건(correct, wrong);
   const 스테이지 = 1 + Math.floor(맞힘 / 스테이지문제);
   const 배율 = 점수배율(연속);
@@ -182,7 +199,11 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
   const 결승칸 = goal;
   // 달리기 길과 줄다리기 밧줄을 결승 점수에 맞춰 나눕니다(10점이면 한 칸 9%, 5점이면 18%).
   const 칸너비 = 90 / 결승칸;
-  const 경주 = use라이벌(맞힘, 놓침, 기본초, stopped || 준비, 결승칸);
+  const 경주 = use라이벌(맞힘, 놓침, 기본초, stopped || 준비 || Boolean(friends), 결승칸);
+  // 이번 판 내 점수입니다. 친구와 겨루면 바깥에서 받은 점수를 씁니다.
+  const 내판점수 = friends ? friends.나 : 경주.나;
+  // 친구 가운데 이번 판 점수가 가장 높은 친구가 줄다리기 상대입니다.
+  const 맞수 = friends?.친구들.reduce((best, one) => (one.점수 > best.점수 ? one : best), friends.친구들[0]);
   const 라이벌 = 라이벌들[game.mode];
   // 바로 앞 판이 끝났을 때의 승패를 기억해, 이번 판을 누가 이겼는지 알아냅니다.
   const 지난판 = useRef({ 판: 0, 내승: 0, 상대승: 0 });
@@ -194,11 +215,11 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
   // 라이벌을 이기면 스테이지 소리처럼 올라가는 소리를 냅니다(10문제째와 겹치면 이미 울리므로 건너뜁니다).
   const 소리낸판 = useRef(경주.판);
   useEffect(() => {
-    if (경주.판 === 소리낸판.current) return;
+    if (friends || 경주.판 === 소리낸판.current) return;
     소리낸판.current = 경주.판;
     if (game.mode !== 'race' && 경주.내승 > 지난판.current.내승 && 맞힘 % 스테이지문제 !== 0) playGameStage();
     else if (경주.상대승 > 지난판.current.상대승) playGameMiss(game.mode);
-  }, [경주.판, 경주.내승, 경주.상대승, 맞힘, game.mode]);
+  }, [경주.판, 경주.내승, 경주.상대승, 맞힘, game.mode, friends]);
   const 시계: CSSProperties | undefined = stopped ? undefined : { animationDuration: `${초.toFixed(2)}s` };
   const 끝나면 = stopped ? undefined : onTimeout;
 
@@ -248,7 +269,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     treasure: { top: '78%' },
     rocket: { left: '9%', top: `${Math.max(12, 82 - (correct % 10) * 9)}%` },
     // 결승선을 밟아 새 판이 되었으면 결승선에서 터집니다.
-    race: { left: `${경주.나 === 0 && 경주.판 > 0 ? 88 : Math.min(88, 경주.나 * 칸너비 + 5)}%`, top: '22%' },
+    race: { left: `${내판점수 === 0 && (friends?.판 ?? 경주.판) > 0 ? 88 : Math.min(88, 내판점수 * 칸너비 + 5)}%`, top: '22%' },
     mole: { left: `${((직전.current.구멍 * 2 + 1) / 6) * 100}%`, top: '72%' },
     soccer3d: { top: '22%' },
     tunnel3d: undefined,
@@ -262,7 +283,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
   const 줄 = (왼쪽: ReactNode, 오른쪽: ReactNode) => (
     <div className="game-status">
       <span>{왼쪽}</span>
-      <small>{game.how.replace(`${기본결승}점`, `${결승칸}점`)}</small>
+      <small>{(friends ? 친구설명(game.how) : game.how).replace(`${기본결승}점`, `${결승칸}점`)}</small>
       <span>{오른쪽}</span>
     </div>
   );
@@ -271,7 +292,16 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
   // 달리기는 길 위에서 거북이와 직접 겨루므로 줄다리기를 따로 두지 않습니다.
   const 상대점수 = Math.floor(경주.상대);
   const 앞섬 = 경주.나 - 경주.상대;
-  const 라이벌줄 = game.mode === 'race' ? null : (
+  const 라이벌줄 = game.mode === 'race' ? null : friends && 맞수 ? (
+    <span
+      className={`rival-bar friends ${내판점수 < 맞수.점수 ? 'behind' : 내판점수 > 맞수.점수 ? 'ahead' : ''}`.trim()}
+      aria-label={`나 ${내판점수}점, 친구 ${맞수.이름} ${맞수.점수}점, 먼저 ${결승칸}점 내기`}
+    >
+      <b className="rival-me">{avatar}{내판점수}</b>
+      <span className="rival-rope" aria-hidden="true"><i style={{ left: `${50 + Math.max(-44, Math.min(44, (내판점수 - 맞수.점수) * (44 / 결승칸)))}%` }} /></span>
+      <b className="rival-them" key={`friend-${friends.판}-${맞수.점수}`}>{맞수.점수}{맞수.얼굴}</b>
+    </span>
+  ) : (
     <span
       className={`rival-bar ${앞섬 <= -0.5 ? 'behind' : 앞섬 >= 1 ? 'ahead' : ''}`.trim()}
       aria-label={`나 ${경주.나}점, ${라이벌.이름} ${상대점수}점, 먼저 ${결승칸}점 내기`}
@@ -284,7 +314,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
   );
   // 한 판이 끝난 순간의 알림입니다. 판이 바뀌면(판 수가 늘면) 누가 이겼는지 띄웁니다.
   const 방금이김 = 경주.판 > 0 && 경주.나 === 0 && 경주.출발맞힘 === 맞힘 && 경주.내승 > 0 && 지난판.current.내승 < 경주.내승;
-  const 판끝알림 = game.mode === 'race' || 경주.판 === 0 ? null : 지난판.current.상대승 < 경주.상대승 ? (
+  const 판끝알림 = friends || game.mode === 'race' || 경주.판 === 0 ? null : 지난판.current.상대승 < 경주.상대승 ? (
     <div className="arcade-banner stage rival lose" key={`rival-${경주.판}`} aria-hidden="true"><b>{라이벌.얼굴} {라이벌.이가} 먼저 {결승칸}점!</b><small>다시 도전!</small></div>
   ) : 방금이김 ? (
     <div className="arcade-banner stage rival win" key={`rival-${경주.판}`} aria-hidden="true"><b>🏆 {라이벌.을를} 이겼다!</b><small>{경주.내승}승 {경주.상대승}패</small></div>
@@ -443,6 +473,27 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
       );
     }
     case 'race': {
+      if (friends) {
+        const 앞친구 = 맞수 && 맞수.점수 > friends.나 ? 맞수 : null;
+        return (
+          <div className="game-scene game-race">
+            {줄(
+              <>👑 {friends.판}판 끝</>,
+              앞친구 ? <b className="race-warn">{앞친구.얼굴} {앞친구.이름} 앞서요! 서둘러!</b> : <>🏁 결승까지 {결승칸 - friends.나}칸</>,
+            )}
+            {판('road', (
+              <>
+                <div className="game-lane"><span className="runner" key={`me-run-${friends.판}`} style={{ left: `${friends.나 * 칸너비}%` }}><span className="game-kick" key={`me-${맞힘}`}>{avatar}{맞힘 > 0 && <i>💨</i>}</span></span><b>🏁</b></div>
+                {friends.친구들.map((one, at) => (
+                  <div className="game-lane friend" key={at}><span className="runner" key={`friend-run-${friends.판}`} style={{ left: `${Math.min(결승칸, one.점수) * 칸너비}%` }}><span className="game-kick" key={`f-${one.점수}`}>{one.얼굴}</span></span><b>🏁</b></div>
+                ))}
+                <div className="game-center">{문제}</div>
+              </>
+            ))}
+            <div className="game-fuel race"><div className={stopped ? 'stopped' : ''} key={questionKey} style={시계} onAnimationEnd={끝나면} /></div>
+          </div>
+        );
+      }
       const { 나, 상대: 거북, 내승: 내우승, 상대승: 거북우승, 판: 판수 } = 경주;
       // 거북이가 반 칸 넘게 앞서야 '서둘러!'를 띄웁니다. 출발선에서 조금 기어 나간 것만으로는 띄우지 않습니다.
       const 거북앞섬 = 거북 >= 나 + 0.5;

@@ -56,6 +56,7 @@ import {
 import { HighlightedPrompt } from './components/HighlightedPrompt';
 import { MathText } from './components/MathText';
 import { 결승점수, 놀이차시붙이기, 놀이차시인가, 놀이찾기 } from './data/games';
+import { 등수표시, 새친구판, 순위매기기, 판넘기기, 판점수, type 친구판 } from './data/games/friendRace';
 import { MONSTER_HP, UnitMonster, 단원몬스터찾기 } from './components/UnitMonster';
 import { 조작칭찬 } from './data/manipulate/fun';
 import { 답전까지걸음 } from './data/hintUpgrade';
@@ -1104,11 +1105,28 @@ function App() {
   // 단원 맨 앞의 놀이 차시입니다. 성 지키기처럼 문제 자리를 놀이 그림이 차지합니다.
   const game = 놀이찾기(lesson);
   const isPlayScene = isCastleDefense || Boolean(game);
-  // 두 명이 놀이 차시를 하면 서로 겨룹니다. 맞힌 개수가 많은 쪽이 앞서고, 앞선 쪽이 바뀌면 '역전!'을 띄웁니다.
+  // 둘 이상이 놀이 차시를 하면 컴퓨터 라이벌 대신 같이 하는 친구들과 겨룹니다(friendRace.ts).
+  // 짧은 판을 여러 번 합니다. 먼저 결승 점수를 낸 아이가 판을 이기고(👑) 모두 0점에서 다시 시작해서,
+  // 한 번 뒤처진 아이도 다음 판에서 이길 수 있습니다. 1등이 바뀌면 '역전!'을 띄웁니다.
   // 놀이(단원 놀이·성 지키기)에서만 겨룹니다. 보통 차시는 저마다 수준이 달라 견주지 않습니다.
-  const 겨루기 = !isMobileEntry && players.length === 2 && isPlayScene;
-  const 겨룬점수 = 겨루기 ? players.map((player) => playerResults[player.id]?.correct ?? 0) : [0, 0];
-  const 선두 = !겨루기 || 겨룬점수[0] === 겨룬점수[1] ? null : players[겨룬점수[0] > 겨룬점수[1] ? 0 : 1].id;
+  const 겨루기 = !isMobileEntry && players.length >= 2 && isPlayScene;
+  const 겨룬결승 = 결승점수(sessionDuration);
+  const 겨룬맞힘 = useMemo(
+    () => Object.fromEntries(players.map((player) => [player.id, playerResults[player.id]?.correct ?? 0])) as Record<number, number>,
+    [players, playerResults],
+  );
+  const [겨룬판, set겨룬판] = useState<친구판>(새친구판);
+  const 겨룬아이들 = useMemo(() => players.map((player) => player.id), [players]);
+  useEffect(() => {
+    if (!겨루기 || mode !== 'playing') return;
+    const 다음 = 판넘기기(겨룬판, 겨룬아이들, 겨룬맞힘, 겨룬결승);
+    if (다음 === 겨룬판) return;
+    set겨룬판(다음);
+    playGameStage();
+  }, [겨룬맞힘, 겨루기, 겨룬결승, mode, 겨룬판, 겨룬아이들]);
+  const 등수 = 겨루기 ? 순위매기기(겨룬판, 겨룬아이들, 겨룬맞힘) : {};
+  const 일등들 = 겨룬아이들.filter((id) => 등수[id] === 1);
+  const 선두 = 일등들.length === 1 ? 일등들[0] : null;
   const 앞선두 = useRef<number | null>(null);
   const [역전, set역전] = useState<{ id: number; n: number } | null>(null);
   useEffect(() => {
@@ -1119,11 +1137,12 @@ function App() {
     }
     앞선두.current = 선두;
   }, [선두, mode]);
-  // 다시 시작하면 누가 앞섰는지도 잊습니다.
+  // 다시 시작하면 판도, 누가 앞섰는지도 잊습니다.
   useEffect(() => {
     if (sessionRecords.length === 0) {
       앞선두.current = null;
       set역전(null);
+      set겨룬판(새친구판());
     }
   }, [sessionRecords.length]);
   const isCastleDivide = lesson.title === CASTLE_DIVIDE_TITLE;
@@ -1803,7 +1822,7 @@ function App() {
               </div>
               <span className="board-hint">
                 {isPlayScene
-                  ? sessionDuration <= 120 ? '짧은 수업: 라이벌과 먼저 5점 내기예요.' : '라이벌과 먼저 10점 내기예요.'
+                  ? `${sessionDuration <= 120 ? '짧은 수업: ' : ''}${playerCount >= 2 ? '친구들' : '라이벌'}과 먼저 ${결승점수(sessionDuration)}점 내기예요.${playerCount >= 2 ? ' 판마다 1등에게 👑!' : ''}`
                   : lesson.objective}
               </span>
             </div>
@@ -2346,6 +2365,13 @@ function App() {
           <span>맞히면 별 +1</span>
         </div>
       )}
+      {/* 한 판이 끝난 순간입니다. 모두가 보도록 놀이판 가운데에 잠깐 띄웁니다. */}
+      {겨루기 && mode === 'playing' && 겨룬판.판 > 0 && (
+        <div className="friend-round-banner" key={`round-${겨룬판.판}`} aria-live="polite">
+          <b>🏁 {players.filter((player) => 겨룬판.승자.includes(player.id)).map((player) => `${player.avatar} ${player.name}`).join(', ')} 먼저 {겨룬결승}점!</b>
+          <small>👑 {겨룬판.판}판 끝 · 모두 0점에서 다시 출발!</small>
+        </div>
+      )}
       <section className={`game-layout individual players-${playerCount} ${feverOn && mode === 'playing' ? 'fever' : ''}`}>
         <section className="playfield" style={{ backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(./assets/math-adventure-bg.webp)' }}>
           <div
@@ -2373,12 +2399,14 @@ function App() {
                     <PlayerAvatar player={player} active={successActive} stars={profileOf(player.attendanceNo).stars} fire={mode === 'playing' ? 불꽃단계(runs[player.id]?.fire ?? 0) : 0} />
                     <strong>{player.name}</strong>
                     {겨루기 && mode === 'playing' && (() => {
-                      const 내점수 = playerResults[player.id]?.correct ?? 0;
-                      const 차 = Math.abs(겨룬점수[0] - 겨룬점수[1]);
-                      const 모양 = 선두 === null ? 'tie' : 선두 === player.id ? 'lead' : 'chase';
+                      const 내등수 = 등수[player.id] ?? 1;
+                      const 이번판 = 판점수(겨룬판, 겨룬맞힘, player.id);
+                      const 이긴판 = 겨룬판.승[player.id] ?? 0;
+                      const 모양 = 내등수 > 1 ? 'chase' : 선두 === player.id ? 'lead' : 'tie';
                       return (
-                        <span className={`versus-chip ${모양}`} key={`vs-${모양}-${내점수}`} aria-label={모양 === 'tie' ? '친구와 동점' : 모양 === 'lead' ? `친구보다 ${차}개 앞섬` : `친구보다 ${차}개 뒤짐`}>
-                          {모양 === 'tie' ? '⚔️ 동점' : 모양 === 'lead' ? `👑 ${차}개 앞섬` : `🏃 ${차}개 차이, 따라잡자!`}
+                        <span className={`versus-chip ${모양}`} key={`vs-${내등수}-${이번판}`} aria-label={`${내등수}등, 이번 판 ${이번판}점, 이긴 판 ${이긴판}`}>
+                          {모양 === 'tie' ? '⚔️ 공동 1등' : 등수표시(내등수)} {이번판}/{겨룬결승}
+                          {이긴판 > 0 && <small> 👑{이긴판}</small>}
                         </span>
                       );
                     })()}
@@ -2426,12 +2454,16 @@ function App() {
                     <div className="student-result-summary">
                       <span className="result-kicker">시간 종료</span>
                       <strong>{player.name} 결과</strong>
-                      {겨루기 && (
-                        <span className={`versus-result ${선두 === null ? 'tie' : 선두 === player.id ? 'win' : 'lose'}`}>
-                          {선두 === null ? '🤝 비겼어요!' : 선두 === player.id ? '🏆 친구와 겨루기에서 이겼어요!' : '💪 아깝게 졌어요. 다음엔 이길 수 있어요!'}
-                          <small> {playerResults[player.id]?.correct ?? 0} : {겨룬점수[players[0].id === player.id ? 1 : 0]}</small>
-                        </span>
-                      )}
+                      {겨루기 && (() => {
+                        const 내등수 = 등수[player.id] ?? 1;
+                        const 모양 = 내등수 > 1 ? 'lose' : 선두 === player.id ? 'win' : 'tie';
+                        return (
+                          <span className={`versus-result ${모양}`}>
+                            {모양 === 'win' ? '🏆 겨루기 1등!' : 모양 === 'tie' ? '🤝 공동 1등!' : `${내등수 <= 3 ? 등수표시(내등수) : '💪'} ${내등수}등! 다음엔 1등 도전!`}
+                            <small> 👑 {겨룬판.승[player.id] ?? 0}판</small>
+                          </span>
+                        );
+                      })()}
                       {/* 개수는 접혀 있을 때만 보여 줍니다. 펼치면 그 자리는
                           '무엇을 더 공부할까'가 씁니다. 몇 개 맞혔는지는
                           아이가 이미 압니다 — 풀 때마다 보았으니까요. */}
@@ -2662,7 +2694,12 @@ function App() {
                             sharedScreen={!isMobileEntry}
                             stopped={state.feedback === 'explain'}
                             onTimeout={() => answerQuestion(player, question, -1)}
-                            goal={결승점수(sessionDuration)}
+                            goal={겨룬결승}
+                            friends={겨루기 ? {
+                              나: 판점수(겨룬판, 겨룬맞힘, player.id),
+                              판: 겨룬판.판,
+                              친구들: players.filter((one) => one.id !== player.id).map((one) => ({ 얼굴: one.avatar, 이름: one.name, 점수: 판점수(겨룬판, 겨룬맞힘, one.id) })),
+                            } : undefined}
                           />
                         ) : isCastleDefense ? (
                           <CastleDefenseScene
