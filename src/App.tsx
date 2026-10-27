@@ -1713,172 +1713,101 @@ function App() {
     <section className="setup-screen">
       {/* QR로 들어온 학생은 선생님이 정한 차시·시간으로 혼자 풉니다. 고를 것이 없으므로
           안내·차시·인원·시간 칸은 모두 빼고, 동물과 출석번호만 고르면 바로 시작합니다. */}
-      {!isMobileEntry && (<>
-      <div className="setup-hero">
-        <div className="setup-copy">
-          <p className="eyebrow">수업 시작</p>
-          <h2>오늘 풀 차시와 시간을 고르세요</h2>
-          <p>{lesson.objective}</p>
+      {!isMobileEntry && (
+      <section className="board-setup" aria-labelledby="board-setup-title">
+        {/* 선생님이 고르는 곳은 화면 위쪽에 가로로 모읍니다. 전자칠판 앞의 2학년은 키가 작아
+            위쪽에 손이 닿지 않으므로, 학생이 누르는 자리 카드는 아래 절반에 둡니다. */}
+        <div className="board-setup-head">
+          <h2 id="board-setup-title">오늘 놀이판 차리기</h2>
+          <span>선생님이 고르는 곳</span>
         </div>
-        <div className="setup-summary">
-          <span><Users size={18} /> {playerCount}명</span>
-          <span><Timer size={18} /> {durationLabel(sessionDuration)}</span>
-          <button className="mobile-join-toggle" type="button" onClick={() => setMobileJoinOpen(true)}>
-              <Sparkles size={18} />
-              {reviewScope === 'lesson' ? '학생별 개별 문항' : '종합 랜덤 문항'}
-              <QrCode size={18} />
-              모바일 QR
-            </button>
-        </div>
-      </div>
-
-      <div className="setup-grid">
-        <label>
-          학기
-          <select value={semester} onChange={(event) => setSemester(event.target.value as Unit['semester'])}>
-            <option value="1-1">1학년 1학기</option>
-            <option value="1-2">1학년 2학기</option>
-            <option value="2-1">2학년 1학기</option>
-            <option value="2-2">2학년 2학기</option>
-            <option value="3-1">3학년 1학기</option>
-            <option value="3-2">3학년 2학기</option>
-            <option value="4-1">4학년 1학기</option>
-            <option value="4-2">4학년 2학기</option>
-            <option value="5-1">5학년 1학기</option>
-            <option value="5-2">5학년 2학기</option>
-            <option value="6-1">6학년 1학기</option>
-            <option value="6-2">6학년 2학기</option>
-          </select>
-        </label>
-        <label>
-          단원
-          <select
-            value={isSemesterReviewSelected ? semesterReviewUnitValue : String(selectedUnit.unitNo)}
-            onChange={(event) => {
-              const nextValue = event.target.value;
-              if (nextValue === semesterReviewUnitValue) {
-                setUnitSelection(semesterReviewUnitValue);
-                setLessonId(semesterReviewId);
-                return;
-              }
-
-              const nextUnitNo = Number(nextValue);
-              const nextUnit = semesterUnits.find((unit) => unit.unitNo === nextUnitNo);
-              setUnitSelection(nextUnitNo);
-              if (nextUnit) setLessonId(nextUnit.lessons[0].id);
-            }}
-          >
-            {semesterUnits.map((unit) => (
-              <option value={String(unit.unitNo)} key={unit.title}>{unit.unitNo}. {unit.title}</option>
-            ))}
-            <option value={semesterReviewUnitValue}>학기 종합 · {semester} 전체</option>
-          </select>
-        </label>
-        <label>
-          차시
-          {isSemesterReviewSelected ? (
-            <select value={semesterReviewId} disabled>
-              <option value={semesterReviewId}>학기 종합 · {semester} 전체</option>
-            </select>
-          ) : (
-            <select value={lesson.id} onChange={(event) => setLessonId(event.target.value)}>
-              {selectedUnit.lessons.map((item) => (
-                <option value={item.id} key={item.id}>{놀이차시인가(item) ? '🎮 놀이' : `${item.lessonNo}차시`} · {item.title}</option>
-              ))}
-              <option value={unitReviewId}>단원 종합 · {selectedUnit.title} 전체</option>
-            </select>
-          )}
-        </label>
-      </div>
-
-      <div className="setup-options">
-          <section>
-            <h3>학생 인원수</h3>
-            <div className="big-segmented">
-              {[1, 2, 3, 4, 5].map((count) => (
-                <button type="button" className={playerCount === count ? 'active' : ''} key={count} onClick={() => setPlayerCount(count)}>
-                  {count}명
-                </button>
-              ))}
+        <div className="board-setup-cols">
+          <div className="board-setup-col wide">
+            <div className="board-field">
+              <span className="board-label">학년과 학기</span>
+              <div className="board-chips">
+                {[1, 2, 3, 4, 5, 6].map((grade) => {
+                  const on = semester.startsWith(`${grade}-`);
+                  return (
+                    <button type="button" key={grade} className={`board-chip ${on ? 'on' : ''}`.trim()} aria-pressed={on}
+                      onClick={() => setSemester(`${grade}-${semester.endsWith('2') ? 2 : 1}` as Unit['semester'])}>
+                      {grade}학년
+                    </button>
+                  );
+                })}
+                <span className="board-chip-gap" />
+                {[1, 2].map((term) => {
+                  const on = semester.endsWith(`-${term}`);
+                  return (
+                    <button type="button" key={term} className={`board-chip ${on ? 'on' : ''}`.trim()} aria-pressed={on}
+                      onClick={() => setSemester(`${semester.split('-')[0]}-${term}` as Unit['semester'])}>
+                      {term}학기
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            {/* 문제의 '민준, 서연' 자리에 아이의 동물 친구나 우리 반 이름을 넣습니다. 칸을 따로 쓰면
-                아래 번호 고르는 자리가 좁아지므로, 인원수 칸 아래 한 줄에 둡니다. */}
-            <div className="name-swap-row">
-              <span className="name-swap-label">문제 속 주인공</span>
-              <div className="name-swap-options" role="group" aria-label="문제 속 주인공">
-                {([['off', '그대로'], ['animals', '동물 친구'], ['class', '우리 반 이름']] as const).map(([value, label]) => (
-                  <button
-                    type="button"
-                    key={value}
-                    className={nameMode === value ? 'active' : ''}
-                    aria-pressed={nameMode === value}
-                    onClick={() => {
-                      setNameMode(value);
-                      방식쓰기(value);
-                    }}
-                  >
-                    {label}
+            <div className="board-field">
+              <span className="board-label">단원</span>
+              <div className="board-units">
+                {semesterUnits.map((unit) => {
+                  const on = !isSemesterReviewSelected && selectedUnit.unitNo === unit.unitNo;
+                  return (
+                    <button type="button" key={unit.title} className={`board-chip unit ${on ? 'on' : ''}`.trim()} aria-pressed={on}
+                      onClick={() => {
+                        setUnitSelection(unit.unitNo);
+                        setLessonId(unit.lessons[0].id);
+                      }}>
+                      <span className="board-unit-no">{unit.unitNo}</span>
+                      <span className="board-unit-title">{unit.title}</span>
+                    </button>
+                  );
+                })}
+                <button type="button" className={`board-chip unit ${isSemesterReviewSelected ? 'on' : ''}`.trim()} aria-pressed={isSemesterReviewSelected}
+                  onClick={() => {
+                    setUnitSelection(semesterReviewUnitValue);
+                    setLessonId(semesterReviewId);
+                  }}>
+                  <span className="board-unit-no">✓</span>
+                  <span className="board-unit-title">학기 종합</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="board-setup-col">
+            <label className="board-field">
+              <span className="board-label">차시</span>
+              {isSemesterReviewSelected ? (
+                <select className="board-select" value={semesterReviewId} disabled>
+                  <option value={semesterReviewId}>학기 종합 · {semester} 전체</option>
+                </select>
+              ) : (
+                <select className="board-select" value={lesson.id} onChange={(event) => setLessonId(event.target.value)}>
+                  {selectedUnit.lessons.map((item) => (
+                    <option value={item.id} key={item.id}>{놀이차시인가(item) ? '놀이' : `${item.lessonNo}차시`} · {item.title}</option>
+                  ))}
+                  <option value={unitReviewId}>단원 종합 · {selectedUnit.title} 전체</option>
+                </select>
+              )}
+            </label>
+            <div className="board-field">
+              <span className="board-label">놀이 시간</span>
+              <div className="board-chips even six">
+                {durations.map((duration) => (
+                  <button type="button" key={duration} className={`board-chip ${sessionDuration === duration ? 'on' : ''}`.trim()}
+                    aria-pressed={sessionDuration === duration} onClick={() => setSessionDuration(duration)}>
+                    {durationLabel(duration)}
                   </button>
                 ))}
               </div>
+              <span className="board-hint">
+                {isPlayScene
+                  ? sessionDuration <= 120 ? '짧은 수업: 라이벌과 먼저 5점 내기예요.' : '라이벌과 먼저 10점 내기예요.'
+                  : lesson.objective}
+              </span>
             </div>
-            {nameMode === 'class' && (
-              <label className="name-roster">
-                <input
-                  type="text"
-                  value={roster}
-                  placeholder="출석 번호 차례로 쉼표로 적기: 김민준, 이서연, 박하은 (이 컴퓨터에만 저장)"
-                  onChange={(event) => {
-                    setRoster(event.target.value);
-                    명단쓰기(event.target.value);
-                  }}
-                />
-                <small>{Object.keys(rosterNames).length}명</small>
-              </label>
-            )}
-          </section>
-        <section>
-          <h3>학습 시간</h3>
-          <div className="big-segmented time-options">
-            {durations.map((duration) => (
-              <button
-                type="button"
-                className={sessionDuration === duration ? 'active' : ''}
-                key={duration}
-                onClick={() => setSessionDuration(duration)}
-              >
-                {durationLabel(duration)}
-              </button>
-            ))}
-          </div>
-          {/* 별과 꾸미개, 배지는 출석 번호마다 이 컴퓨터에 남습니다. 새 반을 맡으면 지웁니다.
-              자동 다운로드와 한 줄에 두어 칸 높이를 늘리지 않습니다. */}
-          {!isMobileEntry && (
-            <div className="setup-option-row">
-              <label className="auto-download-option">
-                <input
-                  type="checkbox"
-                  checked={autoDownloadAnalysis}
-                  onChange={(event) => toggleAutoDownloadAnalysis(event.target.checked)}
-                />
-                <span>학습이 끝나면 교사용 분석 파일 자동 다운로드</span>
-              </label>
-              <button
-                type="button"
-                className="secondary-button reward-reset"
-                onClick={() => {
-                  if (!window.confirm('이 컴퓨터에 모아 둔 별·꾸미개·배지를 모든 번호에서 지울까요?')) return;
-                  기록장모두지우기();
-                  setProfiles({});
-                }}
-              >
-                별·꾸미개·배지 기록 지우기
-              </button>
-            </div>
-          )}
-          {/* 성 지키기 차시에서 낼 단입니다. 칸을 따로 쓰면 아래 번호 고르는 자리가 밀려
-              보이지 않으므로, 학습 시간 칸 아래 한 줄에 작은 단추로 둡니다. */}
-          {isCastleDefense && (
+            {isCastleDefense && (
             <div className="castle-dan-row">
               <span className="castle-dan-label">{isCastleDivide ? '나누는 수' : '구구단'}</span>
               <div className="castle-dan-options" role="group" aria-label={isCastleDivide ? '출제할 나누는 수' : '출제할 구구단'}>
@@ -1904,9 +1833,80 @@ function App() {
               </div>
             </div>
           )}
-        </section>
-      </div>
-      </>)}
+          </div>
+
+          <div className="board-setup-col">
+            <div className="board-field">
+              <span className="board-label">함께 하는 학생</span>
+              <div className="board-chips even five">
+                {[1, 2, 3, 4, 5].map((count) => (
+                  <button type="button" key={count} className={`board-chip ${playerCount === count ? 'on' : ''}`.trim()}
+                    aria-pressed={playerCount === count} onClick={() => setPlayerCount(count)}>
+                    {count}명
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* 문제의 '민준, 서연' 자리에 아이의 동물 친구나 우리 반 이름을 넣습니다. */}
+            <div className="board-field">
+              <span className="board-label">문제 속 주인공</span>
+              <div className="board-chips even three" role="group" aria-label="문제 속 주인공">
+                {([['off', '그대로'], ['animals', '동물 친구'], ['class', '우리 반 이름']] as const).map(([value, label]) => (
+                  <button
+                    type="button"
+                    key={value}
+                    className={`board-chip ${nameMode === value ? 'on' : ''}`.trim()}
+                    aria-pressed={nameMode === value}
+                    onClick={() => {
+                      setNameMode(value);
+                      방식쓰기(value);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {nameMode === 'class' && (
+              <label className="name-roster">
+                <input
+                  type="text"
+                  value={roster}
+                  placeholder="출석 번호 차례로 쉼표로 적기: 김민준, 이서연, 박하은 (이 컴퓨터에만 저장)"
+                  onChange={(event) => {
+                    setRoster(event.target.value);
+                    명단쓰기(event.target.value);
+                  }}
+                />
+                <small>{Object.keys(rosterNames).length}명</small>
+              </label>
+            )}
+            {/* 별과 꾸미개, 배지는 출석 번호마다 이 컴퓨터에 남습니다. 새 반을 맡으면 지웁니다. */}
+            <div className="board-setup-foot">
+              <label className="auto-download-option">
+                <input
+                  type="checkbox"
+                  checked={autoDownloadAnalysis}
+                  onChange={(event) => toggleAutoDownloadAnalysis(event.target.checked)}
+                />
+                <span>끝나면 분석 파일 내려받기</span>
+              </label>
+              <button
+                type="button"
+                className="board-link-button"
+                onClick={() => {
+                  if (!window.confirm('이 컴퓨터에 모아 둔 별·꾸미개·배지를 모든 번호에서 지울까요?')) return;
+                  기록장모두지우기();
+                  setProfiles({});
+                }}
+              >
+                별·배지 기록 지우기
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+      )}
 
       <section
         className="setup-playfield playfield"
@@ -1914,14 +1914,24 @@ function App() {
           backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(./assets/math-adventure-bg.webp)',
         }}
       >
-        <div className="setup-progress">
-          <span><Users size={16} /> {isMobileEntry ? `내 준비 ${readyPlayerCount} / 1` : `학생 준비 ${readyPlayerCount} / ${playerCount}`}</span>
-          <span>{isMobileEntry ? '번호를 누르면 자동 시작' : '출석번호를 누르면 자동 시작'}</span>
-        </div>
+        {isMobileEntry ? (
+          <div className="setup-progress">
+            <span><Users size={16} /> 내 준비 {readyPlayerCount} / 1</span>
+            <span>번호를 누르면 자동 시작</span>
+          </div>
+        ) : (
+          <div className="board-seats-head">
+            <div>
+              <h2>자리에 앉아 출석번호를 눌러요</h2>
+              <span>학생이 누르는 곳 · 모두 고르면 바로 시작해요</span>
+            </div>
+            <div className="board-ready" role="status"><b>{readyPlayerCount} / {playerCount}</b> 준비됨</div>
+          </div>
+        )}
 
         <div
-          className="player-lanes individual setup-lanes"
-          style={{ gridTemplateColumns: `repeat(${Math.min(playerCount, 5)}, minmax(${playerCount >= 5 ? 220 : playerCount >= 4 ? 240 : 280}px, 1fr))` }}
+          className={`player-lanes individual setup-lanes seats-${Math.min(playerCount, 5)}`}
+          style={{ gridTemplateColumns: `repeat(${Math.min(playerCount, 5)}, minmax(${isMobileEntry ? (playerCount >= 5 ? 220 : playerCount >= 4 ? 240 : 280) : 0}px, 1fr))` }}
         >
           {players.map((player) => {
             const step = studentSetupSteps[player.id] ?? 'attendance';
@@ -2918,6 +2928,13 @@ function App() {
         )}
         {mode !== 'setup' && renderLessonBar()}
         <div className="header-actions">
+          {/* 휴대폰 QR은 선생님이 여는 것이라 머리줄에 둡니다(자리 카드가 있는 아래쪽은 학생이 누르는 곳). */}
+          {mode === 'setup' && !isMobileEntry && (
+            <button className="secondary-button mobile-join-toggle header-qr" type="button" onClick={() => setMobileJoinOpen(true)}>
+              <QrCode size={20} />
+              휴대폰으로 함께 풀기
+            </button>
+          )}
           {/* 교실에서 소리를 꺼야 할 때가 있습니다. 옆 반이 시험을 보거나
               선생님이 설명하는 동안입니다. 수업이 시작된 뒤에야 끌 수
               있으면 이미 한 번은 울린 뒤입니다 — 첫 화면부터 둡니다.
