@@ -10315,3 +10315,104 @@ body::before {
   .app-shell.setup:not(.mobile-entry) .attendance-number-pad { grid-auto-rows: 40px; }
   .app-shell.setup:not(.mobile-entry) .setup-step-card > strong { display: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   QR로 들어온 학생 화면(휴대폰·패드)도 선생님 첫 화면과 같은 보드게임 판으로 꾸밉니다.
+   바탕은 민트색 점 판, 위 줄은 남색 띠입니다. 문제 칸과 답 칸은 남색 판 위에 올립니다
+   (문제 그림·조작 도구가 어두운 바탕에 맞춰 그려져 있어, 그 안쪽 색은 그대로 둡니다).
+   보기 단추와 출석번호 단추는 흰 말판 칸처럼 굵은 테두리와 아래 그림자를 붙입니다.
+   ════════════════════════════════════════════════════════════════════ */
+.app-shell.mobile-entry {
+  --board-ink: #1D2B45;
+  --board-sun: #FFC23D;
+  --board-panel: #1D2B45;
+  color: var(--board-ink);
+  background: #E3F1EA radial-gradient(#C3DFD0 1.6px, transparent 1.6px) 0 0 / 24px 24px;
+}
+.app-shell.mobile-entry .app-header,
+.app-shell.mobile-entry.playing .app-header,
+.app-shell.mobile-entry.finished .app-header {
+  background: var(--board-ink);
+  border: 0;
+  box-shadow: none;
+  color: #FFFFFF;
+}
+.app-shell.mobile-entry .mobile-lesson-title,
+.app-shell.mobile-entry.playing .game-topbar h2,
+.app-shell.mobile-entry.finished .game-topbar h2 { color: #FFFFFF; text-shadow: none; font-family: 'Jua', 'Noto Sans KR', sans-serif; font-weight: 400; }
+.app-shell.mobile-entry .timer-card { background: #2A3A5C; border: 2px solid var(--board-sun); box-shadow: none; color: #FFFFFF; border-radius: 12px; }
+.app-shell.mobile-entry .timer-card strong { color: var(--board-sun); font-family: 'Jua', 'Noto Sans KR', sans-serif; font-weight: 400; }
+.app-shell.mobile-entry .sound-toggle { border-radius: 12px; border: 2px solid #4A5B7E; background: #2A3A5C; color: #FFFFFF; box-shadow: none; }
+
+/* 시작 화면: 흰 자리 카드, 말판 칸 같은 동물·번호 단추 */
+.app-shell.mobile-entry .setup-playfield { background: none !important; box-shadow: none; }
+.app-shell.mobile-entry .setup-player-lane {
+  position: relative;
+  overflow: hidden;
+  background: #FFFFFF;
+  border: 2px solid var(--board-ink);
+  border-radius: 18px;
+  box-shadow: 0 4px 0 var(--board-ink);
+  color: var(--board-ink);
+  padding-top: 16px;
+}
+.app-shell.mobile-entry .setup-player-lane::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 8px;
+  background: var(--player-color, var(--board-sun));
+}
+.app-shell.mobile-entry .setup-player-lane::after { display: none; }
+.app-shell.mobile-entry .setup-player-lane > header strong { color: var(--board-ink); text-shadow: none; font-family: 'Jua', 'Noto Sans KR', sans-serif; font-weight: 400; }
+.app-shell.mobile-entry .setup-player-lane > header small { padding: 3px 10px; border-radius: 999px; background: var(--player-tint, #F1F4F8); color: var(--board-ink); }
+.app-shell.mobile-entry .setup-player-lane .setup-step-card > strong { color: var(--board-ink); font-family: 'Jua', 'Noto Sans KR', sans-serif; font-weight: 400; }
+.app-shell.mobile-entry .setup-player-lane .avatar-pad button { border: 2px solid #DCE4EE; background: #FFFFFF; box-shadow: none; }
+.app-shell.mobile-entry .setup-player-lane .avatar-pad button.chosen { border: 3px solid var(--player-color, var(--board-ink)); background: var(--player-tint, #F6FBF8); }
+.app-shell.mobile-entry .setup-player-lane .attendance-number-pad button {
+  border: 2px solid var(--board-ink);
+  background: #FFFFFF;
+  color: var(--board-ink);
+  font-family: 'Jua', 'Noto Sans KR', sans-serif;
+  font-weight: 400;
+  box-shadow: 0 3px 0 var(--board-ink);
+}
+.app-shell.mobile-entry .setup-player-lane .attendance-number-pad button:disabled { border: 2px dashed #C6CFDB; background: #F1F4F8; color: #8A96A8; box-shadow: none; }
+.app-shell.mobile-entry .setup-ready-card { background: none; border: 0; box-shadow: none; color: var(--board-ink); }
+.app-shell.mobile-entry .setup-ready-card strong { color: var(--board-ink); font-family: 'Jua', 'Noto Sans KR', sans-serif; font-weight: 400; }
+.app-shell.mobile-entry .setup-ready-card > span { color: #0F6B5E; font-weight: 700; }
+
+/* 문제 푸는 화면: 머리줄은 민트 판 위의 남색 글씨, 문제 칸·답 칸은 남색 판 */
+.app-shell.mobile-entry .player-lane.student-question { background: none; }
+.app-shell.mobile-entry .player-lane.student-question::before,
+.app-shell.mobile-entry .player-lane.student-question::after { display: none; }
+.app-shell.mobile-entry .student-question > .lane-head strong { color: var(--board-ink); text-shadow: none; font-family: 'Jua', 'Noto Sans KR', sans-serif; font-weight: 400; }
+.app-shell.mobile-entry .student-question > .lane-head small { color: #4C5B73; }
+.app-shell.mobile-entry .student-question > .lane-head .lane-stars { color: #8A5A00; }
+.app-shell.mobile-entry .student-question-body,
+.app-shell.mobile-entry .student-answer-dock,
+.app-shell.mobile-entry .student-feedback,
+.app-shell.mobile-entry .student-result-summary {
+  background: var(--board-panel);
+  border: 2px solid var(--board-ink);
+  border-radius: 16px;
+  box-shadow: 0 4px 0 #0E1628;
+}
+.app-shell.mobile-entry .student-answer-dock .choice-grid button {
+  background: #FFFFFF;
+  border: 2px solid #FFFFFF;
+  border-radius: 14px;
+  color: var(--board-ink);
+  box-shadow: 0 4px 0 #0B1324;
+}
+.app-shell.mobile-entry .student-answer-dock .choice-grid button > span:first-child { background: var(--board-sun); color: var(--board-ink); border-radius: 8px; }
+.app-shell.mobile-entry .student-answer-dock .choice-grid button .choice-text,
+.app-shell.mobile-entry .student-answer-dock .choice-grid button .choice-caption { color: var(--board-ink); }
+.app-shell.mobile-entry .student-answer-dock .choice-grid button.selected { background: var(--board-sun); border-color: var(--board-sun); }
+.app-shell.mobile-entry .student-answer-dock .choice-grid button.selected > span:first-child { background: var(--board-ink); color: #FFFFFF; }
+.app-shell.mobile-entry .student-answer-dock .choice-grid button:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #0B1324; }
+.app-shell.mobile-entry .command-bar.mobile-actions { background: none; border: 0; box-shadow: none; }
+/* 어두운 판 무늬(배경 그림·줄무늬)가 위 규칙보다 뒤에서 덮어쓰므로, 휴대폰에서는 확실히 걷어 냅니다. */
+.app-shell.mobile-entry .setup-screen,
+.app-shell.mobile-entry .game-layout > .playfield { background: none !important; box-shadow: none !important; border: 0; }
+.app-shell.mobile-entry .setup-player-lane { background: #FFFFFF !important; box-shadow: 0 4px 0 var(--board-ink) !important; }
