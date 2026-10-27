@@ -43,7 +43,8 @@ const 함께쓰는화면덤 = 1;
 const 터짐: Record<GameMode, { 큰: string; 말: string[]; 조각: string[] }> = {
   monster: { 큰: '💥', 말: ['퍽!', '쾅!', '막았다!'], 조각: ['⭐', '✨', '💫'] },
   balloon: { 큰: '🎉', 말: ['팡!', '펑!', '빵!'], 조각: ['🎊', '✨', '🎈'] },
-  mole: { 큰: '🔨', 말: ['뿅!', '딱!', '잡았다!'], 조각: ['💫', '⭐', '✨'] },
+  // 두더지는 망치가 구멍에 있던 두더지를 직접 내리치므로(아래 game-whack), 가운데에는 별만 터뜨립니다.
+  mole: { 큰: '⭐', 말: ['뿅!', '딱!', '잡았다!'], 조각: ['💫', '⭐', '✨'] },
   rocket: { 큰: '🔥', 말: ['슝!', '발사!', '부스터!'], 조각: ['✨', '⭐', '💨'] },
   race: { 큰: '💨', 말: ['쌩!', '달려!', '앞질렀다!'], 조각: ['💨', '✨', '⭐'] },
   treasure: { 큰: '✨', 말: ['반짝!', '열렸다!', '보물!'], 조각: ['💎', '🪙', '✨'] },
@@ -141,6 +142,14 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     return () => 시계들.forEach((one) => window.clearTimeout(one));
   }, [questionKey, stopped, 초, game.mode]);
   const h = 해시(questionKey);
+  // 바로 앞 문제의 두더지 구멍을 기억해 둡니다. 맞히는 순간 문제가 바뀌어 새 두더지가 나오므로,
+  // 망치는 방금 맞힌 문제의 두더지가 있던 구멍을 내리쳐야 합니다.
+  const 앞문제 = useRef({ key: questionKey, 구멍: h % 3 });
+  const 직전구멍 = useRef(h % 3);
+  if (앞문제.current.key !== questionKey) {
+    직전구멍.current = 앞문제.current.구멍;
+    앞문제.current = { key: questionKey, 구멍: h % 3 };
+  }
   const 문제 = (
     <div className={`game-card ${visual ? 'with-visual' : ''}`.trim()}>
       {visual && <div className="game-visual"><QuestionVisualGraphic visual={visual} /></div>}
@@ -259,6 +268,14 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
                     {at !== 구멍 && <span className="game-mole-fake" style={{ animationDelay: `${(at + h) % 3}s` }} aria-hidden="true">👀</span>}
                   </div>
                 ))}
+                {/* 맞히면 망치가 방금 그 두더지를 쾅 내리치고, 두더지는 납작해져 구멍으로 쏙 들어갑니다. */}
+                {맞힘 > 0 && (
+                  <div className="game-whack" key={`whack-${맞힘}`} style={{ left: `${((직전구멍.current * 2 + 1) / 6) * 100}%` }} aria-hidden="true">
+                    <span className="game-whack-mole">🐹</span>
+                    <span className="game-whack-stars">💫</span>
+                    <span className="game-whack-hammer">🔨</span>
+                  </div>
+                )}
               </div>
             </>
           ))}
