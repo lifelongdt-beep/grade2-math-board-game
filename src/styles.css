@@ -10942,3 +10942,81 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   .game-waves, .game-boat, .game-fish { animation: none; }
 }
+
+/* 사다리가 있는 놀이에서는 문제 카드가 늘 사다리 왼쪽에 머뭅니다(5명일 때처럼 칸이 좁아도 가리지 않게). */
+.game-track:has(.rival-ladder) :is(.game-faller, .game-riser) { left: calc(50% - 28px); width: calc(92% - 56px); }
+.game-track:has(.rival-ladder) :is(.game-center, .tunnel-card) { right: 56px; }
+.game-track.field:has(.rival-ladder) { padding-right: 62px; }
+.ladder-token-boost { position: absolute; top: -10px; right: -10px; font-size: 15px; font-style: normal; }
+
+/* ── 블록 탑 쌓기: 기중기가 문제를 단 블록을 내려 주고, 맞히면 탑에 한 층 얹습니다 ───── */
+.game-track.build {
+  background:
+    linear-gradient(180deg, #ffe7b8 0%, #ffd38a 55%, #e9a85c 55.5%, #d38d45 100%);
+}
+.game-build-area { position: absolute; top: 0; bottom: 0; left: 0; right: 56px; overflow: hidden; }
+.game-crane {
+  position: absolute;
+  top: 22px;
+  left: 8%;
+  right: 8%;
+  height: 8px;
+  border-radius: 4px;
+  background: repeating-linear-gradient(90deg, #1D2B45 0 10px, #FFC23D 10px 20px);
+}
+.game-dropper {
+  position: absolute;
+  top: 28px;
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  width: min(86%, 300px);
+  transform: translateX(-50%);
+  animation: game-drop 12s linear forwards;
+}
+.game-dropper.stopped { animation: none; top: 28px; }
+/* 블록이 탑 바로 위까지 내려오면 시간이 다 된 것입니다. */
+@keyframes game-drop { from { top: 28px; } to { top: 46%; } }
+.game-hook { width: 2px; height: 14px; background: #1D2B45; }
+.game-dropper .game-card { width: 100%; }
+.game-block {
+  display: block;
+  width: 64px;
+  height: 16px;
+  border: 2px solid #1D2B45;
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0 30%, transparent 30%), var(--block);
+}
+.game-block.next { margin-bottom: 2px; animation: block-sway 1.2s ease-in-out infinite alternate; }
+@keyframes block-sway { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+.game-tower-stack {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 1px;
+  transform: translateX(-50%);
+}
+.game-tower-stack .game-block:nth-child(odd) { translate: 3px 0; }
+.game-tower-stack .game-block.landed { animation: block-land 0.45s cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes block-land { 0% { transform: translateY(-60px); } 70% { transform: translateY(2px) scaleY(0.85); } 100% { transform: translateY(0); } }
+.game-tower-base { order: -1; font-size: 22px; line-height: 1; }
+.game-block.tumble {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  z-index: 3;
+  animation: block-tumble 0.9s ease-in forwards;
+}
+@keyframes block-tumble {
+  0% { transform: translate(-50%, 0) rotate(0); opacity: 1; }
+  100% { transform: translate(60px, 160px) rotate(220deg); opacity: 0; }
+}
+.ladder-tower { --ladder-bg: repeating-linear-gradient(135deg, #FFC23D 0 10px, #1D2B45 10px 20px); --ladder-rung: #fff; border-color: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .game-block.next { animation: none; }
+}

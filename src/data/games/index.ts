@@ -20,7 +20,7 @@ import { isCastleLesson } from '../lessonKinds';
 // 그대로 두어, 차시 번호로 짝지어 둔 다른 표들이 어긋나지 않습니다.
 // ════════════════════════════════════════════════════════════════════
 
-export type GameMode = 'monster' | 'balloon' | 'mole' | 'rocket' | 'race' | 'treasure' | 'tunnel3d' | 'soccer3d' | 'fishing';
+export type GameMode = 'monster' | 'balloon' | 'mole' | 'rocket' | 'race' | 'treasure' | 'tunnel3d' | 'soccer3d' | 'fishing' | 'tower';
 
 export interface GameInfo {
   mode: GameMode;
@@ -42,9 +42,10 @@ export const 놀이들: Record<GameMode, GameInfo> = {
   tunnel3d: { mode: 'tunnel3d', title: '3D 우주 터널을 지나라!', how: '외계인보다 먼저 10점! 부딪히기 전에 날아오는 문제를 맞혀요', missTitle: '운석에 부딪혔어요!' },
   soccer3d: { mode: 'soccer3d', title: '3D 승부차기, 골을 넣어라!', how: '골키퍼보다 먼저 10점! 시간 안에 맞히면 슛! 골문에 공을 넣어요', missTitle: '골키퍼가 막았어요!' },
   fishing: { mode: 'fishing', title: '낚시 대회, 물고기를 낚아라!', how: '곰보다 먼저 10점! 물고기가 지나가기 전에 맞혀 낚아 올려요', missTitle: '물고기가 도망갔어요!' },
+  tower: { mode: 'tower', title: '블록 탑 쌓기!', how: '비버보다 먼저 10점! 블록이 떨어지기 전에 맞혀 탑을 높이 쌓아요', missTitle: '블록이 떨어졌어요!' },
 };
 
-const 돌림차례: GameMode[] = ['monster', 'balloon', 'tunnel3d', 'mole', 'rocket', 'soccer3d', 'race', 'treasure', 'fishing'];
+const 돌림차례: GameMode[] = ['monster', 'balloon', 'tunnel3d', 'mole', 'rocket', 'soccer3d', 'race', 'treasure', 'fishing', 'tower'];
 
 const 놀이꼬리 = '-game';
 

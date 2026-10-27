@@ -36,6 +36,9 @@ const 몬스터들 = ['👾', '👹', '👻', '🐲', '🦖', '🐙'];
 const 풍선색 = ['#ff5a7a', '#ffb347', '#59d68a', '#4fb3ff', '#b779ff', '#ff7ad9'];
 const 보석들 = ['💎', '💍', '👑', '🪙', '🔮', '⭐'];
 const 물고기들 = ['🐟', '🐠', '🐡', '🦑', '🦀', '🐙'];
+const 블록색 = ['#FF6B6B', '#FFC23D', '#4FC3A1', '#4F9DE8', '#B57BFF', '#FF8FC7'];
+/** 탑에 한 번에 보이는 층 수입니다. 더 높아지면 아래층은 화면 밖으로 내려간 것처럼 둡니다. */
+const 보이는층 = 6;
 
 // 전자칠판은 여럿이 한 화면을 함께 누르므로 상 수준에 1초를 돌려줍니다(구구단 몬스터와 같은 까닭).
 const 함께쓰는화면덤 = 1;
@@ -52,6 +55,7 @@ const 터짐: Record<GameMode, { 큰: string; 말: string[]; 조각: string[] }>
   tunnel3d: { 큰: '💥', 말: ['콰광!', '명중!', '빔!'], 조각: ['✨', '💫', '⭐'] },
   soccer3d: { 큰: '⭐', 말: ['골인!', '슛!', 'GOAL!'], 조각: ['⭐', '🎉', '✨'] },
   fishing: { 큰: '💦', 말: ['낚았다!', '월척!', '첨벙!'], 조각: ['💧', '🐟', '✨'] },
+  tower: { 큰: '✨', 말: ['쿵!', '한 층 더!', '착!'], 조각: ['⭐', '✨', '🧱'] },
 };
 
 /**
@@ -110,11 +114,12 @@ const 라이벌들: Record<GameMode, { 얼굴: string; 이름: string; 이가: s
   treasure: { 얼굴: '🏴‍☠️', 이름: '해적', 이가: '해적이', 을를: '해적을' },
   soccer3d: { 얼굴: '🧤', 이름: '골키퍼', 이가: '골키퍼가', 을를: '골키퍼를' },
   fishing: { 얼굴: '🐻', 이름: '곰', 이가: '곰이', 을를: '곰을' },
+  tower: { 얼굴: '🦫', 이름: '비버', 이가: '비버가', 을를: '비버를' },
 };
 
 /** 놀이마다 사다리 꼭대기에 놓인 목표입니다. 로켓은 달로, 풍선은 구름으로 올라갑니다. */
 const 사다리목표: Record<GameMode, string> = {
-  monster: '👑', balloon: '☁️', tunnel3d: '🌀', mole: '🏆', rocket: '🌕', race: '🏁', treasure: '💎', soccer3d: '🥅', fishing: '🐳',
+  monster: '👑', balloon: '☁️', tunnel3d: '🌀', mole: '🏆', rocket: '🌕', race: '🏁', treasure: '💎', soccer3d: '🥅', fishing: '🐳', tower: '🌟',
 };
 
 /** 놀이 설명의 'OO보다 먼저 10점!'을 친구들과 겨루는 말로 바꿉니다. 달리기는 거북이 대신 친구들이 따라옵니다. */
@@ -286,6 +291,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     soccer3d: { top: '22%' },
     tunnel3d: undefined,
     fishing: { left: `${물고기자리 + 8}%`, top: '30%' },
+    tower: { left: 'calc(50% - 28px)', top: `${Math.max(14, 80 - Math.min(correct, 보이는층) * 9)}%` },
   }[game.mode];
   const 문제 = (
     <div className={`game-card ${visual ? 'with-visual' : ''}`.trim()}>
@@ -329,10 +335,11 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
         ))}
         <span className="ladder-token me" key={`me-${friends?.판 ?? 경주.판}`} style={{ bottom: 높이(내판점수) }}>
           <span className="game-kick" key={`me-${맞힘}`}>{avatar}</span>
+          {/* ⚡부스터는 문제 카드를 가리지 않게 내 말에 붙여 둡니다. */}
+          {friends?.부스터 && <i className="ladder-token-boost">⚡</i>}
         </span>
       </div>
       {직전경고}
-      {friends?.부스터 && <b className="ladder-boost">⚡두 칸!</b>}
       {!friends && 경주.내승 + 경주.상대승 > 0 && <small className="ladder-record">{경주.내승}승 {경주.상대승}패</small>}
     </div>
   );
@@ -587,6 +594,39 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
           ))}
         </div>
       );
+    case 'tower': {
+      // 맞힐 때마다 한 층씩 쌓입니다. 맨 위 블록만 방금 내려앉은 움직임을 보입니다.
+      const 층들 = Array.from({ length: Math.min(correct, 보이는층) }, (_, at) => correct - Math.min(correct, 보이는층) + at);
+      return (
+        <div className="game-scene game-tower">
+          {줄(<>🏢 {correct}층</>, <>떨어진 블록 {wrong}</>)}
+          {판('build', (
+            <>
+              <div className="game-build-area">
+                <i className="game-crane" aria-hidden="true" />
+                <div className={`game-dropper ${stopped ? 'stopped' : ''}`} key={questionKey} style={시계} onAnimationEnd={끝나면}>
+                  <i className="game-hook" aria-hidden="true" />
+                  <span className="game-block next" style={{ '--block': 블록색[correct % 블록색.length] } as CSSProperties} aria-hidden="true" />
+                  {문제}
+                </div>
+                <div className="game-tower-stack" aria-hidden="true">
+                  {층들.map((층) => (
+                    <span
+                      key={층}
+                      className={`game-block ${층 === correct - 1 && 맞힘 > 0 ? 'landed' : ''}`.trim()}
+                      style={{ '--block': 블록색[층 % 블록색.length] } as CSSProperties}
+                    />
+                  ))}
+                  <b className="game-tower-base">{avatar}</b>
+                </div>
+                {/* 놓치면 매달려 있던 블록이 옆으로 굴러떨어집니다. */}
+                {놓침 > 0 && <span className="game-block tumble" key={`tumble-${놓침}`} style={{ '--block': 블록색[(correct + 1) % 블록색.length] } as CSSProperties} aria-hidden="true" />}
+              </div>
+            </>
+          ))}
+        </div>
+      );
+    }
     case 'tunnel3d':
       return (
         <div className="game-scene game-tunnel">
