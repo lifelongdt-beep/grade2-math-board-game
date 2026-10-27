@@ -746,7 +746,7 @@ export const playFeverBeat = (tick: number) => {
 // 동물 친구의 기쁨·화남 소리와 함께 울리므로, 하나하나는 짧고(0.6초 안쪽)
 // 작게(0.1 이하) 둡니다. 다섯이 한꺼번에 내도 시끄럽지 않아야 합니다.
 
-export type 놀이소리모드 = 'monster' | 'balloon' | 'mole' | 'rocket' | 'race' | 'treasure' | 'tunnel3d' | 'soccer3d' | 'fishing' | 'tower';
+export type 놀이소리모드 = 'monster' | 'balloon' | 'mole' | 'rocket' | 'race' | 'treasure' | 'tunnel3d' | 'soccer3d' | 'fishing' | 'tower' | 'archery';
 
 // 터지는 소리입니다. 거친 톱니파를 빠르게 떨며 낮게 떨어뜨리면 '쾅'처럼 들립니다.
 const 쾅 = (at: number, volume = 0.07): Blip[] => [
@@ -820,6 +820,13 @@ const 맞힘효과: Record<놀이소리모드, Blip[]> = {
     { frequency: 300, at: 0, length: 0.05, volume: 0.05, type: 'square' },
     { frequency: 1318.51, at: 0.12, length: 0.18, volume: 0.05, type: 'triangle' },
   ],
+  // 팅(시위) — 슈욱(화살) — 탁!(과녁에 꽂힘)
+  archery: [
+    { frequency: 320, at: 0, length: 0.08, volume: 0.06, type: 'triangle', slideTo: 520 },
+    { frequency: 2400, at: 0.06, length: 0.16, volume: 0.03, type: 'sine', slideTo: 900 },
+    { frequency: 180, at: 0.22, length: 0.06, volume: 0.09, type: 'square', slideTo: 90 },
+    { frequency: 1567.98, at: 0.3, length: 0.16, volume: 0.04, type: 'triangle' },
+  ],
 };
 
 const 놓침효과: Record<놀이소리모드, Blip[]> = {
@@ -874,6 +881,11 @@ const 놓침효과: Record<놀이소리모드, Blip[]> = {
     { frequency: 500, at: 0, length: 0.4, volume: 0.05, type: 'triangle', slideTo: 80 },
     { frequency: 120, at: 0.3, length: 0.12, volume: 0.07, type: 'sawtooth', slideTo: 50 },
   ],
+  // 슈우웅 — 화살이 과녁 옆으로 날아가 버립니다.
+  archery: [
+    { frequency: 1800, at: 0, length: 0.4, volume: 0.04, type: 'sine', slideTo: 500 },
+    { frequency: 110, at: 0.38, length: 0.08, volume: 0.05, type: 'triangle' },
+  ],
 };
 
 // 새 문제가 나올 때의 작은 신호입니다. 매 문제 울리므로 가장 작게 둡니다.
@@ -892,6 +904,7 @@ const 등장효과: Record<놀이소리모드, Blip[]> = {
   soccer3d: [{ frequency: 2900, at: 0, length: 0.18, volume: 0.03, type: 'sine', vibrato: { rate: 45, depth: 120 } }],
   fishing: [{ frequency: 1400, at: 0, length: 0.12, volume: 0.03, type: 'sine', slideTo: 2100 }],
   tower: [{ frequency: 600, at: 0, length: 0.14, volume: 0.025, type: 'square', vibrato: { rate: 30, depth: 40 } }],
+  archery: [{ frequency: 260, at: 0, length: 0.2, volume: 0.03, type: 'triangle', slideTo: 380 }],
 };
 
 // 콤보 소리는 도 레 미 솔 라(5음 음계)를 따라 맞힐 때마다 한 칸씩 올라갑니다.
@@ -1018,7 +1031,7 @@ export const 배경곡들: Record<배경곡, 곡> = {
 export const 놀이배경곡: Record<놀이소리모드, 배경곡> = {
   monster: 'adventure', tunnel3d: 'adventure', rocket: 'adventure',
   balloon: 'bouncy', mole: 'bouncy', soccer3d: 'dash',
-  race: 'dash', treasure: 'dash', fishing: 'bouncy', tower: 'dash',
+  race: 'dash', treasure: 'dash', fishing: 'bouncy', tower: 'dash', archery: 'adventure',
 };
 
 const 배경 = {

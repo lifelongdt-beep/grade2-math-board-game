@@ -11020,3 +11020,73 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   .game-block.next { animation: none; }
 }
+
+/* ── 활쏘기: 시위를 당기는 동안 맞히면 화살이 과녁 한가운데에 꽂힙니다 ───── */
+.game-track.range {
+  background: linear-gradient(180deg, #a8dcff 0%, #d9f1ff 58%, #8fd17a 58.5%, #5fae4f 100%);
+}
+.game-range-area { position: absolute; top: 0; bottom: 0; left: 0; right: 56px; overflow: hidden; container-type: inline-size; }
+.game-archery .game-center { place-items: start center; padding-top: 26px; z-index: 2; }
+.game-bow {
+  position: absolute;
+  left: 6%;
+  bottom: 14%;
+  font-size: 36px;
+  line-height: 1;
+  transform: scaleX(-1);
+}
+.game-bow i { position: absolute; right: -18px; bottom: 2px; font-size: 22px; font-style: normal; transform: scaleX(-1); }
+.game-target {
+  position: absolute;
+  right: 8%;
+  bottom: 14%;
+  animation: target-bob 1.8s ease-in-out infinite alternate;
+}
+@keyframes target-bob { from { transform: translateY(-10px); } to { transform: translateY(10px); } }
+.game-target-face {
+  position: relative;
+  display: block;
+  width: clamp(44px, 16cqw, 70px);
+  aspect-ratio: 1;
+  border: 3px solid #1D2B45;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FFC23D 0 14%, #E8604C 14% 30%, #fff 30% 46%, #E8604C 46% 62%, #fff 62% 78%, #4F9DE8 78%);
+  animation: target-hit 0.4s ease-out;
+}
+@keyframes target-hit { 0% { transform: scale(1); } 30% { transform: scale(1.12) rotate(-6deg); } 100% { transform: scale(1); } }
+.game-target-face::after { content: ''; position: absolute; left: 50%; bottom: -26px; width: 4px; height: 24px; background: #7a4d2a; transform: translateX(-50%); }
+.game-stuck {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: #1D2B45;
+  transform-origin: 0 50%;
+  transform: rotate(var(--a)) translateX(var(--r));
+}
+.game-arrow {
+  position: absolute;
+  left: 14%;
+  bottom: calc(16% + 36px);
+  z-index: 3;
+  width: 46px;
+  height: 3px;
+  background: #7a4d2a;
+}
+.game-arrow::after { content: ''; position: absolute; right: -8px; top: -4px; border-left: 10px solid #1D2B45; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+.game-arrow::before { content: ''; position: absolute; left: -2px; top: -4px; width: 10px; height: 11px; background: linear-gradient(135deg, #E8604C 50%, transparent 50%), linear-gradient(45deg, transparent 50%, #E8604C 50%); }
+.game-arrow.hit { animation: arrow-fly 0.35s ease-in forwards; }
+.game-arrow.miss { animation: arrow-miss 0.8s ease-out forwards; }
+@keyframes arrow-fly { from { left: 14%; opacity: 1; } 90% { opacity: 1; } to { left: calc(90% - 82px); opacity: 0; } }
+@keyframes arrow-miss { from { left: 14%; opacity: 1; transform: rotate(0); } to { left: 96%; bottom: 92%; opacity: 0; transform: rotate(-24deg); } }
+.game-fuel.bow > div { background: linear-gradient(90deg, #E8604C, #FFC23D, #4FC3A1); }
+.ladder-archery { --ladder-bg: linear-gradient(#a8dcff 0%, #d9f1ff 55%, #5fae4f 56%, #3f8a35 100%); --ladder-rung: rgba(29, 43, 69, 0.35); border-color: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .game-target { animation: none; }
+}
+
+/* 5명처럼 칸이 좁아도 학생 이름은 한 줄로 둡니다. */
+.lane-head > strong { white-space: nowrap; }

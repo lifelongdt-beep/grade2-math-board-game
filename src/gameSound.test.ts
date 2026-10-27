@@ -5,7 +5,7 @@ import { 놀이놓침소리, 놀이등장소리, 놀이똑딱소리, 놀이맞�
 // 단원 놀이 여덟 가지는 저마다 맞힌 소리·놓친 소리·나오는 소리가 있어야 하고,
 // 동물 친구 소리와 겹쳐 울려도 시끄럽지 않게 짧고 작아야 합니다.
 describe('단원 놀이 효과음', () => {
-  const 모드들: 놀이소리모드[] = ['monster', 'balloon', 'mole', 'rocket', 'race', 'treasure', 'tunnel3d', 'soccer3d', 'fishing', 'tower'];
+  const 모드들: 놀이소리모드[] = ['monster', 'balloon', 'mole', 'rocket', 'race', 'treasure', 'tunnel3d', 'soccer3d', 'fishing', 'tower', 'archery'];
   const 길이 = (blips: Blip[]) => Math.max(...blips.map((one) => one.at + one.length));
   const 서명 = (blips: Blip[]) => blips.map((one) => `${one.type}:${Math.round(one.frequency)}@${one.at}`).join(' ');
 
