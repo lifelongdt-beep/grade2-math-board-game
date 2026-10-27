@@ -56,7 +56,8 @@ import {
 import { HighlightedPrompt } from './components/HighlightedPrompt';
 import { MathText } from './components/MathText';
 import { 결승점수, 놀이차시붙이기, 놀이차시인가, 놀이찾기 } from './data/games';
-import { 등수표시, 새친구판, 순위매기기, 판넘기기, 판점수, type 친구판 } from './data/games/friendRace';
+import { 등수표시, 맞힘반영, 부스터인가, 새친구판, 순위매기기, 판점수, type 친구판 } from './data/games/friendRace';
+import { FriendRaceBoard } from './components/FriendRaceBoard';
 import { MONSTER_HP, UnitMonster, 단원몬스터찾기 } from './components/UnitMonster';
 import { 조작칭찬 } from './data/manipulate/fun';
 import { 답전까지걸음 } from './data/hintUpgrade';
@@ -1117,14 +1118,31 @@ function App() {
   );
   const [겨룬판, set겨룬판] = useState<친구판>(새친구판);
   const 겨룬아이들 = useMemo(() => players.map((player) => player.id), [players]);
+  // 바로 앞에 본 맞힌 개수입니다. 부스터였던 아이가 새로 맞혔는지 알아내는 데 씁니다.
+  const 앞겨룬맞힘 = useRef(겨룬맞힘);
   useEffect(() => {
+    const 앞 = 앞겨룬맞힘.current;
+    앞겨룬맞힘.current = 겨룬맞힘;
     if (!겨루기 || mode !== 'playing') return;
-    const 다음 = 판넘기기(겨룬판, 겨룬아이들, 겨룬맞힘, 겨룬결승);
+    const 다음 = 맞힘반영(겨룬판, 겨룬아이들, 앞, 겨룬맞힘, 겨룬결승);
     if (다음 === 겨룬판) return;
     set겨룬판(다음);
-    playGameStage();
-  }, [겨룬맞힘, 겨루기, 겨룬결승, mode, 겨룬판, 겨룬아이들]);
+    if (다음.판 !== 겨룬판.판) playGameStage();
+  }, [겨룬맞힘, 겨루기, 겨룬결승, mode, 겨룬아이들, 겨룬판]);
   const 등수 = 겨루기 ? 순위매기기(겨룬판, 겨룬아이들, 겨룬맞힘) : {};
+  const 부스터들 = 겨루기 && mode === 'playing' ? 겨룬아이들.filter((id) => 부스터인가(겨룬판, 겨룬아이들, 겨룬맞힘, id)) : [];
+  // 순위가 오른 아이에게 '추월!'을 띄웁니다. 새 판이 시작되어 모두 0점이 된 순간은 세지 않습니다.
+  const 앞등수 = useRef<{ 판: number; 등수: Record<number, number> }>({ 판: 0, 등수: {} });
+  const [추월, set추월] = useState<{ id: number; n: number } | null>(null);
+  const 등수열쇠 = 겨룬아이들.map((id) => 등수[id] ?? 0).join(',');
+  useEffect(() => {
+    const 앞 = 앞등수.current;
+    앞등수.current = { 판: 겨룬판.판, 등수 };
+    if (!겨루기 || mode !== 'playing' || 앞.판 !== 겨룬판.판) return;
+    const 오른 = 겨룬아이들.find((id) => 앞.등수[id] !== undefined && (등수[id] ?? 0) < 앞.등수[id]);
+    if (오른 !== undefined) set추월((one) => ({ id: 오른, n: (one?.n ?? 0) + 1 }));
+    // 등수는 그릴 때마다 새 객체이므로 등수열쇠(글자)로 바뀜을 봅니다.
+  }, [등수열쇠, 겨룬판.판]);
   const 일등들 = 겨룬아이들.filter((id) => 등수[id] === 1);
   const 선두 = 일등들.length === 1 ? 일등들[0] : null;
   const 앞선두 = useRef<number | null>(null);
@@ -1142,6 +1160,7 @@ function App() {
     if (sessionRecords.length === 0) {
       앞선두.current = null;
       set역전(null);
+      set추월(null);
       set겨룬판(새친구판());
     }
   }, [sessionRecords.length]);
@@ -2372,6 +2391,24 @@ function App() {
           <small>👑 {겨룬판.판}판 끝 · 모두 0점에서 다시 출발!</small>
         </div>
       )}
+      {겨루기 && mode === 'playing' && (
+        <FriendRaceBoard
+          말들={players.map((player) => ({
+            id: player.id,
+            avatar: player.avatar,
+            name: player.name,
+            점수: 판점수(겨룬판, 겨룬맞힘, player.id),
+            등수: 등수[player.id] ?? 1,
+            이긴판: 겨룬판.승[player.id] ?? 0,
+            부스터: 부스터들.includes(player.id),
+            style: laneStyleFor(player.id),
+          }))}
+          결승={겨룬결승}
+          판={겨룬판.판 + 1}
+          선두={선두}
+          추월={추월}
+        />
+      )}
       <section className={`game-layout individual players-${playerCount} ${feverOn && mode === 'playing' ? 'fever' : ''}`}>
         <section className="playfield" style={{ backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(./assets/math-adventure-bg.webp)' }}>
           <div
@@ -2698,6 +2735,7 @@ function App() {
                             friends={겨루기 ? {
                               나: 판점수(겨룬판, 겨룬맞힘, player.id),
                               판: 겨룬판.판,
+                              부스터: 부스터들.includes(player.id),
                               친구들: players.filter((one) => one.id !== player.id).map((one) => ({ 얼굴: one.avatar, 이름: one.name, 점수: 판점수(겨룬판, 겨룬맞힘, one.id) })),
                             } : undefined}
                           />

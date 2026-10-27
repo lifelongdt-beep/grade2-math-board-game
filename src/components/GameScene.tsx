@@ -180,6 +180,8 @@ export interface 친구겨루기 {
   /** 끝난 판 수입니다. 판이 바뀌면 달리기 길의 캐릭터들이 출발선으로 돌아갑니다. */
   판: number;
   친구들: { 얼굴: string; 이름: string; 점수: number }[];
+  /** 내가 ⚡부스터를 받고 있으면 true입니다. 맞히면 두 칸을 갑니다. */
+  부스터: boolean;
 }
 
 export function GameScene({ game, questionKey, prompt, visual, level, correct, wrong, avatar, sharedScreen, stopped, onTimeout, goal = 기본결승, friends }: GameSceneProps) {
@@ -202,7 +204,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
   const 경주 = use라이벌(맞힘, 놓침, 기본초, stopped || 준비 || Boolean(friends), 결승칸);
   // 이번 판 내 점수입니다. 친구와 겨루면 바깥에서 받은 점수를 씁니다.
   const 내판점수 = friends ? friends.나 : 경주.나;
-  // 친구 가운데 이번 판 점수가 가장 높은 친구가 줄다리기 상대입니다.
+  // 친구 가운데 이번 판 점수가 가장 높은 친구입니다. 달리기에서 그 친구가 앞서면 '서둘러!'를 띄웁니다.
   const 맞수 = friends?.친구들.reduce((best, one) => (one.점수 > best.점수 ? one : best), friends.친구들[0]);
   const 라이벌 = 라이벌들[game.mode];
   // 바로 앞 판이 끝났을 때의 승패를 기억해, 이번 판을 누가 이겼는지 알아냅니다.
@@ -292,14 +294,19 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
   // 달리기는 길 위에서 거북이와 직접 겨루므로 줄다리기를 따로 두지 않습니다.
   const 상대점수 = Math.floor(경주.상대);
   const 앞섬 = 경주.나 - 경주.상대;
-  const 라이벌줄 = game.mode === 'race' ? null : friends && 맞수 ? (
+  // 친구와 겨루면 두 명씩 견주지 않고, 한 줄 위에 모든 친구와 나를 함께 세웁니다.
+  const 라이벌줄 = game.mode === 'race' ? null : friends ? (
     <span
-      className={`rival-bar friends ${내판점수 < 맞수.점수 ? 'behind' : 내판점수 > 맞수.점수 ? 'ahead' : ''}`.trim()}
-      aria-label={`나 ${내판점수}점, 친구 ${맞수.이름} ${맞수.점수}점, 먼저 ${결승칸}점 내기`}
+      className={`rival-bar friends ${friends.부스터 ? 'boost' : ''}`.trim()}
+      aria-label={`나 ${내판점수}점, ${friends.친구들.map((one) => `${one.이름} ${one.점수}점`).join(', ')}, 먼저 ${결승칸}점 내기`}
     >
-      <b className="rival-me">{avatar}{내판점수}</b>
-      <span className="rival-rope" aria-hidden="true"><i style={{ left: `${50 + Math.max(-44, Math.min(44, (내판점수 - 맞수.점수) * (44 / 결승칸)))}%` }} /></span>
-      <b className="rival-them" key={`friend-${friends.판}-${맞수.점수}`}>{맞수.점수}{맞수.얼굴}</b>
+      <span className="friend-strip" aria-hidden="true">
+        {friends.친구들.map((one, at) => (
+          <i key={at} style={{ left: `${(Math.min(결승칸, one.점수) / 결승칸) * 100}%` }}>{one.얼굴}</i>
+        ))}
+        <b className="friend-strip-me" key={`me-${friends.판}-${내판점수}`} style={{ left: `${(Math.min(결승칸, 내판점수) / 결승칸) * 100}%` }}>{avatar}</b>
+      </span>
+      {friends.부스터 ? <small className="boost-chip">⚡두 칸!</small> : <small>{내판점수}/{결승칸}</small>}
     </span>
   ) : (
     <span
@@ -478,15 +485,19 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
         return (
           <div className="game-scene game-race">
             {줄(
-              <>👑 {friends.판}판 끝</>,
+              friends.부스터 ? <b className="boost-chip">⚡ 맞히면 두 칸!</b> : <>🏁 {friends.판 + 1}판째</>,
               앞친구 ? <b className="race-warn">{앞친구.얼굴} {앞친구.이름} 앞서요! 서둘러!</b> : <>🏁 결승까지 {결승칸 - friends.나}칸</>,
             )}
             {판('road', (
               <>
-                <div className="game-lane"><span className="runner" key={`me-run-${friends.판}`} style={{ left: `${friends.나 * 칸너비}%` }}><span className="game-kick" key={`me-${맞힘}`}>{avatar}{맞힘 > 0 && <i>💨</i>}</span></span><b>🏁</b></div>
-                {friends.친구들.map((one, at) => (
-                  <div className="game-lane friend" key={at}><span className="runner" key={`friend-run-${friends.판}`} style={{ left: `${Math.min(결승칸, one.점수) * 칸너비}%` }}><span className="game-kick" key={`f-${one.점수}`}>{one.얼굴}</span></span><b>🏁</b></div>
-                ))}
+                {/* 친구들 모두가 위 경주판에도 있으므로, 여기서는 한 길에 작게 함께 달려 문제 칸을 넉넉히 둡니다. */}
+                <div className="game-lane">
+                  {friends.친구들.map((one, at) => (
+                    <span className="runner friend" key={`friend-run-${friends.판}-${at}`} style={{ left: `${Math.min(결승칸, one.점수) * 칸너비}%` }}>{one.얼굴}</span>
+                  ))}
+                  <span className="runner" key={`me-run-${friends.판}`} style={{ left: `${friends.나 * 칸너비}%` }}><span className="game-kick" key={`me-${맞힘}`}>{avatar}{맞힘 > 0 && <i>💨</i>}</span></span>
+                  <b>🏁</b>
+                </div>
                 <div className="game-center">{문제}</div>
               </>
             ))}

@@ -10584,9 +10584,7 @@ body::before {
 }
 
 /* 친구와 겨루기: 달리기 길에는 친구들 줄이 내 줄 아래로 조금 작게 이어집니다. */
-.game-lane.friend { flex-basis: 26px; }
-.game-lane.friend span { font-size: 21px; }
-.game-lane.friend b { font-size: 18px; }
+.game-lane span.runner.friend { bottom: 4px; font-size: 18px; opacity: 0.8; }
 
 /* 한 판이 끝나면 놀이판 가운데에 모두가 보도록 잠깐 띄웁니다. 누르는 자리를 가리지 않게 터치는 지나갑니다. */
 .friend-round-banner {
@@ -10616,3 +10614,160 @@ body::before {
   100% { opacity: 0; transform: translate(-50%, -60%) scale(0.96); }
 }
 .versus-chip small { font-size: 0.9em; }
+
+/* ── 친구들 경주판: 모두가 한 길 위에서 칸을 뛰어갑니다 ───────────────────── */
+.race-board {
+  --rb-ink: #1D2B45;
+  --rb-mint: #E3F1EA;
+  --rb-line: #CFE3D8;
+  --rb-sun: #FFC23D;
+  --rb-coral: #E8604C;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin: 0 0 8px;
+  padding: 6px 10px 6px 6px;
+  border: 3px solid var(--rb-ink);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 4px 0 var(--rb-ink);
+  font-family: 'Jua', 'Pretendard', sans-serif;
+  color: var(--rb-ink);
+  pointer-events: none;
+}
+.race-board-round {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  min-width: 74px;
+  padding: 0 6px;
+  border-radius: 12px;
+  background: var(--rb-ink);
+  color: #fff;
+}
+.race-board-round b { font-size: 24px; line-height: 1; color: var(--rb-sun); }
+.race-board-round small { font-size: 13px; }
+.race-board-track { position: relative; flex: 1; min-width: 0; height: 54px; }
+.race-board-path {
+  position: absolute;
+  inset: 14px 0 0;
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.race-board-path li {
+  display: grid;
+  align-items: end;
+  justify-items: end;
+  padding: 0 6px 2px;
+  border: 2px solid var(--rb-line);
+  border-radius: 10px;
+  background: var(--rb-mint);
+  font-size: 13px;
+  color: #4C5B73;
+}
+.race-board-path li:nth-child(even) { background: #fff; }
+.race-board-path li.start { justify-items: start; background: #F3F8F5; color: var(--rb-ink); }
+.race-board-path li.goal {
+  justify-items: center;
+  align-items: center;
+  border-color: var(--rb-ink);
+  background: repeating-conic-gradient(var(--rb-ink) 0 25%, #fff 0 50%) 0 0 / 14px 14px;
+  font-size: 20px;
+}
+.race-token {
+  position: absolute;
+  top: 0;
+  display: grid;
+  justify-items: center;
+  width: 44px;
+  transform: translateX(-50%);
+  transition: left 0.55s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.race-token-face {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 3px solid var(--player-color, var(--rb-ink));
+  border-radius: 50%;
+  background: #fff;
+  font-size: 22px;
+  box-shadow: 0 3px 0 var(--rb-ink);
+  animation: token-hop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.race-token-no {
+  margin-top: -6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--player-color, var(--rb-ink));
+  color: #fff;
+  font-size: 12px;
+  line-height: 16px;
+}
+.race-token-crown { position: absolute; top: -16px; font-style: normal; font-size: 20px; animation: crown-sway 1.4s ease-in-out infinite alternate; }
+.race-token.leader .race-token-face { border-color: var(--rb-sun); box-shadow: 0 3px 0 var(--rb-ink), 0 0 0 4px rgba(255, 194, 61, 0.45); }
+.race-token.boost .race-token-face { border-color: var(--rb-coral); animation: token-hop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1), boost-glow 0.7s ease-in-out infinite alternate; }
+.race-token-boost { position: absolute; top: -8px; right: -6px; font-style: normal; font-size: 18px; }
+.race-token-wins {
+  position: absolute;
+  top: 20px;
+  left: -14px;
+  padding: 0 4px;
+  border: 2px solid var(--rb-ink);
+  border-radius: 999px;
+  background: var(--rb-sun);
+  font-style: normal;
+  font-size: 11px;
+  line-height: 14px;
+}
+.race-token-pass {
+  position: absolute;
+  top: -22px;
+  padding: 1px 8px;
+  border: 2px solid var(--rb-ink);
+  border-radius: 10px;
+  background: var(--rb-coral);
+  color: #fff;
+  font-size: 15px;
+  white-space: nowrap;
+  animation: pass-pop 1.6s ease-out forwards;
+}
+@keyframes token-hop { 0% { transform: translateY(0); } 40% { transform: translateY(-14px) scale(1.12); } 100% { transform: translateY(0); } }
+@keyframes crown-sway { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+@keyframes boost-glow { from { box-shadow: 0 3px 0 #1D2B45, 0 0 0 2px rgba(232, 96, 76, 0.3); } to { box-shadow: 0 3px 0 #1D2B45, 0 0 0 7px rgba(232, 96, 76, 0.55); } }
+@keyframes pass-pop {
+  0% { opacity: 0; transform: translateY(8px) scale(0.6); }
+  15% { opacity: 1; transform: translateY(-4px) scale(1.1); }
+  25%, 75% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+
+/* 놀이 안의 한 줄: 친구들 모두와 내가 같은 줄 위에 섭니다(나는 크게, 친구들은 작게). */
+.rival-bar.friends { gap: 8px; padding: 2px 10px; }
+.friend-strip {
+  position: relative;
+  width: clamp(90px, 12vw, 170px);
+  height: 22px;
+  margin: 0 10px;
+  background: linear-gradient(#fff, #fff) center / 100% 3px no-repeat;
+}
+.friend-strip::after { content: '🏁'; position: absolute; right: -14px; top: 1px; font-size: 13px; }
+.friend-strip i, .friend-strip b {
+  position: absolute;
+  top: 50%;
+  font-style: normal;
+  transform: translate(-50%, -50%);
+  transition: left 0.45s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.friend-strip i { font-size: 13px; opacity: 0.85; }
+.friend-strip b.friend-strip-me { z-index: 1; font-size: 19px; animation: score-bump 0.35s ease; text-shadow: none; }
+.rival-bar.friends .boost-chip, .game-status .boost-chip { color: #FFC23D; font-size: 12px; font-weight: 900; }
+.rival-bar.friends.boost { border-color: #E8604C; animation: rival-warn 0.6s ease-in-out infinite alternate; }
+
+@media (prefers-reduced-motion: reduce) {
+  .race-token-crown, .race-token.boost .race-token-face { animation: none; }
+}
+.rival-bar.friends small { white-space: nowrap; }
