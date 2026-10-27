@@ -1,5 +1,3 @@
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import { useState } from 'react';
 import {
   BarChart3,
@@ -23,7 +21,8 @@ interface TeacherPanelProps {
   records: AnswerRecord[];
   players: Player[];
   lesson: Lesson;
-  currentQuestion: Question;
+  /** 문항 엔진을 아직 내려받는 중이면 비어 있습니다. */
+  currentQuestion?: Question;
   // 우리 반 목표 한 단계에 필요한 정답 수입니다. 몇 번째 단계를 누가
   // 밀었는지 적으려면 이 수가 있어야 합니다.
   goalStep: number;
@@ -454,6 +453,8 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
     if (!report || studentWrongRecords.length === 0) return;
 
     const pages = Array.from(report.querySelectorAll<HTMLElement>('.pdf-page'));
+    // PDF 도구는 1MB가 넘어, 앱을 처음 열 때가 아니라 PDF를 만들 때 불러옵니다.
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
     const pdf = new jsPDF('p', 'mm', 'a4');
 
     for (let index = 0; index < pages.length; index += 1) {
@@ -592,7 +593,7 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
           <article>
             <ListChecks size={22} />
             <span>현재 문항 전략</span>
-            <strong>{currentQuestion.strategy}</strong>
+            <strong>{currentQuestion?.strategy ?? '문제 준비 중'}</strong>
           </article>
         </div>
 

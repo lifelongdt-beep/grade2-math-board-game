@@ -81,7 +81,7 @@ button:disabled {
 .app-shell.setup {
   background:
     linear-gradient(90deg, rgba(246, 248, 251, 0.95), rgba(246, 248, 251, 0.78)),
-    url("./assets/math-adventure-bg.png") center / cover;
+    url("./assets/math-adventure-bg.webp") center / cover;
 }
 
 .app-header,
@@ -9520,3 +9520,15 @@ body::before {
 .game-track.road { padding-top: 22px; }
 .game-track.field { padding-top: 26px; }
 .game-treasure .game-center { padding-top: 28px; }
+
+/* 문항 엔진을 내려받는 동안 잠깐 보이는 화면입니다. */
+.engine-loading {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  min-height: 60vh;
+  color: #fff6d6;
+  font-size: clamp(20px, 2.4vw, 32px);
+}
+.engine-loading span { font-size: 64px; animation: dice-spin 1.2s linear infinite; display: inline-block; }

@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import QRCode from 'qrcode';
 import {
   BarChart3,
   CheckCircle2,
@@ -54,16 +53,11 @@ import {
   wakeAudio,
   watchMuted,
 } from './sound';
-import { QuestionVisualGraphic } from './components/QuestionVisualGraphic';
 import { HighlightedPrompt } from './components/HighlightedPrompt';
 import { MathText } from './components/MathText';
-import { CastleDefenseScene } from './components/CastleDefenseScene';
-import { GameScene } from './components/GameScene';
-import { 놀이문항, 놀이차시붙이기, 놀이차시인가, 놀이찾기 } from './data/games';
+import { 놀이차시붙이기, 놀이차시인가, 놀이찾기 } from './data/games';
 import { MONSTER_HP, UnitMonster, 단원몬스터찾기 } from './components/UnitMonster';
-import { InteractiveHintModal } from './components/InteractiveHintModal';
-import { ManipulateTask } from './components/Manipulate';
-import { 조작섞기, 조작칭찬 } from './data/manipulate';
+import { 조작칭찬 } from './data/manipulate/fun';
 import { 답전까지걸음 } from './data/hintUpgrade';
 import type { ManipResult } from './data/manipulate/check';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
@@ -71,7 +65,6 @@ import { studyGuideFor } from './data/studyGuide';
 import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
 import { 동물이름, 명단쓰기, 명단읽기, 명단풀기, 방식쓰기, 방식읽기, 주인공바꾸기, type 이름바꾸기방식 } from './data/nameSwap';
 import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 황금문제인가, 대왕때리기, 대왕읽기, 대왕쓰기, 지금대왕, type 기록장, type 대왕, type 대왕싸움 } from './rewards';
-import { TeacherPanel, downloadAnalysisFile } from './components/TeacherPanel';
 import { curriculum as curriculum2 } from './data/curriculum';
 import { curriculum5 } from './data/curriculum5';
 import { curriculum51 } from './data/curriculum51';
@@ -84,7 +77,25 @@ import { curriculum61 } from './data/curriculum61';
 import { curriculum62 } from './data/curriculum62';
 import { curriculum32 } from './data/curriculum32';
 import { 도입차시인가 } from './data/introReview';
-import { generateClassQuestions, ALL_CASTLE_DEFENSE_DANS, CASTLE_DIVIDE_TITLE, isCastleLesson } from './data/questionFactory';
+import { ALL_CASTLE_DEFENSE_DANS, CASTLE_DIVIDE_TITLE, isCastleLesson } from './data/lessonKinds';
+// 문항 엔진은 무거워서 화면을 먼저 띄운 뒤 따로 불러옵니다(engine.ts).
+type 문항엔진 = typeof import('./data/engine');
+// 수업 화면에서만 쓰는 큰 부품들(문제 그림, 손 조작, 힌트 실험실, 놀이 장면)도 늦게 불러옵니다.
+// 설정 화면이 뜬 뒤 문항 엔진과 함께 미리 받아 두므로, 수업을 시작할 때는 이미 와 있습니다.
+const 부품불러오기 = {
+  그림: () => import('./components/QuestionVisualGraphic'),
+  성: () => import('./components/CastleDefenseScene'),
+  놀이: () => import('./components/GameScene'),
+  힌트: () => import('./components/InteractiveHintModal'),
+  조작: () => import('./components/Manipulate'),
+  교사: () => import('./components/TeacherPanel'),
+};
+const QuestionVisualGraphic = lazy(() => 부품불러오기.그림().then((m) => ({ default: m.QuestionVisualGraphic })));
+const CastleDefenseScene = lazy(() => 부품불러오기.성().then((m) => ({ default: m.CastleDefenseScene })));
+const GameScene = lazy(() => 부품불러오기.놀이().then((m) => ({ default: m.GameScene })));
+const InteractiveHintModal = lazy(() => 부품불러오기.힌트().then((m) => ({ default: m.InteractiveHintModal })));
+const ManipulateTask = lazy(() => 부품불러오기.조작().then((m) => ({ default: m.ManipulateTask })));
+const TeacherPanel = lazy(() => 부품불러오기.교사().then((m) => ({ default: m.TeacherPanel })));
 import type { AnswerRecord, ConceptTag, Difficulty, Lesson, Player, PlayerQuestionState, Question, SessionDuration, Unit } from './types';
 
 // 자리 색은 빨강·주황·노랑·초록·파랑 순서입니다. 아이들이 "나는 노랑" 하고
@@ -375,6 +386,7 @@ const spaceOutRepeats = (questions: Question[], gap: number): Question[] => {
 const 문제판수 = 7;
 
 const buildScopedQuestions = (
+  { generateClassQuestions, 놀이문항, 조작섞기 }: 문항엔진,
   lessons: Lesson[],
   difficulty: Difficulty,
   scope: ReviewScope,
@@ -586,7 +598,8 @@ const ClassroomQrCode = ({ value }: { value: string }) => {
     let active = true;
     setQrFailed(false);
 
-    QRCode.toDataURL(value, {
+    // 큐알 도구는 큐알을 띄울 때 불러옵니다(처음 여는 무게를 줄입니다).
+    import('qrcode').then(({ default: QRCode }) => QRCode.toDataURL(value, {
       errorCorrectionLevel: 'H',
       margin: 5,
       scale: 14,
@@ -595,7 +608,7 @@ const ClassroomQrCode = ({ value }: { value: string }) => {
         dark: '#111827',
         light: '#ffffff',
       },
-    })
+    }))
       .then((nextUrl) => {
         if (!active) return;
         setQrImageUrl(nextUrl);
@@ -753,15 +766,30 @@ function App() {
   };
   // 판을 여러 벌 만들면 시간이 걸리므로, 수준마다 처음 꺼낼 때 한 번만 만듭니다.
   // 하에서 시작한 학생이 상에 오르기 전에는 상 문제집을 만들지 않습니다.
+  // 문항 엔진입니다. 화면을 먼저 그린 뒤 뒤에서 내려받습니다. 받기 전에는 문제집이 비어 있고,
+  // 수업 화면은 '문제를 준비하고 있어요'를 잠깐 보여 줍니다.
+  const [engine, setEngine] = useState<문항엔진 | null>(null);
+  useEffect(() => {
+    let 살아있음 = true;
+    void import('./data/engine').then((loaded) => {
+      if (살아있음) setEngine(loaded);
+    });
+    // 수업 화면 부품도 이때 미리 받아 둡니다.
+    for (const 받기 of Object.values(부품불러오기)) void 받기();
+    return () => {
+      살아있음 = false;
+    };
+  }, []);
   const questionBanks = useMemo<Record<Difficulty, Question[]>>(() => {
+    if (!engine) return { 하: [], 중: [], 상: [] };
     const 만든것: Partial<Record<Difficulty, Question[]>> = {};
-    const 꺼내기 = (level: Difficulty) => (만든것[level] ??= buildScopedQuestions(scopedLessons, level, reviewScope, bankSeed, castleDans));
+    const 꺼내기 = (level: Difficulty) => (만든것[level] ??= buildScopedQuestions(engine, scopedLessons, level, reviewScope, bankSeed, castleDans));
     return {
       get 하() { return 꺼내기('하'); },
       get 중() { return 꺼내기('중'); },
       get 상() { return 꺼내기('상'); },
     };
-  }, [bankSeed, reviewScope, scopedLessons, castleDans]);
+  }, [engine, bankSeed, reviewScope, scopedLessons, castleDans]);
   const [remainingSeconds, setRemainingSeconds] = useState<SessionDuration | number>(sessionDuration);
   const [playerStates, setPlayerStates] = useState<Record<number, PlayerQuestionState>>(() => createQuestionState(players, undefined, checkLevel));
   const [records, setRecords] = useState<AnswerRecord[]>([]);
@@ -1097,7 +1125,7 @@ function App() {
     const 모든기록 = [...records, ...remoteRecords];
     if (모든기록.length === 0) return;
     autoDownloadedRef.current = true;
-    downloadAnalysisFile(lesson, 모든기록, [...players, ...remotePlayers], goalStep);
+    void 부품불러오기.교사().then(({ downloadAnalysisFile }) => downloadAnalysisFile(lesson, 모든기록, [...players, ...remotePlayers], goalStep));
   }, [mode, autoDownloadAnalysis, isMobileEntry, records, remoteRecords, lesson, players, remotePlayers, goalStep]);
   const goalStage = Math.floor(correctCount / goalStep) + 1;
   const goalTarget = goalStage * goalStep;
@@ -1117,7 +1145,8 @@ function App() {
     getPlayerQuestion(questionBanks, state);
   const fallbackStates = createQuestionState(players, undefined, checkLevel);
   const firstPlayer = players[0];
-  const sampleQuestion = firstPlayer
+  // 문항 엔진을 받기 전에는 문제집이 비어 있으므로 없을 수 있습니다.
+  const sampleQuestion: Question | undefined = firstPlayer
     ? getQuestionForPlayer(firstPlayer, playerStates[firstPlayer.id] ?? fallbackStates[firstPlayer.id])
     : questionBanks.중[0];
   const fullscreenActive = isFullscreen || fullscreenFallback;
@@ -1885,7 +1914,7 @@ function App() {
       <section
         className="setup-playfield playfield"
         style={{
-          backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(./assets/math-adventure-bg.png)',
+          backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(./assets/math-adventure-bg.webp)',
         }}
       >
         <div className="setup-progress">
@@ -2177,6 +2206,13 @@ function App() {
       </span>
     ));
 
+  // 문항 엔진이나 수업 부품을 다 받기 전에 수업을 시작하면 잠깐 이 화면이 보입니다.
+  const 준비화면 = (
+    <section className="engine-loading" role="status" aria-live="polite">
+      <span aria-hidden="true">🎲</span>
+      <strong>문제를 준비하고 있어요…</strong>
+    </section>
+  );
   const renderGame = () => (
     <>
       {renderFlyingStars()}
@@ -2289,7 +2325,7 @@ function App() {
         </div>
       )}
       <section className={`game-layout individual players-${playerCount} ${feverOn && mode === 'playing' ? 'fever' : ''}`}>
-        <section className="playfield" style={{ backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(./assets/math-adventure-bg.png)' }}>
+        <section className="playfield" style={{ backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,.93), rgba(0,0,0,.88)), url(./assets/math-adventure-bg.webp)' }}>
           <div
             className="player-lanes individual"
             style={{ gridTemplateColumns: `repeat(${Math.min(playerCount, 5)}, minmax(${playerCount >= 5 ? 180 : playerCount >= 4 ? 210 : 260}px, 1fr))` }}
@@ -2865,8 +2901,10 @@ function App() {
         </div>
       </header>
 
-      {mode === 'setup' ? renderSetup() : renderGame()}
+      {mode === 'setup' ? renderSetup() : engine ? <Suspense fallback={준비화면}>{renderGame()}</Suspense> : 준비화면}
 
+      {teacherOpen && (
+      <Suspense fallback={null}>
       <TeacherPanel
         isOpen={teacherOpen}
         onClose={() => setTeacherOpen(false)}
@@ -2880,6 +2918,8 @@ function App() {
         currentQuestion={sampleQuestion}
         goalStep={goalStep}
       />
+      </Suspense>
+      )}
 
     </main>
   );

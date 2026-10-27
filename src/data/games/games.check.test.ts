@@ -11,7 +11,8 @@ import { curriculum5 } from '../curriculum5';
 import { curriculum51 } from '../curriculum51';
 import { curriculum61 } from '../curriculum61';
 import { curriculum62 } from '../curriculum62';
-import { 놀이들, 놀이문항, 놀이차시붙이기, 놀이차시인가, 놀이찾기 } from './index';
+import { 놀이들, 놀이차시붙이기, 놀이차시인가, 놀이찾기 } from './index';
+import { 놀이문항 } from './questions';
 import { 단순문항있나 } from './quick';
 
 // 모든 학년 모든 단원 맨 앞에 놀이 차시가 붙고, 놀이마다 단원의 핵심을 묻는 짧은 문항이 넉넉해야 합니다.
