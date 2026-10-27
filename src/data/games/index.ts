@@ -8,7 +8,7 @@ import { isCastleLesson } from '../lessonKinds';
 // '구구단, 몬스터를 막아라!'처럼, 모든 학년 모든 단원의 맨 앞에 그 단원의
 // 가장 핵심 개념을 빠르게 떠올리는 놀이를 둡니다. 놀이 방법은 여덟 가지이고
 // (내려오는 몬스터 막기, 떠오르는 풍선, 두더지, 로켓, 달리기, 보물 상자,
-// 3D 우주 터널, 3D 주사위), 단원마다 돌아가며 붙여 학년이 바뀌어도 같은
+// 3D 우주 터널, 3D 승부차기), 단원마다 돌아가며 붙여 학년이 바뀌어도 같은
 // 놀이만 되풀이되지 않게 합니다.
 //
 // 문제는 단원마다 새로 짓습니다(quick.ts) — 그 단원의 핵심 개념을 묻는 한 줄
@@ -20,7 +20,7 @@ import { isCastleLesson } from '../lessonKinds';
 // 그대로 두어, 차시 번호로 짝지어 둔 다른 표들이 어긋나지 않습니다.
 // ════════════════════════════════════════════════════════════════════
 
-export type GameMode = 'monster' | 'balloon' | 'mole' | 'rocket' | 'race' | 'treasure' | 'tunnel3d' | 'dice3d';
+export type GameMode = 'monster' | 'balloon' | 'mole' | 'rocket' | 'race' | 'treasure' | 'tunnel3d' | 'soccer3d';
 
 export interface GameInfo {
   mode: GameMode;
@@ -40,10 +40,10 @@ export const 놀이들: Record<GameMode, GameInfo> = {
   race: { mode: 'race', title: '달리기 시합!', how: '맞힐 때마다 내 캐릭터가 달려 나가요. 거북이보다 먼저 결승선에!', missTitle: '거북이가 한 걸음 앞섰어요!' },
   treasure: { mode: 'treasure', title: '보물 상자를 열어라!', how: '심지가 다 타기 전에 맞히면 보석이 나와요', missTitle: '상자가 잠겨 버렸어요!' },
   tunnel3d: { mode: 'tunnel3d', title: '3D 우주 터널을 지나라!', how: '우주선 쪽으로 날아오는 문제를 부딪히기 전에 맞혀요', missTitle: '운석에 부딪혔어요!' },
-  dice3d: { mode: 'dice3d', title: '3D 주사위를 굴려라!', how: '주사위가 멈추기 전에 맞히면 주사위 눈만큼 점수가 쌓여요', missTitle: '주사위가 멈춰 버렸어요!' },
+  soccer3d: { mode: 'soccer3d', title: '3D 승부차기, 골을 넣어라!', how: '시간 안에 맞히면 슛! 골키퍼를 피해 골문에 공을 넣어요', missTitle: '골키퍼가 막았어요!' },
 };
 
-const 돌림차례: GameMode[] = ['monster', 'balloon', 'tunnel3d', 'mole', 'rocket', 'dice3d', 'race', 'treasure'];
+const 돌림차례: GameMode[] = ['monster', 'balloon', 'tunnel3d', 'mole', 'rocket', 'soccer3d', 'race', 'treasure'];
 
 const 놀이꼬리 = '-game';
 

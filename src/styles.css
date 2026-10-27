@@ -9040,40 +9040,6 @@ body::before {
 }
 .tunnel-ship { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); font-size: 30px; animation: gentle-beat 1.2s ease-in-out infinite; }
 
-/* ── 3D 주사위: 정육면체가 굴러가다 시간이 다 되면 멈춥니다 ── */
-.game-track.table { background: radial-gradient(ellipse at center, #1b6b4a 0%, #0c3a28 80%); }
-.dice-stage { position: absolute; left: 14px; top: 50%; width: 70px; height: 70px; margin-top: -35px; perspective: 400px; }
-.dice-cube {
-  position: relative;
-  width: 70px;
-  height: 70px;
-  transform-style: preserve-3d;
-  animation: dice-spin 1.6s linear infinite;
-}
-.dice-cube.stopped { animation-play-state: paused; }
-.dice-face {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-  background: #fffaf0;
-  color: #c0182e;
-  font-size: 54px;
-  line-height: 1;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25);
-}
-.dice-face.f0 { transform: translateZ(35px); }
-.dice-face.f1 { transform: rotateY(90deg) translateZ(35px); }
-.dice-face.f2 { transform: rotateY(180deg) translateZ(35px); }
-.dice-face.f3 { transform: rotateY(-90deg) translateZ(35px); }
-.dice-face.f4 { transform: rotateX(90deg) translateZ(35px); }
-.dice-face.f5 { transform: rotateX(-90deg) translateZ(35px); }
-@keyframes dice-spin {
-  from { transform: rotateX(0) rotateY(0); }
-  to { transform: rotateX(360deg) rotateY(720deg); }
-}
-.game-dice .game-center { padding-left: 96px; }
 
 /* 놀이 카드: 문제 글과(있으면) 그림을 함께 싣고 움직입니다. */
 .game-card {
@@ -9372,14 +9338,6 @@ body::before {
   pointer-events: none;
 }
 
-/* ── 3D 주사위: 맞히면 크게 튀어 올랐다 떨어집니다 ── */
-.dice-stage { animation: dice-jump 0.7s cubic-bezier(0.3, 1.4, 0.5, 1); }
-@keyframes dice-jump {
-  0% { transform: translateY(0) scale(1); }
-  40% { transform: translateY(-34px) scale(1.25); }
-  70% { transform: translateY(4px) scale(0.95, 1.05); }
-  100% { transform: translateY(0) scale(1); }
-}
 
 /* ════════════════════════════════════════════════════════════════════
    오락실 화면: 점수판·배율·스테이지·READY GO·점수 튀기·브라운관 줄무늬
@@ -9531,7 +9489,8 @@ body::before {
   color: #fff6d6;
   font-size: clamp(20px, 2.4vw, 32px);
 }
-.engine-loading span { font-size: 64px; animation: dice-spin 1.2s linear infinite; display: inline-block; }
+.engine-loading span { font-size: 64px; animation: loading-spin 1s linear infinite; display: inline-block; }
+@keyframes loading-spin { to { transform: rotate(360deg); } }
 
 /* ── 두더지 잡기: 맞히면 망치가 그 두더지를 내리칩니다 ── */
 .game-holes { position: relative; }
@@ -9594,3 +9553,105 @@ body::before {
   85% { opacity: 1; transform: translate(-50%, -10px) scale(1) rotate(200deg); }
   100% { opacity: 0; transform: translate(-50%, -16px) scale(0.8) rotate(240deg); }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   3D 승부차기: 비스듬히 누운 잔디 위로 공을 차 골문에 넣습니다.
+   맞히면 공이 골문 구석으로 작아지며 날아가고(멀어지는 느낌), 골키퍼는 반대쪽으로 몸을 날립니다.
+   시간이 다 되면 골키퍼가 공을 잡습니다.
+   ════════════════════════════════════════════════════════════════════ */
+.game-track.pitch {
+  perspective: 520px;
+  perspective-origin: 50% 0%;
+  background: linear-gradient(180deg, #123a6b 0%, #1d5a9a 22%, #2f8f3e 22%, #2a7d36 100%);
+}
+.soccer-plane {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  top: 22%;
+  bottom: -40%;
+  transform: rotateX(58deg);
+  transform-origin: 50% 0%;
+  background: repeating-linear-gradient(90deg, #2f9a42 0 60px, #2a8a3b 60px 120px);
+  pointer-events: none;
+}
+/* 벌칙 구역의 흰 선입니다. */
+.soccer-plane i {
+  position: absolute;
+  left: 30%;
+  right: 30%;
+  top: 0;
+  height: 45%;
+  border: 3px solid rgba(255, 255, 255, 0.75);
+  border-top: none;
+}
+.soccer-goal {
+  position: absolute;
+  left: 50%;
+  top: 6%;
+  width: min(46%, 280px);
+  height: 30%;
+  transform: translateX(-50%);
+  border: 4px solid #ffffff;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.35) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.35) 0 1px, transparent 1px 9px),
+    rgba(10, 30, 50, 0.35);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+.soccer-keeper {
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  font-size: 34px;
+  line-height: 1;
+  transform: translateX(-50%);
+  animation: keeper-sway 1.4s ease-in-out infinite alternate;
+}
+@keyframes keeper-sway { from { margin-left: -28%; } to { margin-left: 28%; } }
+.soccer-keeper.dive-left { animation: keeper-dive-left 0.7s ease-out forwards; }
+.soccer-keeper.dive-right { animation: keeper-dive-right 0.7s ease-out forwards; }
+@keyframes keeper-dive-left { 0% { margin-left: 0; } 40% { margin-left: -38%; transform: translateX(-50%) rotate(-70deg); } 100% { margin-left: -38%; transform: translateX(-50%) rotate(-80deg); opacity: 0.9; } }
+@keyframes keeper-dive-right { 0% { margin-left: 0; } 40% { margin-left: 38%; transform: translateX(-50%) rotate(70deg); } 100% { margin-left: 38%; transform: translateX(-50%) rotate(80deg); opacity: 0.9; } }
+/* 시간이 다 되면 골키퍼가 가운데에서 공을 잡고 버팁니다. */
+.soccer-keeper.save { animation: keeper-save 0.5s ease-out forwards; }
+.soccer-keeper.save::after { content: '⚽'; position: absolute; left: 50%; top: -14px; font-size: 22px; transform: translateX(-50%); }
+@keyframes keeper-save { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.35); } 100% { transform: translateX(-50%) scale(1.2); } }
+/* 벌칙 지점에서 통통 튀며 기다리는 공입니다. */
+.soccer-ball {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  font-size: 34px;
+  line-height: 1;
+  transform: translateX(-50%);
+  z-index: 3;
+  animation: ball-bob 0.6s ease-in-out infinite alternate;
+}
+@keyframes ball-bob { from { transform: translate(-50%, 0) rotate(0); } to { transform: translate(-50%, -8px) rotate(25deg); } }
+/* 슛! 가까이(크게)에서 골문 구석(작게)으로 날아갑니다. */
+.soccer-shot {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  font-size: 40px;
+  line-height: 1;
+  z-index: 5;
+  pointer-events: none;
+}
+.soccer-shot.to-left { animation: shot-left 0.55s cubic-bezier(0.2, 0.6, 0.4, 1) forwards; }
+.soccer-shot.to-right { animation: shot-right 0.55s cubic-bezier(0.2, 0.6, 0.4, 1) forwards; }
+@keyframes shot-left {
+  0% { transform: translate(-50%, 0) scale(1) rotate(0); opacity: 1; }
+  85% { transform: translate(calc(-50% - min(9vw, 110px)), calc(-1 * min(22vh, 190px))) scale(0.42) rotate(-540deg); opacity: 1; }
+  100% { transform: translate(calc(-50% - min(9vw, 110px)), calc(-1 * min(21vh, 182px))) scale(0.4) rotate(-560deg); opacity: 0; }
+}
+@keyframes shot-right {
+  0% { transform: translate(-50%, 0) scale(1) rotate(0); opacity: 1; }
+  85% { transform: translate(calc(-50% + min(9vw, 110px)), calc(-1 * min(22vh, 190px))) scale(0.42) rotate(540deg); opacity: 1; }
+  100% { transform: translate(calc(-50% + min(9vw, 110px)), calc(-1 * min(21vh, 182px))) scale(0.4) rotate(560deg); opacity: 0; }
+}
+.game-soccer .game-center { padding-top: 22%; padding-bottom: 40px; }
+.game-fuel.soccer > div { background: linear-gradient(90deg, #ff5a3d, #ffd84a, #6be08a); }

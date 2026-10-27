@@ -9,7 +9,7 @@ import { playGameHit, playGameMiss, playGameReady, playGameSpawn, playGameStage,
 // ────────────────────────────────────────────────────────────────────
 // 문제는 다른 차시처럼 아래 보기 단추로 풉니다. 이 자리는 놀이마다 다른
 // 그림으로 시간을 보여 줍니다 — 몬스터가 내려오고, 풍선이 떠오르고, 두더지가
-// 숨고, 연료나 심지가 줄어들고, 3D 터널 속에서 문제가 날아옵니다. 시간이 다
+// 숨고, 연료나 심지가 줄어들고, 3D 터널 속에서 문제가 날아오고, 3D 승부차기에서 공을 찹니다. 시간이 다
 // 되면(onAnimationEnd) 놓친 것으로 칩니다. 틀린 뒤 도움말을 보는 동안에는
 // 멈춰 둡니다.
 //
@@ -49,7 +49,7 @@ const 터짐: Record<GameMode, { 큰: string; 말: string[]; 조각: string[] }>
   race: { 큰: '💨', 말: ['쌩!', '달려!', '앞질렀다!'], 조각: ['💨', '✨', '⭐'] },
   treasure: { 큰: '✨', 말: ['반짝!', '열렸다!', '보물!'], 조각: ['💎', '🪙', '✨'] },
   tunnel3d: { 큰: '💥', 말: ['콰광!', '명중!', '빔!'], 조각: ['✨', '💫', '⭐'] },
-  dice3d: { 큰: '🎲', 말: ['데구르르!', '착!', '굴렸다!'], 조각: ['⭐', '✨', '🎯'] },
+  soccer3d: { 큰: '⭐', 말: ['골인!', '슛!', 'GOAL!'], 조각: ['⭐', '🎉', '✨'] },
 };
 
 /**
@@ -353,22 +353,25 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
           ))}
         </div>
       );
-    case 'dice3d': {
-      const 점수 = correct * 3 + (correct > 0 ? (h % 3) : 0);
+    case 'soccer3d': {
+      // 맞힐 때마다 공이 골문 왼쪽·오른쪽 구석으로 번갈아 날아가고, 골키퍼는 반대쪽으로 몸을 날립니다.
+      const 쪽 = 맞힘 % 2 === 0 ? 'left' : 'right';
       return (
-        <div className="game-scene game-dice">
-          {줄(<>🎲 점수 {점수}</>, <>놓친 주사위 {wrong}</>)}
-          {판('table', (
+        <div className="game-scene game-soccer">
+          {줄(<>⚽ 골인 {correct}</>, <>🧤 막힌 공 {wrong}</>)}
+          {판('pitch', (
             <>
-              <div className="dice-stage" key={`dice-${맞힘}`}>
-                <div className={`dice-cube ${stopped ? 'stopped' : ''}`} key={questionKey}>
-                  {['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'].map((face, at) => <span className={`dice-face f${at}`} key={at}>{face}</span>)}
-                </div>
+              {/* 원근(perspective) 속에 비스듬히 누운 잔디와 벌칙 구역 선입니다. */}
+              <div className="soccer-plane" aria-hidden="true"><i /></div>
+              <div className="soccer-goal" aria-hidden="true">
+                <span className={`soccer-keeper ${stopped ? 'save' : 맞힘 > 0 ? `dive-${쪽 === 'left' ? 'right' : 'left'}` : ''}`.trim()} key={`keeper-${맞힘}-${stopped}`}>🙆</span>
               </div>
+              {맞힘 > 0 && <span className={`soccer-shot to-${쪽}`} key={`shot-${맞힘}`} aria-hidden="true">⚽</span>}
+              {!stopped && <span className="soccer-ball" key={questionKey} aria-hidden="true">⚽</span>}
               <div className="game-center">{문제}</div>
             </>
           ))}
-          <div className="game-fuel dice"><div className={stopped ? 'stopped' : ''} key={questionKey} style={시계} onAnimationEnd={끝나면} /></div>
+          <div className="game-fuel soccer"><div className={stopped ? 'stopped' : ''} key={questionKey} style={시계} onAnimationEnd={끝나면} /></div>
         </div>
       );
     }

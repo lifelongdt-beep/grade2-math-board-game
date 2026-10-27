@@ -2209,7 +2209,7 @@ function App() {
   // 문항 엔진이나 수업 부품을 다 받기 전에 수업을 시작하면 잠깐 이 화면이 보입니다.
   const 준비화면 = (
     <section className="engine-loading" role="status" aria-live="polite">
-      <span aria-hidden="true">🎲</span>
+      <span aria-hidden="true">⚽</span>
       <strong>문제를 준비하고 있어요…</strong>
     </section>
   );
