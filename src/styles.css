@@ -8189,9 +8189,15 @@ body::before {
   max-height: clamp(150px, 30vh, 420px);
 }
 
-/* 큐알로 들어온 휴대폰은 한 사람이 화면을 다 씁니다. */
+/* 큐알로 들어온 휴대폰·패드는 한 사람이 화면을 다 씁니다. 패드처럼 넓은 화면에서는
+   조작 판도 넓게 펴서 자 눈금·모눈을 손가락으로 누르기 쉽게 합니다. */
 .app-shell.mobile-entry .manip-svg {
+  max-width: 100%;
   max-height: 50vh;
+  margin-inline: auto;
+}
+.app-shell.mobile-entry .manip-svg.manip-square {
+  max-width: min(100%, 480px);
 }
 
 .player-lanes .manip-tools button {

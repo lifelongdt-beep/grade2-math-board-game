@@ -90,10 +90,32 @@ function 물건({ x, y, mm, item, color = '#4fc3f7' }: { x: number; y: number; m
   );
 }
 
+/**
+ * 자로 재기 판의 크기입니다. 판은 자가 처음 놓인 자리(친구가 둔 자리 포함)와 바르게 맞춘 자리를 모두
+ * 담을 만큼 넓힙니다. 예전에는 물건 길이만 보고 폭을 정해, 자가 처음에 물건 오른쪽으로 비켜 놓이면
+ * 자 끝이 판 밖으로 잘렸습니다(패드에서 '자로 길이 재기'의 자 오른쪽이 보이지 않던 까닭).
+ * 끌어도 자가 판 밖으로 나가지 않게, 0 눈금이 갈 수 있는 자리(끌왼~끌오른, mm)도 함께 냅니다.
+ */
+export function 자로재기판(m: Extract<Manipulation, { kind: 'ruler-measure' }>) {
+  const 처음자리 = (처음상태(m) as Extract<ManipState, { kind: 'ruler-measure' }>).rulerAt;
+  const 가장왼자리 = Math.min(처음자리, m.objectStartMm);
+  const 가장오른자리 = Math.max(처음자리, m.objectStartMm);
+  const 자길이 = m.rulerCm * 10 + 자여백;
+  const 왼 = 10 + Math.max(0, 자여백 - 가장왼자리) * MM;
+  const 판폭 = 왼 + Math.max(m.objectStartMm + m.objectMm + 20, 가장오른자리 + 자길이 + 4, m.rulerCm * 10 + 자여백 * 2 + 20) * MM + 10;
+  const 끌왼 = Math.min(가장왼자리, 자여백 - (왼 - 2) / MM);
+  const 끌오른 = Math.max(가장오른자리, (판폭 - 2 - 왼) / MM - 자길이);
+  /** 0 눈금을 at(mm)에 둔 자의 왼쪽·오른쪽 끝 x입니다. */
+  const 자끝 = (at: number) => [왼 + (at - 자여백) * MM, 왼 + (at + 자길이) * MM] as const;
+  return { 왼, 판폭, 끌왼, 끌오른, 자끝, 처음자리 };
+}
+
 function 자로재기({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipulation, { kind: 'ruler-measure' }>; s: Extract<ManipState, { kind: 'ruler-measure' }>; set: 설정; locked: boolean; 바른?: Extract<ManipState, { kind: 'ruler-measure' }>; 도움: boolean }) {
   const ref = useRef<SVGSVGElement>(null);
-  const 판폭 = Math.max(m.objectStartMm + m.objectMm + 20, m.rulerCm * 10 + 자여백 * 2 + 20) * MM + 20;
-  const 왼 = 10;
+  // 판은 자가 처음 놓인 자리(친구가 둔 자리 포함)와 바르게 맞춘 자리를 모두 담을 만큼 넓힙니다.
+  // 예전에는 물건 길이만 보고 폭을 정해, 자가 처음에 물건 오른쪽으로 비켜 놓이면 자 끝이 판 밖으로
+  // 잘렸습니다(패드에서 '자로 길이 재기'의 자 오른쪽이 보이지 않던 까닭).
+  const { 왼, 판폭, 끌왼, 끌오른 } = 자로재기판(m);
   const 끌기 = useRef<{ x0: number; at0: number; moved: boolean } | null>(null);
   const 자위치 = (at: number) => 왼 + (at - 자여백) * MM;
   const down = (e: ReactPointerEvent<SVGGElement>) => {
@@ -110,9 +132,10 @@ function 자로재기({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipu
     // 1 mm씩 붙으면 손가락으로 맞추기가 너무 까다로워 2 mm(0.2 cm)씩 붙입니다.
     // 칸은 물건의 왼쪽 끝에서부터 세므로, 0 눈금을 끝에 맞추는 자리는 늘 칸 위에 있습니다.
     const 칸 = 2;
-    const 가장 = Math.round((판폭 - 20) / MM);
-    const 안 = Math.max(-m.rulerCm * 5, Math.min(가장, d.at0 + dx / MM));
-    set({ ...s, rulerAt: m.objectStartMm + Math.round((안 - m.objectStartMm) / 칸) * 칸 });
+    const 안 = Math.max(끌왼, Math.min(끌오른, d.at0 + dx / MM));
+    const 칸왼 = m.objectStartMm + Math.ceil((끌왼 - m.objectStartMm) / 칸) * 칸;
+    const 칸오른 = m.objectStartMm + Math.floor((끌오른 - m.objectStartMm) / 칸) * 칸;
+    set({ ...s, rulerAt: Math.max(칸왼, Math.min(칸오른, m.objectStartMm + Math.round((안 - m.objectStartMm) / 칸) * 칸)) });
   };
   const up = (e: ReactPointerEvent) => {
     const d = 끌기.current;
