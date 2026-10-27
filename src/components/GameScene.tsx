@@ -109,6 +109,11 @@ const 라이벌들: Record<GameMode, { 얼굴: string; 이름: string; 이가: s
   soccer3d: { 얼굴: '🧤', 이름: '골키퍼', 이가: '골키퍼가', 을를: '골키퍼를' },
 };
 
+/** 놀이마다 사다리 꼭대기에 놓인 목표입니다. 로켓은 달로, 풍선은 구름으로 올라갑니다. */
+const 사다리목표: Record<GameMode, string> = {
+  monster: '👑', balloon: '☁️', tunnel3d: '🌀', mole: '🏆', rocket: '🌕', race: '🏁', treasure: '💎', soccer3d: '🥅',
+};
+
 /** 놀이 설명의 'OO보다 먼저 10점!'을 친구들과 겨루는 말로 바꿉니다. 달리기는 거북이 대신 친구들이 따라옵니다. */
 const 친구설명 = (how: string) =>
   how.replace(/^\S+(?: \S+)?보다 먼저/, '친구들보다 먼저').replace('거북이도 슬금슬금 따라와요. 먼저 결승선에!', '친구들보다 먼저 결승선에!');
@@ -290,34 +295,40 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     </div>
   );
 
-  // 라이벌과의 줄다리기입니다. 가운데 깃발이 앞선 쪽으로 끌려가고, 라이벌이 점수를 낼 때마다 숫자가 튑니다.
-  // 달리기는 길 위에서 거북이와 직접 겨루므로 줄다리기를 따로 두지 않습니다.
-  const 상대점수 = Math.floor(경주.상대);
-  const 앞섬 = 경주.나 - 경주.상대;
-  // 친구와 겨루면 두 명씩 견주지 않고, 한 줄 위에 모든 친구와 나를 함께 세웁니다.
-  const 라이벌줄 = game.mode === 'race' ? null : friends ? (
-    <span
-      className={`rival-bar friends ${friends.부스터 ? 'boost' : ''}`.trim()}
-      aria-label={`나 ${내판점수}점, ${friends.친구들.map((one) => `${one.이름} ${one.점수}점`).join(', ')}, 먼저 ${결승칸}점 내기`}
+  // 겨루는 사다리입니다. 놀이 판 오른쪽 가장자리에 세로 길을 두고, 나와 겨루는 상대 모두(친구들, 혼자면 라이벌)가
+  // 이번 판 점수만큼 그 놀이의 목표(로켓은 달, 풍선은 구름…)를 향해 올라갑니다. 혼자 할 때 라이벌은 시간이 흐르는 만큼
+  // 슬금슬금 기어오르므로, 머뭇거리면 눈앞에서 따라잡힙니다. 누군가 한 칸만 남으면 사다리 꼭대기에 경고가 켜집니다.
+  // 달리기는 길 위에서 직접 겨루므로 사다리를 두지 않습니다.
+  const 상대들 = friends
+    ? friends.친구들.map((one) => ({ 얼굴: one.얼굴, 점수: one.점수 }))
+    : [{ 얼굴: 라이벌.얼굴, 점수: 경주.상대 }];
+  const 상대최고 = Math.max(0, ...상대들.map((one) => one.점수));
+  const 사다리끝 = 사다리목표[game.mode];
+  const 직전경고 = 내판점수 >= 결승칸 - 1 && 내판점수 >= 상대최고
+    ? <b className="ladder-alert me">한 칸만 더!</b>
+    : 상대최고 >= 결승칸 - 1
+      ? <b className="ladder-alert them">{상대들.find((one) => one.점수 === 상대최고)?.얼굴} 한 칸 남았어!</b>
+      : null;
+  const 높이 = (점수: number) => `${(Math.min(결승칸, Math.max(0, 점수)) / 결승칸) * 100}%`;
+  const 사다리 = game.mode === 'race' ? null : (
+    <div
+      className={`rival-ladder ladder-${game.mode} ${friends?.부스터 ? 'boost' : ''}`.trim()}
+      aria-label={`나 ${내판점수}점, ${상대들.map((one) => `${one.얼굴} ${Math.floor(one.점수)}점`).join(', ')}, 먼저 ${결승칸}점`}
     >
-      <span className="friend-strip" aria-hidden="true">
-        {friends.친구들.map((one, at) => (
-          <i key={at} style={{ left: `${(Math.min(결승칸, one.점수) / 결승칸) * 100}%` }}>{one.얼굴}</i>
+      <span className="ladder-goal" aria-hidden="true">{사다리끝}</span>
+      <div className="ladder-rail" aria-hidden="true">
+        {Array.from({ length: 결승칸 - 1 }, (_, at) => <i key={at} className="ladder-rung" style={{ bottom: 높이(at + 1) }} />)}
+        {상대들.map((one, at) => (
+          <span key={at} className={`ladder-token them ${friends ? '' : 'rival'}`.trim()} style={{ bottom: 높이(one.점수), left: `${24 + ((at * 13) % 26)}%` }}>{one.얼굴}</span>
         ))}
-        <b className="friend-strip-me" key={`me-${friends.판}-${내판점수}`} style={{ left: `${(Math.min(결승칸, 내판점수) / 결승칸) * 100}%` }}>{avatar}</b>
-      </span>
-      {friends.부스터 ? <small className="boost-chip">⚡두 칸!</small> : <small>{내판점수}/{결승칸}</small>}
-    </span>
-  ) : (
-    <span
-      className={`rival-bar ${앞섬 <= -0.5 ? 'behind' : 앞섬 >= 1 ? 'ahead' : ''}`.trim()}
-      aria-label={`나 ${경주.나}점, ${라이벌.이름} ${상대점수}점, 먼저 ${결승칸}점 내기`}
-    >
-      <b className="rival-me">{avatar}{경주.나}</b>
-      <span className="rival-rope" aria-hidden="true"><i style={{ left: `${50 + Math.max(-44, Math.min(44, 앞섬 * (44 / 결승칸)))}%` }} /></span>
-      <b className="rival-them" key={`them-${경주.판}-${상대점수}`}>{상대점수}{라이벌.얼굴}</b>
-      {경주.내승 + 경주.상대승 > 0 && <small>{경주.내승}승 {경주.상대승}패</small>}
-    </span>
+        <span className="ladder-token me" key={`me-${friends?.판 ?? 경주.판}`} style={{ bottom: 높이(내판점수) }}>
+          <span className="game-kick" key={`me-${맞힘}`}>{avatar}</span>
+        </span>
+      </div>
+      {직전경고}
+      {friends?.부스터 && <b className="ladder-boost">⚡두 칸!</b>}
+      {!friends && 경주.내승 + 경주.상대승 > 0 && <small className="ladder-record">{경주.내승}승 {경주.상대승}패</small>}
+    </div>
   );
   // 한 판이 끝난 순간의 알림입니다. 판이 바뀌면(판 수가 늘면) 누가 이겼는지 띄웁니다.
   const 방금이김 = 경주.판 > 0 && 경주.나 === 0 && 경주.출발맞힘 === 맞힘 && 경주.내승 > 0 && 지난판.current.내승 < 경주.내승;
@@ -351,7 +362,6 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
       <div className="arcade-hud" aria-label={`점수 ${점수}점, 스테이지 ${스테이지}`}>
         <span className="arcade-score">SCORE <b key={점수} className={점수 > 0 ? 'bump' : ''}>{String(점수).padStart(6, '0')}</b></span>
         {배율 > 1 && <span className="arcade-multi" key={`x-${배율}`}>×{배율}</span>}
-        {라이벌줄}
         <span className="arcade-stage">STAGE <b>{스테이지}</b></span>
       </div>
       {준비 && (
@@ -374,6 +384,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     <div className={`game-track ${className} ${흔들림} ${연속 >= 5 ? 'fever' : ''}`.replace(/\s+/g, ' ').trim()}>
       {children}
       {효과}
+      {사다리}
     </div>
   );
 

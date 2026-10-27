@@ -10771,3 +10771,87 @@ body::before {
   .race-token-crown, .race-token.boost .race-token-face { animation: none; }
 }
 .rival-bar.friends small { white-space: nowrap; }
+
+/* ── 겨루는 사다리: 놀이 판 오른쪽 가장자리에서 모두가 그 놀이의 목표로 올라갑니다 ───── */
+.rival-ladder {
+  --ladder-bg: rgba(29, 43, 69, 0.55);
+  --ladder-rung: rgba(255, 255, 255, 0.35);
+  position: absolute;
+  top: 26px;
+  right: 6px;
+  bottom: 8px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 46px;
+  padding: 2px 0 6px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: 23px;
+  background: var(--ladder-bg);
+  pointer-events: none;
+  font-family: 'Jua', 'Pretendard', sans-serif;
+}
+.ladder-goal { font-size: 22px; line-height: 1.1; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.4)); }
+.ladder-rail { position: relative; flex: 1; width: 100%; margin-top: 2px; }
+.ladder-rung {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ladder-rung);
+}
+.ladder-token {
+  position: absolute;
+  transform: translate(-50%, 50%);
+  transition: bottom 0.5s cubic-bezier(0.3, 1.5, 0.5, 1);
+  line-height: 1;
+}
+.ladder-token.them { font-size: 15px; opacity: 0.9; }
+/* 라이벌은 시간이 흐르는 만큼 조금씩 올라오므로 튀지 않고 미끄러지듯 움직입니다. */
+.ladder-token.rival { transition: bottom 0.22s linear; font-size: 18px; }
+.ladder-token.me {
+  left: 66%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 3px solid #FFC23D;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 17px;
+  box-shadow: 0 2px 0 #1D2B45;
+}
+.rival-ladder.boost .ladder-token.me { border-color: #E8604C; animation: boost-glow 0.7s ease-in-out infinite alternate; }
+.ladder-alert, .ladder-boost {
+  position: absolute;
+  top: -25px;
+  right: 54px;
+  padding: 2px 8px;
+  border: 2px solid #1D2B45;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+  animation: alert-pulse 0.55s ease-in-out infinite alternate;
+}
+.ladder-alert.me { background: #FFC23D; color: #1D2B45; }
+.ladder-alert.them { background: #E8604C; color: #fff; }
+.ladder-boost { top: auto; right: calc(100% + 4px); bottom: 30px; background: #fff; color: #C2412D; animation: none; }
+.ladder-record { position: absolute; bottom: -2px; right: calc(100% + 4px); padding: 0 6px; border-radius: 8px; background: rgba(29, 43, 69, 0.75); color: #fff; font-size: 11px; white-space: nowrap; }
+@keyframes alert-pulse { from { transform: scale(1); } to { transform: scale(1.08); } }
+
+/* 놀이마다 사다리 결을 그 세계에 맞춥니다. */
+.ladder-monster { --ladder-bg: linear-gradient(#2b2350, #3d2a55); --ladder-rung: rgba(255, 216, 107, 0.45); }
+.ladder-balloon { --ladder-bg: linear-gradient(#ffffff 0%, #bfe3ff 100%); --ladder-rung: rgba(29, 43, 69, 0.25); border-color: #fff; }
+.ladder-tunnel3d { --ladder-bg: linear-gradient(#1b1640, #0e2a4d); --ladder-rung: rgba(120, 240, 255, 0.55); border-color: rgba(120, 240, 255, 0.7); }
+.ladder-mole { --ladder-bg: repeating-linear-gradient(0deg, #8a5a33 0 10px, #7a4d2a 10px 20px); --ladder-rung: rgba(255, 230, 180, 0.55); border-color: #f4e2c0; }
+.ladder-rocket { --ladder-bg: radial-gradient(circle at 50% 10%, #3a3f7a, #0c0f2b 70%); --ladder-rung: rgba(255, 255, 255, 0.4); }
+.ladder-treasure { --ladder-bg: linear-gradient(#4a2f6b, #2a1840); --ladder-rung: rgba(255, 210, 120, 0.5); border-color: #ffd27a; }
+.ladder-soccer3d { --ladder-bg: repeating-linear-gradient(0deg, #2f9e4f 0 12px, #38b45c 12px 24px); --ladder-rung: rgba(255, 255, 255, 0.7); border-color: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ladder-alert { animation: none; }
+}
