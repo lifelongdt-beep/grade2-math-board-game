@@ -36,7 +36,7 @@ describe('놀이 배경음악', () => {
   it('세 곡은 서로 다르고, 여덟 가지 놀이 모두 곡이 정해져 있습니다', () => {
     const 서명들 = Object.values(배경곡들).map((곡) => 곡.가락.join(' '));
     expect(new Set(서명들).size).toBe(서명들.length);
-    expect(Object.keys(놀이배경곡).sort()).toEqual(['balloon', 'dice3d', 'mole', 'monster', 'race', 'rocket', 'treasure', 'tunnel3d']);
+    expect(Object.keys(놀이배경곡).sort()).toEqual(['balloon', 'mole', 'monster', 'race', 'rocket', 'soccer3d', 'treasure', 'tunnel3d']);
     for (const 곡 of Object.values(놀이배경곡)) expect(배경곡들[곡]).toBeDefined();
   });
 
