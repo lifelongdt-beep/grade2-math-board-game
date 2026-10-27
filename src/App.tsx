@@ -1711,6 +1711,9 @@ function App() {
 
   const renderSetup = () => (
     <section className="setup-screen">
+      {/* QR로 들어온 학생은 선생님이 정한 차시·시간으로 혼자 풉니다. 고를 것이 없으므로
+          안내·차시·인원·시간 칸은 모두 빼고, 동물과 출석번호만 고르면 바로 시작합니다. */}
+      {!isMobileEntry && (<>
       <div className="setup-hero">
         <div className="setup-copy">
           <p className="eyebrow">수업 시작</p>
@@ -1718,34 +1721,17 @@ function App() {
           <p>{lesson.objective}</p>
         </div>
         <div className="setup-summary">
-          <span><Users size={18} /> {isMobileEntry ? '모바일 1명' : `${playerCount}명`}</span>
+          <span><Users size={18} /> {playerCount}명</span>
           <span><Timer size={18} /> {durationLabel(sessionDuration)}</span>
-          {/* 모바일 QR로 들어오면 학생마다 다른 문항을 받습니다. 같은 이야기를
-              두 칸에 나눠 쓰면 따로따로 읽히므로 한 칸으로 합쳤습니다. */}
-          {isMobileEntry ? (
-            <span><Sparkles size={18} /> {reviewScope === 'lesson' ? '학생별 개별 문항' : '종합 랜덤 문항'}</span>
-          ) : (
-            <button className="mobile-join-toggle" type="button" onClick={() => setMobileJoinOpen(true)}>
+          <button className="mobile-join-toggle" type="button" onClick={() => setMobileJoinOpen(true)}>
               <Sparkles size={18} />
               {reviewScope === 'lesson' ? '학생별 개별 문항' : '종합 랜덤 문항'}
               <QrCode size={18} />
               모바일 QR
             </button>
-          )}
         </div>
       </div>
 
-      {/* QR로 들어온 학생은 선생님이 정해 준 차시만 풉니다. 고르는 상자를
-          그대로 두면 다른 단원으로 넘어가 버려서, 선생님이 무엇을 시켰는지와
-          아이가 무엇을 푸는지가 어긋납니다. 보여 주기만 하고 바꾸지는
-          못하게 합니다. */}
-      {isMobileEntry ? (
-        <div className="setup-grid mobile-fixed-lesson">
-          <p className="eyebrow">선생님이 정한 오늘 문제</p>
-          <strong>{lessonHeading}</strong>
-          <span>{lessonContextLabel}</span>
-        </div>
-      ) : (
       <div className="setup-grid">
         <label>
           학기
@@ -1804,19 +1790,8 @@ function App() {
           )}
         </label>
       </div>
-      )}
 
       <div className="setup-options">
-        {isMobileEntry ? (
-          <section className="mobile-single-option">
-            <h3>개인 모바일</h3>
-            <div className="mobile-single-status">
-              <Smartphone size={24} />
-              <strong>1명</strong>
-              <span>출석번호와 난이도만 고르면 바로 시작</span>
-            </div>
-          </section>
-        ) : (
           <section>
             <h3>학생 인원수</h3>
             <div className="big-segmented">
@@ -1862,7 +1837,6 @@ function App() {
               </label>
             )}
           </section>
-        )}
         <section>
           <h3>학습 시간</h3>
           <div className="big-segmented time-options">
@@ -1932,6 +1906,7 @@ function App() {
           )}
         </section>
       </div>
+      </>)}
 
       <section
         className="setup-playfield playfield"
@@ -2179,13 +2154,13 @@ function App() {
   const renderLessonBar = () => (
     <section className="game-topbar">
       <div>
-        <p className="eyebrow">{lessonContextLabel}</p>
+        {!isMobileEntry && <p className="eyebrow">{lessonContextLabel}</p>}
         <h2>{lessonHeading}</h2>
-        <p className="lesson-objective-inline">{lesson.objective}</p>
+        {!isMobileEntry && <p className="lesson-objective-inline">{lesson.objective}</p>}
       </div>
       <div className="game-topbar-actions">
           <div className={`timer-cluster ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}>
-            <SandTimer remaining={remainingSeconds} total={sessionDuration + bonusCap} />
+            {!isMobileEntry && <SandTimer remaining={remainingSeconds} total={sessionDuration + bonusCap} />}
             <div
               ref={timerCardRef}
               className={`timer-card ${mode === 'playing' && remainingSeconds <= 10 ? 'urgent' : ''}`}
@@ -2238,6 +2213,18 @@ function App() {
   const renderGame = () => (
     <>
       {renderFlyingStars()}
+      {/* 휴대폰으로 푸는 학생은 그 차시 문제만 풀면 됩니다. 설정·기록 줄은 빼고,
+          시간이 끝났을 때만 '다시 풀기'를 둡니다. */}
+      {isMobileEntry ? (
+        mode === 'finished' && (
+          <footer className="command-bar finished-actions mobile-actions">
+            <button className="primary-button" type="button" onClick={resetSession}>
+              <RefreshCcw size={18} />
+              다시 풀기
+            </button>
+          </footer>
+        )
+      ) : (
       <footer className={`command-bar ${mode === 'finished' ? 'finished-actions' : ''}`}>
         <button className="secondary-button" type="button" onClick={goSetup}>
           <Home size={18} />
@@ -2264,6 +2251,7 @@ function App() {
           {mode === 'finished' ? '다시 풀기' : '다시 시작'}
         </button>
       </footer>
+      )}
 
       {/* 우리 반이 함께 채우는 길입니다. 아이는 자기 칸만 보게 되어 있어서,
           서른 문제가 '혼자 푸는 서른 개'로 끝납니다. 등수가 아니라 합계라
@@ -2271,6 +2259,7 @@ function App() {
           교실 뒤에서도 보여야 함께 채우는 맛이 나므로 제 줄을 씁니다.
           로켓이 나아가고 별에 불이 들어옵니다 — 얼마나 왔는지가 수보다
           그림으로 먼저 읽혀야 2학년이 다음 문제를 풀고 싶어집니다. */}
+      {!isMobileEntry && (
       <div className={`class-goal ${goalJustReached ? 'reached' : ''}`} aria-live="polite">
         <strong className="class-goal-count">
           <span className="class-goal-badge">🏁</span>
@@ -2331,6 +2320,7 @@ function App() {
           );
         })()}
       </div>
+      )}
       {bossWin && (
         <div className="boss-win" key={bossWin.id} aria-live="assertive">
           <span aria-hidden="true">{bossWin.boss.look}💥</span>
@@ -2912,13 +2902,19 @@ function App() {
   return (
     <main className={`app-shell ${mode} ${isMobileEntry ? 'mobile-entry' : ''} ${fullscreenActive ? 'fullscreen-mode' : ''}`}>
       <header className={`app-header ${mode === 'setup' ? '' : 'with-lesson'}`}>
+        {/* QR로 들어온 휴대폰·패드에서는 화면이 좁습니다. 이름표와 전체화면 단추는 빼고,
+            차시 제목·시계·소리 단추만 한 줄에 둡니다. */}
+        {isMobileEntry ? (
+          mode === 'setup' && <strong className="mobile-lesson-title">{lessonHeading}</strong>
+        ) : (
         <div className="brand">
           <span className="brand-mark"><GraduationCap size={24} /></span>
           <div>
             <h1>보조개샘ai클래스 수학 게임</h1>
-            {mode === 'setup' && <p>{isMobileEntry ? '모바일 1인 참여' : '수업 설정'}</p>}
+            {mode === 'setup' && <p>수업 설정</p>}
           </div>
         </div>
+        )}
         {mode !== 'setup' && renderLessonBar()}
         <div className="header-actions">
           {/* 교실에서 소리를 꺼야 할 때가 있습니다. 옆 반이 시험을 보거나
@@ -2935,10 +2931,12 @@ function App() {
             {muted ? <VolumeX size={19} /> : <Volume2 size={19} />}
             <span>{muted ? '소리 꺼짐' : '소리 켜짐'}</span>
           </button>
-          <button className="secondary-button fullscreen-button" type="button" onClick={toggleFullscreen}>
-            {fullscreenActive ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-            {fullscreenActive ? '전체화면 나가기' : '전체화면'}
-          </button>
+          {!isMobileEntry && (
+            <button className="secondary-button fullscreen-button" type="button" onClick={toggleFullscreen}>
+              {fullscreenActive ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+              {fullscreenActive ? '전체화면 나가기' : '전체화면'}
+            </button>
+          )}
         </div>
       </header>
 

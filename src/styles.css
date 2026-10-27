@@ -9832,3 +9832,227 @@ body::before {
 /* 놀이판은 학생 칸 너비를 넘지 않습니다. 두 명이 태블릿에서 하면 안내 글과 문제 카드의 최소 너비 때문에
    놀이판이 칸보다 넓어져 오른쪽이 잘렸습니다. */
 .student-question-body > .game-scene { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+
+/* ════════════════════════════════════════════════════════════════════
+   QR로 들어온 학생 화면(휴대폰·패드, 1인용)
+   화면이 작으므로 바깥 여백·테두리를 모두 걷어 내고, 위에는 차시 제목·시계·소리 단추
+   한 줄만 둡니다. 나머지 높이는 문제 칸과 정답 단추가 나눠 씁니다. 스크롤 없이 한 화면에 들어옵니다.
+   ════════════════════════════════════════════════════════════════════ */
+.app-shell.mobile-entry,
+.app-shell.mobile-entry.playing,
+.app-shell.mobile-entry.finished {
+  padding: 0;
+  gap: 0;
+}
+.app-shell.mobile-entry.playing {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.app-shell.mobile-entry .app-header,
+.app-shell.mobile-entry.playing .app-header,
+.app-shell.mobile-entry.finished .app-header {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 0;
+  margin: 0;
+  padding: 4px 6px;
+  border-width: 0 0 1px;
+  border-radius: 0;
+}
+.app-shell.mobile-entry .mobile-lesson-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 1.25;
+  color: #e8f4ff;
+}
+.app-shell.mobile-entry .app-header .game-topbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 1 1 auto;
+  gap: 6px;
+  min-width: 0;
+}
+.app-shell.mobile-entry .game-topbar > div:first-child { flex: 1 1 auto; min-width: 0; }
+.app-shell.mobile-entry.playing .game-topbar h2,
+.app-shell.mobile-entry.finished .game-topbar h2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+  font-size: 14px;
+  line-height: 1.2;
+}
+.app-shell.mobile-entry .game-topbar-actions { flex: 0 0 auto; }
+.app-shell.mobile-entry .timer-card {
+  width: auto;
+  min-height: 0;
+  padding: 4px 8px;
+  gap: 4px;
+}
+.app-shell.mobile-entry .timer-card svg { width: 16px; height: 16px; }
+.app-shell.mobile-entry .timer-card strong { font-size: 18px; }
+.app-shell.mobile-entry .header-actions { flex: 0 0 auto; width: auto; }
+.app-shell.mobile-entry .sound-toggle {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  justify-content: center;
+}
+.app-shell.mobile-entry .sound-toggle span { display: none; }
+
+/* 문제 풀이 화면: 남은 높이를 모두 씁니다. */
+.app-shell.mobile-entry .game-layout {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+}
+.app-shell.mobile-entry .game-layout > .playfield {
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  gap: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.app-shell.mobile-entry .game-layout .player-lanes.individual {
+  height: 100%;
+  min-height: 0;
+  gap: 0;
+}
+.app-shell.mobile-entry .player-lane.student-question {
+  height: 100%;
+  min-height: 0;
+  padding: 4px;
+  border-width: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.app-shell.mobile-entry .player-lane.student-question:not(.finished-result) > header.lane-head {
+  margin: 0 0 4px;
+  padding: 0 4px;
+  min-height: 0;
+}
+/* 휴대폰에서는 문제 칸이 남는 높이를 모두 받습니다(위쪽 빈 줄까지 씁니다). */
+.app-shell.mobile-entry .player-lane.student-question:not(.finished-result) > .student-question-body {
+  grid-row: 3 / span 2;
+  margin-bottom: 4px;
+}
+.app-shell.mobile-entry .student-question > .lane-head .player-avatar { width: 24px; height: 24px; }
+.app-shell.mobile-entry .student-question > .lane-head strong { font-size: 14px; }
+.app-shell.mobile-entry .student-question-body {
+  min-height: 0;
+  padding: 4px;
+  gap: 4px;
+}
+.app-shell.mobile-entry .student-answer-dock { padding: 4px; }
+.app-shell.mobile-entry .student-answer-dock .choice-grid { gap: 6px; }
+.app-shell.mobile-entry .student-answer-dock .choice-grid button {
+  min-height: clamp(54px, 9dvh, 84px);
+  font-size: clamp(17px, 5.2vw, 24px);
+  line-height: 1.2;
+}
+.app-shell.mobile-entry .command-bar.mobile-actions {
+  margin: 0;
+  padding: 6px;
+  border-radius: 0;
+  justify-content: center;
+}
+.app-shell.mobile-entry .command-bar.mobile-actions .primary-button { flex: 1 1 auto; }
+
+/* 시작 화면: 동물과 출석번호만 고릅니다. 한 화면에 들어오도록 높이를 나눠 씁니다. */
+.app-shell.mobile-entry.setup {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.app-shell.mobile-entry .setup-screen {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+.app-shell.mobile-entry .setup-playfield {
+  height: 100%;
+  padding: 4px;
+  border: 0;
+  border-radius: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+.app-shell.mobile-entry .setup-progress { display: none; }
+.app-shell.mobile-entry .setup-lanes { height: 100%; }
+.app-shell.mobile-entry .setup-player-lane {
+  min-height: 0;
+  height: 100%;
+  padding: 6px;
+}
+.app-shell.mobile-entry .setup-player-lane .setup-step-card,
+.app-shell.mobile-entry .setup-player-lane .setup-ready-card {
+  min-height: 0;
+  align-content: start;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: 8px;
+}
+.app-shell.mobile-entry .setup-player-lane .attendance-number-pad {
+  min-height: 0;
+  max-height: none;
+  height: 100%;
+  grid-auto-rows: minmax(36px, 1fr);
+}
+
+/* 일반 차시는 문제 글을 문제 칸 가운데에 둡니다. 위에 붙여 두면 아래가 텅 빈 검은 칸이 됩니다. */
+.app-shell.mobile-entry .student-question-body:not(:has(.game-scene)):not(:has(.castle-defense-scene)) {
+  align-content: center;
+}
+
+/* 휴대폰 시작 화면은 안쪽 여백·테두리도 걷어 냅니다. 동물과 번호 단추가 화면 너비를 다 쓰고,
+   '준비' 띠는 빼서 번호 단추가 그만큼 커지게 합니다. */
+.app-shell.mobile-entry .setup-playfield { padding: 0; }
+.app-shell.mobile-entry .setup-player-lane {
+  padding: 4px 4px 6px;
+  border-width: 0;
+  border-radius: 0;
+  box-shadow: none;
+  gap: 4px;
+}
+.app-shell.mobile-entry .setup-player-lane > header { margin: 0; padding: 0 2px; min-height: 0; }
+.app-shell.mobile-entry .setup-player-lane .setup-step-card,
+.app-shell.mobile-entry .setup-player-lane .setup-ready-card {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  gap: 6px;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+.app-shell.mobile-entry .setup-player-lane .setup-step-card > .result-kicker { display: none; }
+.app-shell.mobile-entry .setup-player-lane .setup-step-card > strong { font-size: 18px; padding: 0 2px; }
+.app-shell.mobile-entry .setup-player-lane .avatar-pad {
+  width: 100%;
+  margin: 0;
+  gap: 4px;
+}
+.app-shell.mobile-entry .setup-player-lane .avatar-pad button { min-height: 52px; font-size: 30px; }
+.app-shell.mobile-entry .setup-player-lane .attendance-number-pad {
+  gap: 4px;
+  padding: 0;
+  overflow-y: auto;
+}
+.app-shell.mobile-entry .setup-player-lane .attendance-number-pad button {
+  min-height: 0;
+  font-size: clamp(24px, 8vw, 40px);
+  border-radius: 10px;
+}
