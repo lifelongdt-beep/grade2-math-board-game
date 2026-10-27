@@ -1,4 +1,6 @@
-.claude/
+.claude/*
+!.claude/skills/
+!.claude/commands/
 node_modules/
 dist/
 tmp/
