@@ -8838,7 +8838,12 @@ body::before {
   font-weight: 900;
   white-space: nowrap;
 }
+.game-status > span { flex-shrink: 0; }
 .game-status small {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: center;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: #bfe3ff;
@@ -9770,3 +9775,60 @@ body::before {
   30% { transform: translateX(-50%) rotate(180deg) scale(2.2, 3.2); }
   100% { transform: translateX(-50%) rotate(180deg) scale(1, 1); }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   두 명이 놀이를 할 때의 친구 겨루기
+   학생 칸 머리줄에 앞섬·뒤짐·동점을 띄우고, 앞선 쪽이 바뀌면 '역전!'이 크게 뜹니다.
+   ════════════════════════════════════════════════════════════════════ */
+.versus-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 900;
+  white-space: nowrap;
+  animation: score-bump 0.35s ease;
+}
+.versus-chip.lead { background: linear-gradient(90deg, #ffd84a, #ffb347); color: #3a2400; box-shadow: 0 0 12px rgba(255, 210, 70, 0.8); }
+.versus-chip.chase { background: rgba(255, 90, 122, 0.18); color: #ffb3c1; border: 1px solid rgba(255, 90, 122, 0.8); animation: versus-chase 0.7s ease-in-out infinite alternate; }
+.versus-chip.tie { background: rgba(255, 255, 255, 0.12); color: #e8f4ff; border: 1px solid rgba(255, 255, 255, 0.4); }
+@keyframes versus-chase { from { box-shadow: 0 0 2px rgba(255, 90, 122, 0.3); } to { box-shadow: 0 0 12px rgba(255, 90, 122, 0.9); } }
+
+.versus-flip {
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  top: 40%;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: versus-flip 1.6s cubic-bezier(0.2, 1.6, 0.4, 1) forwards;
+}
+.versus-flip b {
+  font-size: clamp(40px, 5vw, 72px);
+  font-weight: 900;
+  color: #fff36b;
+  -webkit-text-stroke: 3px #7a2a00;
+  paint-order: stroke fill;
+  text-shadow: 0 0 24px rgba(255, 220, 60, 0.95);
+}
+.versus-flip small { font-size: 18px; font-weight: 900; color: #fff; text-shadow: 0 2px 0 #000; }
+@keyframes versus-flip {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-12deg); }
+  25% { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(3deg); }
+  75% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -60%) scale(1); }
+}
+
+.versus-result { display: block; margin: 4px 0; font-size: 18px; font-weight: 900; }
+.versus-result.win { color: #ffd84a; }
+.versus-result.lose { color: #ffb3c1; }
+.versus-result.tie { color: #cfe8ff; }
+.versus-result small { font-size: 16px; color: #fff; }
+
+/* 놀이판은 학생 칸 너비를 넘지 않습니다. 두 명이 태블릿에서 하면 안내 글과 문제 카드의 최소 너비 때문에
+   놀이판이 칸보다 넓어져 오른쪽이 잘렸습니다. */
+.student-question-body > .game-scene { min-width: 0; grid-template-columns: minmax(0, 1fr); }

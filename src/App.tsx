@@ -41,7 +41,7 @@ import {
 import {
   isMuted,
   playAnimalSound,
-  playFeverBeat, playFeverStart, playFinishSound, setGameMusicFast, startGameMusic, stopGameMusic, 놀이배경곡,
+  playFeverBeat, playFeverStart, playFinishSound, playGameStage, setGameMusicFast, startGameMusic, stopGameMusic, 놀이배경곡,
   playGoalFanfare,
   playReadySound,
   playAnimalAngry,
@@ -1104,6 +1104,28 @@ function App() {
   // 단원 맨 앞의 놀이 차시입니다. 성 지키기처럼 문제 자리를 놀이 그림이 차지합니다.
   const game = 놀이찾기(lesson);
   const isPlayScene = isCastleDefense || Boolean(game);
+  // 두 명이 놀이 차시를 하면 서로 겨룹니다. 맞힌 개수가 많은 쪽이 앞서고, 앞선 쪽이 바뀌면 '역전!'을 띄웁니다.
+  // 놀이(단원 놀이·성 지키기)에서만 겨룹니다. 보통 차시는 저마다 수준이 달라 견주지 않습니다.
+  const 겨루기 = !isMobileEntry && players.length === 2 && isPlayScene;
+  const 겨룬점수 = 겨루기 ? players.map((player) => playerResults[player.id]?.correct ?? 0) : [0, 0];
+  const 선두 = !겨루기 || 겨룬점수[0] === 겨룬점수[1] ? null : players[겨룬점수[0] > 겨룬점수[1] ? 0 : 1].id;
+  const 앞선두 = useRef<number | null>(null);
+  const [역전, set역전] = useState<{ id: number; n: number } | null>(null);
+  useEffect(() => {
+    if (선두 === null) return;
+    if (앞선두.current !== null && 앞선두.current !== 선두) {
+      set역전((one) => ({ id: 선두, n: (one?.n ?? 0) + 1 }));
+      if (mode === 'playing') playGameStage();
+    }
+    앞선두.current = 선두;
+  }, [선두, mode]);
+  // 다시 시작하면 누가 앞섰는지도 잊습니다.
+  useEffect(() => {
+    if (sessionRecords.length === 0) {
+      앞선두.current = null;
+      set역전(null);
+    }
+  }, [sessionRecords.length]);
   const isCastleDivide = lesson.title === CASTLE_DIVIDE_TITLE;
   const CASTLE_HEARTS_MAX = 8;
 
@@ -2350,6 +2372,16 @@ function App() {
                   <header className={`lane-head ${차림새(profileOf(player.attendanceNo).stars).bg?.look ?? ''}`.trim()}>
                     <PlayerAvatar player={player} active={successActive} stars={profileOf(player.attendanceNo).stars} fire={mode === 'playing' ? 불꽃단계(runs[player.id]?.fire ?? 0) : 0} />
                     <strong>{player.name}</strong>
+                    {겨루기 && mode === 'playing' && (() => {
+                      const 내점수 = playerResults[player.id]?.correct ?? 0;
+                      const 차 = Math.abs(겨룬점수[0] - 겨룬점수[1]);
+                      const 모양 = 선두 === null ? 'tie' : 선두 === player.id ? 'lead' : 'chase';
+                      return (
+                        <span className={`versus-chip ${모양}`} key={`vs-${모양}-${내점수}`} aria-label={모양 === 'tie' ? '친구와 동점' : 모양 === 'lead' ? `친구보다 ${차}개 앞섬` : `친구보다 ${차}개 뒤짐`}>
+                          {모양 === 'tie' ? '⚔️ 동점' : 모양 === 'lead' ? `👑 ${차}개 앞섬` : `🏃 ${차}개 차이, 따라잡자!`}
+                        </span>
+                      );
+                    })()}
                     {mode === 'playing' && 불꽃단계(runs[player.id]?.fire ?? 0) > 0 && (
                       <span className={`fire-chip fire-${불꽃단계(runs[player.id]?.fire ?? 0)}`} aria-label={`${runs[player.id]?.fire}문제 연속 정답`}>
                         🔥 {runs[player.id]?.fire}
@@ -2358,6 +2390,9 @@ function App() {
                     <span className="lane-stars" aria-label={`모은 별 ${profileOf(player.attendanceNo).stars}개`}>⭐ {profileOf(player.attendanceNo).stars}</span>
                     <small>{state.level} · {formatMs(state.responseMs)}</small>
                   </header>
+                  {겨루기 && mode === 'playing' && 역전?.id === player.id && (
+                    <div className="versus-flip" key={`flip-${역전.n}`} aria-live="polite"><b>역전!</b><small>👑 이제 내가 앞서요</small></div>
+                  )}
                   {laneToasts[player.id]?.[0] && (
                     <div className="lane-toast" key={laneToasts[player.id][0].id} aria-live="polite">
                       <span aria-hidden="true">{laneToasts[player.id][0].look}</span>
@@ -2391,6 +2426,12 @@ function App() {
                     <div className="student-result-summary">
                       <span className="result-kicker">시간 종료</span>
                       <strong>{player.name} 결과</strong>
+                      {겨루기 && (
+                        <span className={`versus-result ${선두 === null ? 'tie' : 선두 === player.id ? 'win' : 'lose'}`}>
+                          {선두 === null ? '🤝 비겼어요!' : 선두 === player.id ? '🏆 친구와 겨루기에서 이겼어요!' : '💪 아깝게 졌어요. 다음엔 이길 수 있어요!'}
+                          <small> {playerResults[player.id]?.correct ?? 0} : {겨룬점수[players[0].id === player.id ? 1 : 0]}</small>
+                        </span>
+                      )}
                       {/* 개수는 접혀 있을 때만 보여 줍니다. 펼치면 그 자리는
                           '무엇을 더 공부할까'가 씁니다. 몇 개 맞혔는지는
                           아이가 이미 압니다 — 풀 때마다 보았으니까요. */}
