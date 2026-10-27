@@ -56,6 +56,7 @@ const 터짐: Record<GameMode, { 큰: string; 말: string[]; 조각: string[] }>
   soccer3d: { 큰: '⭐', 말: ['골인!', '슛!', 'GOAL!'], 조각: ['⭐', '🎉', '✨'] },
   fishing: { 큰: '💦', 말: ['낚았다!', '월척!', '첨벙!'], 조각: ['💧', '🐟', '✨'] },
   tower: { 큰: '✨', 말: ['쿵!', '한 층 더!', '착!'], 조각: ['⭐', '✨', '🧱'] },
+  archery: { 큰: '🎯', 말: ['명중!', '한가운데!', '텐!'], 조각: ['⭐', '✨', '🎉'] },
 };
 
 /**
@@ -115,11 +116,12 @@ const 라이벌들: Record<GameMode, { 얼굴: string; 이름: string; 이가: s
   soccer3d: { 얼굴: '🧤', 이름: '골키퍼', 이가: '골키퍼가', 을를: '골키퍼를' },
   fishing: { 얼굴: '🐻', 이름: '곰', 이가: '곰이', 을를: '곰을' },
   tower: { 얼굴: '🦫', 이름: '비버', 이가: '비버가', 을를: '비버를' },
+  archery: { 얼굴: '🦅', 이름: '독수리', 이가: '독수리가', 을를: '독수리를' },
 };
 
 /** 놀이마다 사다리 꼭대기에 놓인 목표입니다. 로켓은 달로, 풍선은 구름으로 올라갑니다. */
 const 사다리목표: Record<GameMode, string> = {
-  monster: '👑', balloon: '☁️', tunnel3d: '🌀', mole: '🏆', rocket: '🌕', race: '🏁', treasure: '💎', soccer3d: '🥅', fishing: '🐳', tower: '🌟',
+  monster: '👑', balloon: '☁️', tunnel3d: '🌀', mole: '🏆', rocket: '🌕', race: '🏁', treasure: '💎', soccer3d: '🥅', fishing: '🐳', tower: '🌟', archery: '🏅',
 };
 
 /** 놀이 설명의 'OO보다 먼저 10점!'을 친구들과 겨루는 말로 바꿉니다. 달리기는 거북이 대신 친구들이 따라옵니다. */
@@ -291,6 +293,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     soccer3d: { top: '22%' },
     tunnel3d: undefined,
     fishing: { left: `${물고기자리 + 8}%`, top: '30%' },
+    archery: { left: 'calc(76% - 42px)', top: '52%' },
     tower: { left: 'calc(50% - 28px)', top: `${Math.max(14, 80 - Math.min(correct, 보이는층) * 9)}%` },
   }[game.mode];
   const 문제 = (
@@ -624,6 +627,35 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
               </div>
             </>
           ))}
+        </div>
+      );
+    }
+    case 'archery': {
+      // 과녁에 꽂힌 화살은 마지막 다섯 개까지 남겨 둡니다. 꽂히는 자리는 문제마다 한가운데 근처에서 조금씩 다릅니다.
+      const 꽂힌 = Array.from({ length: Math.min(correct, 5) }, (_, at) => 해시(`${correct - at}`) % 360);
+      return (
+        <div className="game-scene game-archery">
+          {줄(<>🎯 명중 {correct}</>, <>빗나감 {wrong}</>)}
+          {판('range', (
+            <>
+              <div className="game-range-area">
+                <div className="game-center">{문제}</div>
+                <span className="game-bow" aria-hidden="true">🏹<i>{avatar}</i></span>
+                <div className="game-target" aria-hidden="true">
+                  <span className="game-target-face" key={`target-${맞힘}`}>
+                    {꽂힌.map((각, at) => (
+                      <i key={at} className="game-stuck" style={{ '--a': `${각}deg`, '--r': `${(각 % 5) + 2}px` } as CSSProperties} />
+                    ))}
+                  </span>
+                </div>
+                {/* 맞히면 화살이 활에서 과녁 한가운데로 날아가 꽂히고, 놓치면 과녁 위로 빗나가 날아갑니다. */}
+                {맞힘 > 0 && <span className="game-arrow hit" key={`arrow-${맞힘}`} aria-hidden="true" />}
+                {놓침 > 0 && <span className="game-arrow miss" key={`miss-${놓침}`} aria-hidden="true" />}
+              </div>
+            </>
+          ))}
+          {/* 시위를 당기고 있을 수 있는 시간입니다. 다 줄면 화살이 저절로 빗나갑니다. */}
+          <div className="game-fuel bow"><div className={stopped ? 'stopped' : ''} key={questionKey} style={시계} onAnimationEnd={끝나면} /></div>
         </div>
       );
     }
