@@ -45,7 +45,7 @@ const 터짐: Record<GameMode, { 큰: string; 말: string[]; 조각: string[] }>
   balloon: { 큰: '🎉', 말: ['팡!', '펑!', '빵!'], 조각: ['🎊', '✨', '🎈'] },
   // 두더지는 망치가 구멍에 있던 두더지를 직접 내리치므로(아래 game-whack), 가운데에는 별만 터뜨립니다.
   mole: { 큰: '⭐', 말: ['뿅!', '딱!', '잡았다!'], 조각: ['💫', '⭐', '✨'] },
-  rocket: { 큰: '🔥', 말: ['슝!', '발사!', '부스터!'], 조각: ['✨', '⭐', '💨'] },
+  rocket: { 큰: '⭐', 말: ['슝!', '발사!', '부스터!'], 조각: ['✨', '⭐', '💨'] },
   race: { 큰: '💨', 말: ['쌩!', '달려!', '앞질렀다!'], 조각: ['💨', '✨', '⭐'] },
   treasure: { 큰: '✨', 말: ['반짝!', '열렸다!', '보물!'], 조각: ['💎', '🪙', '✨'] },
   tunnel3d: { 큰: '💥', 말: ['콰광!', '명중!', '빔!'], 조각: ['✨', '💫', '⭐'] },
@@ -144,12 +144,31 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
   const h = 해시(questionKey);
   // 바로 앞 문제의 두더지 구멍을 기억해 둡니다. 맞히는 순간 문제가 바뀌어 새 두더지가 나오므로,
   // 망치는 방금 맞힌 문제의 두더지가 있던 구멍을 내리쳐야 합니다.
-  const 앞문제 = useRef({ key: questionKey, 구멍: h % 3 });
-  const 직전구멍 = useRef(h % 3);
+  // 몬스터·풍선도 같습니다. 문제가 나온 때를 기억해 두면, 맞힌 순간 그 물체가 어디까지 왔는지
+  // (진행: 0~1) 알 수 있어 바로 그 자리에서 터뜨릴 수 있습니다.
+  const 앞문제 = useRef({ key: questionKey, 구멍: h % 3, 해시: h, 시작: performance.now(), 초 });
+  const 직전 = useRef({ 구멍: h % 3, 해시: h, 진행: 0 });
   if (앞문제.current.key !== questionKey) {
-    직전구멍.current = 앞문제.current.구멍;
-    앞문제.current = { key: questionKey, 구멍: h % 3 };
+    const 지난 = 앞문제.current;
+    직전.current = { 구멍: 지난.구멍, 해시: 지난.해시, 진행: Math.min(1, (performance.now() - 지난.시작) / (지난.초 * 1000)) };
+    앞문제.current = { key: questionKey, 구멍: h % 3, 해시: h, 시작: performance.now(), 초 };
   }
+  const 직전구멍 = { current: 직전.current.구멍 };
+  // 맞힌 물체가 있던 높이(%)입니다. game-fall은 -30%→70%, game-rise는 2%→78%로 움직입니다.
+  const 몬스터높이 = Math.max(-10, -30 + 100 * 직전.current.진행);
+  const 풍선높이 = 2 + 76 * 직전.current.진행;
+  // 펑 터지는 자리입니다. 몬스터·풍선·보물은 그 물체 자리에서, 나머지는 가운데에서 터집니다.
+  // 로켓은 지금 고도, 달리기는 내 캐릭터 자리, 두더지는 맞힌 구멍, 승부차기는 골문입니다.
+  const 터질자리: CSSProperties | undefined = {
+    monster: { top: `${Math.min(80, 몬스터높이 + 10)}%` },
+    balloon: { top: `${Math.max(12, 100 - 풍선높이 - 30)}%` },
+    treasure: { top: '78%' },
+    rocket: { left: '9%', top: `${Math.max(12, 82 - (correct % 10) * 9)}%` },
+    race: { left: `${Math.min(88, (correct % 10) * 9 + 5)}%`, top: '22%' },
+    mole: { left: `${((직전.current.구멍 * 2 + 1) / 6) * 100}%`, top: '72%' },
+    soccer3d: { top: '22%' },
+    tunnel3d: undefined,
+  }[game.mode];
   const 문제 = (
     <div className={`game-card ${visual ? 'with-visual' : ''}`.trim()}>
       {visual && <div className="game-visual"><QuestionVisualGraphic visual={visual} /></div>}
@@ -169,7 +188,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
   const 효과 = (
     <>
       {맞힘 > 0 && (
-        <div className="game-burst" key={`hit-${맞힘}`} aria-hidden="true">
+        <div className="game-burst" key={`hit-${맞힘}`} style={터질자리} aria-hidden="true">
           <span className="game-burst-big">{터짐모양.큰}</span>
           <b className="game-burst-word">{터짐모양.말[맞힘 % 터짐모양.말.length]}</b>
           {Array.from({ length: 10 }, (_, at) => (
@@ -224,7 +243,13 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
                 <span className="game-big-emoji wobble">{몬스터들[h % 몬스터들.length]}</span>
                 {문제}
               </div>
-              {맞힘 > 0 && <span className="game-laser" key={`laser-${맞힘}`} aria-hidden="true" />}
+              {/* 맞히면 성에서 광선이 그 몬스터가 있던 높이까지 쏘아 올라가고, 몬스터는 그 자리에서 터집니다. */}
+              {맞힘 > 0 && <span className="game-laser" key={`laser-${맞힘}`} style={{ '--laser': `${Math.min(92, Math.max(8, 88 - 몬스터높이))}%` } as CSSProperties} aria-hidden="true" />}
+              {맞힘 > 0 && (
+                <div className="game-ghost monster" key={`ghost-${맞힘}`} style={{ top: `${몬스터높이}%` }} aria-hidden="true">
+                  <span>{몬스터들[직전.current.해시 % 몬스터들.length]}</span><b>💥</b>
+                </div>
+              )}
               <div className="game-ground">🧱🧱🧱<b className="game-cannon">🏰</b>🧱🧱🧱</div>
             </>
           ))}
@@ -244,6 +269,12 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
                 </span>
                 {문제}
               </div>
+              {/* 맞히면 방금 그 풍선이 떠 있던 자리에서 팡 터집니다. */}
+              {맞힘 > 0 && (
+                <div className="game-ghost balloon" key={`ghost-${맞힘}`} style={{ bottom: `calc(${풍선높이}% + 40px)` }} aria-hidden="true">
+                  <span className="game-balloon-body" style={{ '--balloon': 풍선색[직전.current.해시 % 풍선색.length] } as CSSProperties} /><b>💥</b>
+                </div>
+              )}
               <span className="game-dart" aria-hidden="true">🎯</span>
             </>
           ))}
@@ -325,7 +356,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
           {줄(<>모은 보석 {correct}</>, <span className="game-gems">{Array.from({ length: Math.min(correct, 8) }, (_, at) => 보석들[(at * 7 + correct) % 보석들.length]).join('')}</span>)}
           {판('cave', (
             <>
-              <span className={`game-chest ${stopped ? 'shake' : 'rattle'}`} key={`chest-${맞힘}`}>{맞힘 > 0 ? '🎁' : '🧰'}</span>
+              <span className={`game-chest ${stopped ? 'shake' : 'rattle'}`} key={`chest-${맞힘}`}>🧰</span>
               {맞힘 > 0 && <span className="game-gem-fly" key={`gem-${맞힘}`} aria-hidden="true">{보석들[(correct * 7) % 보석들.length]}</span>}
               <div className="game-center">{문제}</div>
             </>
