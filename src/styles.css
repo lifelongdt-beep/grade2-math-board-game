@@ -10855,3 +10855,90 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   .ladder-alert { animation: none; }
 }
+
+/* ── 낚시 대회: 물고기가 오른쪽에서 왼쪽으로 헤엄치고, 맞히면 배에서 낚아 올립니다 ───── */
+.game-track.sea {
+  background:
+    linear-gradient(180deg, #bfe7ff 0 16%, #3fa7d6 16% 17%, #2b8cc4 17%, #1d6fa8 60%, #134f80 100%);
+}
+.game-waves {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(16% - 6px);
+  height: 12px;
+  background: radial-gradient(circle at 10px -2px, transparent 9px, #3fa7d6 10px) 0 0 / 20px 12px repeat-x;
+  animation: waves-roll 2.4s linear infinite;
+}
+@keyframes waves-roll { to { background-position: 20px 0; } }
+.game-boat {
+  position: absolute;
+  top: calc(16% - 30px);
+  z-index: 3;
+  font-size: 34px;
+  line-height: 1;
+  transform: translateX(-50%);
+  transition: left 0.6s cubic-bezier(0.3, 1.4, 0.5, 1);
+  animation: boat-bob 1.6s ease-in-out infinite alternate;
+}
+.game-boat i { position: absolute; left: 50%; top: -16px; font-size: 20px; font-style: normal; transform: translateX(-50%); }
+@keyframes boat-bob { from { margin-top: 0; rotate: -4deg; } to { margin-top: 3px; rotate: 4deg; } }
+.game-swim-area { position: absolute; top: 0; bottom: 0; left: 0; right: 56px; overflow: hidden; }
+.game-swimmer {
+  position: absolute;
+  top: 34%;
+  left: 68%;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: min(60%, 300px);
+  transform: translateX(-50%);
+  animation: game-swim 12s linear forwards;
+}
+.game-swimmer.stopped { animation: none; left: 50%; }
+/* 처음부터 문제 카드가 다 보이도록 판 안쪽에서 출발해, 왼쪽 끝에 닿으면 놓친 것으로 칩니다. */
+@keyframes game-swim { from { left: 68%; } to { left: 4%; } }
+.game-swimmer .game-card { width: 100%; }
+.game-fish { font-size: clamp(30px, 3.4vw, 42px); line-height: 1; animation: fish-wiggle 0.45s ease-in-out infinite alternate; }
+@keyframes fish-wiggle { from { transform: rotate(-8deg) translateY(-2px); } to { transform: rotate(8deg) translateY(2px); } }
+.game-catch {
+  position: absolute;
+  top: calc(16% - 4px);
+  z-index: 4;
+  width: 0;
+  pointer-events: none;
+}
+.game-catch-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 0;
+  background: #fff;
+  animation: line-drop 0.7s ease-out forwards;
+}
+.game-catch-fish {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 34px;
+  line-height: 1;
+  transform: translate(-50%, 0);
+  animation: fish-reel 0.7s cubic-bezier(0.3, 1.4, 0.5, 1) forwards;
+}
+@keyframes line-drop { 0% { height: 0; } 35% { height: 90px; } 100% { height: 0; } }
+@keyframes fish-reel {
+  0%, 30% { opacity: 0; transform: translate(-50%, 86px) rotate(0); }
+  40% { opacity: 1; transform: translate(-50%, 80px) rotate(-20deg); }
+  100% { opacity: 0; transform: translate(-50%, -46px) rotate(340deg) scale(1.2); }
+}
+.game-seabed { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; font-size: 20px; letter-spacing: 18px; opacity: 0.9; }
+.ladder-fishing { --ladder-bg: linear-gradient(#bfe7ff 0%, #2b8cc4 30%, #134f80 100%); --ladder-rung: rgba(255, 255, 255, 0.5); border-color: #e6f6ff; }
+
+/* 사다리가 있는 놀이에서는 콤보 표시를 사다리 왼쪽에 둡니다(꼭대기 목표를 가리지 않게). */
+.game-track:has(.rival-ladder) .game-combo { right: 58px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .game-waves, .game-boat, .game-fish { animation: none; }
+}

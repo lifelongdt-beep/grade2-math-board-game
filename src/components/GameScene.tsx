@@ -35,6 +35,7 @@ const 해시 = (text: string) => text.split('').reduce((sum, ch) => (sum * 31 + 
 const 몬스터들 = ['👾', '👹', '👻', '🐲', '🦖', '🐙'];
 const 풍선색 = ['#ff5a7a', '#ffb347', '#59d68a', '#4fb3ff', '#b779ff', '#ff7ad9'];
 const 보석들 = ['💎', '💍', '👑', '🪙', '🔮', '⭐'];
+const 물고기들 = ['🐟', '🐠', '🐡', '🦑', '🦀', '🐙'];
 
 // 전자칠판은 여럿이 한 화면을 함께 누르므로 상 수준에 1초를 돌려줍니다(구구단 몬스터와 같은 까닭).
 const 함께쓰는화면덤 = 1;
@@ -50,6 +51,7 @@ const 터짐: Record<GameMode, { 큰: string; 말: string[]; 조각: string[] }>
   treasure: { 큰: '✨', 말: ['반짝!', '열렸다!', '보물!'], 조각: ['💎', '🪙', '✨'] },
   tunnel3d: { 큰: '💥', 말: ['콰광!', '명중!', '빔!'], 조각: ['✨', '💫', '⭐'] },
   soccer3d: { 큰: '⭐', 말: ['골인!', '슛!', 'GOAL!'], 조각: ['⭐', '🎉', '✨'] },
+  fishing: { 큰: '💦', 말: ['낚았다!', '월척!', '첨벙!'], 조각: ['💧', '🐟', '✨'] },
 };
 
 /**
@@ -107,11 +109,12 @@ const 라이벌들: Record<GameMode, { 얼굴: string; 이름: string; 이가: s
   race: { 얼굴: '🐢', 이름: '거북이', 이가: '거북이가', 을를: '거북이를' },
   treasure: { 얼굴: '🏴‍☠️', 이름: '해적', 이가: '해적이', 을를: '해적을' },
   soccer3d: { 얼굴: '🧤', 이름: '골키퍼', 이가: '골키퍼가', 을를: '골키퍼를' },
+  fishing: { 얼굴: '🐻', 이름: '곰', 이가: '곰이', 을를: '곰을' },
 };
 
 /** 놀이마다 사다리 꼭대기에 놓인 목표입니다. 로켓은 달로, 풍선은 구름으로 올라갑니다. */
 const 사다리목표: Record<GameMode, string> = {
-  monster: '👑', balloon: '☁️', tunnel3d: '🌀', mole: '🏆', rocket: '🌕', race: '🏁', treasure: '💎', soccer3d: '🥅',
+  monster: '👑', balloon: '☁️', tunnel3d: '🌀', mole: '🏆', rocket: '🌕', race: '🏁', treasure: '💎', soccer3d: '🥅', fishing: '🐳',
 };
 
 /** 놀이 설명의 'OO보다 먼저 10점!'을 친구들과 겨루는 말로 바꿉니다. 달리기는 거북이 대신 친구들이 따라옵니다. */
@@ -268,6 +271,8 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
   // 맞힌 물체가 있던 높이(%)입니다. game-fall은 6%→72%, game-rise는 2%→78%로 움직입니다.
   const 몬스터높이 = 6 + 66 * 직전.current.진행;
   const 풍선높이 = 2 + 76 * 직전.current.진행;
+  // 물고기는 오른쪽에서 왼쪽으로 헤엄칩니다(game-swim은 68%→4%). 맞힌 순간 물고기가 있던 가로 자리(%)입니다.
+  const 물고기자리 = 68 - 64 * 직전.current.진행;
   // 펑 터지는 자리입니다. 몬스터·풍선·보물은 그 물체 자리에서, 나머지는 가운데에서 터집니다.
   // 로켓은 지금 고도, 달리기는 내 캐릭터 자리, 두더지는 맞힌 구멍, 승부차기는 골문입니다.
   const 터질자리: CSSProperties | undefined = {
@@ -280,6 +285,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     mole: { left: `${((직전.current.구멍 * 2 + 1) / 6) * 100}%`, top: '72%' },
     soccer3d: { top: '22%' },
     tunnel3d: undefined,
+    fishing: { left: `${물고기자리 + 8}%`, top: '30%' },
   }[game.mode];
   const 문제 = (
     <div className={`game-card ${visual ? 'with-visual' : ''}`.trim()}>
@@ -551,6 +557,34 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
             </>
           ))}
           <div className="game-fuel fuse"><div className={stopped ? 'stopped' : ''} key={questionKey} style={시계} onAnimationEnd={끝나면} /><span>🔥</span></div>
+        </div>
+      );
+    case 'fishing':
+      return (
+        <div className="game-scene game-fishing">
+          {줄(<>🪣 낚은 물고기 {correct}</>, <>도망간 물고기 {wrong}</>)}
+          {판('sea', (
+            <>
+              <div className="game-waves" aria-hidden="true" />
+              {/* 배는 방금 물고기를 낚은 자리 위로 옮겨 가 있습니다. */}
+              <span className="game-boat" style={{ left: `${맞힘 > 0 ? 물고기자리 : 50}%` }} aria-hidden="true">🛶<i>{avatar}</i></span>
+              {/* 물고기는 오른쪽 사다리를 가리지 않도록 그 왼쪽 물속에서만 헤엄칩니다. */}
+              <div className="game-swim-area">
+                <div className={`game-swimmer ${stopped ? 'stopped' : ''}`} key={questionKey} style={시계} onAnimationEnd={끝나면}>
+                  <span className="game-fish">{물고기들[h % 물고기들.length]}</span>
+                  {문제}
+                </div>
+              </div>
+              {/* 맞히면 배에서 낚싯줄이 내려가 방금 그 물고기를 물 밖으로 휙 낚아 올립니다. */}
+              {맞힘 > 0 && (
+                <div className="game-catch" key={`catch-${맞힘}`} style={{ left: `${물고기자리 + 6}%` }} aria-hidden="true">
+                  <i className="game-catch-line" />
+                  <span className="game-catch-fish">{물고기들[직전.current.해시 % 물고기들.length]}</span>
+                </div>
+              )}
+              <div className="game-seabed" aria-hidden="true">🪸🌿🐚🌿🪸</div>
+            </>
+          ))}
         </div>
       );
     case 'tunnel3d':

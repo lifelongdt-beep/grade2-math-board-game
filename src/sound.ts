@@ -746,7 +746,7 @@ export const playFeverBeat = (tick: number) => {
 // 동물 친구의 기쁨·화남 소리와 함께 울리므로, 하나하나는 짧고(0.6초 안쪽)
 // 작게(0.1 이하) 둡니다. 다섯이 한꺼번에 내도 시끄럽지 않아야 합니다.
 
-export type 놀이소리모드 = 'monster' | 'balloon' | 'mole' | 'rocket' | 'race' | 'treasure' | 'tunnel3d' | 'soccer3d';
+export type 놀이소리모드 = 'monster' | 'balloon' | 'mole' | 'rocket' | 'race' | 'treasure' | 'tunnel3d' | 'soccer3d' | 'fishing';
 
 // 터지는 소리입니다. 거친 톱니파를 빠르게 떨며 낮게 떨어뜨리면 '쾅'처럼 들립니다.
 const 쾅 = (at: number, volume = 0.07): Blip[] => [
@@ -808,6 +808,12 @@ const 맞힘효과: Record<놀이소리모드, Blip[]> = {
     { frequency: 1046.5, at: 0.34, length: 0.08, volume: 0.06, type: 'triangle' },
     { frequency: 1318.51, at: 0.42, length: 0.16, volume: 0.07, type: 'triangle' },
   ],
+  // 첨벙 — 드르륵(릴 감기) — 뿅(낚아 올림)!
+  fishing: [
+    { frequency: 500, at: 0, length: 0.12, volume: 0.06, type: 'sine', slideTo: 120 },
+    { frequency: 900, at: 0.1, length: 0.18, volume: 0.035, type: 'square', vibrato: { rate: 38, depth: 160 } },
+    { frequency: 700, at: 0.3, length: 0.16, volume: 0.06, type: 'sine', slideTo: 1800 },
+  ],
 };
 
 const 놓침효과: Record<놀이소리모드, Blip[]> = {
@@ -852,6 +858,11 @@ const 놓침효과: Record<놀이소리모드, Blip[]> = {
     { frequency: 170, at: 0.04, length: 0.08, volume: 0.06, type: 'triangle' },
     { frequency: 330, at: 0.14, length: 0.4, volume: 0.05, type: 'triangle', slideTo: 165, vibrato: { rate: 6, depth: 8 } },
   ],
+  // 퐁당 — 물고기가 줄을 끊고 물속으로 달아납니다.
+  fishing: [
+    { frequency: 1200, at: 0, length: 0.08, volume: 0.05, type: 'sine', slideTo: 300 },
+    { frequency: 260, at: 0.1, length: 0.3, volume: 0.05, type: 'triangle', slideTo: 90, vibrato: { rate: 14, depth: 20 } },
+  ],
 };
 
 // 새 문제가 나올 때의 작은 신호입니다. 매 문제 울리므로 가장 작게 둡니다.
@@ -868,6 +879,7 @@ const 등장효과: Record<놀이소리모드, Blip[]> = {
   tunnel3d: [{ frequency: 180, at: 0, length: 0.4, volume: 0.035, type: 'sine', slideTo: 900 }],
   // 삑(심판 호루라기)
   soccer3d: [{ frequency: 2900, at: 0, length: 0.18, volume: 0.03, type: 'sine', vibrato: { rate: 45, depth: 120 } }],
+  fishing: [{ frequency: 1400, at: 0, length: 0.12, volume: 0.03, type: 'sine', slideTo: 2100 }],
 };
 
 // 콤보 소리는 도 레 미 솔 라(5음 음계)를 따라 맞힐 때마다 한 칸씩 올라갑니다.
@@ -994,7 +1006,7 @@ export const 배경곡들: Record<배경곡, 곡> = {
 export const 놀이배경곡: Record<놀이소리모드, 배경곡> = {
   monster: 'adventure', tunnel3d: 'adventure', rocket: 'adventure',
   balloon: 'bouncy', mole: 'bouncy', soccer3d: 'dash',
-  race: 'dash', treasure: 'dash',
+  race: 'dash', treasure: 'dash', fishing: 'bouncy',
 };
 
 const 배경 = {
