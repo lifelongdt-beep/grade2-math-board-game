@@ -379,6 +379,10 @@ const 길이재기 = (p: string): QuestionVisual | null => {
 export const 그림추론 = (p: string): QuestionVisual | null => {
   let m: RegExpExecArray | null;
 
+  // 칠교판(2-1 2단원): 조각을 세거나 견주는 문제는 번호가 붙은 칠교 7조각을 보여 줍니다.
+  // 그림이 없으면 아이는 삼각형 조각 5개, 사각형 조각 2개를 떠올릴 수가 없습니다.
+  if (/칠교/.test(p)) return { kind: 'tangram', label: '번호가 붙은 칠교 7조각' };
+
   // 세 각이 주어진 삼각형
   m = /세 각의 크기가 (\d+)°, (\d+)°, (\d+)°인 삼각형/.exec(p);
   if (m) return 각삼각형(Number(m[1]), Number(m[2]), [`${m[1]}°`, `${m[2]}°`, `${m[3]}°`], '세 각의 크기가 주어진 삼각형');
