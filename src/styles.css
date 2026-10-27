@@ -9294,6 +9294,11 @@ body::before {
 .game-track.road.shake-1 { animation: track-shake-b 0.45s ease, road-scroll 0.8s linear infinite; }
 .game-lane span.runner { animation: run-bob 0.32s ease-in-out infinite alternate; }
 .game-lane span.runner.slow { animation-duration: 0.6s; }
+/* 거북이는 0.2초마다 조금씩 기어가므로 튀지 않고 부드럽게 미끄러지게 합니다. */
+.game-lane span.runner.crawl { transition: left 0.22s linear; }
+.game-race .race-warn { color: #ffd84a; animation: race-warn 0.5s ease-in-out infinite alternate; }
+@keyframes race-warn { from { opacity: 1; } to { opacity: 0.45; } }
+.arcade-banner.stage.turtle b { font-size: clamp(22px, 4.5vw, 40px); }
 @keyframes run-bob { from { margin-bottom: 0; } to { margin-bottom: 5px; } }
 .game-lane span.runner i { position: absolute; right: 100%; bottom: 0; font-style: normal; font-size: 20px; animation: dust 0.6s ease-out forwards; }
 @keyframes dust { from { opacity: 1; transform: translateX(0) scale(0.6); } to { opacity: 0; transform: translateX(-20px) scale(1.4); } }

@@ -87,6 +87,55 @@ function use놀이사건(correct: number, wrong: number) {
   return 사건;
 }
 
+/** 달리기 결승선까지의 칸 수입니다. */
+const 결승칸 = 10;
+/**
+ * 달리기의 거북이는 문제와 상관없이 시간이 흐르면 슬금슬금 기어갑니다. 그 문제 시간의 70%마다
+ * 한 칸쯤 가므로, 꾸준히 맞히면 이기고 머뭇거리면 따라잡힙니다. 틀리면 한 칸 더 갑니다.
+ * 너무 뒤처지면 조금 빨라지고, 앞서면 조금 느려져서 늘 엎치락뒤치락하게 둡니다.
+ */
+const 거북한칸 = 0.7;
+const 거북걸음간격 = 200;
+
+function use거북경주(켜짐: boolean, 맞힘: number, 놓침: number, 기본초: number, 멈춤: boolean) {
+  const 처음 = { 출발맞힘: 0, 거북: 0, 내우승: 0, 거북우승: 0, 판: 0 };
+  const [경주, set경주] = useState(처음);
+  const 맞힘지금 = useRef(맞힘);
+  맞힘지금.current = 맞힘;
+  // 한 판이 끝나면 둘 다 출발선으로 돌아갑니다.
+  const 새판 = (one: typeof 처음, 누가: '나' | '거북') => ({
+    출발맞힘: 맞힘지금.current,
+    거북: 0,
+    내우승: one.내우승 + (누가 === '나' ? 1 : 0),
+    거북우승: one.거북우승 + (누가 === '거북' ? 1 : 0),
+    판: one.판 + 1,
+  });
+  useEffect(() => {
+    if (!켜짐 || 멈춤) return undefined;
+    const 시계 = window.setInterval(() => set경주((one) => {
+      const 나 = 맞힘지금.current - one.출발맞힘;
+      const 차이 = 나 - one.거북;
+      const 빠르기 = 차이 > 3 ? 1.6 : 차이 < -1 ? 0.6 : 1;
+      const 거북 = one.거북 + (거북걸음간격 / (기본초 * 거북한칸 * 1000)) * 빠르기;
+      return 거북 >= 결승칸 ? 새판(one, '거북') : { ...one, 거북 };
+    }), 거북걸음간격);
+    return () => window.clearInterval(시계);
+  }, [켜짐, 멈춤, 기본초]);
+  useEffect(() => {
+    if (!켜짐) return;
+    set경주((one) => (맞힘 - one.출발맞힘 >= 결승칸 ? 새판(one, '나') : one));
+  }, [켜짐, 맞힘]);
+  useEffect(() => {
+    if (!켜짐 || 놓침 === 0) return;
+    set경주((one) => (one.거북 + 1 >= 결승칸 ? 새판(one, '거북') : { ...one, 거북: one.거북 + 1 }));
+  }, [켜짐, 놓침]);
+  // 다시 시작하면 경주도 처음부터 합니다.
+  useEffect(() => {
+    if (맞힘 === 0 && 놓침 === 0) set경주(처음);
+  }, [맞힘, 놓침]);
+  return { ...경주, 나: 맞힘 - 경주.출발맞힘 };
+}
+
 interface GameSceneProps {
   game: GameInfo;
   questionKey: string;
@@ -107,7 +156,8 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
   const { 맞힘, 놓침, 연속, 점수, 얻은 } = use놀이사건(correct, wrong);
   const 스테이지 = 1 + Math.floor(맞힘 / 스테이지문제);
   const 배율 = 점수배율(연속);
-  const 초 = (놀이시간[level] + (sharedScreen && level === '상' ? 함께쓰는화면덤 : 0)) * 빨라짐(연속, 스테이지);
+  const 기본초 = 놀이시간[level] + (sharedScreen && level === '상' ? 함께쓰는화면덤 : 0);
+  const 초 = 기본초 * 빨라짐(연속, 스테이지);
 
   // 처음 화면에 들어오면 READY? GO!를 띄우고 출발 신호를 울립니다.
   const [준비, set준비] = useState(true);
@@ -116,6 +166,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     const 끝 = window.setTimeout(() => set준비(false), 1500);
     return () => window.clearTimeout(끝);
   }, []);
+  const 경주 = use거북경주(game.mode === 'race', 맞힘, 놓침, 기본초, stopped || 준비);
   const 시계: CSSProperties | undefined = stopped ? undefined : { animationDuration: `${초.toFixed(2)}s` };
   const 끝나면 = stopped ? undefined : onTimeout;
 
@@ -164,7 +215,8 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     balloon: { top: `${Math.max(12, 100 - 풍선높이 - 30)}%` },
     treasure: { top: '78%' },
     rocket: { left: '9%', top: `${Math.max(12, 82 - (correct % 10) * 9)}%` },
-    race: { left: `${Math.min(88, (correct % 10) * 9 + 5)}%`, top: '22%' },
+    // 결승선을 밟아 새 판이 되었으면 결승선에서 터집니다.
+    race: { left: `${경주.나 === 0 && 경주.판 > 0 ? 88 : Math.min(88, 경주.나 * 9 + 5)}%`, top: '22%' },
     mole: { left: `${((직전.current.구멍 * 2 + 1) / 6) * 100}%`, top: '72%' },
     soccer3d: { top: '22%' },
     tunnel3d: undefined,
@@ -334,16 +386,23 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
       );
     }
     case 'race': {
-      const 나 = correct % 10;
-      const 거북 = Math.min(9, wrong % 10);
+      const { 나, 거북, 내우승, 거북우승, 판: 판수 } = 경주;
+      // 거북이가 반 칸 넘게 앞서야 '서둘러!'를 띄웁니다. 출발선에서 조금 기어 나간 것만으로는 띄우지 않습니다.
+      const 거북앞섬 = 거북 >= 나 + 0.5;
       return (
         <div className="game-scene game-race">
-          {줄(<>🏆 우승 {Math.floor(correct / 10)}번</>, <>🏁 결승까지 {10 - 나}칸</>)}
+          {줄(
+            <>🏆 나 {내우승} : {거북우승} 🐢</>,
+            거북앞섬 ? <b className="race-warn">🐢 거북이가 앞서요! 서둘러!</b> : <>🏁 결승까지 {결승칸 - 나}칸</>,
+          )}
           {판('road', (
             <>
-              <div className="game-lane"><span className="runner" style={{ left: `${나 * 9}%` }}><span className="game-kick" key={`me-${맞힘}`}>{avatar}{맞힘 > 0 && <i>💨</i>}</span></span><b>🏁</b></div>
-              <div className="game-lane"><span className="runner slow" style={{ left: `${거북 * 9}%` }}>🐢</span><b>🏁</b></div>
+              <div className="game-lane"><span className="runner" key={`me-run-${판수}`} style={{ left: `${나 * 9}%` }}><span className="game-kick" key={`me-${맞힘}`}>{avatar}{맞힘 > 0 && <i>💨</i>}</span></span><b>🏁</b></div>
+              <div className="game-lane"><span className="runner slow crawl" key={`turtle-${판수}`} style={{ left: `${Math.min(결승칸, 거북) * 9}%` }}>🐢</span><b>🏁</b></div>
               <div className="game-center">{문제}</div>
+              {거북우승 > 0 && (
+                <div className="arcade-banner stage turtle" key={`turtle-win-${거북우승}`} aria-hidden="true"><b>🐢 거북이 먼저 도착!</b><small>다시 출발!</small></div>
+              )}
             </>
           ))}
           <div className="game-fuel race"><div className={stopped ? 'stopped' : ''} key={questionKey} style={시계} onAnimationEnd={끝나면} /></div>
