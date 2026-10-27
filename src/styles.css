@@ -9408,6 +9408,47 @@ body::before {
   animation: combo-stamp 0.4s cubic-bezier(0.2, 1.9, 0.4, 1);
 }
 .arcade-stage b { color: #7dff8a; text-shadow: 0 0 8px rgba(80, 255, 120, 0.9), 0 1px 0 #000; }
+
+/* 라이벌과의 줄다리기: 점수판 가운데에 나와 라이벌의 점수, 그 사이 밧줄의 깃발이 앞선 쪽으로 끌려갑니다. */
+.rival-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-family: inherit;
+  letter-spacing: 0;
+}
+.rival-bar b { font-size: 15px; color: #fff; text-shadow: 0 1px 0 #000; }
+.rival-bar .rival-them { display: inline-block; animation: score-bump 0.35s ease; }
+.rival-bar small { font-size: 11px; color: #ffd84a; }
+.rival-rope {
+  position: relative;
+  width: clamp(60px, 9vw, 120px);
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #4fb3ff 0 50%, #ff5a7a 50% 100%);
+}
+.rival-rope i {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff36b;
+  box-shadow: 0 0 8px rgba(255, 240, 100, 0.95);
+  transform: translate(-50%, -50%);
+  transition: left 0.3s ease;
+}
+.rival-bar.ahead { border-color: rgba(107, 224, 138, 0.9); box-shadow: 0 0 10px rgba(107, 224, 138, 0.6); }
+.rival-bar.behind { border-color: rgba(255, 90, 122, 0.95); animation: rival-warn 0.6s ease-in-out infinite alternate; }
+@keyframes rival-warn { from { box-shadow: 0 0 2px rgba(255, 90, 122, 0.4); } to { box-shadow: 0 0 14px rgba(255, 90, 122, 0.95); } }
+.arcade-banner.stage.rival b { font-size: clamp(20px, 3.6vw, 38px); }
+.arcade-banner.stage.rival.lose b { color: #ffb3c1; text-shadow: 0 0 18px rgba(255, 90, 122, 0.95), 0 3px 0 #5a0018; }
+.arcade-banner.stage.rival.win b { color: #fff36b; text-shadow: 0 0 18px rgba(255, 220, 60, 0.95), 0 3px 0 #5a3a00; }
 /* 콤보 도장은 점수판 아래로 내립니다. */
 .game-combo { top: 26px; }
 

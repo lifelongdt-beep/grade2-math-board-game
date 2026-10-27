@@ -33,14 +33,14 @@ export interface GameInfo {
 }
 
 export const 놀이들: Record<GameMode, GameInfo> = {
-  monster: { mode: 'monster', title: '몬스터를 막아라!', how: '몬스터가 땅에 닿기 전에 답을 골라 막아요', missTitle: '몬스터가 성에 닿았어요!' },
-  balloon: { mode: 'balloon', title: '풍선을 터뜨려라!', how: '풍선이 하늘 끝에 닿기 전에 답을 골라 터뜨려요', missTitle: '풍선이 날아가 버렸어요!' },
-  mole: { mode: 'mole', title: '두더지를 잡아라!', how: '두더지가 숨기 전에 답을 골라 뿅 잡아요', missTitle: '두더지가 숨어 버렸어요!' },
-  rocket: { mode: 'rocket', title: '로켓을 쏘아 올려라!', how: '연료가 다 떨어지기 전에 맞히면 로켓이 한 칸씩 올라가요', missTitle: '연료가 새어 버렸어요!' },
+  monster: { mode: 'monster', title: '몬스터를 막아라!', how: '몬스터 대장보다 먼저 10점! 땅에 닿기 전에 답을 골라 막아요', missTitle: '몬스터가 성에 닿았어요!' },
+  balloon: { mode: 'balloon', title: '풍선을 터뜨려라!', how: '참새보다 먼저 10점! 하늘 끝에 닿기 전에 풍선을 터뜨려요', missTitle: '풍선이 날아가 버렸어요!' },
+  mole: { mode: 'mole', title: '두더지를 잡아라!', how: '고양이보다 먼저 10점! 숨기 전에 두더지를 뿅 잡아요', missTitle: '두더지가 숨어 버렸어요!' },
+  rocket: { mode: 'rocket', title: '로켓을 쏘아 올려라!', how: '로봇보다 먼저 10점! 연료가 떨어지기 전에 맞혀 로켓을 올려요', missTitle: '연료가 새어 버렸어요!' },
   race: { mode: 'race', title: '달리기 시합!', how: '맞힐 때마다 내 캐릭터가 달려 나가요. 거북이도 슬금슬금 따라와요. 먼저 결승선에!', missTitle: '거북이가 한 걸음 앞섰어요!' },
-  treasure: { mode: 'treasure', title: '보물 상자를 열어라!', how: '심지가 다 타기 전에 맞히면 보석이 나와요', missTitle: '상자가 잠겨 버렸어요!' },
-  tunnel3d: { mode: 'tunnel3d', title: '3D 우주 터널을 지나라!', how: '우주선 쪽으로 날아오는 문제를 부딪히기 전에 맞혀요', missTitle: '운석에 부딪혔어요!' },
-  soccer3d: { mode: 'soccer3d', title: '3D 승부차기, 골을 넣어라!', how: '시간 안에 맞히면 슛! 골키퍼를 피해 골문에 공을 넣어요', missTitle: '골키퍼가 막았어요!' },
+  treasure: { mode: 'treasure', title: '보물 상자를 열어라!', how: '해적보다 먼저 10점! 심지가 다 타기 전에 맞혀 보석을 모아요', missTitle: '상자가 잠겨 버렸어요!' },
+  tunnel3d: { mode: 'tunnel3d', title: '3D 우주 터널을 지나라!', how: '외계인보다 먼저 10점! 부딪히기 전에 날아오는 문제를 맞혀요', missTitle: '운석에 부딪혔어요!' },
+  soccer3d: { mode: 'soccer3d', title: '3D 승부차기, 골을 넣어라!', how: '골키퍼보다 먼저 10점! 시간 안에 맞히면 슛! 골문에 공을 넣어요', missTitle: '골키퍼가 막았어요!' },
 };
 
 const 돌림차례: GameMode[] = ['monster', 'balloon', 'tunnel3d', 'mole', 'rocket', 'soccer3d', 'race', 'treasure'];
