@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Difficulty, QuestionVisual } from '../types';
 import { QuestionVisualGraphic } from './QuestionVisualGraphic';
-import { 놀이시간, type GameInfo, type GameMode } from '../data/games';
+import { 기본결승, 놀이시간, type GameInfo, type GameMode } from '../data/games';
 import { playGameHit, playGameMiss, playGameReady, playGameSpawn, playGameStage, playGameTick } from '../sound';
 
 // ════════════════════════════════════════════════════════════════════
@@ -87,8 +87,7 @@ function use놀이사건(correct: number, wrong: number) {
   return 사건;
 }
 
-/** 라이벌과 먼저 이만큼 점수를 내는 쪽이 한 판을 이깁니다. 달리기에서는 결승선까지의 칸 수입니다. */
-const 결승칸 = 10;
+
 /**
  * 놀이마다 맞서는 라이벌이 있습니다(달리기는 거북이, 풍선은 참새…). 라이벌은 문제와 상관없이
  * 시간이 흐르면 슬금슬금 점수를 냅니다. 그 문제 시간의 70%마다 1점쯤 내므로, 꾸준히 맞히면 이기고
@@ -110,7 +109,7 @@ const 라이벌들: Record<GameMode, { 얼굴: string; 이름: string; 이가: s
   soccer3d: { 얼굴: '🧤', 이름: '골키퍼', 이가: '골키퍼가', 을를: '골키퍼를' },
 };
 
-function use라이벌(맞힘: number, 놓침: number, 기본초: number, 멈춤: boolean) {
+function use라이벌(맞힘: number, 놓침: number, 기본초: number, 멈춤: boolean, 결승칸: number) {
   const 처음 = { 출발맞힘: 0, 상대: 0, 내승: 0, 상대승: 0, 판: 0 };
   const [경주, set경주] = useState(처음);
   const 맞힘지금 = useRef(맞힘);
@@ -133,10 +132,10 @@ function use라이벌(맞힘: number, 놓침: number, 기본초: number, 멈춤:
       return 상대 >= 결승칸 ? 새판(one, '상대') : { ...one, 상대 };
     }), 라이벌걸음간격);
     return () => window.clearInterval(시계);
-  }, [멈춤, 기본초]);
+  }, [멈춤, 기본초, 결승칸]);
   useEffect(() => {
     set경주((one) => (맞힘 - one.출발맞힘 >= 결승칸 ? 새판(one, '나') : one));
-  }, [맞힘]);
+  }, [맞힘, 결승칸]);
   useEffect(() => {
     if (놓침 === 0) return;
     set경주((one) => (one.상대 + 1 >= 결승칸 ? 새판(one, '상대') : { ...one, 상대: one.상대 + 1 }));
@@ -162,9 +161,11 @@ interface GameSceneProps {
   /** 틀린 뒤 도움말을 보는 동안이면 true입니다. 시계가 멈춥니다. */
   stopped: boolean;
   onTimeout: () => void;
+  /** 라이벌과 먼저 몇 점을 내면 이기는지입니다(결승점수로 수업 시간에 맞춰 정합니다). */
+  goal?: number;
 }
 
-export function GameScene({ game, questionKey, prompt, visual, level, correct, wrong, avatar, sharedScreen, stopped, onTimeout }: GameSceneProps) {
+export function GameScene({ game, questionKey, prompt, visual, level, correct, wrong, avatar, sharedScreen, stopped, onTimeout, goal = 기본결승 }: GameSceneProps) {
   const { 맞힘, 놓침, 연속, 점수, 얻은 } = use놀이사건(correct, wrong);
   const 스테이지 = 1 + Math.floor(맞힘 / 스테이지문제);
   const 배율 = 점수배율(연속);
@@ -178,7 +179,10 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     const 끝 = window.setTimeout(() => set준비(false), 1500);
     return () => window.clearTimeout(끝);
   }, []);
-  const 경주 = use라이벌(맞힘, 놓침, 기본초, stopped || 준비);
+  const 결승칸 = goal;
+  // 달리기 길과 줄다리기 밧줄을 결승 점수에 맞춰 나눕니다(10점이면 한 칸 9%, 5점이면 18%).
+  const 칸너비 = 90 / 결승칸;
+  const 경주 = use라이벌(맞힘, 놓침, 기본초, stopped || 준비, 결승칸);
   const 라이벌 = 라이벌들[game.mode];
   // 바로 앞 판이 끝났을 때의 승패를 기억해, 이번 판을 누가 이겼는지 알아냅니다.
   const 지난판 = useRef({ 판: 0, 내승: 0, 상대승: 0 });
@@ -244,7 +248,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
     treasure: { top: '78%' },
     rocket: { left: '9%', top: `${Math.max(12, 82 - (correct % 10) * 9)}%` },
     // 결승선을 밟아 새 판이 되었으면 결승선에서 터집니다.
-    race: { left: `${경주.나 === 0 && 경주.판 > 0 ? 88 : Math.min(88, 경주.나 * 9 + 5)}%`, top: '22%' },
+    race: { left: `${경주.나 === 0 && 경주.판 > 0 ? 88 : Math.min(88, 경주.나 * 칸너비 + 5)}%`, top: '22%' },
     mole: { left: `${((직전.current.구멍 * 2 + 1) / 6) * 100}%`, top: '72%' },
     soccer3d: { top: '22%' },
     tunnel3d: undefined,
@@ -258,7 +262,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
   const 줄 = (왼쪽: ReactNode, 오른쪽: ReactNode) => (
     <div className="game-status">
       <span>{왼쪽}</span>
-      <small>{game.how}</small>
+      <small>{game.how.replace(`${기본결승}점`, `${결승칸}점`)}</small>
       <span>{오른쪽}</span>
     </div>
   );
@@ -273,7 +277,7 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
       aria-label={`나 ${경주.나}점, ${라이벌.이름} ${상대점수}점, 먼저 ${결승칸}점 내기`}
     >
       <b className="rival-me">{avatar}{경주.나}</b>
-      <span className="rival-rope" aria-hidden="true"><i style={{ left: `${50 + Math.max(-44, Math.min(44, 앞섬 * 4.4))}%` }} /></span>
+      <span className="rival-rope" aria-hidden="true"><i style={{ left: `${50 + Math.max(-44, Math.min(44, 앞섬 * (44 / 결승칸)))}%` }} /></span>
       <b className="rival-them" key={`them-${경주.판}-${상대점수}`}>{상대점수}{라이벌.얼굴}</b>
       {경주.내승 + 경주.상대승 > 0 && <small>{경주.내승}승 {경주.상대승}패</small>}
     </span>
@@ -450,8 +454,8 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
           )}
           {판('road', (
             <>
-              <div className="game-lane"><span className="runner" key={`me-run-${판수}`} style={{ left: `${나 * 9}%` }}><span className="game-kick" key={`me-${맞힘}`}>{avatar}{맞힘 > 0 && <i>💨</i>}</span></span><b>🏁</b></div>
-              <div className="game-lane"><span className="runner slow crawl" key={`turtle-${판수}`} style={{ left: `${Math.min(결승칸, 거북) * 9}%` }}>🐢</span><b>🏁</b></div>
+              <div className="game-lane"><span className="runner" key={`me-run-${판수}`} style={{ left: `${나 * 칸너비}%` }}><span className="game-kick" key={`me-${맞힘}`}>{avatar}{맞힘 > 0 && <i>💨</i>}</span></span><b>🏁</b></div>
+              <div className="game-lane"><span className="runner slow crawl" key={`turtle-${판수}`} style={{ left: `${Math.min(결승칸, 거북) * 칸너비}%` }}>🐢</span><b>🏁</b></div>
               <div className="game-center">{문제}</div>
               {거북우승 > 0 && (
                 <div className="arcade-banner stage turtle" key={`turtle-win-${거북우승}`} aria-hidden="true"><b>🐢 거북이 먼저 도착!</b><small>다시 출발!</small></div>

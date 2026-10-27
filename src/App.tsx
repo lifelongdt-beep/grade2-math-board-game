@@ -55,7 +55,7 @@ import {
 } from './sound';
 import { HighlightedPrompt } from './components/HighlightedPrompt';
 import { MathText } from './components/MathText';
-import { 놀이차시붙이기, 놀이차시인가, 놀이찾기 } from './data/games';
+import { 결승점수, 놀이차시붙이기, 놀이차시인가, 놀이찾기 } from './data/games';
 import { MONSTER_HP, UnitMonster, 단원몬스터찾기 } from './components/UnitMonster';
 import { 조작칭찬 } from './data/manipulate/fun';
 import { 답전까지걸음 } from './data/hintUpgrade';
@@ -2652,6 +2652,7 @@ function App() {
                             sharedScreen={!isMobileEntry}
                             stopped={state.feedback === 'explain'}
                             onTimeout={() => answerQuestion(player, question, -1)}
+                            goal={결승점수(sessionDuration)}
                           />
                         ) : isCastleDefense ? (
                           <CastleDefenseScene
