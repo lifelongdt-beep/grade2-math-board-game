@@ -10318,9 +10318,8 @@ body::before {
 
 /* ════════════════════════════════════════════════════════════════════
    QR로 들어온 학생 화면(휴대폰·패드)도 선생님 첫 화면과 같은 보드게임 판으로 꾸밉니다.
-   바탕은 민트색 점 판, 위 줄은 남색 띠입니다. 문제 칸과 답 칸은 남색 판 위에 올립니다
-   (문제 그림·조작 도구가 어두운 바탕에 맞춰 그려져 있어, 그 안쪽 색은 그대로 둡니다).
-   보기 단추와 출석번호 단추는 흰 말판 칸처럼 굵은 테두리와 아래 그림자를 붙입니다.
+   바탕은 민트색 점 판, 위 줄은 남색 띠입니다. 문제 칸·답 칸·결과 칸은 아래의 밝은 놀이 화면 규칙을
+   선생님 화면과 함께 씁니다.
    ════════════════════════════════════════════════════════════════════ */
 .app-shell.mobile-entry {
   --board-ink: #1D2B45;
@@ -10389,30 +10388,197 @@ body::before {
 .app-shell.mobile-entry .student-question > .lane-head strong { color: var(--board-ink); text-shadow: none; font-family: 'Jua', 'Noto Sans KR', sans-serif; font-weight: 400; }
 .app-shell.mobile-entry .student-question > .lane-head small { color: #4C5B73; }
 .app-shell.mobile-entry .student-question > .lane-head .lane-stars { color: #8A5A00; }
-.app-shell.mobile-entry .student-question-body,
-.app-shell.mobile-entry .student-answer-dock,
-.app-shell.mobile-entry .student-feedback,
-.app-shell.mobile-entry .student-result-summary {
-  background: var(--board-panel);
-  border: 2px solid var(--board-ink);
-  border-radius: 16px;
-  box-shadow: 0 4px 0 #0E1628;
-}
-.app-shell.mobile-entry .student-answer-dock .choice-grid button {
-  background: #FFFFFF;
-  border: 2px solid #FFFFFF;
-  border-radius: 14px;
-  color: var(--board-ink);
-  box-shadow: 0 4px 0 #0B1324;
-}
-.app-shell.mobile-entry .student-answer-dock .choice-grid button > span:first-child { background: var(--board-sun); color: var(--board-ink); border-radius: 8px; }
-.app-shell.mobile-entry .student-answer-dock .choice-grid button .choice-text,
-.app-shell.mobile-entry .student-answer-dock .choice-grid button .choice-caption { color: var(--board-ink); }
-.app-shell.mobile-entry .student-answer-dock .choice-grid button.selected { background: var(--board-sun); border-color: var(--board-sun); }
-.app-shell.mobile-entry .student-answer-dock .choice-grid button.selected > span:first-child { background: var(--board-ink); color: #FFFFFF; }
-.app-shell.mobile-entry .student-answer-dock .choice-grid button:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #0B1324; }
 .app-shell.mobile-entry .command-bar.mobile-actions { background: none; border: 0; box-shadow: none; }
 /* 어두운 판 무늬(배경 그림·줄무늬)가 위 규칙보다 뒤에서 덮어쓰므로, 휴대폰에서는 확실히 걷어 냅니다. */
 .app-shell.mobile-entry .setup-screen,
 .app-shell.mobile-entry .game-layout > .playfield { background: none !important; box-shadow: none !important; border: 0; }
 .app-shell.mobile-entry .setup-player-lane { background: #FFFFFF !important; box-shadow: 0 4px 0 var(--board-ink) !important; }
+
+/* ════════════════════════════════════════════════════════════════════
+   밝은 놀이 화면·결과 화면 (전자칠판과 QR 휴대폰 모두)
+   첫 화면과 같은 보드게임 판입니다. 바탕은 민트색 점 판, 위 줄은 남색 띠,
+   학생 칸은 흰 카드, 문제 칸은 옅은 민트 판, 보기 단추는 흰 말판 칸입니다.
+   놀이(단원 놀이·성 지키기)의 놀이판 그림은 그 놀이의 장면이라 그대로 둡니다.
+   ════════════════════════════════════════════════════════════════════ */
+.app-shell:is(.playing, .finished) {
+  --lt-ink: #1D2B45;
+  --lt-muted: #4C5B73;
+  --lt-sun: #FFC23D;
+  --lt-line: #CFE3D8;
+  --lt-soft: #F3F8F5;
+  color: var(--lt-ink);
+  background: #E3F1EA radial-gradient(#C3DFD0 1.6px, transparent 1.6px) 0 0 / 28px 28px !important;
+}
+.app-shell:is(.playing, .finished)::before,
+.app-shell:is(.playing, .finished)::after { display: none; }
+
+/* 위 줄: 남색 띠 */
+.app-shell:is(.playing, .finished) .app-header {
+  background: var(--lt-ink) !important;
+  background-image: none !important;
+  border: 0;
+  box-shadow: none;
+  color: #FFFFFF;
+}
+.app-shell:is(.playing, .finished) .app-header .eyebrow,
+.app-shell:is(.playing, .finished) .app-header .lesson-objective-inline { color: #C9D3E6; text-shadow: none; }
+.app-shell:is(.playing, .finished) .app-header h1,
+.app-shell:is(.playing, .finished) .game-topbar h2 { color: #FFFFFF; text-shadow: none; font-family: 'Jua', 'Noto Sans KR', sans-serif; font-weight: 400; }
+.app-shell:is(.playing, .finished) .timer-card { background: #2A3A5C; border: 2px solid var(--lt-sun); box-shadow: none; color: #FFFFFF; }
+.app-shell:is(.playing, .finished) .timer-card strong { color: var(--lt-sun); }
+.app-shell:is(.playing, .finished) .header-actions button,
+.app-shell:is(.playing, .finished) .game-topbar-actions .teacher-button { border-radius: 12px; border: 2px solid #4A5B7E; background: #2A3A5C; color: #FFFFFF; box-shadow: none; }
+.app-shell:is(.playing, .finished) .game-topbar-actions .teacher-button { border-color: #5FD0B4; }
+
+/* 명령 줄·우리 반 길: 흰 판 */
+.app-shell:is(.playing, .finished) .command-bar,
+.app-shell:is(.playing, .finished) .class-goal {
+  background: #FFFFFF !important;
+  background-image: none !important;
+  border: 2px solid var(--lt-ink);
+  border-radius: 16px;
+  box-shadow: 0 4px 0 var(--lt-ink);
+  color: var(--lt-ink);
+}
+.app-shell:is(.playing, .finished) .command-bar .secondary-button { background: #FFFFFF; border: 2px solid var(--lt-ink); color: var(--lt-ink); box-shadow: 0 3px 0 var(--lt-ink); }
+.app-shell:is(.playing, .finished) .command-status span,
+.app-shell:is(.playing, .finished) .round-status span { background: var(--lt-soft); border: 1px solid var(--lt-line); color: var(--lt-ink); box-shadow: none; text-shadow: none; }
+.app-shell:is(.playing, .finished) .class-goal-count,
+.app-shell:is(.playing, .finished) .class-goal small,
+.app-shell:is(.playing, .finished) .class-boss span,
+.app-shell:is(.playing, .finished) .class-boss strong { color: var(--lt-ink); text-shadow: none; }
+.app-shell:is(.playing, .finished) .class-goal-track { background-color: #DCEDE4; }
+
+/* 놀이판 바탕과 학생 칸 */
+.app-shell:is(.playing, .finished) .playfield { background: none !important; border: 0; box-shadow: none; }
+.app-shell:is(.playing, .finished) .player-lane.student-question {
+  background: #FFFFFF !important;
+  background-image: none !important;
+  border: 2px solid var(--lt-ink);
+  box-shadow: 0 5px 0 var(--lt-ink);
+  color: var(--lt-ink);
+}
+.app-shell:is(.playing, .finished) .player-lane.student-question::before { background: var(--player-color, var(--lt-sun)); }
+.app-shell:is(.playing, .finished) .player-lane.student-question::after { display: none; }
+.app-shell:is(.playing, .finished) .lane-head { background: none !important; }
+.app-shell:is(.playing, .finished) .lane-head strong { color: var(--lt-ink); text-shadow: none; font-family: 'Jua', 'Noto Sans KR', sans-serif; font-weight: 400; }
+.app-shell:is(.playing, .finished) .lane-head small { color: var(--lt-muted); }
+.app-shell:is(.playing, .finished) .lane-head .lane-stars { color: #8A5A00; }
+
+/* 문제 칸: 옅은 민트 판, 남색 글씨 */
+.app-shell:is(.playing, .finished) .student-question-body {
+  background: var(--lt-soft) !important;
+  background-image: none !important;
+  border: 2px solid var(--lt-line);
+  border-radius: 16px;
+  box-shadow: none;
+  color: var(--lt-ink);
+}
+.app-shell:is(.playing, .finished) .student-question-body :is(p, h3, strong).hint-highlighted-prompt,
+.app-shell:is(.playing, .finished) .student-question-body .hint-highlighted-prompt,
+.app-shell:is(.playing, .finished) .student-question-body .question-prompt { color: var(--lt-ink); text-shadow: none; }
+.app-shell:is(.playing, .finished) .student-question-meta span { background: #FFFFFF; border: 1px solid var(--lt-line); color: #0F6B5E; }
+.app-shell:is(.playing, .finished) .unit-monster { background: #FCE8F1; border-color: #E9A6C3; color: #7A1E4A; }
+.app-shell:is(.playing, .finished) .unit-monster small,
+.app-shell:is(.playing, .finished) .unit-monster-name { color: #7A1E4A; }
+
+/* 답 칸과 보기 단추: 흰 말판 칸 */
+.app-shell:is(.playing, .finished) .student-answer-dock { background: none !important; border: 0; box-shadow: none; color: var(--lt-ink); }
+.app-shell:is(.playing, .finished) .choice-grid button {
+  background: #FFFFFF;
+  border: 2px solid var(--lt-ink);
+  border-radius: 14px;
+  color: var(--lt-ink);
+  box-shadow: 0 4px 0 var(--lt-ink);
+}
+.app-shell:is(.playing, .finished) .choice-grid button:hover:not(:disabled) { background: #FFF8E6; border-color: var(--lt-ink); box-shadow: 0 4px 0 var(--lt-ink); }
+.app-shell:is(.playing, .finished) .choice-grid button:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--lt-ink); }
+.app-shell:is(.playing, .finished) .choice-grid button > span:first-child { background: var(--lt-sun); color: var(--lt-ink); border-radius: 8px; }
+.app-shell:is(.playing, .finished) .choice-grid button :is(.choice-text, .choice-caption) { color: var(--lt-ink); }
+.app-shell:is(.playing, .finished) .choice-grid button.selected { background: var(--lt-sun); }
+.app-shell:is(.playing, .finished) .choice-grid button.selected > span:first-child { background: var(--lt-ink); color: #FFFFFF; }
+
+/* 맞힘·틀림 뒤 도움말 */
+.app-shell:is(.playing, .finished) .student-feedback {
+  background: #FFFFFF !important;
+  background-image: none !important;
+  border: 2px solid var(--lt-ink);
+  border-radius: 16px;
+  box-shadow: 0 4px 0 var(--lt-ink);
+  color: var(--lt-ink);
+}
+.app-shell:is(.playing, .finished) .student-feedback.wrong-feedback { border-color: #C2412D; box-shadow: 0 4px 0 #C2412D; }
+.app-shell:is(.playing, .finished) .student-feedback.correct-feedback { border-color: #0F6B5E; box-shadow: 0 4px 0 #0F6B5E; }
+.app-shell:is(.playing, .finished) .student-feedback :is(strong, h3, h4, span, p, li, small) { color: inherit; text-shadow: none; }
+.app-shell:is(.playing, .finished) .student-feedback.wrong-feedback > :first-child { color: #A23A28; }
+.app-shell:is(.playing, .finished) .student-feedback.correct-feedback > :first-child { color: #0F6B5E; }
+.app-shell:is(.playing, .finished) .support-card {
+  background: var(--lt-soft) !important;
+  border: 1px solid var(--lt-line);
+  color: var(--lt-ink);
+  box-shadow: none;
+}
+.app-shell:is(.playing, .finished) .support-card * { color: var(--lt-ink); text-shadow: none; }
+.app-shell:is(.playing, .finished) .student-feedback button { background: var(--lt-ink); border: 2px solid var(--lt-ink); color: #FFFFFF; box-shadow: none; }
+
+/* 결과 칸 */
+.app-shell.finished .student-result-summary { background: none !important; border: 0; box-shadow: none; color: var(--lt-ink); }
+.app-shell.finished .student-result-summary > strong { color: var(--lt-ink); text-shadow: none; font-family: 'Jua', 'Noto Sans KR', sans-serif; font-weight: 400; }
+.app-shell.finished .student-result-list > div {
+  background: #FFFFFF !important;
+  border: 2px solid var(--lt-line);
+  border-radius: 14px;
+  box-shadow: none;
+  color: var(--lt-ink);
+}
+.app-shell.finished .student-result-list > div span { color: var(--lt-muted); }
+.app-shell.finished .student-result-list > div strong { color: var(--lt-ink); text-shadow: none; }
+.app-shell.finished .student-result-list .correct-result { border-color: #2E9A6E; background: #E8F7EF !important; }
+.app-shell.finished .student-result-list .correct-result strong { color: #0F6B5E; }
+.app-shell.finished .student-result-list .wrong-result { border-color: #E07A6A; background: #FDECE8 !important; }
+.app-shell.finished .student-result-list .wrong-result strong { color: #A23A28; }
+.app-shell.finished .student-result-list .share-result strong { color: #2453A6; }
+.app-shell.finished .student-result-list .star-result strong { color: #8A5A00; }
+.app-shell.finished .result-kicker { background: #FFF3D1; border-color: var(--lt-sun); color: #6B4700; }
+
+/* 단원 놀이 화면의 안내 줄 */
+.app-shell:is(.playing, .finished) .game-status { background: #FFFFFF; border: 1px solid var(--lt-line); color: var(--lt-ink); }
+.app-shell:is(.playing, .finished) .game-status small { color: var(--lt-muted); }
+.app-shell:is(.playing, .finished) .game-status .race-warn { color: #A23A28; }
+.app-shell:is(.playing, .finished) .unit-monster-hp b.full { color: #D6336C; }
+.app-shell:is(.playing, .finished) .manip-mission { background: #E3EEFB; border: 1px solid #B9CFEA; color: var(--lt-ink); }
+.app-shell:is(.playing, .finished) .manip-mission * { color: var(--lt-ink); }
+.app-shell:is(.playing, .finished) .manip-mission-badge { background: #FFFFFF; }
+.app-shell:is(.playing, .finished) .manip-actions button { background: #FFFFFF; border: 2px solid var(--lt-ink); color: var(--lt-ink); box-shadow: 0 3px 0 var(--lt-ink); }
+.app-shell:is(.playing, .finished) .manip-actions button.manip-submit { background: var(--lt-sun); }
+.app-shell:is(.playing, .finished) .hint-toggle-button[aria-expanded="true"],
+.app-shell:is(.playing, .finished) .hint-toggle-button.open,
+.app-shell:is(.playing, .finished) .hint-toggle-button.active { background: #0F6B5E; color: #FFFFFF; }
+.app-shell.finished .student-result-list small { color: #8A5A00; }
+.app-shell.finished .lane-result-toggle { color: #A23A28; border-color: #A23A28; }
+/* 도움말 칸의 '핵심·볼 곳·정답·왜?' 딱지 */
+.app-shell:is(.playing, .finished) .student-feedback .support-card p > span:first-child,
+.app-shell:is(.playing, .finished) .quick-support-card p > span:first-child,
+.app-shell:is(.playing, .finished) .quick-support-card .quick-core > span:first-child,
+.app-shell:is(.playing, .finished) .quick-support-card .quick-reason > span:first-child { color: #0F6B5E; background: #DDF3EC; text-shadow: none; }
+/* 두 명 겨루기 딱지 */
+.app-shell.playing .versus-chip.tie { background: #F1F4F8; border-color: #C6CFDB; color: var(--lt-ink); }
+.app-shell.playing .versus-chip.chase { background: #FDECE8; border-color: #E07A6A; color: #A23A28; }
+.app-shell.finished .versus-result.win { color: #8A5A00; }
+.app-shell.finished .versus-result.lose { color: #A23A28; }
+.app-shell.finished .versus-result.tie { color: var(--lt-ink); }
+.app-shell.finished .versus-result small { color: var(--lt-ink); }
+
+/* 놀이·결과 화면의 큰 버튼도 판 색(해바라기)으로 */
+.app-shell:is(.playing, .finished) .command-bar .primary-button {
+  background: #FFC23D !important;
+  color: #1D2B45 !important;
+  border: 3px solid #1D2B45 !important;
+  box-shadow: 0 4px 0 #1D2B45 !important;
+  text-shadow: none !important;
+}
+.app-shell.mobile-entry.finished .mobile-actions {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
