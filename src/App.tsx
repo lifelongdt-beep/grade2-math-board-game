@@ -1922,7 +1922,7 @@ function App() {
         ) : (
           <div className="board-seats-head">
             <div>
-              <h2>자리에 앉아 출석번호를 눌러요</h2>
+              <h2>출석번호를 눌러요</h2>
               <span>학생이 누르는 곳 · 모두 고르면 바로 시작해요</span>
             </div>
             <div className="board-ready" role="status"><b>{readyPlayerCount} / {playerCount}</b> 준비됨</div>
