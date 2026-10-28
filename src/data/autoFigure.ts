@@ -75,7 +75,7 @@ const 각사각형 = (각: [number, number, number, number], 글: string[], labe
 };
 
 // ── 길이로 정해지는 평면도형(넓이·둘레) ────────────────────────────
-const 직사각형 = (가로: number, 세로: number, 글: { 가로: string; 세로: string }, label = '직사각형'): FigureSetVisual =>
+export const 직사각형 = (가로: number, 세로: number, 글: { 가로: string; 세로: string }, label = '직사각형'): FigureSetVisual =>
   도형하나(label, {
     shape: '직사각형',
     points: 맞추기([[0, 0], [가로, 0], [가로, 세로], [0, 세로]]),
@@ -121,7 +121,7 @@ const 마름모 = (가: number, 나: number, 글: [string, string]): FigureSetVi
 
 // ── 원 ────────────────────────────────────────────────────────────
 // r은 실제 반지름(cm)입니다. 그린 길이와 적은 길이가 비율로 맞아야 합니다.
-const 원그림 = (글: string, 지름: boolean, r = 1): QuestionVisual => ({
+export const 원그림 = (글: string, 지름: boolean, r = 1): QuestionVisual => ({
   kind: 'circles',
   label: 지름 ? '원과 지름' : '원과 반지름',
   circles: [{ cx: 0, cy: 0, r }],
