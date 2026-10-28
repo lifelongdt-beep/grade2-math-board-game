@@ -376,8 +376,47 @@ const 길이재기 = (p: string): QuestionVisual | null => {
 };
 
 /** 문제 글로 그림을 정합니다. 그릴 수 없으면 null입니다. */
+// ── 시계·달력 ─────────────────────────────────────────────────────────
+// '짧은바늘이 6과 7 사이에 있고, 긴바늘이 숫자 6을 가리킵니다. 몇 시 몇 분일까요?'처럼
+// 바늘 자리를 글로만 알려 주던 문제가 많았습니다. 2학년에게 바늘 자리를 머릿속에
+// 그리게 하는 것은 시계 읽기보다 어렵습니다. 글이 말한 바늘 자리 그대로 시계를 그려
+// 보여 줍니다(글에 이미 있는 것만 그리므로 답을 더 알려 주지 않습니다).
+const 바늘글 = (p: string): { hour: number; minute: number } | null => {
+  if (!/몇 시(?: 몇 분)?일까요\?\s*$/.test(p)) return null;
+  const 눈금 = /긴바늘[이은는]?\s*(?:숫자\s*)?(\d+)(?:에서|을 지나|를 지나)\s*작은 눈금(?:으로)?\s*(\d+)\s*칸/.exec(p);
+  const 긴 = /긴바늘[이은는]?\s*(?:숫자\s*)?(\d+)[을를]?\s*가리/.exec(p);
+  const minute = 눈금 ? (Number(눈금[1]) % 12) * 5 + Number(눈금[2]) : 긴 ? (Number(긴[1]) % 12) * 5 : null;
+  if (minute === null || minute > 59) return null;
+  const 사이 = /짧은바늘[이은는]?\s*(\d+)[과와]\s*\d+\s*사이/.exec(p);
+  const 가리킴 = /짧은바늘[이은는]?\s*(\d+)[을를]?\s*(?:조금\s*)?가리/.exec(p);
+  const 짧은 = 사이 ?? 가리킴;
+  if (!짧은) return null;
+  const hour = Number(짧은[1]);
+  if (hour < 1 || hour > 12) return null;
+  // '짧은바늘이 4를 가리키는' 것은 정각뿐입니다. 글이 어긋나면 그리지 않습니다.
+  if (가리킴 && !사이 && minute !== 0) return null;
+  return { hour, minute };
+};
+
+const 요일이름 = ['일', '월', '화', '수', '목', '금', '토'];
+/** '어느 달 3일은 화요일입니다. 같은 달 17일은 무슨 요일일까요?' — 알려 준 날을 표시한 달력입니다. */
+const 달력글 = (p: string): QuestionVisual | null => {
+  const m = /(\d+)일[은이]\s*(일|월|화|수|목|금|토)요일입니다\.\s*같은 달 (\d+)일은 무슨 요일/.exec(p);
+  if (!m) return null;
+  const 날 = Number(m[1]);
+  const 그날 = Number(m[3]);
+  if (날 < 1 || 그날 < 1 || 그날 > 31) return null;
+  const 처음 = (((요일이름.indexOf(m[2]) - (날 - 1)) % 7) + 7) % 7;
+  return { kind: 'calendar', label: '요일을 알려 주는 달력', startWeekday: 처음, days: Math.max(30, 그날), marks: [{ day: 날, tone: 'start' }] };
+};
+
 export const 그림추론 = (p: string): QuestionVisual | null => {
   let m: RegExpExecArray | null;
+
+  const 바늘 = 바늘글(p);
+  if (바늘) return { kind: 'clock', label: '바늘 자리를 그린 시계', hour: 바늘.hour, minute: 바늘.minute };
+  const 달력 = 달력글(p);
+  if (달력) return 달력;
 
   // 칠교판(2-1 2단원): 조각을 세거나 견주는 문제는 번호가 붙은 칠교 7조각을 보여 줍니다.
   // 그림이 없으면 아이는 삼각형 조각 5개, 사각형 조각 2개를 떠올릴 수가 없습니다.

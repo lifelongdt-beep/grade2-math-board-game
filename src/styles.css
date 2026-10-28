@@ -11094,3 +11094,22 @@ body::before {
 /* 여럿이 동시에 누르는 놀이 화면에서는 두 손가락이 닿아도 브라우저가 확대(핀치)나 옆으로 밀기로
    가로채지 않게 합니다. 가로채면 다른 아이의 손가락이 통째로 무시됩니다. 위아래 밀기는 남겨 둡니다. */
 .app-shell.playing .game-layout { touch-action: pan-y; }
+/* 놀이 화면의 단추는 누르는 곳일 뿐입니다. 손가락이 조금 미끄러져도 화면 밀기로 바뀌지 않고,
+   꾹 눌러도 글자 고르기나 메뉴가 뜨지 않게 합니다(그러면 손을 떼도 단추가 눌리지 않습니다). */
+.app-shell.playing button {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 그림이 있는 놀이 문제: 그림을 크게 보여 주고(수 모형·점 배열을 셀 수 있게), 움직이는 문제 카드가
+   그림만큼 길어져도 판 밖으로 잘리지 않게 움직이는 거리를 줄입니다. */
+.game-visual > *, .game-visual svg { max-height: 132px; }
+.game-swimmer:has(.with-visual) { top: 12%; }
+.game-faller:has(.with-visual) { animation-name: game-fall-short; }
+.game-riser:has(.with-visual) { animation-name: game-rise-short; }
+.game-dropper:has(.with-visual) { animation-name: game-drop-short; }
+@keyframes game-fall-short { from { top: 4%; } to { top: 40%; } }
+@keyframes game-rise-short { from { bottom: 2%; } to { bottom: 40%; } }
+@keyframes game-drop-short { from { top: 28px; } to { top: 22%; } }

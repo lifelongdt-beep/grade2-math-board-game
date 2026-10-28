@@ -1,4 +1,4 @@
-import type { ConceptTag, Difficulty, Lesson, Question } from '../../types';
+import type { ConceptTag, Difficulty, Lesson, PlaneShapeKind, Question, QuestionVisual } from '../../types';
 
 // ════════════════════════════════════════════════════════════════════
 // 단원 놀이의 단순 문항
@@ -14,7 +14,7 @@ import type { ConceptTag, Difficulty, Lesson, Question } from '../../types';
 // ════════════════════════════════════════════════════════════════════
 
 type 난수 = () => number;
-type 한문제 = { q: string; a: string; w: string[]; why: string };
+type 한문제 = { q: string; a: string; w: string[]; why: string; /** 문제와 함께 보여 줄 그림입니다. */ v?: QuestionVisual };
 /** lv는 하 0, 중 1, 상 2입니다. */
 type 생성 = (r: 난수, lv: number) => 한문제 | null;
 
@@ -23,7 +23,15 @@ interface 단원놀이문항 {
   /** 이 단원의 핵심 개념 한 줄입니다. 도움말의 '핵심'으로 보여 줍니다. */
   핵심: string;
   생성들: 생성[];
+  /**
+   * 그림을 보고 바로 답하는 문제입니다(시계를 읽고, 도형의 꼭짓점을 세고, 점 배열을 셉니다).
+   * 그림이 있으면 2학년도 몇 초 안에 답을 떠올리므로, 수준이 낮을수록 자주 냅니다.
+   */
+  그림들?: 생성[];
 }
+
+/** 그림 문제를 고를 몫입니다(하 55%, 중 40%, 상 25%). */
+const 그림몫 = [0.55, 0.4, 0.25];
 
 // ── 작은 도구들 ──────────────────────────────────────────────────────
 const 씨앗난수 = (seed: number): 난수 => {
@@ -164,6 +172,81 @@ const 분수글 = (n: number, d: number): string => {
 const 다각형이름: Record<number, string> = { 3: '삼각형', 4: '사각형', 5: '오각형', 6: '육각형', 7: '칠각형', 8: '팔각형' };
 const 각이름: Record<number, string> = { 3: '삼각', 4: '사각', 5: '오각', 6: '육각', 7: '칠각', 8: '팔각' };
 
+// ── 그림 문제 ─────────────────────────────────────────────────────────
+// 그림에는 문제에 필요한 것만 그리고, 답을 글로 적어 주지 않습니다(점 배열의
+// '3개씩 4묶음' 설명, 수 모형의 자리 숫자는 지웁니다).
+const 다음시각 = (h: number) => (h === 12 ? 1 : h + 1);
+const 시각 = (h: number, m: number) => (m === 0 ? `${h}시` : `${h}시 ${m}분`);
+/** 시계를 보고 시각 읽기. 분은 step 단위(30이면 몇 시·몇 시 30분)로 고릅니다. */
+const 시계읽기 = (step: 1 | 5 | 30): 생성 => (r) => {
+  const h = 정수(r, 1, 12);
+  const m = step === 30 ? 하나(r, [0, 30]) : step === 5 ? 정수(r, 0, 11) * 5 : 정수(r, 1, 11) * 5 + 정수(r, 1, 4);
+  const 답 = 시각(h, m);
+  const 오답 = [
+    시각(다음시각(h), m),
+    m === 0 ? `${h}시 30분` : m % 5 === 0 ? `${h}시 ${m / 5}분` : `${h}시 ${m + 5 > 59 ? m - 5 : m + 5}분`,
+    m === 0 ? `12시 ${h * 5 === 60 ? 5 : h * 5}분` : 시각(h === 1 ? 12 : h - 1, m),
+  ];
+  return { q: '시계가 가리키는 시각은?', a: 답, w: 오답, why: `짧은바늘이 지나온 숫자가 시, 긴바늘이 가리키는 곳이 분이라 ${답}입니다.`, v: { kind: 'clock', label: '시계', hour: h, minute: m } };
+};
+const 도형꼭짓점: Record<'triangle' | 'square' | 'rectangle', number> = { triangle: 3, square: 4, rectangle: 4 };
+const 도형한이름: Record<PlaneShapeKind, string> = { circle: '원', triangle: '삼각형', square: '사각형', rectangle: '사각형', parallelogram: '사각형', 'open-triangle': '열린 도형' };
+/** 도형 하나를 보고 꼭짓점(변) 수 세기 */
+const 도형세기 = (): 생성 => (r) => {
+  const k = 하나(r, ['triangle', 'square', 'rectangle'] as const);
+  const 무엇 = 하나(r, ['꼭짓점', '변']);
+  const n = 도형꼭짓점[k];
+  return { ...수문제(`이 도형의 ${무엇}은 몇 개?`, n, [n - 1, n + 1, n === 3 ? 0 : 6], `${도형한이름[k]}은 ${무엇}이 ${n}개입니다.`, '개'), v: { kind: 'plane-shapes', label: '도형', items: [{ kind: k, rotate: 정수(r, 0, 3) * 15 }] } };
+};
+/** 여러 도형 가운데 한 가지만 세기 */
+const 도형골라세기 = (이름들: Partial<Record<PlaneShapeKind, string>>): 생성 => (r) => {
+  const 종류 = Object.keys(이름들) as PlaneShapeKind[];
+  const 찾을 = 하나(r, 종류);
+  const 수 = 정수(r, 1, 4);
+  const 나머지 = Array.from({ length: 정수(r, 2, 4) }, () => 하나(r, 종류.filter((x) => 이름들[x] !== 이름들[찾을])));
+  const items = 섞기(r, [...Array(수).fill(찾을), ...나머지] as PlaneShapeKind[]).map((kind) => ({ kind, rotate: 정수(r, 0, 2) * 20 }));
+  const 실제 = items.filter((x) => 이름들[x.kind] === 이름들[찾을]).length;
+  return { ...수문제(`${이름들[찾을]}은 몇 개?`.replace(/([가-힣])은/, (_, c: string) => `${c}${(c.charCodeAt(0) - 0xac00) % 28 ? '은' : '는'}`), 실제, 근처(실제, 1, -1, 2, items.length - 실제), `${이름들[찾을]}만 하나씩 세면 ${실제}개입니다.`, '개'), v: { kind: 'plane-shapes', label: '도형 모음', items } };
+};
+/** 점 배열을 곱셈으로 세기 */
+const 배열세기 = (rLo: number, rHi: number, cLo: number, cHi: number): 생성 => (r) => {
+  const rows = 정수(r, rLo, rHi);
+  const cols = 정수(r, cLo, cHi);
+  const n = rows * cols;
+  return { ...수문제('●는 모두 몇 개?', n, 근처(n, cols, -cols, rows + cols - n, 1), `${cols}개씩 ${rows}줄이므로 ${cols} × ${rows} = ${n}개입니다.`, '개'), v: { kind: 'array', label: '점 배열', rows, columns: cols, hideCaption: true } };
+};
+/** 수 모형을 세어 수 쓰기 */
+const 모형수 = (자리수: 2 | 3): 생성 => (r) => {
+  const 백 = 자리수 === 3 ? 정수(r, 1, 5) : 0;
+  const 십 = 정수(r, 자리수 === 3 ? 0 : 1, 5);
+  const 일 = 정수(r, 0, 9);
+  const n = 백 * 100 + 십 * 10 + 일;
+  const columns = [...(자리수 === 3 ? [{ label: '백', value: 백, blocks: 백 }] : []), { label: '십', value: 십, blocks: 십 }, { label: '일', value: 일, blocks: 일 }];
+  const 오답 = 자리수 === 3 ? [백 * 100 + 일 * 10 + 십, 백 * 100 + 십 * 10 + 일 + 10, 백 + 십 + 일] : [일 * 10 + 십, n + 10, 십 + 일];
+  return { ...수문제('수 모형이 나타내는 수는?', n, 오답, 자리수 === 3 ? `백 모형 ${백}개, 십 모형 ${십}개, 일 모형 ${일}개이므로 ${n}입니다.` : `십 모형 ${십}개, 일 모형 ${일}개이므로 ${n}입니다.`), v: { kind: 'place-value', label: '수 모형', columns, countOnly: true } };
+};
+/** 자로 막대 길이 읽기 */
+const 자읽기 = (최대: number): 생성 => (r) => {
+  const 시작 = 정수(r, 0, 2);
+  const 길이 = 정수(r, 2, 최대 - 시작);
+  return { ...수문제('색칠한 막대의 길이는?', 길이, [시작 + 길이, 길이 + 1, 길이 - 1].filter((x) => x > 0), 시작 ? `${시작}에서 ${시작 + 길이}까지 1cm가 ${길이}번이므로 ${길이}cm입니다.` : `0에서 ${길이}까지이므로 ${길이}cm입니다.`, 'cm'), v: { kind: 'ruler', label: '자', start: 0, end: 시작 + 길이 + 1, highlightStart: 시작, highlightEnd: 시작 + 길이 } };
+};
+/** 띠의 색칠한 부분을 분수로 */
+const 분수띠 = (dLo: number, dHi: number): 생성 => (r) => {
+  const d = 정수(r, dLo, dHi);
+  const n = 정수(r, 1, d - 1);
+  return { q: '색칠한 부분은 전체의 얼마?', a: `${n}/${d}`, w: [`${d}/${n}`, `${n}/${d + 1}`, `${d - n}/${d}`].filter((x, i, all) => x !== `${n}/${d}` && all.indexOf(x) === i), why: `전체를 똑같이 ${d}칸으로 나눈 것 중 ${n}칸이므로 ${n}/${d}입니다.`, v: { kind: 'fraction-model', label: '분수 띠', shape: 'bar', denominator: d, numerator: n } };
+};
+const 그래프항목 = [['사과', '배', '귤', '포도'], ['축구', '줄넘기', '수영', '야구'], ['강아지', '고양이', '토끼', '거북'], ['봄', '여름', '가을', '겨울']];
+/** 그래프를 보고 가장 많은(적은) 것 고르기 */
+const 그래프읽기 = (): 생성 => (r) => {
+  const 항목 = 하나(r, 그래프항목);
+  const 수들 = 몇개(r, [1, 2, 3, 4, 5, 6, 7], 4);
+  const 많은 = r() < 0.6;
+  const 답 = 항목[수들.indexOf(많은 ? Math.max(...수들) : Math.min(...수들))];
+  return { q: 많은 ? '가장 많은 것은?' : '가장 적은 것은?', a: 답, w: 항목.filter((x) => x !== 답), why: `○가 가장 ${많은 ? '높이' : '낮게'} 쌓인 것은 ${답}입니다.`, v: { kind: 'pictograph', label: '그래프', unit: 1, items: 항목.map((label, i) => ({ label, count: 수들[i] })), orientation: 'up' } };
+};
+
 // ════════════════════════════════════════════════════════════════════
 // 단원표
 // ════════════════════════════════════════════════════════════════════
@@ -231,6 +314,7 @@ const 단원표: Record<string, 단원놀이문항> = {
   },
   '1-1-u5': {
     tag: 'number', 핵심: '10개씩 묶음과 낱개로 50까지의 수를 압니다.',
+    그림들: [모형수(2)],
     생성들: [
       (r) => { const t = 정수(r, 1, 4); const o = 정수(r, 0, 9); const n = t * 10 + o; return 수문제(`10개씩 묶음 ${t}개와 낱개 ${o}개는?`, n, [...근처(n, 1, -1, 10, -10), o * 10 + t].filter((x) => x !== n && x <= 99), `10개씩 묶음 ${t}개는 ${t * 10}, 낱개 ${o}개를 더하면 ${n}입니다.`); },
       다음수(9, 49), 앞수(11, 50), 가장큰수(10, 50),
@@ -241,6 +325,7 @@ const 단원표: Record<string, 단원놀이문항> = {
   // ── 1학년 2학기 ─────────────────────────────────────────────────────
   '1-2-u1': {
     tag: 'number', 핵심: '100까지의 수를 세고 읽으며, 짝수와 홀수를 압니다.',
+    그림들: [모형수(2)],
     생성들: [
       (r) => { const t = 정수(r, 5, 9); const o = 정수(r, 0, 9); const n = t * 10 + o; return 수문제(`10개씩 묶음 ${t}개와 낱개 ${o}개는?`, n, [...근처(n, 1, -1, 10, -10), o * 10 + t].filter((x) => x !== n && x <= 99), `10개씩 묶음 ${t}개는 ${t * 10}입니다. 낱개 ${o}개를 더하면 ${n}입니다.`); },
       다음수(50, 98), 가장큰수(50, 99),
@@ -265,6 +350,7 @@ const 단원표: Record<string, 단원놀이문항> = {
   },
   '1-2-u3': {
     tag: 'shape', 핵심: '■, ▲, ● 모양과 몇 시, 몇 시 30분을 압니다.',
+    그림들: [시계읽기(30), 도형골라세기({ square: '■ 모양', triangle: '▲ 모양', circle: '● 모양' })],
     생성들: [
       사실들([
         사실('뾰족한 곳이 3군데인 모양은?', '▲ 모양', ['■ 모양', '● 모양'], '▲ 모양은 뾰족한 곳이 3군데입니다.'),
@@ -307,6 +393,7 @@ const 단원표: Record<string, 단원놀이문항> = {
   // ── 2학년 1학기 ─────────────────────────────────────────────────────
   '2-1-u1': {
     tag: 'placeValue', 핵심: '세 자리 수의 각 자리 숫자가 나타내는 값을 압니다.',
+    그림들: [모형수(3)],
     생성들: [
       (r) => { const [h, t, o] = [정수(r, 1, 9), 정수(r, 0, 9), 정수(r, 0, 9)]; const n = h * 100 + t * 10 + o; return 수문제(`100이 ${h}, 10이 ${t}, 1이 ${o}개면?`, n, [o * 100 + t * 10 + h, h * 100 + o * 10 + t, n + 100, n + 10].filter((x) => x !== n && x >= 100), `${h * 100} + ${t * 10} + ${o} = ${n}입니다.`); },
       (r) => {
@@ -324,6 +411,7 @@ const 단원표: Record<string, 단원놀이문항> = {
   },
   '2-1-u2': {
     tag: 'shape', 핵심: '삼각형, 사각형, 원의 변과 꼭짓점을 알아봅니다.',
+    그림들: [도형세기(), 도형골라세기({ triangle: '삼각형', square: '사각형', rectangle: '사각형', circle: '원' })],
     생성들: [
       사실들([
         사실('삼각형의 변은 몇 개?', '3개', ['4개', '0개', '5개'], '삼각형은 곧은 선 3개로 둘러싸여 있습니다.'),
@@ -350,6 +438,7 @@ const 단원표: Record<string, 단원놀이문항> = {
   },
   '2-1-u4': {
     tag: 'measurement', 핵심: '1cm를 알고 자로 길이를 잽니다.',
+    그림들: [자읽기(10)],
     생성들: [
       (r) => { const n = 정수(r, 2, 15); return 수문제(`1cm가 ${n}번이면?`, n, 근처(n, 1, -1, 10), `1cm가 ${n}번이면 ${n}cm입니다.`, 'cm'); },
       (r) => { const a = 정수(r, 0, 6); const b = 정수(r, a + 2, a + 9); return 수문제(`자의 눈금 ${a}부터 ${b}까지는?`, b - a, [b, ...근처(b - a, 1, -1)].filter((x) => x !== b - a), `${b} - ${a} = ${b - a}칸이므로 ${b - a}cm입니다.`, 'cm'); },
@@ -377,6 +466,7 @@ const 단원표: Record<string, 단원놀이문항> = {
   },
   '2-1-u6': {
     tag: 'multiplication', 핵심: '몇씩 몇 묶음, 몇의 몇 배를 곱셈식으로 나타냅니다.',
+    그림들: [배열세기(2, 4, 2, 5)],
     생성들: [
       (r) => { const a = 정수(r, 2, 5); const b = 정수(r, 2, 6); return 수문제(`${a}씩 ${b}묶음은?`, a * b, 근처(a * b, a, -a, 1), `${a}씩 ${b}묶음은 ${a} × ${b} = ${a * b}입니다.`); },
       (r) => { const a = 정수(r, 2, 6); const b = 정수(r, 2, 5); return 수문제(`${a}의 ${b}배는?`, a * b, 근처(a * b, a, -a, a + b - a * b === 0 ? 1 : a + b - a * b), `${a}의 ${b}배는 ${a}를 ${b}번 더한 수, ${a * b}입니다.`.replace(`${a}를`, 을(a))); },
@@ -413,6 +503,7 @@ const 단원표: Record<string, 단원놀이문항> = {
   },
   '2-2-u4': {
     tag: 'time', 핵심: '몇 시 몇 분을 읽고, 1시간은 60분임을 압니다.',
+    그림들: [시계읽기(5), 시계읽기(5), 시계읽기(1)],
     생성들: [
       (r) => { const k = 정수(r, 1, 11); return 수문제(`긴바늘이 ${k}에 있으면 몇 분?`, k * 5, [k, k * 10, k * 5 + 5].filter((x) => x !== k * 5), `긴바늘이 숫자 1칸을 갈 때 5분이므로 ${k * 5}분입니다.`, '분'); },
       사실들([
@@ -428,6 +519,7 @@ const 단원표: Record<string, 단원놀이문항> = {
   },
   '2-2-u5': {
     tag: 'data', 핵심: '자료를 표와 그래프로 나타내고 읽습니다.',
+    그림들: [그래프읽기()],
     생성들: [
       세기(['🐶', '🐱', '🐰', '🍎', '🍌'], 2, 6),
       (r) => { const [a, b, c] = [정수(r, 1, 7), 정수(r, 1, 7), 정수(r, 1, 7)]; return 수문제(`🐶 ${a}, 🐱 ${b}, 🐰 ${c}마리면 모두?`, a + b + c, 근처(a + b + c, 1, -1, 2), `합계는 ${a} + ${b} + ${c} = ${a + b + c}입니다.`, '마리'); },
@@ -463,6 +555,7 @@ const 단원표: Record<string, 단원놀이문항> = {
   },
   '3-1-u2': {
     tag: 'shape', 핵심: '선분·직선·반직선, 각과 직각, 직사각형과 정사각형을 압니다.',
+    그림들: [도형골라세기({ rectangle: '직사각형', square: '정사각형', triangle: '삼각형' })],
     생성들: [
       사실들([
         사실('두 점을 곧게 이은 선은?', '선분', ['직선', '반직선', '곡선'], '두 점을 곧게 이은 선은 선분입니다.'),
@@ -507,6 +600,7 @@ const 단원표: Record<string, 단원놀이문항> = {
   },
   '3-1-u6': {
     tag: 'fraction', 핵심: '똑같이 나눈 것 중의 부분을 분수와 소수로 나타냅니다.',
+    그림들: [분수띠(2, 8)],
     생성들: [
       (r) => { const d = 정수(r, 3, 9); const n = 정수(r, 1, d - 1); return 사실(`전체를 똑같이 ${로(d)} 나눈 것 중 ${n}은?`.replace(`중 ${n}은`, `중 ${n}${받침수(n) ? '은' : '는'}`), `${n}/${d}`, [`${d}/${n}`, `${n}/${d + 1}`, `${d - n}/${d}`].filter((x) => x !== `${n}/${d}`), `${d}개 중 ${n}개이므로 ${n}/${d}입니다.`); },
       (r) => { const 분모 = 몇개(r, [2, 3, 4, 5, 6, 7, 8, 9, 10], 4); const 큰 = r() < 0.6; return 가장(큰 ? '가장 큰 분수는?' : '가장 작은 분수는?', 분모, !큰, '단위분수는 분모가 작을수록 큽니다.', (d) => `1/${d}`); },
@@ -547,6 +641,7 @@ const 단원표: Record<string, 단원놀이문항> = {
   },
   '3-2-u4': {
     tag: 'fraction', 핵심: '전체의 분수만큼을 구하고, 진분수·가분수·대분수를 압니다.',
+    그림들: [분수띠(3, 10)],
     생성들: [
       (r) => { const d = 정수(r, 2, 6); const k = 정수(r, 2, 5); return 수문제(`${d * k}의 1/${d}은?`, k, 근처(k, 1, -1, d), `${d * k}를 ${d}묶음으로 나누면 한 묶음은 ${k}입니다.`.replace(`${d * k}를`, 을(d * k))); },
       (r) => { const d = 정수(r, 3, 6); const k = 정수(r, 2, 4); const n = 정수(r, 2, d - 1); return 수문제(`${d * k}의 ${은(`${n}/${d}`)}?`, k * n, 근처(k * n, k, -k, 1), `1/${d}은 ${k}이므로 ${은(`${n}/${d}`)} ${k * n}입니다.`); },
@@ -570,6 +665,7 @@ const 단원표: Record<string, 단원놀이문항> = {
   },
   '3-2-u6': {
     tag: 'data', 핵심: '그림그래프에서 큰 그림과 작은 그림이 나타내는 수를 읽습니다.',
+    그림들: [그래프읽기()],
     생성들: [
       (r) => { const a = 정수(r, 1, 5); const b = 정수(r, 0, 9); return 수문제(`큰 그림 10명, 작은 그림 1명일 때\n큰 그림 ${a}개, 작은 그림 ${b}개는?`, a * 10 + b, [a + b, b * 10 + a, a * 10 + b + 10].filter((x) => x !== a * 10 + b), `${a * 10} + ${b} = ${a * 10 + b}명입니다.`, '명'); },
       (r) => { const a = 정수(r, 1, 5); const b = 정수(r, 0, 9); return 수문제(`큰 그림 100개, 작은 그림 10개일 때\n큰 그림 ${a}개, 작은 그림 ${b}개는?`, a * 100 + b * 10, [a * 10 + b, a * 100 + b, (a + b) * 100].filter((x) => x !== a * 100 + b * 10), `${a * 100} + ${b * 10} = ${a * 100 + b * 10}개입니다.`, '개'); },
@@ -1020,12 +1116,14 @@ export const 단순문항 = (game: Lesson, difficulty: Difficulty, seed: number,
   const 본 = new Set<string>();
   const out: Question[] = [];
   for (let 시도 = 0; out.length < 수 && 시도 < 수 * 40; 시도 += 1) {
-    const 만들기 = 표.생성들[Math.floor(r() * 표.생성들.length)];
+    const 그림차례 = 표.그림들?.length && r() < 그림몫[수준값[difficulty]];
+    const 고를곳 = 그림차례 ? 표.그림들! : 표.생성들;
+    const 만들기 = 고를곳[Math.floor(r() * 고를곳.length)];
     const 문 = 만들기(r, 수준값[difficulty]);
     if (!문) continue;
     const 보기 = [...new Set([문.a, ...문.w.filter((x) => x !== 문.a)])].slice(0, 4);
     if (보기.length < 3) continue;
-    const 열쇠 = `${문.q}|${[...보기].sort().join('|')}`;
+    const 열쇠 = `${문.q}|${[...보기].sort().join('|')}|${문.v ? JSON.stringify(문.v) : ''}`;
     if (본.has(열쇠)) continue;
     본.add(열쇠);
     const 섞인 = 섞기(r, 보기);
@@ -1035,6 +1133,7 @@ export const 단순문항 = (game: Lesson, difficulty: Difficulty, seed: number,
       difficulty,
       prompt: 문.q,
       basePrompt: 문.q,
+      ...(문.v ? { visual: 문.v } : {}),
       thinkingLevel: 0,
       choices: 섞인,
       answerIndex: 섞인.indexOf(문.a),

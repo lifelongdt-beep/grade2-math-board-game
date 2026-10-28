@@ -7053,7 +7053,64 @@ const clockUnitQuestion = (lesson: Lesson, difficulty: Difficulty, index: number
   return null;
 };
 
+// ── 그림을 보고 바로 읽는 쉬운 문제 ───────────────────────────────────
+// 시계·달력 문제를 바늘 자리나 요일을 글로만 알려 주면, 2학년은 그림을 머릿속에
+// 그리느라 정작 읽는 연습을 못 합니다. '하'에서는 세 문제에 하나꼴로 시계나 달력을
+// 그대로 보여 주고 읽게 합니다. 바늘 자리와 날짜는 문제마다 달라집니다.
+const 요일들 = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+const 시각글 = (h: number, m: number) => (m === 0 ? `${h}시` : `${h}시 ${m}분`);
+const 다음시 = (h: number) => (h === 12 ? 1 : h + 1);
+/** 1~12를 소리 내어 읽을 때 받침이 있으면 '과', 없으면 '와'입니다(일·삼·육·칠·팔·십·십일 → 과). */
+const 과와 = (h: number) => `${h}${[1, 3, 6, 7, 8, 10, 11].includes(h) ? '과' : '와'}`;
+const 쉬운그림시간문제 = (lesson: Lesson, difficulty: Difficulty, index: number): Question | null => {
+  if (lesson.unitTitle !== '시각과 시간' || difficulty !== '하' || index % 3 !== 0) return null;
+  const k = index / 3;
+  const h = 1 + ((k * 5) % 12);
+  const title = lesson.title;
+  const 읽기 = (m: number, 전략: string, 풀이: string) => {
+    const 답 = 시각글(h, m);
+    const 오답 = [시각글(다음시(h), m), m === 0 ? `${h}시 30분` : `${h}시 ${m % 5 === 0 ? m / 5 : m + 5}분`, m === 0 ? `12시 ${h * 5 > 55 ? 5 : h * 5}분` : `${Math.max(1, Math.floor(m / 5))}시 ${(h * 5) % 60}분`];
+    return makeQuestion(
+      lesson, difficulty, index,
+      m === 0 ? '시계를 보고 몇 시인지 골라 보세요.' : '시계를 보고 몇 시 몇 분인지 골라 보세요.',
+      답, 오답.filter((w, i, all) => w !== 답 && all.indexOf(w) === i),
+      풀이, 'time', 전략,
+      clockVisualFor(h, m, '읽어 볼 시계'),
+    );
+  };
+  if (title.includes('단원 도입')) {
+    const m = k % 2 === 0 ? 0 : 30;
+    return 읽기(m, m ? '몇 시 30분 읽기' : '몇 시 읽기', m ? `긴바늘이 6을 가리키면 30분입니다. 짧은바늘이 ${과와(h)} ${다음시(h)} 사이이므로 ${h}시 30분입니다.` : `긴바늘이 12를 가리키면 정각입니다. 짧은바늘이 ${h}이므로 ${h}시입니다.`);
+  }
+  if (title.includes('몇 시 몇 분을 읽어 볼까요 ⑴')) {
+    const m = 5 * (1 + (k % 11));
+    return 읽기(m, '시계를 보고 5분 단위로 읽기', `짧은바늘이 ${과와(h)} ${다음시(h)} 사이이므로 ${h}시, 긴바늘이 숫자 ${m / 5}이므로 ${m}분입니다.`);
+  }
+  if (title.includes('몇 시 몇 분을 읽어 볼까요 ⑵')) {
+    const 숫자 = 1 + (k % 10);
+    const 칸 = 1 + (k % 4);
+    const m = 숫자 * 5 + 칸;
+    return 읽기(m, '시계를 보고 1분 단위로 읽기', `긴바늘이 숫자 ${숫자}(${숫자 * 5}분)에서 작은 눈금 ${칸}칸 더 갔으므로 ${m}분, 그래서 ${h}시 ${m}분입니다.`);
+  }
+  if (title.includes('달력')) {
+    const 처음 = k % 7;
+    const 날 = 2 + ((k * 4) % 27);
+    const 답 = 요일들[(처음 + 날 - 1) % 7];
+    return makeQuestion(
+      lesson, difficulty, index,
+      `달력을 보고 ${날}일은 무슨 요일인지 골라 보세요.`,
+      답, [요일들[(처음 + 날) % 7], 요일들[(처음 + 날 + 5) % 7], 요일들[(처음 + 날 + 2) % 7]],
+      `${날}일이 있는 세로줄의 맨 위를 보면 ${답}입니다.`,
+      'time', '달력에서 날짜의 요일 찾기',
+      calendarVisualFor([{ day: 날, tone: 'start' }], '읽어 볼 달력', 처음),
+    );
+  }
+  return null;
+};
+
 const timeQuestion = (lesson: Lesson, difficulty: Difficulty, index: number): Question => {
+  const 그림 = 쉬운그림시간문제(lesson, difficulty, index);
+  if (그림) return 그림;
   const unitSpecific = clockUnitQuestion(lesson, difficulty, index);
   if (unitSpecific) return unitSpecific;
 
