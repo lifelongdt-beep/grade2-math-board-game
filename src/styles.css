@@ -11090,3 +11090,7 @@ body::before {
 
 /* 5명처럼 칸이 좁아도 학생 이름은 한 줄로 둡니다. */
 .lane-head > strong { white-space: nowrap; }
+
+/* 여럿이 동시에 누르는 놀이 화면에서는 두 손가락이 닿아도 브라우저가 확대(핀치)나 옆으로 밀기로
+   가로채지 않게 합니다. 가로채면 다른 아이의 손가락이 통째로 무시됩니다. 위아래 밀기는 남겨 둡니다. */
+.app-shell.playing .game-layout { touch-action: pan-y; }
