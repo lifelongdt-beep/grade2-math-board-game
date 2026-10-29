@@ -9,6 +9,7 @@ import {
   Maximize2,
   Minimize2,
   MonitorUp,
+  NotebookPen,
   PencilLine,
   QrCode,
   RefreshCcw,
@@ -55,7 +56,7 @@ import {
 } from './sound';
 import { HighlightedPrompt } from './components/HighlightedPrompt';
 import { MathText } from './components/MathText';
-import { 결승점수, 놀이차시붙이기, 놀이차시인가, 놀이찾기 } from './data/games';
+import { 결승점수, 놀이차시인가, 놀이찾기 } from './data/games';
 import { 등수표시, 맞힘반영, 부스터인가, 새친구판, 순위매기기, 판점수, type 친구판 } from './data/games/friendRace';
 import { FriendRaceBoard } from './components/FriendRaceBoard';
 import { MONSTER_HP, UnitMonster, 단원몬스터찾기 } from './components/UnitMonster';
@@ -68,17 +69,8 @@ import { RETRY_LIMIT, advancePlayerState, createQuestionState, getPlayerQuestion
 import { 도전권줄까, 도전보너스별, 나이김보너스별, 몬스터보너스별, 미션보너스별, 빈통계, 오늘미션, 지난나모두지우기, 지난나목표, 지난나쓰기, 지난나읽기, 카드넣기, 카드모두지우기, 카드모양, 카드읽기, 카드이름, 카드조건, 카드쓰기, type 미션통계, type 카드등급 } from './lessonQuests';
 import { 동물이름, 명단쓰기, 명단읽기, 명단풀기, 방식쓰기, 방식읽기, 주인공바꾸기, type 이름바꾸기방식 } from './data/nameSwap';
 import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 황금문제인가, 대왕때리기, 대왕읽기, 대왕쓰기, 지금대왕, type 기록장, type 대왕, type 대왕싸움 } from './rewards';
-import { curriculum as curriculum2 } from './data/curriculum';
-import { curriculum5 } from './data/curriculum5';
-import { curriculum51 } from './data/curriculum51';
-import { curriculum31 } from './data/curriculum31';
-import { curriculum11 } from './data/curriculum11';
-import { curriculum12 } from './data/curriculum12';
-import { curriculum41 } from './data/curriculum41';
-import { curriculum42 } from './data/curriculum42';
-import { curriculum61 } from './data/curriculum61';
-import { curriculum62 } from './data/curriculum62';
-import { curriculum32 } from './data/curriculum32';
+import { curriculum } from './data/allCurriculum';
+import { 기록더하기, 기록만들기, 오래남기기 } from './data/learningLog';
 import { 도입차시인가 } from './data/introReview';
 import { ALL_CASTLE_DEFENSE_DANS, CASTLE_DIVIDE_TITLE, isCastleLesson } from './data/lessonKinds';
 // 문항 엔진은 무거워서 화면을 먼저 띄운 뒤 따로 불러옵니다(engine.ts).
@@ -169,11 +161,8 @@ type InitialRoute = {
   checkLevel?: Difficulty;
 };
 
-// 2학년 차시와 5학년 차시를 한 앱에서 씁니다. 2학년 문항을 지키는
-// 시험들이 curriculum만 훑도록, 두 학기는 파일을 따로 두고 여기서만
-// 이어 붙입니다.
-// 단원마다 맨 앞에 놀이 차시를 붙입니다(data/games). 교과 차시 자료는 그대로 둡니다.
-const curriculum: Unit[] = 놀이차시붙이기([...curriculum11, ...curriculum12, ...curriculum2, ...curriculum31, ...curriculum32, ...curriculum41, ...curriculum42, ...curriculum51, ...curriculum5, ...curriculum61, ...curriculum62]);
+// 교사용 학습 기록장 페이지의 주소입니다. 같은 사이트에서 ?page=records로 열고(main.tsx), 같은 컴퓨터의 기록을 읽습니다.
+const 학습기록장주소 = () => `${window.location.origin}${window.location.pathname}?page=records`;
 
 const isSemesterValue = (value: string | null): value is Unit['semester'] =>
   value === '1-1' || value === '1-2' || value === '2-1' || value === '2-2' || value === '3-1' || value === '3-2' || value === '4-1' || value === '4-2' || value === '5-1' || value === '5-2' || value === '6-1' || value === '6-2';
@@ -1094,6 +1083,27 @@ function App() {
   }, [isMobileEntry, mode, relayTarget]);
 
   const sessionRecords = useMemo(() => records.filter((record) => record.lessonId === lesson.id), [records, lesson.id]);
+
+  // 학습 기록장(교사용 컴퓨터)입니다. 처음 한 번, 브라우저가 공간이 모자라도 지우지 않게 부탁합니다.
+  useEffect(() => {
+    if (!isMobileEntry) void 오래남기기();
+  }, [isMobileEntry]);
+  // QR로 들어온 휴대폰의 기록도 받아 오는 대로 학습 기록장에 쌓습니다. 학생(출석번호)을 아직 모르면
+  // 다음에 학생 목록이 오면 다시 봅니다. 같은 기록은 한 번만 쌓습니다.
+  const 쌓은원격 = useRef(new Set<string>());
+  const 차시표 = useMemo(() => new Map(curriculum.flatMap((unit) => unit.lessons).map((one) => [one.id, one])), []);
+  useEffect(() => {
+    if (isMobileEntry || remoteRecords.length === 0) return;
+    const 번호 = new Map(remotePlayers.map((one) => [one.id, one.attendanceNo]));
+    const 새것 = remoteRecords.flatMap((record) => {
+      const no = 번호.get(record.playerId);
+      if (no === undefined || 쌓은원격.current.has(record.id)) return [];
+      쌓은원격.current.add(record.id);
+      const 그차시 = 차시표.get(record.lessonId) ?? (record.lessonId === lesson.id ? lesson : null);
+      return 그차시 ? [기록만들기(record, { no, remote: true }, 그차시)] : [];
+    });
+    if (새것.length) void 기록더하기(새것);
+  }, [isMobileEntry, remoteRecords, remotePlayers, 차시표, lesson]);
   const playerResults = useMemo<Record<number, PlayerResult>>(() => {
     const summaries = Object.fromEntries(
       players.map((player) => [player.id, { total: 0, correct: 0, wrong: 0 }]),
@@ -1831,6 +1841,9 @@ function App() {
       bonus,
     });
     setRecords((prev) => [...prev, record]);
+    // 교사용 컴퓨터의 학습 기록장에도 바로 쌓습니다. 판을 다시 시작하거나 창을 닫아도 남습니다.
+    // 학생 휴대폰에서는 쌓지 않습니다(그 기록은 선생님 화면이 받아 와서 쌓습니다).
+    if (!isMobileEntry) void 기록더하기([기록만들기(record, { no: player.attendanceNo }, lesson)]);
     // 큐알로 들어온 폰은 선생님 화면과 다른 기기입니다. 로컬 상태만으로는
     // 선생님이 볼 수 없으므로 연결된 곳에도 올려 둡니다. 연결할 곳이 없는
     // 보통 배포본에서는 조용히 실패하고 넘어갑니다.
@@ -2068,6 +2081,9 @@ function App() {
               >
                 별·배지 기록 지우기
               </button>
+              <a className="board-link-button records-open" href={학습기록장주소()} target="_blank" rel="noopener">
+                📒 학습 기록장 열기
+              </a>
             </div>
           </div>
         </div>
@@ -2353,6 +2369,12 @@ function App() {
               <MonitorUp size={19} />
               교사용 분석
             </button>
+          )}
+          {!isMobileEntry && (
+            <a className="teacher-button records-link" href={학습기록장주소()} target="_blank" rel="noopener" title="학생들이 푼 문제가 계속 쌓이는 교사용 학습 기록장을 새 창에서 엽니다">
+              <NotebookPen size={19} />
+              학습 기록장
+            </a>
           )}
         </div>
     </section>
