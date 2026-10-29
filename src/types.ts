@@ -1459,6 +1459,9 @@ export interface PlayerQuestionState {
   // 바로 내리면, 손이 미끄러진 한 번으로 풀 수 있던 수준을 잃습니다.
   streak: number;
   missStreak: number;
+  // 아이가 '도전 카드'를 받아 지금 문제를 한 단계 어려운 문제집에서 풀고 있으면 그 수준입니다.
+  // 도전은 틀려도 손해가 없습니다: 다시 낼 줄에 넣지 않고, 내려가는 셈에도 넣지 않습니다.
+  challenge?: Difficulty | null;
 }
 
 export interface AnswerRecord {

@@ -64,8 +64,8 @@ import { 답전까지걸음 } from './data/hintUpgrade';
 import type { ManipResult } from './data/manipulate/check';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
-import { RETRY_LIMIT, advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
-import { 나이김보너스별, 몬스터보너스별, 미션보너스별, 빈통계, 오늘미션, 지난나모두지우기, 지난나목표, 지난나쓰기, 지난나읽기, 카드넣기, 카드모두지우기, 카드모양, 카드읽기, 카드이름, 카드조건, 카드쓰기, type 미션통계, type 카드등급 } from './lessonQuests';
+import { RETRY_LIMIT, advancePlayerState, createQuestionState, getPlayerQuestion, levelUp, shownLevel } from './playerState';
+import { 도전권줄까, 도전보너스별, 나이김보너스별, 몬스터보너스별, 미션보너스별, 빈통계, 오늘미션, 지난나모두지우기, 지난나목표, 지난나쓰기, 지난나읽기, 카드넣기, 카드모두지우기, 카드모양, 카드읽기, 카드이름, 카드조건, 카드쓰기, type 미션통계, type 카드등급 } from './lessonQuests';
 import { 동물이름, 명단쓰기, 명단읽기, 명단풀기, 방식쓰기, 방식읽기, 주인공바꾸기, type 이름바꾸기방식 } from './data/nameSwap';
 import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 황금문제인가, 대왕때리기, 대왕읽기, 대왕쓰기, 지금대왕, type 기록장, type 대왕, type 대왕싸움 } from './rewards';
 import { curriculum as curriculum2 } from './data/curriculum';
@@ -878,6 +878,9 @@ function App() {
   const cardsOf = (attendanceNo: number) => cardBook[attendanceNo] ?? 카드읽기(attendanceNo);
   // 이번 판에 새로 얻거나 올린 카드입니다(판 결과에서 빛나게 합니다).
   const [sessionCards, setSessionCards] = useState<Record<number, string[]>>({});
+  // 도전 카드입니다. offer는 지금 '도전할래?'를 보여 주는지, wins는 이번 판에 도전에 성공한 수입니다.
+  const [challengeOffer, setChallengeOffer] = useState<Record<number, boolean>>({});
+  const [challengeWins, setChallengeWins] = useState<Record<number, number>>({});
   const ghostSavedRef = useRef(false);
   const [wrongSignals, setWrongSignals] = useState<Record<number, number>>({});
 
@@ -1607,6 +1610,8 @@ function App() {
   const beginQuests = () => {
     setQuests({});
     setSessionCards({});
+    setChallengeOffer({});
+    setChallengeWins({});
     setGhosts(Object.fromEntries(players.map((player) => [player.id, 지난나목표(지난나읽기(player.attendanceNo, 단원열쇠), sessionDuration)])));
     questStartRef.current = Date.now();
     ghostSavedRef.current = false;
@@ -1671,10 +1676,16 @@ function App() {
 
   // 일반 차시에서 한 문제를 답했을 때 실수 몬스터·오늘의 미션·지난번의 나를 따져 봅니다.
   // 알림을 띄우고, 더 줄 별의 수를 돌려줍니다(별은 rewardAnswer가 한꺼번에 줍니다).
-  const questAnswer = (player: Player, state: PlayerQuestionState, correct: boolean, hintUsed: boolean, levelUp: boolean) => {
+  const questAnswer = (player: Player, state: PlayerQuestionState, correct: boolean, hintUsed: boolean, 맞힌뒤: PlayerQuestionState | null) => {
     const 앞 = quests[player.id] ?? { 통계: 빈통계(), 다함: false, 나이김: false };
     const 앞런 = runs[player.id] ?? { fire: 0, noHint: 0 };
     const 다시 = state.activeRetry;
+    // 답을 하면 떠 있던 '도전할래?'는 접습니다(고르지 않고 그냥 풀면 보통 문제로 푼 것입니다).
+    setChallengeOffer((prev) => ({ ...prev, [player.id]: false }));
+    if (!correct && state.challenge) {
+      showLaneToast(player.id, '⚡', '아쉬워요! 도전한 것만으로 멋져요');
+      return 0;
+    }
     if (!correct) {
       // 틀린 문제는 몇 문제 뒤에 다시 나옵니다. 두 번째에도 틀리면 다시 나오지 않으므로 몬스터가 달아납니다.
       if ((다시?.tries ?? 1) < RETRY_LIMIT) showLaneToast(player.id, '👾', '실수 몬스터가 나타났어요! 조금 뒤에 다시 와요');
@@ -1687,8 +1698,14 @@ function App() {
       연속최고: Math.max(앞.통계.연속최고, 앞런.fire + 1),
       힌트없이최고: Math.max(앞.통계.힌트없이최고, hintUsed ? 0 : 앞런.noHint + 1),
       잡은몬스터: 앞.통계.잡은몬스터 + (다시 ? 1 : 0),
-      올라감: 앞.통계.올라감 || levelUp,
+      올라감: 앞.통계.올라감 || 맞힌뒤?.justMoved === 'up',
     };
+    if (state.challenge) {
+      bonus += 도전보너스별;
+      setChallengeWins((prev) => ({ ...prev, [player.id]: (prev[player.id] ?? 0) + 1 }));
+      showLaneToast(player.id, '⚡', `도전 성공! 별 +${도전보너스별 + 1}`);
+    }
+    if (맞힌뒤 && 도전권줄까(통계.맞힘, 맞힌뒤)) setChallengeOffer((prev) => ({ ...prev, [player.id]: true }));
     if (다시) {
       bonus += 몬스터보너스별;
       showLaneToast(player.id, '👾', `실수 몬스터를 잡았어요! 별 +${몬스터보너스별}`);
@@ -1709,7 +1726,7 @@ function App() {
     setQuests((prev) => ({ ...prev, [player.id]: { 통계, 다함, 나이김 } }));
     // 힌트 없이 이어서 맞히면 이 차시의 개념 카드를 얻습니다. 등급은 지금 푼 문제의 수준입니다.
     if (!hintUsed && 앞런.noHint + 1 >= 카드조건) {
-      const 등급 = (다시?.level ?? state.level) as 카드등급;
+      const 등급: 카드등급 = shownLevel(state);
       const 넣음 = 카드넣기(cardsOf(player.attendanceNo), lesson.id, 등급);
       if (넣음.바뀜) {
         카드쓰기(player.attendanceNo, 넣음.모음);
@@ -1720,6 +1737,17 @@ function App() {
       }
     }
     return bonus;
+  };
+
+  // 아이가 '도전!'을 누르면 지금 문제를 한 단계 어려운 문제집의 문제로 바꿉니다.
+  const acceptChallenge = (player: Player) => {
+    setChallengeOffer((prev) => ({ ...prev, [player.id]: false }));
+    resetHintState(player.id);
+    setPlayerStates((prev) => {
+      const current = prev[player.id];
+      if (!current || current.locked || current.activeRetry || current.level === '상') return prev;
+      return { ...prev, [player.id]: { ...current, challenge: levelUp(current.level), questionStartedAt: Date.now() } };
+    });
   };
 
   const answerQuestion = (player: Player, question: Question, choiceIndex: number, manip?: ManipResult) => {
@@ -1791,7 +1819,7 @@ function App() {
 
     const hintUsed = Boolean(hintUsedThisQuestion[player.id] || hintTextOpen[player.id]);
     const 맞힌뒤 = isCorrect ? advancePlayerState(state, players.length, false, questionBanks.하.length) : null;
-    const bonus = isPlayScene ? 0 : questAnswer(player, state, isCorrect, hintUsed, 맞힌뒤?.justMoved === 'up');
+    const bonus = isPlayScene ? 0 : questAnswer(player, state, isCorrect, hintUsed, 맞힌뒤);
     rewardAnswer(player, {
       correct: isCorrect,
       golden,
@@ -2517,7 +2545,7 @@ function App() {
           >
             {players.map((player) => {
               const state = playerStates[player.id] ?? fallbackStates[player.id];
-              const playerQuestions = questionBanks[state.activeRetry?.level ?? state.level];
+              const playerQuestions = questionBanks[shownLevel(state)];
               const question = 주인공바꾸기(getPlayerQuestion(questionBanks, state), heroOf(player), friendNamesFor(player));
               const result = playerResults[player.id] ?? { total: 0, correct: 0, wrong: 0 };
               const successActive = Boolean(successSignals[player.id]);
@@ -2585,6 +2613,14 @@ function App() {
                       </div>
                     );
                   })()}
+                  {!isPlayScene && mode === 'playing' && challengeOffer[player.id] && !state.locked && !state.activeRetry && !state.challenge && (
+                    <div className="challenge-offer" role="group" aria-label="도전 카드">
+                      <span className="challenge-card" aria-hidden="true">⚡</span>
+                      <p><b>도전할래?</b><small>한 단계 어려운 문제 · 맞히면 별 {도전보너스별 + 1}개 · 틀려도 괜찮아요</small></p>
+                      <button type="button" className="challenge-yes" onClick={() => acceptChallenge(player)}>도전!</button>
+                      <button type="button" className="challenge-no" onClick={() => setChallengeOffer((prev) => ({ ...prev, [player.id]: false }))}>괜찮아요</button>
+                    </div>
+                  )}
                   {겨루기 && mode === 'playing' && 역전?.id === player.id && (
                     <div className="versus-flip" key={`flip-${역전.n}`} aria-live="polite"><b>역전!</b><small>👑 이제 내가 앞서요</small></div>
                   )}
@@ -2696,6 +2732,7 @@ function App() {
                             <p className="quest-stats">
                               <span>🎯 미션 <b>{미션.filter((one) => one.됐나(퀘.통계)).length}/{미션.length}{퀘.다함 ? ' 🏆' : ''}</b></span>
                               <span>👾 잡은 실수 몬스터 <b>{퀘.통계.잡은몬스터}마리</b></span>
+                              <span>⚡ 도전 성공 <b>{challengeWins[player.id] ?? 0}번</b></span>
                               <span>
                                 👻 지난번의 나 <b>{목표 == null ? '첫 기록' : `${목표}개 → 오늘 ${result.correct}개`}</b>
                                 {목표 != null && <em>{퀘.나이김 ? ' 이겼어요!' : ' 다음엔 이겨요'}</em>}
@@ -2877,6 +2914,7 @@ function App() {
                               아이에게 완전히 다른 일입니다. */}
                           {state.activeRetry !== null && <span className="retry-tag">{isPlayScene ? '다시 도전' : '👾 실수 몬스터 등장!'}</span>}
                           {/* 황금 문제는 맞히면 별을 두 배로 받습니다. 융합 문항은 늘 황금입니다. */}
+                          {state.challenge && <span className="challenge-tag">⚡ 도전 문제 · {state.challenge}</span>}
                           {golden && <span className="golden-tag">🌟 황금 문제 · 별 2배</span>}
                           <span>{question.strategy}</span>
                         </div>
@@ -2896,7 +2934,7 @@ function App() {
                             questionKey={question.id}
                             prompt={question.prompt}
                             visual={question.visual}
-                            level={state.activeRetry?.level ?? state.level}
+                            level={shownLevel(state)}
                             correct={result.correct}
                             wrong={result.wrong}
                             avatar={player.avatar}
@@ -2919,7 +2957,7 @@ function App() {
                             heartsLost={result.wrong}
                             solved={result.correct}
                             total={playerQuestions.length}
-                            level={state.activeRetry?.level ?? state.level}
+                            level={shownLevel(state)}
                             sharedScreen={!isMobileEntry}
                             // 틀린 뒤 도움말을 보는 동안에는 몬스터가 더 내려올 까닭이 없습니다. 제자리에 세워 둡니다.
                             stopped={state.feedback === 'explain'}

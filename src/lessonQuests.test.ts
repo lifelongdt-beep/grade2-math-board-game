@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { 미션들, 빈통계, 오늘미션, 지난나목표, 카드넣기, 카드이름 } from './lessonQuests';
+import { 도전권줄까, 미션들, 빈통계, 오늘미션, 지난나목표, 카드넣기, 카드이름 } from './lessonQuests';
 
 describe('오늘의 미션', () => {
   it('아이마다 미션 셋을 주고, 같은 갈래(5문제·8문제)는 함께 내지 않습니다', () => {
@@ -57,5 +57,14 @@ describe('개념 카드 도감', () => {
   it('카드 이름에서 차시 번호를 뺍니다', () => {
     expect(카드이름('몇 시 몇 분을 읽어 볼까요 (1)')).toBe('몇 시 몇 분을 읽어 볼까요');
     expect(카드이름('시각과 시간을 알아볼까요')).toBe('시각과 시간을 알아볼까요');
+  });
+});
+
+describe('도전 카드', () => {
+  it('맞힌 수가 4의 배수일 때만, 상이 아니고 되돌아온 문제가 아닐 때 보여 줍니다', () => {
+    expect(도전권줄까(4, { level: '하', activeRetry: null })).toBe(true);
+    expect(도전권줄까(3, { level: '하', activeRetry: null })).toBe(false);
+    expect(도전권줄까(8, { level: '상', activeRetry: null })).toBe(false);
+    expect(도전권줄까(8, { level: '중', activeRetry: { index: 1 } })).toBe(false);
   });
 });

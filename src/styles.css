@@ -11225,3 +11225,52 @@ body::before {
   40% { transform: rotateY(180deg) scale(1.12); }
   80% { transform: rotateY(360deg) scale(1); }
 }
+
+/* ── 도전 카드 ──────────────────────────────────────────────────
+   맞힌 수가 4의 배수가 되면 이름 줄 아래에 잠깐 놓입니다. 아이가 고르는 것이므로 단추를 크게 둡니다. */
+.challenge-offer {
+  /* 칸의 줄 나눔(grid)을 흔들지 않게 문제 카드 위에 떠 있게 둡니다. */
+  position: absolute;
+  z-index: 5;
+  top: 74px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 6px 18px rgba(46, 26, 92, 0.25);
+  padding: 6px 8px;
+  border: 2px solid #7B4FD6;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #F1EAFF, #FFF6D8);
+  color: #2E1A5C;
+  animation: quest-pop 0.45s ease;
+}
+.challenge-card {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 44px;
+  border-radius: 7px;
+  background: #7B4FD6;
+  color: #FFE27A;
+  font-size: 22px;
+  box-shadow: 0 0 0 2px #FFE27A inset;
+  animation: card-shine 1.4s ease infinite;
+}
+.challenge-offer p { flex: 1; min-width: 0; margin: 0; display: grid; }
+.challenge-offer p b { font-size: 16px; }
+.challenge-offer p small { font-size: 12px; font-weight: 700; color: #4C3A7A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.challenge-offer button {
+  flex: none;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 15px;
+  cursor: pointer;
+}
+.app-shell .challenge-offer .challenge-yes { border: 2px solid #5B2C93; background: #7B4FD6; color: #FFFFFF; }
+.app-shell .challenge-offer .challenge-no { border: 2px solid #C9BEE6; background: #FFFFFF; color: #4C3A7A; }
+.student-question-meta .challenge-tag { background: #F1EAFF; border-color: #7B4FD6; color: #5B2C93; }
