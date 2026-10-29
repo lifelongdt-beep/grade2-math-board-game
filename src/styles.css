@@ -11113,3 +11113,115 @@ body::before {
 @keyframes game-fall-short { from { top: 4%; } to { top: 40%; } }
 @keyframes game-rise-short { from { bottom: 2%; } to { bottom: 40%; } }
 @keyframes game-drop-short { from { top: 28px; } to { top: 22%; } }
+
+/* ── 일반 차시의 게임 요소: 오늘의 미션·실수 몬스터·지난번의 나 ─────────────
+   이름 줄 바로 아래 한 줄에 작은 칩으로 둡니다. 문제 칸을 덜 가리도록 낮고 얇게 하고,
+   칸이 좁으면(5명) 글은 줄이고 그림만 남깁니다. */
+.quest-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  align-items: center;
+  margin: 2px 0 4px;
+  min-width: 0;
+  overflow: hidden;
+  container-type: inline-size;
+}
+.quest-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 2px 8px 2px 5px;
+  border: 2px solid #D5DEEB;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: #4C5B73;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.quest-chip i { flex: none; font-style: normal; font-size: 14px; }
+.quest-chip em { font-style: normal; overflow: hidden; text-overflow: ellipsis; }
+.quest-chip.done {
+  border-color: #2E9A6E;
+  background: #E8F7EF;
+  color: #0F6B5E;
+  animation: quest-pop 0.5s ease;
+}
+.quest-chip.mistake {
+  flex: none;
+  border-color: #B07CE8;
+  background: #F3EAFE;
+  color: #5B2C93;
+  animation: quest-pop 0.4s ease;
+}
+.quest-chip.ghost { flex: none; border-color: #9AA9C2; background: #EEF2F8; color: #33425C; }
+.quest-chip.ghost.done { border-color: #E0A800; background: #FFF3D1; color: #6B4700; }
+.quest-row.all-done .quest-chip:not(.mistake):not(.ghost) { border-color: #E0A800; background: #FFF3D1; color: #6B4700; }
+@keyframes quest-pop {
+  0% { transform: scale(0.7); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+/* 5명 이상이 나눠 쓰는 좁은 칸에서는 미션 글을 숨기고 그림만 둡니다(글은 눌러 보면 나옵니다). */
+@container (max-width: 300px) {
+  .quest-row .quest-chip:not(.mistake):not(.ghost) em { display: none; }
+}
+/* ── 개념 카드 도감(판 결과) ───────────────────────────────────────
+   단원의 차시마다 작은 카드 한 장입니다. 동·은·금 테두리로 등급을 보이고, 이번 판에 얻은 카드는 반짝입니다. */
+.quest-summary {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 2px solid #D5DEEB;
+  border-radius: 14px;
+  background: #FFFFFF;
+  color: #1D2B45;
+}
+.quest-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #4C5B73;
+}
+.quest-stats b { color: #5B2C93; }
+.quest-stats em { font-style: normal; color: #0F6B5E; }
+.card-book { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.card-book-title { font-size: 13px; font-weight: 800; color: #4C5B73; white-space: nowrap; }
+.card-book-title b { color: #2453A6; }
+.card-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.concept-card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 42px;
+  border: 2px solid #D5DEEB;
+  border-radius: 8px;
+  background: #F4F6FA;
+  font-style: normal;
+}
+.concept-card b { font-size: 17px; line-height: 1; }
+.concept-card small { margin-top: 2px; color: #4C5B73; font-size: 10px; font-weight: 800; }
+.concept-card.empty b { color: #9AA9C2; font-size: 18px; }
+.concept-card.here.empty { border-style: dashed; border-color: #2453A6; }
+.concept-card.tier-동 { border-color: #B87333; background: #FBEFE4; }
+.concept-card.tier-은 { border-color: #8E9AAF; background: #EEF1F6; }
+.concept-card.tier-금 { border-color: #E0A800; background: #FFF3D1; }
+.concept-card.new { animation: card-shine 1.2s ease 2; box-shadow: 0 0 0 3px rgba(224, 168, 0, 0.35); }
+@keyframes card-shine {
+  0%, 100% { transform: rotateY(0) scale(1); }
+  40% { transform: rotateY(180deg) scale(1.12); }
+  80% { transform: rotateY(360deg) scale(1); }
+}

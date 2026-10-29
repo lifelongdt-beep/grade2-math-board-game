@@ -41,7 +41,7 @@ const RETRY_AFTER = 3;
 // 같은 문제는 두 번까지만 나옵니다. 세 번째로 또 틀린다면 그것은 사이를
 // 띄워 다시 만나게 해서 될 일이 아닙니다 — 그때 필요한 것은 되풀이가
 // 아니라 도움말이고, 그것은 틀린 그 자리에서 이미 보여 주었습니다.
-const RETRY_LIMIT = 2;
+export const RETRY_LIMIT = 2;
 
 const 최대공약수 = (a: number, b: number): number => (b === 0 ? a : 최대공약수(b, a % b));
 
