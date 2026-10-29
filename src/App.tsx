@@ -70,6 +70,7 @@ import { 도전권줄까, 도전보너스별, 나이김보너스별, 몬스터�
 import { 동물이름, 명단쓰기, 명단읽기, 명단풀기, 방식쓰기, 방식읽기, 주인공바꾸기, type 이름바꾸기방식 } from './data/nameSwap';
 import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 황금문제인가, 대왕때리기, 대왕읽기, 대왕쓰기, 지금대왕, type 기록장, type 대왕, type 대왕싸움 } from './rewards';
 import { curriculum } from './data/allCurriculum';
+import { 마지막차시쓰기, 마지막차시읽기 } from './data/lastLesson';
 import { 기록더하기, 기록만들기, 오래남기기 } from './data/learningLog';
 import { 도입차시인가 } from './data/introReview';
 import { ALL_CASTLE_DEFENSE_DANS, CASTLE_DIVIDE_TITLE, isCastleLesson } from './data/lessonKinds';
@@ -188,9 +189,26 @@ const readInitialRoute = (): InitialRoute => {
   const dbParam = params.get('db');
   const roomParam = params.get('room');
   const checkParam = params.get('check');
+  const isMobileEntry = params.get('mobile') === '1' || params.get('m') === '1';
+  // 주소에 차시가 없으면 선생님이 마지막으로 수업한 차시로 엽니다(data/lastLesson.ts).
+  // 주소에 적힌 차시(공유 링크·QR)가 늘 먼저이고, 학생 휴대폰은 쓰지 않습니다.
+  const 지난차시 = !isMobileEntry && !semesterParam && !unitParam && !lessonParam ? 마지막차시읽기(curriculum) : null;
+  if (지난차시) {
+    return {
+      isMobileEntry,
+      syncEnabled: params.get('sync') !== '0',
+      cloudDbUrl: (dbParam && normalizeDbUrl(dbParam)) || undefined,
+      cloudRoom: roomParam && isRoomCode(roomParam) ? roomParam : undefined,
+      semester: 지난차시.semester,
+      unitSelection: 지난차시.unit,
+      lessonId: 지난차시.lessonId,
+      duration: durationParam ? parseSessionDuration(durationParam) : parseSessionDuration(String(지난차시.duration ?? '')),
+      checkLevel: checkParam === '하' || checkParam === '중' || checkParam === '상' ? checkParam : undefined,
+    };
+  }
 
   return {
-    isMobileEntry: params.get('mobile') === '1' || params.get('m') === '1',
+    isMobileEntry,
     syncEnabled: params.get('sync') !== '0',
     cloudDbUrl: (dbParam && normalizeDbUrl(dbParam)) || undefined,
     cloudRoom: roomParam && isRoomCode(roomParam) ? roomParam : undefined,
@@ -661,14 +679,15 @@ function App() {
     if (dbUrl && room) return { kind: 'cloud', dbUrl, room };
     return { kind: 'local' };
   }, [initialRoute.cloudDbUrl, initialRoute.cloudRoom, isMobileEntry, relayDbUrl, relayRoom]);
-  const skipInitialSemesterReset = useRef(true);
-  const skipInitialUnitReset = useRef(true);
+  const 앞학기 = useRef(initialRoute.semester);
   const [semester, setSemester] = useState<Unit['semester']>(initialRoute.semester);
   const semesterUnits = useMemo(() => curriculum.filter((unit) => unit.semester === semester), [semester]);
   const [unitSelection, setUnitSelection] = useState<UnitSelection>(initialRoute.unitSelection ?? 1);
   const isSemesterReviewSelected = unitSelection === semesterReviewUnitValue;
   const selectedUnitNo = isSemesterReviewSelected ? semesterUnits[0]?.unitNo : unitSelection;
   const selectedUnit = semesterUnits.find((unit) => unit.unitNo === selectedUnitNo) ?? semesterUnits[0];
+  const 지금단원열쇠 = isSemesterReviewSelected ? `${semester}-review` : `${selectedUnit.semester}-${selectedUnit.unitNo}`;
+  const 앞단원 = useRef(지금단원열쇠);
   const unitReviewId = unitReviewIdFor(semester, selectedUnit.unitNo);
   const semesterReviewId = semesterReviewIdFor(semester);
   const [lessonId, setLessonId] = useState(initialRoute.lessonId ?? selectedUnit.lessons[0].id);
@@ -874,10 +893,10 @@ function App() {
   const [wrongSignals, setWrongSignals] = useState<Record<number, number>>({});
 
   useEffect(() => {
-    if (skipInitialSemesterReset.current) {
-      skipInitialSemesterReset.current = false;
-      return;
-    }
+    // 학기가 정말 바뀌었을 때만 첫 단원으로 돌립니다. '처음 한 번은 건너뛰기'로 하면 개발 화면처럼
+    // 효과가 두 번 도는 곳에서 두 번째에 첫 단원으로 돌아가, 주소나 지난 수업의 단원이 사라졌습니다.
+    if (앞학기.current === semester) return;
+    앞학기.current = semester;
 
     const firstUnit = curriculum.find((unit) => unit.semester === semester);
     if (!firstUnit) return;
@@ -886,10 +905,10 @@ function App() {
   }, [semester]);
 
   useEffect(() => {
-    if (skipInitialUnitReset.current) {
-      skipInitialUnitReset.current = false;
-      return;
-    }
+    // 단원이 정말 바뀌었을 때만 첫 차시로 돌립니다(위 학기와 같은 까닭).
+    const 단원열쇠 = 지금단원열쇠;
+    if (앞단원.current === 단원열쇠) return;
+    앞단원.current = 단원열쇠;
 
     if (isSemesterReviewSelected) {
       setLessonId(semesterReviewId);
@@ -1371,6 +1390,8 @@ function App() {
 
   const startGame = () => {
     const now = Date.now();
+    // 다음에 첫 화면을 열면 이 차시가 골라져 있게 적어 둡니다. 학생 휴대폰은 적지 않습니다.
+    if (!isMobileEntry) 마지막차시쓰기({ semester, unit: unitSelection, lessonId: lesson.id, duration: sessionDuration });
     setBonusUsed(0);
     setBonusFlash(0);
     setRecords([]);
@@ -2573,6 +2594,10 @@ function App() {
               const successActive = Boolean(successSignals[player.id]);
               const wrongActive = Boolean(wrongSignals[player.id]);
               const golden = mode === 'playing' && 황금문제인가({ questionId: question.id, seed: bankSeed, fusion: question.fusion, retry: state.activeRetry !== null });
+              // 놀이 차시의 계산 문제(312 × 2 = ? 같은 것)는 힌트 글보다 손으로 적어 볼 자리가 필요합니다.
+              // 이때는 '힌트 보기' 대신 '계산판'을 둡니다. 성 지키기는 몬스터가 내려오는 화면이라 덮지 않습니다.
+              const 놀이계산 = Boolean(game) && /\d\s*[×÷+\-−]\s*\d/.test(question.prompt);
+              const 계산판있음 = !isPlayScene || 놀이계산;
               return (
                 <article
                   className={`player-lane student-question ${mode === 'finished' ? 'finished-result' : state.feedback} ${successActive ? 'success-signal' : ''} ${wrongActive ? 'wrong-signal' : ''} ${mode === 'playing' && 불꽃단계(runs[player.id]?.fire ?? 0) ? `lane-fire-${불꽃단계(runs[player.id]?.fire ?? 0)}` : ''} ${golden ? 'golden-question' : ''}`}
@@ -3001,7 +3026,7 @@ function App() {
                             자리를 밀어내지 않고 이 칸 안에서만 스크롤됩니다. */}
                         {state.feedback !== 'explain' && (
                           <div className="hint-controls">
-                            <button
+                            {!놀이계산 && <button
                               type="button"
                               className="hint-toggle-button"
                               aria-expanded={Boolean(hintTextOpen[player.id])}
@@ -3011,7 +3036,7 @@ function App() {
                               }}
                             >
                               <Lightbulb size={16} /> {hintTextOpen[player.id] ? '힌트 접기' : '힌트 보기'}
-                            </button>
+                            </button>}
                             {(question.visual || question.walkthrough) && (
                               <button
                                 type="button"
@@ -3028,7 +3053,7 @@ function App() {
                             {/* 고학년 계산은 암산으로 되지 않습니다. 적을
                                 자리가 없으면 아이는 머릿속으로 하다 틀리거나
                                 찍습니다. 손으로 풀 자리를 문제 옆에 둡니다. */}
-                            {!isPlayScene && (
+                            {계산판있음 && (
                               <button
                                 type="button"
                                 className="scratch-toggle-button"
@@ -3044,7 +3069,7 @@ function App() {
                           </div>
                         )}
 
-                        {state.feedback !== 'explain' && hintTextOpen[player.id] && (
+                        {state.feedback !== 'explain' && !놀이계산 && hintTextOpen[player.id] && (
                           <div className="hint-text-panel" aria-label={`${player.name} 힌트`}>
                             <p className="quick-core"><span>핵심</span><span><MathText text={question.support.studentConcept} /></span></p>
                             <p><span>볼 곳</span><span><MathText text={question.support.studentHint} /></span></p>
@@ -3089,6 +3114,19 @@ function App() {
                                 <span>뒤에 숨은 쌓기나무까지 비쳐 보입니다. 하나씩 짚어 세어 보세요.</span>
                               </div>
                             )}
+                            {/* 저학년은 키가 작아 전자칠판 위쪽의 '힌트 접기'에 손이 닿지 않습니다.
+                                힌트를 다 읽고 손이 가는 아래쪽에도 접기 단추를 두고, 힌트가 길어
+                                문제 칸이 스크롤되어도 칸 아래쪽에 붙어 있게 합니다(계산판의 접기와 같은 자리). */}
+                            <button
+                              type="button"
+                              className="hint-close-bottom"
+                              onClick={() => {
+                                playTapSound();
+                                setHintTextOpen((prev) => ({ ...prev, [player.id]: false }));
+                              }}
+                            >
+                              <Lightbulb size={16} /> 힌트 접기
+                            </button>
                           </div>
                         )}
 
@@ -3098,7 +3136,7 @@ function App() {
                             넣어, 다음 문제로 넘어가면 쓴 것이 지워집니다.
                             성 지키기는 몬스터가 내려오는 화면이라 덮지
                             않습니다. */}
-                        {!isPlayScene && (
+                        {계산판있음 && (
                           <ScratchPad
                             key={`${player.id}-${question.id}-${state.answered}`}
                             open={Boolean(scratchOpen[player.id])}
