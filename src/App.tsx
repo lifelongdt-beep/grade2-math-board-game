@@ -64,7 +64,8 @@ import { 답전까지걸음 } from './data/hintUpgrade';
 import type { ManipResult } from './data/manipulate/check';
 import { GoalRunner, runnerNameFor } from './components/GoalRunner';
 import { studyGuideFor } from './data/studyGuide';
-import { advancePlayerState, createQuestionState, getPlayerQuestion } from './playerState';
+import { RETRY_LIMIT, advancePlayerState, createQuestionState, getPlayerQuestion, levelUp, shownLevel } from './playerState';
+import { 도전권줄까, 도전보너스별, 나이김보너스별, 몬스터보너스별, 미션보너스별, 빈통계, 오늘미션, 지난나모두지우기, 지난나목표, 지난나쓰기, 지난나읽기, 카드넣기, 카드모두지우기, 카드모양, 카드읽기, 카드이름, 카드조건, 카드쓰기, type 미션통계, type 카드등급 } from './lessonQuests';
 import { 동물이름, 명단쓰기, 명단읽기, 명단풀기, 방식쓰기, 방식읽기, 주인공바꾸기, type 이름바꾸기방식 } from './data/nameSwap';
 import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 황금문제인가, 대왕때리기, 대왕읽기, 대왕쓰기, 지금대왕, type 기록장, type 대왕, type 대왕싸움 } from './rewards';
 import { curriculum as curriculum2 } from './data/curriculum';
@@ -866,6 +867,21 @@ function App() {
   const [sessionBadges, setSessionBadges] = useState<Record<number, string[]>>({});
   // 이번 판에 모은 별입니다(판 결과에 보여 줍니다).
   const [sessionStars, setSessionStars] = useState<Record<number, number>>({});
+  // 일반 차시의 게임 요소(lessonQuests.ts)입니다. 놀이 차시에서는 쓰지 않습니다.
+  // quests는 이번 판에 해낸 것과, 미션을 다 했는지·지난번의 나를 이겼는지입니다.
+  const [quests, setQuests] = useState<Record<number, { 통계: 미션통계; 다함: boolean; 나이김: boolean }>>({});
+  // 오늘 넘어설 '지난번의 나'의 맞힌 수입니다. 판을 시작할 때 정합니다(지난 기록이 없으면 null).
+  const [ghosts, setGhosts] = useState<Record<number, number | null>>({});
+  const questStartRef = useRef(0);
+  // 출석 번호마다 모은 개념 카드(차시 id → 등급)입니다. 이 컴퓨터에 남아 다음 시간에도 이어집니다.
+  const [cardBook, setCardBook] = useState<Record<number, Record<string, 카드등급>>>({});
+  const cardsOf = (attendanceNo: number) => cardBook[attendanceNo] ?? 카드읽기(attendanceNo);
+  // 이번 판에 새로 얻거나 올린 카드입니다(판 결과에서 빛나게 합니다).
+  const [sessionCards, setSessionCards] = useState<Record<number, string[]>>({});
+  // 도전 카드입니다. offer는 지금 '도전할래?'를 보여 주는지, wins는 이번 판에 도전에 성공한 수입니다.
+  const [challengeOffer, setChallengeOffer] = useState<Record<number, boolean>>({});
+  const [challengeWins, setChallengeWins] = useState<Record<number, number>>({});
+  const ghostSavedRef = useRef(false);
   const [wrongSignals, setWrongSignals] = useState<Record<number, number>>({});
 
   useEffect(() => {
@@ -1106,6 +1122,20 @@ function App() {
   // 단원 맨 앞의 놀이 차시입니다. 성 지키기처럼 문제 자리를 놀이 그림이 차지합니다.
   const game = 놀이찾기(lesson);
   const isPlayScene = isCastleDefense || Boolean(game);
+
+  // 일반 차시가 끝나면 아이마다 이번에 맞힌 수를 '지난번의 나'로 남깁니다. 다음에 같은 단원을 하면 이 기록과 겨룹니다.
+  // 한 문제도 풀지 않은 아이(자리만 있던 아이)는 지난 기록을 그대로 둡니다.
+  useEffect(() => {
+    if (mode !== 'finished' || isPlayScene || ghostSavedRef.current) return;
+    ghostSavedRef.current = true;
+    const 초 = Math.max(30, Math.round((Date.now() - questStartRef.current) / 1000));
+    players.forEach((player) => {
+      const 결과 = playerResults[player.id];
+      if (!결과 || 결과.total === 0) return;
+      지난나쓰기(player.attendanceNo, `${lesson.semester}-${lesson.unitNo}`, { 맞힘: 결과.correct, 초 });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
   // 둘 이상이 놀이 차시를 하면 컴퓨터 라이벌 대신 같이 하는 친구들과 겨룹니다(friendRace.ts).
   // 짧은 판을 여러 번 합니다. 먼저 결승 점수를 낸 아이가 판을 이기고(👑) 모두 0점에서 다시 시작해서,
   // 한 번 뒤처진 아이도 다음 판에서 이길 수 있습니다. 1등이 바뀌면 '역전!'을 띄웁니다.
@@ -1340,6 +1370,7 @@ function App() {
     setRuns({});
     setSessionBadges({});
     setMonsters({});
+    beginQuests();
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
     setPlayerStates(createQuestionState(players, now, checkLevel));
     setRemainingSeconds(sessionDuration);
@@ -1441,6 +1472,7 @@ function App() {
     setRuns({});
     setSessionBadges({});
     setMonsters({});
+    beginQuests();
     setBankSeed(Math.floor(Math.random() * 1_000_000_000));
     setPlayerStates(createQuestionState(players, undefined, checkLevel));
     setRemainingSeconds(sessionDuration);
@@ -1573,6 +1605,18 @@ function App() {
       return { ...prev, [playerId]: 남은 };
     });
   };
+  const 단원열쇠 = `${lesson.semester}-${lesson.unitNo}`;
+  // 판을 새로 시작할 때 일반 차시의 미션 기록을 비우고, 아이마다 '지난번의 나'를 불러옵니다.
+  const beginQuests = () => {
+    setQuests({});
+    setSessionCards({});
+    setChallengeOffer({});
+    setChallengeWins({});
+    setGhosts(Object.fromEntries(players.map((player) => [player.id, 지난나목표(지난나읽기(player.attendanceNo, 단원열쇠), sessionDuration)])));
+    questStartRef.current = Date.now();
+    ghostSavedRef.current = false;
+  };
+
   const showLaneToast = (playerId: number, look: string, text: string) => {
     const id = Date.now() + Math.random();
     setLaneToasts((prev) => {
@@ -1587,7 +1631,7 @@ function App() {
   // 배지는 빠르기가 아니라 처음 해낸 일에 줍니다(rewards.ts의 배지들).
   const rewardAnswer = (
     player: Player,
-    o: { correct: boolean; golden: boolean; fever: boolean; hintUsed: boolean; friendFix: boolean; retry: boolean; levelAfter: Difficulty },
+    o: { correct: boolean; golden: boolean; fever: boolean; hintUsed: boolean; friendFix: boolean; retry: boolean; levelAfter: Difficulty; bonus?: number },
   ) => {
     const 장 = profileOf(player.attendanceNo);
     const 앞 = runs[player.id] ?? { fire: 0, noHint: 0 };
@@ -1595,7 +1639,8 @@ function App() {
       ? { fire: 앞.fire + 1, noHint: o.hintUsed ? 0 : 앞.noHint + 1 }
       : { fire: 틀린뒤불꽃(앞.fire), noHint: 0 };
     setRuns((prev) => ({ ...prev, [player.id]: run }));
-    const gain = o.correct ? 받을별(o) : 0;
+    // bonus는 일반 차시의 실수 몬스터·미션·지난번의 나에서 더 받는 별입니다.
+    const gain = o.correct ? 받을별(o) + (o.bonus ?? 0) : 0;
     const stars = 장.stars + gain;
     const 받은 = 새배지(
       { ...o, noHintRun: run.noHint, fireCount: run.fire, totalStars: stars },
@@ -1627,6 +1672,82 @@ function App() {
     const 붙은 = 새로붙은(장.stars, stars).at(-1);
     if (붙은) showLaneToast(player.id, 붙은.icon, `새 꾸미개: ${붙은.name}!`);
     for (const one of 받은) showLaneToast(player.id, one.look, `배지: ${one.name}`);
+  };
+
+  // 일반 차시에서 한 문제를 답했을 때 실수 몬스터·오늘의 미션·지난번의 나를 따져 봅니다.
+  // 알림을 띄우고, 더 줄 별의 수를 돌려줍니다(별은 rewardAnswer가 한꺼번에 줍니다).
+  const questAnswer = (player: Player, state: PlayerQuestionState, correct: boolean, hintUsed: boolean, 맞힌뒤: PlayerQuestionState | null) => {
+    const 앞 = quests[player.id] ?? { 통계: 빈통계(), 다함: false, 나이김: false };
+    const 앞런 = runs[player.id] ?? { fire: 0, noHint: 0 };
+    const 다시 = state.activeRetry;
+    // 답을 하면 떠 있던 '도전할래?'는 접습니다(고르지 않고 그냥 풀면 보통 문제로 푼 것입니다).
+    setChallengeOffer((prev) => ({ ...prev, [player.id]: false }));
+    if (!correct && state.challenge) {
+      showLaneToast(player.id, '⚡', '아쉬워요! 도전한 것만으로 멋져요');
+      return 0;
+    }
+    if (!correct) {
+      // 틀린 문제는 몇 문제 뒤에 다시 나옵니다. 두 번째에도 틀리면 다시 나오지 않으므로 몬스터가 달아납니다.
+      if ((다시?.tries ?? 1) < RETRY_LIMIT) showLaneToast(player.id, '👾', '실수 몬스터가 나타났어요! 조금 뒤에 다시 와요');
+      else showLaneToast(player.id, '💨', '실수 몬스터가 달아났어요. 풀이를 꼭 읽어 봐요');
+      return 0;
+    }
+    let bonus = 0;
+    const 통계: 미션통계 = {
+      맞힘: 앞.통계.맞힘 + 1,
+      연속최고: Math.max(앞.통계.연속최고, 앞런.fire + 1),
+      힌트없이최고: Math.max(앞.통계.힌트없이최고, hintUsed ? 0 : 앞런.noHint + 1),
+      잡은몬스터: 앞.통계.잡은몬스터 + (다시 ? 1 : 0),
+      올라감: 앞.통계.올라감 || 맞힌뒤?.justMoved === 'up',
+    };
+    if (state.challenge) {
+      bonus += 도전보너스별;
+      setChallengeWins((prev) => ({ ...prev, [player.id]: (prev[player.id] ?? 0) + 1 }));
+      showLaneToast(player.id, '⚡', `도전 성공! 별 +${도전보너스별 + 1}`);
+    }
+    if (맞힌뒤 && 도전권줄까(통계.맞힘, 맞힌뒤)) setChallengeOffer((prev) => ({ ...prev, [player.id]: true }));
+    if (다시) {
+      bonus += 몬스터보너스별;
+      showLaneToast(player.id, '👾', `실수 몬스터를 잡았어요! 별 +${몬스터보너스별}`);
+    }
+    const 미션 = 오늘미션(player.attendanceNo, lesson.id);
+    for (const one of 미션) if (one.됐나(통계) && !one.됐나(앞.통계)) showLaneToast(player.id, '🎯', `미션 성공: ${one.글}`);
+    const 다함 = 앞.다함 || 미션.every((one) => one.됐나(통계));
+    if (다함 && !앞.다함) {
+      bonus += 미션보너스별;
+      showLaneToast(player.id, '🏆', `오늘의 미션 완료! 별 +${미션보너스별}`);
+    }
+    const 목표 = ghosts[player.id];
+    const 나이김 = 앞.나이김 || (목표 != null && 통계.맞힘 > 목표);
+    if (나이김 && !앞.나이김) {
+      bonus += 나이김보너스별;
+      showLaneToast(player.id, '👻', `지난번의 나를 이겼어요! 별 +${나이김보너스별}`);
+    }
+    setQuests((prev) => ({ ...prev, [player.id]: { 통계, 다함, 나이김 } }));
+    // 힌트 없이 이어서 맞히면 이 차시의 개념 카드를 얻습니다. 등급은 지금 푼 문제의 수준입니다.
+    if (!hintUsed && 앞런.noHint + 1 >= 카드조건) {
+      const 등급: 카드등급 = shownLevel(state);
+      const 넣음 = 카드넣기(cardsOf(player.attendanceNo), lesson.id, 등급);
+      if (넣음.바뀜) {
+        카드쓰기(player.attendanceNo, 넣음.모음);
+        setCardBook((prev) => ({ ...prev, [player.attendanceNo]: 넣음.모음 }));
+        setSessionCards((prev) => ({ ...prev, [player.id]: [...new Set([...(prev[player.id] ?? []), lesson.id])] }));
+        const 모양 = 카드모양[등급];
+        showLaneToast(player.id, 모양.look, `${넣음.바뀜 === 'new' ? '개념 카드 얻음' : '카드가 올랐어요'}: ${카드이름(lesson.title)} (${모양.이름})`);
+      }
+    }
+    return bonus;
+  };
+
+  // 아이가 '도전!'을 누르면 지금 문제를 한 단계 어려운 문제집의 문제로 바꿉니다.
+  const acceptChallenge = (player: Player) => {
+    setChallengeOffer((prev) => ({ ...prev, [player.id]: false }));
+    resetHintState(player.id);
+    setPlayerStates((prev) => {
+      const current = prev[player.id];
+      if (!current || current.locked || current.activeRetry || current.level === '상') return prev;
+      return { ...prev, [player.id]: { ...current, challenge: levelUp(current.level), questionStartedAt: Date.now() } };
+    });
   };
 
   const answerQuestion = (player: Player, question: Question, choiceIndex: number, manip?: ManipResult) => {
@@ -1696,14 +1817,18 @@ function App() {
       triggerWrongSignal(player.id);
     }
 
+    const hintUsed = Boolean(hintUsedThisQuestion[player.id] || hintTextOpen[player.id]);
+    const 맞힌뒤 = isCorrect ? advancePlayerState(state, players.length, false, questionBanks.하.length) : null;
+    const bonus = isPlayScene ? 0 : questAnswer(player, state, isCorrect, hintUsed, 맞힌뒤);
     rewardAnswer(player, {
       correct: isCorrect,
       golden,
       fever: feverOn,
-      hintUsed: Boolean(hintUsedThisQuestion[player.id] || hintTextOpen[player.id]),
+      hintUsed,
       friendFix: Boolean(question.manipulate?.friend),
       retry: state.activeRetry !== null,
-      levelAfter: isCorrect ? advancePlayerState(state, players.length, false, questionBanks.하.length).level : state.level,
+      levelAfter: 맞힌뒤?.level ?? state.level,
+      bonus,
     });
     setRecords((prev) => [...prev, record]);
     // 큐알로 들어온 폰은 선생님 화면과 다른 기기입니다. 로컬 상태만으로는
@@ -1933,8 +2058,11 @@ function App() {
                 type="button"
                 className="board-link-button"
                 onClick={() => {
-                  if (!window.confirm('이 컴퓨터에 모아 둔 별·꾸미개·배지를 모든 번호에서 지울까요?')) return;
+                  if (!window.confirm('이 컴퓨터에 모아 둔 별·꾸미개·배지·개념 카드와 지난번 기록을 모든 번호에서 지울까요?')) return;
                   기록장모두지우기();
+                  지난나모두지우기();
+                  카드모두지우기();
+                  setCardBook({});
                   setProfiles({});
                 }}
               >
@@ -2417,7 +2545,7 @@ function App() {
           >
             {players.map((player) => {
               const state = playerStates[player.id] ?? fallbackStates[player.id];
-              const playerQuestions = questionBanks[state.activeRetry?.level ?? state.level];
+              const playerQuestions = questionBanks[shownLevel(state)];
               const question = 주인공바꾸기(getPlayerQuestion(questionBanks, state), heroOf(player), friendNamesFor(player));
               const result = playerResults[player.id] ?? { total: 0, correct: 0, wrong: 0 };
               const successActive = Boolean(successSignals[player.id]);
@@ -2455,6 +2583,44 @@ function App() {
                     <span className="lane-stars" aria-label={`모은 별 ${profileOf(player.attendanceNo).stars}개`}>⭐ {profileOf(player.attendanceNo).stars}</span>
                     <small>{state.level} · {formatMs(state.responseMs)}</small>
                   </header>
+                  {/* 일반 차시의 게임 요소입니다: 오늘의 미션 셋, 실수 몬스터 수, 지난번의 나. */}
+                  {!isPlayScene && mode === 'playing' && (() => {
+                    const 퀘 = quests[player.id] ?? { 통계: 빈통계(), 다함: false, 나이김: false };
+                    const 몬스터수 = state.retries.length + (state.activeRetry || state.feedback === 'explain' ? 1 : 0);
+                    const 목표 = ghosts[player.id];
+                    return (
+                      <div className={`quest-row ${퀘.다함 ? 'all-done' : ''}`.trim()}>
+                        {오늘미션(player.attendanceNo, lesson.id).map((one) => {
+                          const 됨 = one.됐나(퀘.통계);
+                          return (
+                            <span key={one.id} className={`quest-chip ${됨 ? 'done' : ''}`.trim()} title={one.글} aria-label={`미션 ${one.글}${됨 ? ', 성공' : ''}`}>
+                              <i aria-hidden="true">{됨 ? '✅' : one.look}</i>
+                              <em>{one.글}</em>
+                            </span>
+                          );
+                        })}
+                        {몬스터수 > 0 && (
+                          <span className="quest-chip mistake" key={`m-${몬스터수}`} aria-label={`잡을 실수 몬스터 ${몬스터수}마리`}>
+                            <i aria-hidden="true">👾</i><em>×{몬스터수}</em>
+                          </span>
+                        )}
+                        {목표 != null && (
+                          <span className={`quest-chip ghost ${퀘.나이김 ? 'done' : ''}`.trim()} aria-label={`지난번의 나 ${목표}개, 지금 ${퀘.통계.맞힘}개`}>
+                            <i aria-hidden="true">{퀘.나이김 ? '🏅' : '👻'}</i>
+                            <em>{퀘.통계.맞힘} : {목표}</em>
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                  {!isPlayScene && mode === 'playing' && challengeOffer[player.id] && !state.locked && !state.activeRetry && !state.challenge && (
+                    <div className="challenge-offer" role="group" aria-label="도전 카드">
+                      <span className="challenge-card" aria-hidden="true">⚡</span>
+                      <p><b>도전할래?</b><small>한 단계 어려운 문제 · 맞히면 별 {도전보너스별 + 1}개 · 틀려도 괜찮아요</small></p>
+                      <button type="button" className="challenge-yes" onClick={() => acceptChallenge(player)}>도전!</button>
+                      <button type="button" className="challenge-no" onClick={() => setChallengeOffer((prev) => ({ ...prev, [player.id]: false }))}>괜찮아요</button>
+                    </div>
+                  )}
                   {겨루기 && mode === 'playing' && 역전?.id === player.id && (
                     <div className="versus-flip" key={`flip-${역전.n}`} aria-live="polite"><b>역전!</b><small>👑 이제 내가 앞서요</small></div>
                   )}
@@ -2551,6 +2717,49 @@ function App() {
                           </div>
                         </div>
                       )}
+
+                      {/* 일반 차시의 미션·실수 몬스터·지난번의 나와 개념 카드 도감입니다. 점수 칸과 섞이지 않게 따로 얇게 둡니다. */}
+                      {!openResults[player.id] && !isPlayScene && (() => {
+                        const 퀘 = quests[player.id] ?? { 통계: 빈통계(), 다함: false, 나이김: false };
+                        const 미션 = 오늘미션(player.attendanceNo, lesson.id);
+                        const 목표 = ghosts[player.id];
+                        const 이단원 = semesterUnits.find((unit) => unit.lessons.some((one) => one.id === lesson.id)) ?? selectedUnit;
+                        const 칸들 = 이단원.lessons.filter((one) => !놀이차시인가(one) && !isCastleLesson(one.title));
+                        const 모음 = cardsOf(player.attendanceNo);
+                        const 새것 = sessionCards[player.id] ?? [];
+                        return (
+                          <section className="quest-summary" aria-label="오늘의 미션과 개념 카드">
+                            <p className="quest-stats">
+                              <span>🎯 미션 <b>{미션.filter((one) => one.됐나(퀘.통계)).length}/{미션.length}{퀘.다함 ? ' 🏆' : ''}</b></span>
+                              <span>👾 잡은 실수 몬스터 <b>{퀘.통계.잡은몬스터}마리</b></span>
+                              <span>⚡ 도전 성공 <b>{challengeWins[player.id] ?? 0}번</b></span>
+                              <span>
+                                👻 지난번의 나 <b>{목표 == null ? '첫 기록' : `${목표}개 → 오늘 ${result.correct}개`}</b>
+                                {목표 != null && <em>{퀘.나이김 ? ' 이겼어요!' : ' 다음엔 이겨요'}</em>}
+                              </span>
+                            </p>
+                            {/* 개념 카드 도감: 이 단원의 차시마다 한 칸입니다. 놀이 차시는 카드가 없으므로 뺍니다. */}
+                            <div className="card-book">
+                              <span className="card-book-title">🃏 {이단원.title} 카드 <b>{칸들.filter((one) => 모음[one.id]).length}/{칸들.length}</b></span>
+                              <span className="card-row">
+                                {칸들.map((one) => {
+                                  const 등급 = 모음[one.id];
+                                  return (
+                                    <i
+                                      key={one.id}
+                                      className={`concept-card ${등급 ? `tier-${카드모양[등급].이름}` : 'empty'} ${새것.includes(one.id) ? 'new' : ''} ${one.id === lesson.id ? 'here' : ''}`.trim()}
+                                      title={등급 ? `${one.lessonNo}차시 ${카드이름(one.title)} (${카드모양[등급].이름} 카드)` : `${one.lessonNo}차시: 힌트 없이 ${카드조건}문제를 이어서 맞히면 얻어요`}
+                                    >
+                                      <b>{등급 ? 카드모양[등급].look : '?'}</b>
+                                      <small>{one.lessonNo}</small>
+                                    </i>
+                                  );
+                                })}
+                              </span>
+                            </div>
+                          </section>
+                        );
+                      })()}
 
                       {openResults[player.id] && (() => {
                         const guide = studyGuideFor(sessionRecords, player.id);
@@ -2703,8 +2912,9 @@ function App() {
                           {/* 아까 틀린 문제가 돌아왔다는 것을 알려 줍니다.
                               모르고 다시 틀리는 것과, 알고 다시 푸는 것은
                               아이에게 완전히 다른 일입니다. */}
-                          {state.activeRetry !== null && <span className="retry-tag">다시 도전</span>}
+                          {state.activeRetry !== null && <span className="retry-tag">{isPlayScene ? '다시 도전' : '👾 실수 몬스터 등장!'}</span>}
                           {/* 황금 문제는 맞히면 별을 두 배로 받습니다. 융합 문항은 늘 황금입니다. */}
+                          {state.challenge && <span className="challenge-tag">⚡ 도전 문제 · {state.challenge}</span>}
                           {golden && <span className="golden-tag">🌟 황금 문제 · 별 2배</span>}
                           <span>{question.strategy}</span>
                         </div>
@@ -2724,7 +2934,7 @@ function App() {
                             questionKey={question.id}
                             prompt={question.prompt}
                             visual={question.visual}
-                            level={state.activeRetry?.level ?? state.level}
+                            level={shownLevel(state)}
                             correct={result.correct}
                             wrong={result.wrong}
                             avatar={player.avatar}
@@ -2747,7 +2957,7 @@ function App() {
                             heartsLost={result.wrong}
                             solved={result.correct}
                             total={playerQuestions.length}
-                            level={state.activeRetry?.level ?? state.level}
+                            level={shownLevel(state)}
                             sharedScreen={!isMobileEntry}
                             // 틀린 뒤 도움말을 보는 동안에는 몬스터가 더 내려올 까닭이 없습니다. 제자리에 세워 둡니다.
                             stopped={state.feedback === 'explain'}

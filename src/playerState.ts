@@ -22,15 +22,18 @@ const STEP_UP_AFTER = 3;
 // 일이 있어서, 한 번의 실수로 수준을 내리면 실제 실력보다 아래에 머뭅니다.
 const STEP_DOWN_AFTER = 2;
 
-const levelUp = (level: Difficulty): Difficulty =>
+export const levelUp = (level: Difficulty): Difficulty =>
   LEVEL_LADDER[Math.min(LEVEL_LADDER.length - 1, LEVEL_LADDER.indexOf(level) + 1)];
 
 const levelDown = (level: Difficulty): Difficulty =>
   LEVEL_LADDER[Math.max(0, LEVEL_LADDER.indexOf(level) - 1)];
 
 // 되돌아온 문제가 있으면 그때 그 수준의 문제집에서, 없으면 지금 수준에서 냅니다.
+/** 지금 화면의 문제가 나온 수준입니다. 되돌아온 문제는 그때 수준, 도전 중이면 한 단계 위입니다. */
+export const shownLevel = (state: PlayerQuestionState): Difficulty => state.activeRetry?.level ?? state.challenge ?? state.level;
+
 export const getPlayerQuestion = (banks: Record<Difficulty, Question[]>, state: PlayerQuestionState) => {
-  const bank = banks[state.activeRetry?.level ?? state.level];
+  const bank = banks[shownLevel(state)];
   return bank[(state.activeRetry?.index ?? state.questionIndex) % bank.length];
 };
 
@@ -41,7 +44,7 @@ const RETRY_AFTER = 3;
 // 같은 문제는 두 번까지만 나옵니다. 세 번째로 또 틀린다면 그것은 사이를
 // 띄워 다시 만나게 해서 될 일이 아닙니다 — 그때 필요한 것은 되풀이가
 // 아니라 도움말이고, 그것은 틀린 그 자리에서 이미 보여 주었습니다.
-const RETRY_LIMIT = 2;
+export const RETRY_LIMIT = 2;
 
 const 최대공약수 = (a: number, b: number): number => (b === 0 ? a : 최대공약수(b, a % b));
 
@@ -73,14 +76,16 @@ export const advancePlayerState = (
   const answered = state.answered + 1;
   const shown = state.activeRetry ?? { index: state.questionIndex, level: state.level, tries: 1 };
   // 두 번까지만 되돌립니다. 세 번째로 또 틀리면 줄에서 뺍니다.
-  const queued = wasWrong && shown.tries < RETRY_LIMIT
+  // 도전 문제는 틀려도 손해가 없습니다. 다시 내지 않고, 연속 오답으로도 세지 않습니다.
+  const 도전실패 = wasWrong && Boolean(state.challenge);
+  const queued = wasWrong && !도전실패 && shown.tries < RETRY_LIMIT
     ? [...state.retries, { ...shown, tries: shown.tries + 1, dueAt: answered + RETRY_AFTER }]
     : state.retries;
 
   // 연속 정답 3번이면 올라가고, 연속 오답 2번이면 내려옵니다.
   // 되돌아온 문제도 똑같이 셈에 넣습니다.
-  const streak = wasWrong ? 0 : state.streak + 1;
-  const missStreak = wasWrong ? state.missStreak + 1 : 0;
+  const streak = 도전실패 ? state.streak : wasWrong ? 0 : state.streak + 1;
+  const missStreak = 도전실패 ? state.missStreak : wasWrong ? state.missStreak + 1 : 0;
   const level = missStreak >= STEP_DOWN_AFTER
     ? levelDown(state.level)
     : streak >= STEP_UP_AFTER
