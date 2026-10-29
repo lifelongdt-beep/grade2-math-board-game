@@ -2594,6 +2594,10 @@ function App() {
               const successActive = Boolean(successSignals[player.id]);
               const wrongActive = Boolean(wrongSignals[player.id]);
               const golden = mode === 'playing' && 황금문제인가({ questionId: question.id, seed: bankSeed, fusion: question.fusion, retry: state.activeRetry !== null });
+              // 놀이 차시의 계산 문제(312 × 2 = ? 같은 것)는 힌트 글보다 손으로 적어 볼 자리가 필요합니다.
+              // 이때는 '힌트 보기' 대신 '계산판'을 둡니다. 성 지키기는 몬스터가 내려오는 화면이라 덮지 않습니다.
+              const 놀이계산 = Boolean(game) && /\d\s*[×÷+\-−]\s*\d/.test(question.prompt);
+              const 계산판있음 = !isPlayScene || 놀이계산;
               return (
                 <article
                   className={`player-lane student-question ${mode === 'finished' ? 'finished-result' : state.feedback} ${successActive ? 'success-signal' : ''} ${wrongActive ? 'wrong-signal' : ''} ${mode === 'playing' && 불꽃단계(runs[player.id]?.fire ?? 0) ? `lane-fire-${불꽃단계(runs[player.id]?.fire ?? 0)}` : ''} ${golden ? 'golden-question' : ''}`}
@@ -3022,7 +3026,7 @@ function App() {
                             자리를 밀어내지 않고 이 칸 안에서만 스크롤됩니다. */}
                         {state.feedback !== 'explain' && (
                           <div className="hint-controls">
-                            <button
+                            {!놀이계산 && <button
                               type="button"
                               className="hint-toggle-button"
                               aria-expanded={Boolean(hintTextOpen[player.id])}
@@ -3032,7 +3036,7 @@ function App() {
                               }}
                             >
                               <Lightbulb size={16} /> {hintTextOpen[player.id] ? '힌트 접기' : '힌트 보기'}
-                            </button>
+                            </button>}
                             {(question.visual || question.walkthrough) && (
                               <button
                                 type="button"
@@ -3049,7 +3053,7 @@ function App() {
                             {/* 고학년 계산은 암산으로 되지 않습니다. 적을
                                 자리가 없으면 아이는 머릿속으로 하다 틀리거나
                                 찍습니다. 손으로 풀 자리를 문제 옆에 둡니다. */}
-                            {!isPlayScene && (
+                            {계산판있음 && (
                               <button
                                 type="button"
                                 className="scratch-toggle-button"
@@ -3065,7 +3069,7 @@ function App() {
                           </div>
                         )}
 
-                        {state.feedback !== 'explain' && hintTextOpen[player.id] && (
+                        {state.feedback !== 'explain' && !놀이계산 && hintTextOpen[player.id] && (
                           <div className="hint-text-panel" aria-label={`${player.name} 힌트`}>
                             <p className="quick-core"><span>핵심</span><span><MathText text={question.support.studentConcept} /></span></p>
                             <p><span>볼 곳</span><span><MathText text={question.support.studentHint} /></span></p>
@@ -3110,6 +3114,19 @@ function App() {
                                 <span>뒤에 숨은 쌓기나무까지 비쳐 보입니다. 하나씩 짚어 세어 보세요.</span>
                               </div>
                             )}
+                            {/* 저학년은 키가 작아 전자칠판 위쪽의 '힌트 접기'에 손이 닿지 않습니다.
+                                힌트를 다 읽고 손이 가는 아래쪽에도 접기 단추를 두고, 힌트가 길어
+                                문제 칸이 스크롤되어도 칸 아래쪽에 붙어 있게 합니다(계산판의 접기와 같은 자리). */}
+                            <button
+                              type="button"
+                              className="hint-close-bottom"
+                              onClick={() => {
+                                playTapSound();
+                                setHintTextOpen((prev) => ({ ...prev, [player.id]: false }));
+                              }}
+                            >
+                              <Lightbulb size={16} /> 힌트 접기
+                            </button>
                           </div>
                         )}
 
@@ -3119,7 +3136,7 @@ function App() {
                             넣어, 다음 문제로 넘어가면 쓴 것이 지워집니다.
                             성 지키기는 몬스터가 내려오는 화면이라 덮지
                             않습니다. */}
-                        {!isPlayScene && (
+                        {계산판있음 && (
                           <ScratchPad
                             key={`${player.id}-${question.id}-${state.answered}`}
                             open={Boolean(scratchOpen[player.id])}

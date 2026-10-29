@@ -2183,11 +2183,14 @@ button:disabled {
   display: grid;
   place-items: center;
   background: rgba(11, 20, 30, 0.5);
-  padding: 12px;
+  /* 여러 명이 나눠 쓰는 좁은 칸에서도 '자세히 보기' 판을 넓게 쓰도록 바깥 여백을 줄입니다. */
+  padding: 6px;
 }
 
 .hint-modal-card {
-  width: min(560px, calc(100% - 16px));
+  width: min(560px, 100%);
+  box-sizing: border-box;
+  overflow-x: hidden;
   max-height: calc(100% - 24px);
   overflow: auto;
   display: grid;
@@ -2243,7 +2246,7 @@ button:disabled {
 }
 
 .interactive-clock-svg {
-  width: min(280px, 68vw);
+  width: min(280px, 100%);
   touch-action: none;
 }
 
@@ -6870,7 +6873,7 @@ body::before {
 }
 
 .symmetry-lab > svg {
-  width: min(340px, 78vw);
+  width: min(340px, 100%);
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
@@ -6878,7 +6881,7 @@ body::before {
 .symmetry-slider {
   display: grid;
   gap: 4px;
-  width: min(340px, 78vw);
+  width: min(340px, 100%);
 }
 
 /* 손잡이는 아이 손가락으로 잡힐 만큼 커야 합니다. */
@@ -7006,7 +7009,8 @@ body::before {
 }
 
 .walk-board {
-  width: min(330px, 80vw);
+  /* 판 너비에 맞춰 줄어듭니다. 화면(vw)에 맞추면 좁은 칸의 판보다 커져 오른쪽이 잘렸습니다. */
+  width: min(330px, 100%);
   height: auto;
   /* 줄이 많은 나눗셈도 설명 글과 단추가 한 화면에 함께 보이게 합니다. */
   max-height: 40vh;
@@ -7142,7 +7146,7 @@ body::before {
 }
 
 .share-lab .share-scene {
-  width: min(360px, 82vw);
+  width: min(360px, 100%);
   height: auto;
   max-height: 46vh;
 }
@@ -11530,3 +11534,30 @@ body.teacher-book-page::before, body.teacher-book-page::after { display: none !i
   .tb-guide { break-inside: avoid; }
 }
 .tb-root .tb-more { margin-top: 10px; }
+
+/* 힌트 판 아래쪽의 '힌트 접기'입니다. 문제 칸이 스크롤되어도 칸 아래쪽에 붙어 있어,
+   키가 작은 아이도 손이 닿는 높이에서 접을 수 있습니다. */
+.hint-text-panel .hint-close-bottom {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 4px;
+  border: 2px solid #0f6b5e;
+  border-radius: 12px;
+  background: #0f6b5e;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 900;
+  box-shadow: 0 -6px 12px rgba(241, 252, 252, 0.95);
+  cursor: pointer;
+}
+
+/* 놀이 화면의 문제 글은 어두운 놀이판 위라 흰 글자인데, 계산판은 밝은 종이라 그 흰 글자가 묻혔습니다.
+   계산판 안의 문제 글은 늘 짙은 색으로 둡니다. */
+.student-question-body .scratch-pad .scratch-pad-prompt.scratch-pad-prompt { color: #123c52; text-shadow: none; }
