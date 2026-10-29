@@ -741,6 +741,10 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
           <span><TimerReset size={17} /> 팝업을 닫아도 기록은 현재 수업 세션에 유지됩니다.</span>
           <span><Download size={17} /> 분석 엑셀은 전체 요약, 학생별 분석, 전체 풀이 기록, 틀린 문제 시트를 포함합니다.</span>
           <span><FileDown size={17} /> 학생별 PDF는 각 학생 카드에서 내려받을 수 있습니다.</span>
+          <span>
+            📒 이번 수업뿐 아니라 지금까지 쌓인 모든 기록(날짜·단원·차시별 표와 그래프, 지도 방법, 범위를 고른 오답 PDF)은{' '}
+            <a href={`${window.location.pathname}?page=records`} target="_blank" rel="noopener">학습 기록장</a>에서 볼 수 있습니다.
+          </span>
         </div>
       </section>
 
