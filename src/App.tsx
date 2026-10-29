@@ -70,6 +70,7 @@ import { 도전권줄까, 도전보너스별, 나이김보너스별, 몬스터�
 import { 동물이름, 명단쓰기, 명단읽기, 명단풀기, 방식쓰기, 방식읽기, 주인공바꾸기, type 이름바꾸기방식 } from './data/nameSwap';
 import { 기록장모두지우기, 기록장읽기, 기록장쓰기, 다음꾸미개, 받을별, 배지들, 불꽃단계, 새로붙은, 새배지, 차림새, 틀린뒤불꽃, 황금문제인가, 대왕때리기, 대왕읽기, 대왕쓰기, 지금대왕, type 기록장, type 대왕, type 대왕싸움 } from './rewards';
 import { curriculum } from './data/allCurriculum';
+import { 마지막차시쓰기, 마지막차시읽기 } from './data/lastLesson';
 import { 기록더하기, 기록만들기, 오래남기기 } from './data/learningLog';
 import { 도입차시인가 } from './data/introReview';
 import { ALL_CASTLE_DEFENSE_DANS, CASTLE_DIVIDE_TITLE, isCastleLesson } from './data/lessonKinds';
@@ -188,9 +189,26 @@ const readInitialRoute = (): InitialRoute => {
   const dbParam = params.get('db');
   const roomParam = params.get('room');
   const checkParam = params.get('check');
+  const isMobileEntry = params.get('mobile') === '1' || params.get('m') === '1';
+  // 주소에 차시가 없으면 선생님이 마지막으로 수업한 차시로 엽니다(data/lastLesson.ts).
+  // 주소에 적힌 차시(공유 링크·QR)가 늘 먼저이고, 학생 휴대폰은 쓰지 않습니다.
+  const 지난차시 = !isMobileEntry && !semesterParam && !unitParam && !lessonParam ? 마지막차시읽기(curriculum) : null;
+  if (지난차시) {
+    return {
+      isMobileEntry,
+      syncEnabled: params.get('sync') !== '0',
+      cloudDbUrl: (dbParam && normalizeDbUrl(dbParam)) || undefined,
+      cloudRoom: roomParam && isRoomCode(roomParam) ? roomParam : undefined,
+      semester: 지난차시.semester,
+      unitSelection: 지난차시.unit,
+      lessonId: 지난차시.lessonId,
+      duration: durationParam ? parseSessionDuration(durationParam) : parseSessionDuration(String(지난차시.duration ?? '')),
+      checkLevel: checkParam === '하' || checkParam === '중' || checkParam === '상' ? checkParam : undefined,
+    };
+  }
 
   return {
-    isMobileEntry: params.get('mobile') === '1' || params.get('m') === '1',
+    isMobileEntry,
     syncEnabled: params.get('sync') !== '0',
     cloudDbUrl: (dbParam && normalizeDbUrl(dbParam)) || undefined,
     cloudRoom: roomParam && isRoomCode(roomParam) ? roomParam : undefined,
@@ -661,14 +679,15 @@ function App() {
     if (dbUrl && room) return { kind: 'cloud', dbUrl, room };
     return { kind: 'local' };
   }, [initialRoute.cloudDbUrl, initialRoute.cloudRoom, isMobileEntry, relayDbUrl, relayRoom]);
-  const skipInitialSemesterReset = useRef(true);
-  const skipInitialUnitReset = useRef(true);
+  const 앞학기 = useRef(initialRoute.semester);
   const [semester, setSemester] = useState<Unit['semester']>(initialRoute.semester);
   const semesterUnits = useMemo(() => curriculum.filter((unit) => unit.semester === semester), [semester]);
   const [unitSelection, setUnitSelection] = useState<UnitSelection>(initialRoute.unitSelection ?? 1);
   const isSemesterReviewSelected = unitSelection === semesterReviewUnitValue;
   const selectedUnitNo = isSemesterReviewSelected ? semesterUnits[0]?.unitNo : unitSelection;
   const selectedUnit = semesterUnits.find((unit) => unit.unitNo === selectedUnitNo) ?? semesterUnits[0];
+  const 지금단원열쇠 = isSemesterReviewSelected ? `${semester}-review` : `${selectedUnit.semester}-${selectedUnit.unitNo}`;
+  const 앞단원 = useRef(지금단원열쇠);
   const unitReviewId = unitReviewIdFor(semester, selectedUnit.unitNo);
   const semesterReviewId = semesterReviewIdFor(semester);
   const [lessonId, setLessonId] = useState(initialRoute.lessonId ?? selectedUnit.lessons[0].id);
@@ -874,10 +893,10 @@ function App() {
   const [wrongSignals, setWrongSignals] = useState<Record<number, number>>({});
 
   useEffect(() => {
-    if (skipInitialSemesterReset.current) {
-      skipInitialSemesterReset.current = false;
-      return;
-    }
+    // 학기가 정말 바뀌었을 때만 첫 단원으로 돌립니다. '처음 한 번은 건너뛰기'로 하면 개발 화면처럼
+    // 효과가 두 번 도는 곳에서 두 번째에 첫 단원으로 돌아가, 주소나 지난 수업의 단원이 사라졌습니다.
+    if (앞학기.current === semester) return;
+    앞학기.current = semester;
 
     const firstUnit = curriculum.find((unit) => unit.semester === semester);
     if (!firstUnit) return;
@@ -886,10 +905,10 @@ function App() {
   }, [semester]);
 
   useEffect(() => {
-    if (skipInitialUnitReset.current) {
-      skipInitialUnitReset.current = false;
-      return;
-    }
+    // 단원이 정말 바뀌었을 때만 첫 차시로 돌립니다(위 학기와 같은 까닭).
+    const 단원열쇠 = 지금단원열쇠;
+    if (앞단원.current === 단원열쇠) return;
+    앞단원.current = 단원열쇠;
 
     if (isSemesterReviewSelected) {
       setLessonId(semesterReviewId);
@@ -1371,6 +1390,8 @@ function App() {
 
   const startGame = () => {
     const now = Date.now();
+    // 다음에 첫 화면을 열면 이 차시가 골라져 있게 적어 둡니다. 학생 휴대폰은 적지 않습니다.
+    if (!isMobileEntry) 마지막차시쓰기({ semester, unit: unitSelection, lessonId: lesson.id, duration: sessionDuration });
     setBonusUsed(0);
     setBonusFlash(0);
     setRecords([]);
