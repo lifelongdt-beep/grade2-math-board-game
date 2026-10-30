@@ -378,6 +378,12 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
       <div className="arcade-hud" aria-label={`점수 ${점수}점, 스테이지 ${스테이지}`}>
         <span className="arcade-score">SCORE <b key={점수} className={점수 > 0 ? 'bump' : ''}>{String(점수).padStart(6, '0')}</b></span>
         {배율 > 1 && <span className="arcade-multi" key={`x-${배율}`}>×{배율}</span>}
+        {/* 연속 콤보는 점수판 줄 안에 둡니다. 놀이판 위에 따로 띄우면 문제 카드를 가렸습니다. */}
+        {연속 >= 2 && (
+          <span className={`game-combo ${연속 >= 5 ? 'hot' : ''}`.trim()} key={`combo-${연속}`}>
+            🔥 {연속}콤보{연속 >= 3 && <small> 속도 UP</small>}
+          </span>
+        )}
         <span className="arcade-stage">STAGE <b>{스테이지}</b></span>
       </div>
       {준비 && (
@@ -386,11 +392,6 @@ export function GameScene({ game, questionKey, prompt, visual, level, correct, w
       {판끝알림}
       {맞힘 > 0 && 맞힘 % 스테이지문제 === 0 && !방금이김 && (
         <div className="arcade-banner stage" key={`stage-${스테이지}`} aria-hidden="true"><b>STAGE {스테이지}!</b><small>SPEED UP</small></div>
-      )}
-      {연속 >= 2 && (
-        <div className={`game-combo ${연속 >= 5 ? 'hot' : ''}`.trim()} key={`combo-${연속}`}>
-          🔥 {연속} 콤보!{연속 >= 3 && <small>속도 UP</small>}
-        </div>
       )}
     </>
   );

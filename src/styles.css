@@ -11561,3 +11561,24 @@ body.teacher-book-page::before, body.teacher-book-page::after { display: none !i
 /* 놀이 화면의 문제 글은 어두운 놀이판 위라 흰 글자인데, 계산판은 밝은 종이라 그 흰 글자가 묻혔습니다.
    계산판 안의 문제 글은 늘 짙은 색으로 둡니다. */
 .student-question-body .scratch-pad .scratch-pad-prompt.scratch-pad-prompt { color: #123c52; text-shadow: none; }
+
+/* 연속 콤보는 점수판 줄(SCORE와 STAGE 사이) 안에 작게 찍힙니다. 놀이판 위에 떠 있으면 문제 카드를 가렸습니다. */
+.arcade-hud .game-combo,
+.game-track:has(.rival-ladder) .arcade-hud .game-combo {
+  position: static;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  margin: 0 auto;
+  padding: 1px 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 0 10px rgba(255, 120, 40, 0.7);
+  transform-origin: center;
+}
+.arcade-hud .game-combo small { font-size: 10px; }
+/* 넷·다섯이 나눠 쓰는 좁은 칸에서는 점수판 줄이 빠듯해 '속도 UP' 글은 빼고 콤보 수만 둡니다. */
+.players-4 .arcade-hud .game-combo small,
+.players-5 .arcade-hud .game-combo small { display: none; }
