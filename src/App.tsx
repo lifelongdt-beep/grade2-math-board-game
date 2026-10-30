@@ -2660,14 +2660,6 @@ function App() {
                       </div>
                     );
                   })()}
-                  {!isPlayScene && mode === 'playing' && challengeOffer[player.id] && !state.locked && !state.activeRetry && !state.challenge && (
-                    <div className="challenge-offer" role="group" aria-label="도전 카드">
-                      <span className="challenge-card" aria-hidden="true">⚡</span>
-                      <p><b>도전할래?</b><small>한 단계 어려운 문제 · 맞히면 별 {도전보너스별 + 1}개 · 틀려도 괜찮아요</small></p>
-                      <button type="button" className="challenge-yes" onClick={() => acceptChallenge(player)}>도전!</button>
-                      <button type="button" className="challenge-no" onClick={() => setChallengeOffer((prev) => ({ ...prev, [player.id]: false }))}>괜찮아요</button>
-                    </div>
-                  )}
                   {겨루기 && mode === 'playing' && 역전?.id === player.id && (
                     <div className="versus-flip" key={`flip-${역전.n}`} aria-live="polite"><b>역전!</b><small>👑 이제 내가 앞서요</small></div>
                   )}
@@ -3130,6 +3122,16 @@ function App() {
                           </div>
                         )}
 
+                        {/* 도전 카드는 문제 칸 아래쪽(답 단추 바로 위)에 붙여 둡니다. 위쪽에 띄우면 키가 작은
+                            저학년이 '도전!'에 손이 닿지 않았습니다. 문제 칸이 스크롤되어도 아래에 붙어 있습니다. */}
+                        {!isPlayScene && mode === 'playing' && challengeOffer[player.id] && !state.locked && !state.activeRetry && !state.challenge && (
+                          <div className="challenge-offer" role="group" aria-label="도전 카드">
+                            <span className="challenge-card" aria-hidden="true">⚡</span>
+                            <p><b>도전할래?</b><small>한 단계 어려운 문제 · 맞히면 별 {도전보너스별 + 1}개 · 틀려도 괜찮아요</small></p>
+                            <button type="button" className="challenge-yes" onClick={() => acceptChallenge(player)}>도전!</button>
+                            <button type="button" className="challenge-no" onClick={() => setChallengeOffer((prev) => ({ ...prev, [player.id]: false }))}>괜찮아요</button>
+                          </div>
+                        )}
                         {/* 계산판입니다. 문제 칸을 그대로 덮되 답 칸은
                             덮지 않습니다 — 쓰다가 답이 보이면 접지 않고
                             바로 누를 수 있어야 합니다. key에 문제 번호를

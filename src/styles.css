@@ -11233,12 +11233,10 @@ body::before {
 /* ── 도전 카드 ──────────────────────────────────────────────────
    맞힌 수가 4의 배수가 되면 이름 줄 아래에 잠깐 놓입니다. 아이가 고르는 것이므로 단추를 크게 둡니다. */
 .challenge-offer {
-  /* 칸의 줄 나눔(grid)을 흔들지 않게 문제 카드 위에 떠 있게 둡니다. */
-  position: absolute;
+  /* 문제 칸(스크롤되는 칸) 아래쪽에 붙어, 답 단추 바로 위 손이 닿는 높이에 놓입니다. */
+  position: sticky;
   z-index: 5;
-  top: 74px;
-  left: 10px;
-  right: 10px;
+  bottom: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -11582,3 +11580,12 @@ body.teacher-book-page::before, body.teacher-book-page::after { display: none !i
 /* 넷·다섯이 나눠 쓰는 좁은 칸에서는 점수판 줄이 빠듯해 '속도 UP' 글은 빼고 콤보 수만 둡니다. */
 .players-4 .arcade-hud .game-combo small,
 .players-5 .arcade-hud .game-combo small { display: none; }
+/* 도전 카드가 문제 칸 안으로 들어오면서, 문제 칸 글(p)을 희게 칠하는 규칙이 '도전할래?'까지 덮었습니다. */
+.student-question-body .challenge-offer.challenge-offer p,
+.student-question-body .challenge-offer.challenge-offer p b { color: #2E1A5C; text-shadow: none; }
+.student-question-body .challenge-offer.challenge-offer p small { color: #4C3A7A; text-shadow: none; }
+/* 좁은 칸(넷·다섯)에서는 글을 한 줄에 두고 '도전!'·'괜찮아요'는 다음 줄로 내려 크게 둡니다. */
+.challenge-offer { flex-wrap: wrap; }
+.challenge-offer p { flex: 1 1 150px; }
+.players-4 .challenge-offer button,
+.players-5 .challenge-offer button { flex: 1 1 0; }
