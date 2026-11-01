@@ -11609,3 +11609,4 @@ body.teacher-book-page::before, body.teacher-book-page::after { display: none !i
 .pdf-manip .manip-mission { font-size: 12px; }
 /* 종이에서는 손으로 움직일 수 없으므로 '손으로 움직여 보며…' 임무 줄은 감춥니다. */
 .pdf-manip .manip-mission { display: none; }
+.pdf-manip .manip-help-line.ok { color: #0F6B5E; background: #E8F7EF; font-weight: 800; }
