@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { QuestionVisualGraphic } from './QuestionVisualGraphic';
+import { PdfFigure, 보기있는문제, 판없는조작문제 } from './PdfFigure';
 import { MathText } from './MathText';
 import { DayColumns, DayLine, HBarChart, 단계이름, 정답률단계 } from './BookCharts';
 import {
@@ -637,7 +637,7 @@ function WrongPdf({ 걸린, 이름, 범위글, 알리기 }: { 걸린: 학습기�
     set그릴것(고른모음);
   };
 
-  const 쪽묶기 = (list: 학습기록[]) => Array.from({ length: Math.ceil(list.length / 6) }, (_, i) => list.slice(i * 6, i * 6 + 6));
+  const 쪽묶기 = (list: 학습기록[]) => Array.from({ length: Math.ceil(list.length / 4) }, (_, i) => list.slice(i * 4, i * 4 + 4));
 
   return (
     <section className="tb-card">
@@ -650,9 +650,9 @@ function WrongPdf({ 걸린, 이름, 범위글, 알리기 }: { 걸린: 학습기�
         <label>학생마다 최대
           <select value={고르기.최대} onChange={(e) => set고르기({ ...고르기, 최대: Number(e.target.value) })}>
             <option value={0}>모두</option>
-            <option value={6}>6문제(1쪽)</option>
-            <option value={12}>12문제(2쪽)</option>
-            <option value={24}>24문제(4쪽)</option>
+            <option value={4}>4문제(1쪽)</option>
+            <option value={8}>8문제(2쪽)</option>
+            <option value={16}>16문제(4쪽)</option>
           </select>
           <small>최근에 틀린 것부터</small>
         </label>
@@ -684,7 +684,7 @@ function WrongPdf({ 걸린, 이름, 범위글, 알리기 }: { 걸린: 학습기�
       <button type="button" className="tb-button" disabled={고른모음.length === 0 || 만드는중} onClick={만들기}>
         {만드는중 ? 'PDF 만드는 중…' : `PDF 만들기 (${고른모음.length}명, ${고른모음.reduce((s, one) => s + one.문제.length, 0)}문제)`}
       </button>
-      <p className="tb-note">학생마다 새 쪽에서 시작합니다. 한 쪽에 6문제씩 들어갑니다.</p>
+      <p className="tb-note">학생마다 새 쪽에서 시작합니다. 한 쪽에 4문제씩 들어갑니다. 손으로 옮기고 그리는 문제는 화면과 같은 판이 함께 들어갑니다.</p>
 
       {그릴것 && (
         <div className="pdf-pages" aria-hidden="true" ref={판}>
@@ -696,15 +696,16 @@ function WrongPdf({ 걸린, 이름, 범위글, 알리기 }: { 걸린: 학습기�
                   <section className="pdf-page pdf-problem-page" key={`p${no}-${pi}`}>
                     <p className="pdf-kicker">수학 오답 복습 · 문제</p>
                     <h1>{이름(no)} · 틀린 문제 다시 풀기</h1>
-                    <p className="pdf-meta">{범위글} · 문제 {pi * 6 + 1}-{pi * 6 + page.length} / 총 {문제.length}문항</p>
+                    <p className="pdf-meta">{범위글} · 문제 {pi * 4 + 1}-{pi * 4 + page.length} / 총 {문제.length}문항</p>
                     <div className="pdf-card-grid">
                       {page.map((one, i) => (
                         <article className="pdf-mini-card" key={one.id}>
-                          <header><strong>문제 {pi * 6 + i + 1}</strong><span>{one.difficulty}</span></header>
+                          <header><strong>문제 {pi * 4 + i + 1}</strong><span>{one.difficulty}</span></header>
                           <p className="pdf-mini-meta">{단원이름(one)} · {차시이름(one)}</p>
-                          <QuestionVisualGraphic visual={one.visual} className="pdf-question-visual" />
                           <p className="pdf-mini-question"><MathText text={one.prompt} /></p>
-                          {one.choices.length > 1 && (
+                          <PdfFigure visual={one.visual} manipulate={one.manipulate} />
+                          {판없는조작문제(one) && <p className="pdf-mini-memo">화면에서 직접 옮기거나 그려 보는 문제였어요. 판은 화면에서 다시 풀어 보세요.</p>}
+                          {보기있는문제(one) && (
                             <ol className="pdf-mini-choices">
                               {one.choices.map((c, ci) => <li key={ci}><span className="pdf-choice-no">{ci + 1}</span><MathText text={c} /></li>)}
                             </ol>
@@ -719,12 +720,13 @@ function WrongPdf({ 걸린, 이름, 범위글, 알리기 }: { 걸린: 학습기�
                   <section className="pdf-page pdf-answer-page" key={`a${no}-${pi}`}>
                     <p className="pdf-kicker">수학 오답 복습 · 정답과 풀이</p>
                     <h1>{이름(no)} · 정답과 풀이</h1>
-                    <p className="pdf-meta">정답과 풀이 {pi * 6 + 1}-{pi * 6 + page.length} / 총 {문제.length}문항</p>
+                    <p className="pdf-meta">정답과 풀이 {pi * 4 + 1}-{pi * 4 + page.length} / 총 {문제.length}문항</p>
                     <div className="pdf-card-grid">
                       {page.map((one, i) => (
                         <article className="pdf-mini-card pdf-solution-card" key={`${one.id}-a`}>
-                          <header><strong>문제 {pi * 6 + i + 1}</strong><span>{one.date}</span></header>
+                          <header><strong>문제 {pi * 4 + i + 1}</strong><span>{one.date}</span></header>
                           <p className="pdf-mini-answer">정답: <MathText text={one.answer} /></p>
+                          <PdfFigure manipulate={one.manipulate} answer />
                           <p className="pdf-mini-memo">그때 고른 답: <MathText text={one.chosen || '-'} /></p>
                           {one.support?.coreConcept && <p className="pdf-mini-concept">핵심: <MathText text={one.support.coreConcept} /></p>}
                           {one.support?.steps?.length ? <p className="pdf-mini-explanation">풀이: <MathText text={one.support.steps.join(' → ')} /></p>
