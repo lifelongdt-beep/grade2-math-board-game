@@ -1809,6 +1809,8 @@ function App() {
       visual: question.visual,
       correct: isCorrect,
       chosen: manip ? manip.said : question.choices[choiceIndex] ?? '',
+      // 조작 문제는 판을 함께 남겨 오답 PDF에 같은 판을 그립니다.
+      ...(question.manipulate ? { manipulate: question.manipulate } : {}),
       // 되돌아온 문제면 두 번째 이후 시도입니다.
       attempts: state.activeRetry === null ? 1 : 2,
       responseMs,

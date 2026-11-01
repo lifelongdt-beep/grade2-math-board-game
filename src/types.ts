@@ -1486,6 +1486,8 @@ export interface AnswerRecord {
   // 아이가 실제로 누른 보기입니다. 무엇을 골랐는지가 남아 있어야
   // 오답 노트에서 "48+25를 63이라고 했구나" 하고 짚어 줄 수 있습니다.
   chosen: string;
+  // 손으로 옮기고 그리는 문제의 판입니다. 오답 PDF에 같은 판을 그려 다시 풀게 할 때 씁니다.
+  manipulate?: Manipulation;
   attempts: number;
   responseMs: number;
   answeredAt: string;

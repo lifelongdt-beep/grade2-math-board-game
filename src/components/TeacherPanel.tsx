@@ -11,7 +11,7 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
-import { QuestionVisualGraphic } from './QuestionVisualGraphic';
+import { PdfFigure, 보기있는문제, 판없는조작문제 } from './PdfFigure';
 import { MathText } from './MathText';
 import type { AnswerRecord, Lesson, Player, Question } from '../types';
 
@@ -29,6 +29,9 @@ interface TeacherPanelProps {
 }
 
 const formatMs = (ms: number) => `${(ms / 1000).toFixed(1)}초`;
+
+// 오답 PDF 한 쪽에 넣는 문제 수입니다. 그림·판이 읽을 수 있는 크기가 되도록 네 문제(2×2)로 둡니다.
+const 쪽당문제 = 4;
 
 const chunkRecords = (items: AnswerRecord[], size: number) =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
@@ -429,8 +432,14 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
     .sort((a, b) => (b.share?.gave ?? 0) - (a.share?.gave ?? 0));
   const most = ranked[0]?.share?.gave ?? 0;
   const wrongRecords = records.filter((record) => !record.correct);
+  // 오답 PDF에 넣을 학생별 틀린 문제입니다. 틀린 문제는 몇 문제 뒤에 다시 나오므로 같은 문제를 두 번
+  // 틀리면 PDF에 똑같은 문제가 두 번 실렸습니다. 같은 문제는 마지막에 틀린 것 하나만 둡니다.
   const wrongRecordsByPlayer = Object.fromEntries(
-    players.map((player) => [player.id, wrongRecords.filter((record) => record.playerId === player.id)]),
+    players.map((player) => {
+      const 내것 = wrongRecords.filter((record) => record.playerId === player.id);
+      const 마지막 = new Map(내것.map((record) => [record.questionId, record]));
+      return [player.id, 내것.filter((record) => 마지막.get(record.questionId) === record)];
+    }),
   );
   const filteredWrongRecords =
     wrongRecordFilter === 'all'
@@ -751,39 +760,41 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
       <div className="pdf-pages" aria-hidden="true">
         {players.map((player) => {
           const studentWrongRecords = wrongRecordsByPlayer[player.id] ?? [];
-          const wrongRecordPages = chunkRecords(studentWrongRecords, 6);
+          // 그림과 손으로 그리는 판이 알아보기 쉬운 크기로 들어가도록 한 쪽에 네 문제씩 둡니다.
+          const wrongRecordPages = chunkRecords(studentWrongRecords, 쪽당문제);
 
           return (
             <div id={`wrong-report-pages-${player.id}`} key={player.id}>
               {wrongRecordPages.map((pageRecords, pageIndex) => (
                 <section className="pdf-page pdf-problem-page" key={`${player.id}-problem-page-${pageIndex + 1}`}>
-                  <p className="pdf-kicker">2학년 수학 오답 복습 · 문제</p>
+                  <p className="pdf-kicker">{lesson.semester.split('-')[0]}학년 수학 오답 복습 · 문제</p>
                   <h1>{player.name} · {lesson.unitTitle} · {lessonFileLabel(lesson)}</h1>
                   <p className="pdf-meta">
-                    문제 {pageIndex * 6 + 1}-{pageIndex * 6 + pageRecords.length} / 총 {studentWrongRecords.length}문항
+                    문제 {pageIndex * 쪽당문제 + 1}-{pageIndex * 쪽당문제 + pageRecords.length} / 총 {studentWrongRecords.length}문항
                   </p>
                   <div className="pdf-card-grid">
                     {pageRecords.map((record, recordIndex) => (
                       <article className="pdf-mini-card" key={`${record.id}-problem`}>
                         <header>
-                          <strong>문제 {pageIndex * 6 + recordIndex + 1}</strong>
+                          <strong>문제 {pageIndex * 쪽당문제 + recordIndex + 1}</strong>
                           <span>{record.difficulty}</span>
                         </header>
                         <p className="pdf-mini-meta">{record.strategy}</p>
-                        <QuestionVisualGraphic visual={record.visual} className="pdf-question-visual" />
                         <p className="pdf-mini-question"><MathText text={record.prompt} /></p>
+                        <PdfFigure visual={record.visual} manipulate={record.manipulate} />
+                        {판없는조작문제(record) && <p className="pdf-mini-memo">화면에서 직접 옮기거나 그려 보는 문제였어요. 판은 화면에서 다시 풀어 보세요.</p>}
                         {/* 화면에서는 보기마다 1·2·3·4 번호가 붙어 있습니다.
                             인쇄물에서도 같은 번호가 보여야 아이가 "3번을
                             골랐구나" 하고 짚어 볼 수 있습니다. 목록 기본
                             번호는 인쇄에서 빠지는 일이 있어 직접 씁니다. */}
-                        <ol className="pdf-mini-choices">
+                        {보기있는문제(record) && <ol className="pdf-mini-choices">
                           {record.choices.map((choice, choiceIndex) => (
                             <li key={`${record.id}-choice-${choiceIndex}`}>
                               <span className="pdf-choice-no">{choiceIndex + 1}</span>
                               <MathText text={choice} />
                             </li>
                           ))}
-                        </ol>
+                        </ol>}
                       </article>
                     ))}
                   </div>
@@ -793,19 +804,20 @@ export function TeacherPanel({ isOpen, onClose, records, players, lesson, curren
 
               {wrongRecordPages.map((pageRecords, pageIndex) => (
                 <section className="pdf-page pdf-answer-page" key={`${player.id}-answer-page-${pageIndex + 1}`}>
-                  <p className="pdf-kicker">2학년 수학 오답 복습 · 정답과 풀이</p>
+                  <p className="pdf-kicker">{lesson.semester.split('-')[0]}학년 수학 오답 복습 · 정답과 풀이</p>
                   <h1>{player.name} · {lesson.unitTitle} · {lessonFileLabel(lesson)}</h1>
                   <p className="pdf-meta">
-                    정답과 풀이 {pageIndex * 6 + 1}-{pageIndex * 6 + pageRecords.length} / 총 {studentWrongRecords.length}문항
+                    정답과 풀이 {pageIndex * 쪽당문제 + 1}-{pageIndex * 쪽당문제 + pageRecords.length} / 총 {studentWrongRecords.length}문항
                   </p>
                   <div className="pdf-card-grid">
                     {pageRecords.map((record, recordIndex) => (
                       <article className="pdf-mini-card pdf-solution-card" key={`${record.id}-answer`}>
                         <header>
-                          <strong>문제 {pageIndex * 6 + recordIndex + 1}</strong>
+                          <strong>문제 {pageIndex * 쪽당문제 + recordIndex + 1}</strong>
                           <span>{record.difficulty}</span>
                         </header>
                         <p className="pdf-mini-answer">정답: <MathText text={record.answer} /></p>
+                        <PdfFigure manipulate={record.manipulate} answer />
                         <p className="pdf-mini-concept">핵심: <MathText text={record.support.coreConcept} /></p>
                         <p className="pdf-mini-explanation">풀이: <MathText text={record.support.steps.join(' → ')} /></p>
                         <p className="pdf-mini-explanation">조심: <MathText text={record.support.misconceptionTip} /></p>

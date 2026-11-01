@@ -12,7 +12,7 @@
 //   · 학생 휴대폰(QR로 들어온 화면)에서는 쌓지 않습니다. 그 기록은 교사 화면이 받아 와서 쌓습니다.
 // ════════════════════════════════════════════════════════════════════
 
-import type { AnswerRecord, ConceptTag, Difficulty, LearningSupport, Lesson, QuestionVisual, Semester } from '../types';
+import type { AnswerRecord, ConceptTag, Difficulty, LearningSupport, Lesson, Manipulation, QuestionVisual, Semester } from '../types';
 
 /** 학습 기록장에 남는 한 문제의 기록입니다. 누가(출석번호)·언제·어느 차시를 풀었는지가 함께 남습니다. */
 export interface 학습기록 {
@@ -44,6 +44,8 @@ export interface 학습기록 {
   misconception: string;
   support: LearningSupport;
   visual?: QuestionVisual;
+  /** 손으로 옮기고 그리는 문제의 판입니다(오답 PDF에 다시 그립니다). 이 자료를 남기기 전의 기록에는 없습니다. */
+  manipulate?: Manipulation;
   hintUsed: boolean;
   /** 1이면 처음 푼 문제, 2 이상이면 틀린 뒤 다시 나온 문제입니다. */
   attempts: number;
@@ -94,6 +96,7 @@ export const 기록만들기 = (
     misconception: record.misconception,
     support: record.support,
     ...(record.visual ? { visual: record.visual } : {}),
+    ...(record.manipulate ? { manipulate: record.manipulate } : {}),
     hintUsed: Boolean(record.hintUsed),
     attempts: record.attempts,
     responseMs: record.responseMs,
