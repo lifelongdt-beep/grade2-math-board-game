@@ -1310,6 +1310,21 @@ export interface BalanceVisual {
   leftG?: number;
 }
 
+/**
+ * 모눈 위에 그은 꺾은 선입니다(2학년 길이 재기 고난도). 한 칸의 길이를 모눈 위쪽과
+ * 왼쪽에 적고, 선은 모눈의 줄을 따라 꺾여 갑니다. path는 [열, 줄] 모눈 점이고
+ * (왼쪽 위가 [0, 0]), 이웃한 두 점은 가로나 세로로만 이어집니다.
+ */
+export interface GridPathVisual {
+  kind: 'grid-path';
+  label: string;
+  cols: number;
+  rows: number;
+  /** 한 칸의 길이를 적은 글(예: '2 cm')입니다. */
+  cell: string;
+  path: Array<[number, number]>;
+}
+
 export interface GridMoveVisual {
   kind: 'grid-move';
   label: string;
@@ -1396,6 +1411,7 @@ export type QuestionVisual =
   | BarGraphVisual
   | LineGraphVisual
   | GridMoveVisual
+  | GridPathVisual
   | RatioGraphVisual
   | StackPlanVisual
   | StackIsoVisual

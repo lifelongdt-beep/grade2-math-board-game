@@ -383,7 +383,7 @@ describe('the maths in each question is true', () => {
     // 모양은?'은 시계를 그리라는 말이 아니라 둥근 것의 예를 든 말입니다.
     // 보라고 시키는 말만 봅니다.
     const subjects: Array<{ name: string; says: RegExp; drawnBy: string[] }> = [
-      { name: '쌓기나무', says: /쌓기나무|쌓은 모양|쌓아 올린/, drawnBy: ['cube-stack', 'cube-pattern', 'cube-views'] },
+      { name: '쌓기나무', says: /쌓기나무|쌓은 모양|쌓아 올린/, drawnBy: ['cube-stack', 'cube-pattern', 'cube-views', 'stack-iso'] },
       { name: '시계', says: /시계를 보고|시계가 나타내|몇 시 몇 분|짧은바늘|긴바늘/, drawnBy: ['clock'] },
       { name: '달력', says: /달력을 보고|달력에서/, drawnBy: ['calendar'] },
       { name: '수직선', says: /수직선/, drawnBy: ['number-line'] },
