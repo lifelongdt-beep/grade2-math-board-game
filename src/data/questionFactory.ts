@@ -17889,8 +17889,14 @@ const 차시원문항 = (
   if (!늘림.length) return 기본;
   const 있는글 = new Set(기본.map((q) => q.prompt));
   const 더할 = buildGrade5Questions(lesson, difficulty, 늘림, 판, 1).filter((q) => !있는글.has(q.prompt));
-  // 처음 판은 서른 문항입니다. 고난도 문항이 들어간 만큼 2학년 생성기의 뒤쪽 문항을 덜어 냅니다.
-  if (!판) return [...기본.slice(0, Math.max(0, 기본.length - 더할.length)), ...더할];
+  // 처음 판은 서른 문항입니다. 고난도 문항이 들어간 만큼 2학년 생성기의 문항을 뒤에서부터 덜어 냅니다.
+  // 풀이 과정 문항(①…, 바른 차례로 놓기)은 상의 몫이 정해져 있으므로(stepCoverage.test.ts) 덜지 않습니다.
+  if (!판) {
+    const 풀이과정 = (q: Question) => q.prompt.includes('①') || q.prompt.includes('바른 차례로 놓으면');
+    const 덜자리 = new Set<number>();
+    for (let at = 기본.length - 1; at >= 0 && 덜자리.size < 더할.length; at -= 1) if (!풀이과정(기본[at])) 덜자리.add(at);
+    return [...기본.filter((_, at) => !덜자리.has(at)), ...더할.slice(0, 덜자리.size)];
+  }
   return [...기본, ...더할];
 };
 
