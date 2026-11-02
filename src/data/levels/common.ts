@@ -35,6 +35,8 @@ const 조사고르기 = (spec: G5Spec): G5Spec => ({
 
 /** 고차적인 사고(과정·까닭, 거꾸로, 용어, 생활 응용)를 묻는 문항입니다. */
 export const 사고 = (spec: Omit<G5Spec, '결'>): G5Spec => 조사고르기({ ...spec, 결: 2 });
+/** 배운 것을 한 번 더 적용해 보는(약간 고민이 필요한) 문항입니다. */
+export const 적용 = (spec: Omit<G5Spec, '결'>): G5Spec => 조사고르기({ ...spec, 결: 1 });
 /** 단순한 지식(뜻, 이름, 바로 계산)을 묻는 문항입니다. */
 export const 지식 = (spec: Omit<G5Spec, '결'>): G5Spec => 조사고르기({ ...spec, 결: 0 });
 
