@@ -7,6 +7,7 @@ import { 수준41 } from './s41';
 import { 수준42 } from './s42';
 import { 수준51 } from './s51';
 import { 수준52 } from './s52';
+import { 수준52고난도 } from './s52hard';
 import { 수준61 } from './s61';
 import { 수준62 } from './s62';
 
@@ -25,7 +26,7 @@ import { 수준62 } from './s62';
 
 export type 수준표 = Record<string, Partial<Record<Difficulty, G5Family[]>>>;
 
-const 모든표: 수준표[] = [수준1, 수준1고난도, 수준3, 수준41, 수준42, 수준51, 수준52, 수준61, 수준62];
+const 모든표: 수준표[] = [수준1, 수준1고난도, 수준3, 수준41, 수준42, 수준51, 수준52, 수준52고난도, 수준61, 수준62];
 
 export const 수준뭉치 = (lesson: Lesson, difficulty: Difficulty): G5Family[] => {
   const 열쇠 = `${lesson.semester} ${lesson.unitNo}-${lesson.lessonNo}`;
