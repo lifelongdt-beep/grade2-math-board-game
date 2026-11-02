@@ -1,3 +1,4 @@
+import { scopedStorageKey, readScopedStorage } from './classContext';
 import type { Question } from '../types';
 
 // ════════════════════════════════════════════════════════════════════
@@ -107,7 +108,7 @@ const 명단열쇠 = 'nameSwapRoster:v1';
 
 export const 방식읽기 = (): 이름바꾸기방식 => {
   try {
-    const raw = window.localStorage.getItem(방식열쇠);
+    const raw = readScopedStorage(방식열쇠);
     return raw === 'animals' || raw === 'class' ? raw : 'off';
   } catch {
     return 'off';
@@ -116,7 +117,7 @@ export const 방식읽기 = (): 이름바꾸기방식 => {
 
 export const 방식쓰기 = (방식: 이름바꾸기방식) => {
   try {
-    window.localStorage.setItem(방식열쇠, 방식);
+    window.localStorage.setItem(scopedStorageKey(방식열쇠), 방식);
   } catch {
     // 저장할 수 없으면 이번 수업에만 적용됩니다.
   }
@@ -125,7 +126,7 @@ export const 방식쓰기 = (방식: 이름바꾸기방식) => {
 /** 우리 반 명단입니다. 한 줄(또는 쉼표)에 한 명씩, 출석 번호 차례로 적습니다. */
 export const 명단읽기 = (): string => {
   try {
-    return window.localStorage.getItem(명단열쇠) ?? '';
+    return readScopedStorage(명단열쇠) ?? '';
   } catch {
     return '';
   }
@@ -133,7 +134,7 @@ export const 명단읽기 = (): string => {
 
 export const 명단쓰기 = (명단: string) => {
   try {
-    window.localStorage.setItem(명단열쇠, 명단);
+    window.localStorage.setItem(scopedStorageKey(명단열쇠), 명단);
   } catch {
     // 저장할 수 없으면 이번 수업에만 적용됩니다.
   }

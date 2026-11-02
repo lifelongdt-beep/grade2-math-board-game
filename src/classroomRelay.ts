@@ -1,4 +1,6 @@
+import { scopedStorageKey, readScopedStorage } from './data/classContext';
 import type { AnswerRecord, LearningSupport, Player } from './types';
+import { validAnswer } from './data/recordValidation';
 
 // 학생 폰과 선생님 화면은 서로 다른 기기입니다. 둘 사이에 답을 옮겨 줄
 // 자리가 없으면 아무리 큐알로 들어와도 결과가 건너오지 않습니다.
@@ -21,8 +23,8 @@ export type RelayTarget =
 // 비어 있으면 예전처럼 선생님이 직접 주소를 넣어야 연동됩니다.
 //
 // 이 주소는 웹앱에 그대로 실려 나가는 값이라 숨길 수 있는 것이 아닙니다.
-// 대신 저장소 규칙에서 방 이름($room)을 아는 사람만 그 방을 읽고 쓰도록
-// 막아 두었습니다 — 주소만으로는 다른 반 기록을 볼 수 없습니다.
+// 실제 읽기·쓰기 권한은 Firebase 프로젝트의 보안 규칙이 정합니다.
+// 방 이름만으로 교사·학생 권한이 분리되지는 않습니다(docs/운영-보안-안내.md).
 export const DEFAULT_DB_URL = 'https://grade-c0262-default-rtdb.firebaseio.com';
 
 // 큐알 주소에 담겨 오는 값이므로, 아무 주소나 받으면 학생 폰이 엉뚱한
@@ -78,8 +80,8 @@ const emptySupport: LearningSupport = {
 // 이 셋이 기록 하나 크기의 대부분인데, 선생님 화면의 분석에는 쓰이지
 // 않습니다. 빼 두면 한 시간 수업에서 오가는 양이 수십 분의 일이 됩니다.
 export const trimRecordForCloud = (record: AnswerRecord) => {
-  const { support: _support, explanation: _explanation, visual: _visual, ...rest } = record;
-  return rest;
+  // 교사 기록장·오답 PDF에 필요한 원문과 그림도 보존합니다.
+  return JSON.parse(JSON.stringify(record)) as AnswerRecord;
 };
 
 // 받아 온 기록에는 위에서 뺀 자리가 비어 있습니다. 선생님 화면의 다른
@@ -96,7 +98,7 @@ const isRecordLike = (value: unknown): value is Partial<AnswerRecord> =>
   typeof value === 'object' &&
   value !== null &&
   typeof (value as AnswerRecord).id === 'string' &&
-  typeof (value as AnswerRecord).playerId === 'number';
+  typeof (value as AnswerRecord).playerId === 'number' && validAnswer(rehydrateCloudRecord(value as Partial<AnswerRecord>));
 
 const isPlayerLike = (value: unknown): value is Player =>
   typeof value === 'object' &&
@@ -119,16 +121,19 @@ export const readCloudState = (
   records: valuesOf(recordsPayload).filter(isRecordLike).map(rehydrateCloudRecord),
 });
 
-const requestJson = async (url: string, init?: RequestInit): Promise<unknown | null> => {
+export const requestRelay = async (url: string, init?: RequestInit): Promise<{ ok: boolean; data: unknown }> => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
   try {
-    const response = await fetch(url, { cache: 'no-store', ...init });
-    if (!response.ok) return null;
+    const response = await fetch(url, { cache: 'no-store', ...init, signal: controller.signal });
+    if (!response.ok) return { ok: false, data: null };
     const text = await response.text();
-    return text ? JSON.parse(text) : null;
+    return { ok: true, data: text ? JSON.parse(text) : null };
   } catch {
-    return null;
-  }
+    return { ok: false, data: null };
+  } finally { clearTimeout(timeout); }
 };
+const requestJson = async (url: string, init?: RequestInit) => (await requestRelay(url, init)).data;
 
 const roomUrl = (target: Extract<RelayTarget, { kind: 'cloud' }>, path: string) =>
   `${target.dbUrl}/rooms/${encodeURIComponent(target.room)}${path}`;
@@ -140,7 +145,7 @@ const CLOUD_RECENT_RECORDS = 100;
 
 export const relayPing = async (target: RelayTarget): Promise<boolean> => {
   if (target.kind === 'local') {
-    return (await requestJson('/api/state')) !== null;
+    return (await requestRelay('/api/ping')).ok;
   }
   // 값이 없으면 null이 오지만, 읽을 수 있었다는 사실은 확인됩니다.
   try {
@@ -153,7 +158,7 @@ export const relayPing = async (target: RelayTarget): Promise<boolean> => {
 
 export const relayJoin = async (
   target: RelayTarget,
-  player: { name: string; attendanceNo: number; avatar: string; difficulty: string },
+  player: { id?: number; name: string; attendanceNo: number; avatar: string; difficulty: string },
 ): Promise<number | null> => {
   if (target.kind === 'local') {
     const result = (await requestJson('/api/join', {
@@ -166,7 +171,7 @@ export const relayJoin = async (
 
   // 폰이 스스로 번호를 정합니다. 한 반 안에서 겹칠 일이 사실상 없고,
   // 서버에 번호를 물어보는 왕복이 없어 첫 문제를 놓칠 틈도 줄어듭니다.
-  const id = 100000 + Math.floor(Math.random() * 899999);
+  const id = player.id ?? (100000 + Math.floor(Math.random() * 899999));
   const saved = await requestJson(roomUrl(target, `/players/${id}.json`), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -175,27 +180,32 @@ export const relayJoin = async (
   return saved === null ? null : id;
 };
 
-export const relayRecord = async (target: RelayTarget, record: AnswerRecord): Promise<void> => {
+export const relayRecordKey = (record: AnswerRecord) => `${String(Date.parse(record.answeredAt)).padStart(13, '0')}_${Array.from(new TextEncoder().encode(record.id), b => b.toString(16).padStart(2, '0')).join('')}`;
+
+export const relayRecord = async (target: RelayTarget, record: AnswerRecord): Promise<boolean> => {
   if (target.kind === 'local') {
-    await requestJson('/api/record', {
+    const result = await requestRelay('/api/record', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(record),
     });
-    return;
+    return result.ok;
   }
 
-  await requestJson(roomUrl(target, '/records.json'), {
-    method: 'POST',
+  const result = await requestRelay(roomUrl(target, `/records/${relayRecordKey(record)}.json`), {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(trimRecordForCloud(record)),
   });
+  return result.ok;
 };
 
 export const relayState = async (
   target: RelayTarget,
-): Promise<{ players: Player[]; records: AnswerRecord[] } | null> => {
+  after?: string,
+): Promise<{ players: Player[]; records: AnswerRecord[]; cursor?: string; hasMore?: boolean } | null> => {
   if (target.kind === 'local') {
+    await requestRelay('/api/session');
     const data = (await requestJson('/api/state')) as
       | { players?: unknown; records?: unknown }
       | null;
@@ -204,18 +214,21 @@ export const relayState = async (
   }
 
   const [players, records] = await Promise.all([
-    requestJson(roomUrl(target, '/players.json')),
-    requestJson(
-      roomUrl(target, `/records.json?orderBy=${encodeURIComponent('"$key"')}&limitToLast=${CLOUD_RECENT_RECORDS}`),
+    requestRelay(roomUrl(target, '/players.json')),
+    requestRelay(
+      roomUrl(target, `/records.json?orderBy=${encodeURIComponent('"$key"')}&limitToFirst=${CLOUD_RECENT_RECORDS + 1}${after ? `&startAt=${encodeURIComponent(JSON.stringify(after))}` : ''}`),
     ),
   ]);
 
-  if (players === null && records === null) return null;
-  return readCloudState(players, records);
+  if (!players.ok || !records.ok) return null;
+  const entries = records.data && typeof records.data === 'object' ? Object.entries(records.data).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).filter(([key]) => !after || key > after) : [];
+  const page = entries.slice(0, CLOUD_RECENT_RECORDS);
+  return { ...readCloudState(players.data, Object.fromEntries(page)), cursor: page.at(-1)?.[0] ?? after, hasMore: entries.length >= CLOUD_RECENT_RECORDS };
 };
 
 export const relayReset = async (target: RelayTarget): Promise<void> => {
   if (target.kind === 'local') {
+    await requestRelay('/api/session');
     await requestJson('/api/reset', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -251,10 +264,10 @@ export const saveDbUrl = (value: string): void => {
 
 export const loadOrCreateRoom = (): string => {
   try {
-    const saved = window.localStorage.getItem(ROOM_KEY);
+    const saved = readScopedStorage(ROOM_KEY);
     if (saved && isRoomCode(saved)) return saved;
     const created = makeRoomCode();
-    window.localStorage.setItem(ROOM_KEY, created);
+    window.localStorage.setItem(scopedStorageKey(ROOM_KEY), created);
     return created;
   } catch {
     return makeRoomCode();

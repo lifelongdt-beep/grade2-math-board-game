@@ -13,9 +13,16 @@
 // ════════════════════════════════════════════════════════════════════
 
 import type { AnswerRecord, ConceptTag, Difficulty, LearningSupport, Lesson, Manipulation, QuestionVisual, Semester } from '../types';
+import { readClassContext, studentKey } from './classContext';
+import { finiteNumber, validAnswer, validJsonTree, validSemester, validSupport } from './recordValidation';
+import { reportStorage } from './storageStatus';
 
 /** 학습 기록장에 남는 한 문제의 기록입니다. 누가(출석번호)·언제·어느 차시를 풀었는지가 함께 남습니다. */
 export interface 학습기록 {
+  schoolYear?: number;
+  classId?: string;
+  studentId?: string;
+  hintKinds?: AnswerRecord['hintKinds'];
   id: string;
   /** 출석번호입니다. 학생은 이 번호로 구별합니다. */
   no: number;
@@ -70,6 +77,8 @@ export const 기록만들기 = (
   const when = new Date(record.answeredAt);
   const 시각 = Number.isNaN(when.getTime()) ? new Date() : when;
   return {
+    ...((record.schoolYear && record.classId) ? { schoolYear: record.schoolYear, classId: record.classId, studentId: record.studentId ?? studentKey(who.no, { schoolYear: record.schoolYear, classId: record.classId }) } : who.remote ? {} : { ...readClassContext(), studentId: studentKey(who.no) }),
+    ...(record.hintKinds ? { hintKinds: record.hintKinds } : {}),
     // 휴대폰 기록은 휴대폰마다 자리 번호(playerId)가 같을 수 있어, 출석번호를 붙여 겹치지 않게 합니다.
     id: `${record.id}#${who.no}`,
     no: who.no,
@@ -149,7 +158,7 @@ let 여는중: Promise<IDBDatabase | null> | null = null;
 
 const 열기 = (): Promise<IDBDatabase | null> => {
   if (여는중) return 여는중;
-  여는중 = new Promise((resolve) => {
+  여는중 = new Promise<IDBDatabase | null>((resolve) => {
     if (typeof indexedDB === 'undefined') {
       resolve(null);
       return;
@@ -162,13 +171,16 @@ const 열기 = (): Promise<IDBDatabase | null> => {
         if (!db.objectStoreNames.contains(휴지통칸)) db.createObjectStore(휴지통칸, { keyPath: 'id' });
         if (!db.objectStoreNames.contains(설정칸)) db.createObjectStore(설정칸);
       };
-      요청.onsuccess = () => resolve(요청.result);
+      요청.onsuccess = () => {
+        요청.result.onversionchange = () => { 요청.result.close(); 여는중 = null; };
+        resolve(요청.result);
+      };
       요청.onerror = () => resolve(null);
       요청.onblocked = () => resolve(null);
     } catch {
       resolve(null);
     }
-  });
+  }).then(db => { if (!db) 여는중 = null; return db; });
   return 여는중;
 };
 
@@ -191,12 +203,22 @@ export const 기록더하기 = async (items: 학습기록[]) => {
   if (items.length === 0) return;
   const db = await 열기();
   if (!db) {
+    reportStorage('브라우저에 기록을 보관할 수 없어 이 창에만 남습니다. 창을 닫기 전에 학습 기록장에서 백업을 내려받아 주세요.');
     items.forEach((one) => 메모리.records.set(one.id, one));
+    if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') throw new Error('기록을 기기에 보관하지 못했습니다.');
   } else {
     const tx = db.transaction(기록칸, 'readwrite');
     const 칸 = tx.objectStore(기록칸);
-    items.forEach((one) => 칸.put(one));
-    await 끝날때까지(tx);
+    const pending = [...new Map([...메모리.records.values(), ...items].map(one => [one.id, one])).values()];
+    pending.forEach((one) => 칸.put(one));
+    try { await 끝날때까지(tx); }
+    catch (error) {
+      items.forEach((one) => 메모리.records.set(one.id, one));
+      reportStorage('기록 저장에 실패했습니다. 이 창을 유지하고 학습 기록장에서 백업을 내려받아 주세요.');
+      알리기();
+      throw error;
+    }
+    pending.forEach(one => 메모리.records.delete(one.id));
   }
   알리기();
   void 백업파일에쓰기();
@@ -204,8 +226,9 @@ export const 기록더하기 = async (items: 학습기록[]) => {
 
 export const 기록모두읽기 = async (): Promise<학습기록[]> => {
   const db = await 열기();
-  const 모두 = db ? await 모두꺼내기<학습기록>(db, 기록칸) : [...메모리.records.values()];
-  return 모두.sort((a, b) => a.answeredAt.localeCompare(b.answeredAt));
+  const saved = db ? await 모두꺼내기<학습기록>(db, 기록칸) : [];
+  const 모두 = [...new Map([...saved, ...메모리.records.values()].map(one => [one.id, one])).values()];
+  return 모두.sort((a, b) => (a.answeredAt ?? '').localeCompare(b.answeredAt ?? ''));
 };
 
 /**
@@ -220,7 +243,7 @@ export const 기록지우기 = async (ids: string[]) => {
     메모리.trash = [...메모리.records.values()].filter((one) => 지울.has(one.id));
     지울.forEach((id) => 메모리.records.delete(id));
   } else {
-    const 지금 = await 모두꺼내기<학습기록>(db, 기록칸);
+    const 지금 = await 기록모두읽기();
     const 버릴 = 지금.filter((one) => 지울.has(one.id));
     const tx = db.transaction([기록칸, 휴지통칸], 'readwrite');
     const 기록 = tx.objectStore(기록칸);
@@ -231,6 +254,7 @@ export const 기록지우기 = async (ids: string[]) => {
       기록.delete(one.id);
     });
     await 끝날때까지(tx);
+    ids.forEach(id => 메모리.records.delete(id));
   }
   알리기();
   void 백업파일에쓰기();
@@ -292,12 +316,37 @@ export const 백업만들기 = (records: 학습기록[]): 백업묶음 => ({
 export const 백업풀기 = (text: string): 학습기록[] | null => {
   try {
     const data = JSON.parse(text) as Partial<백업묶음>;
-    if (data?.kind !== 'math-learning-log' || !Array.isArray(data.records)) return null;
-    return data.records.filter((one): one is 학습기록 =>
-      Boolean(one && typeof one.id === 'string' && typeof one.no === 'number' && typeof one.semester === 'string' && typeof one.date === 'string'));
+    if (data?.kind !== 'math-learning-log' || data.version !== 1 || !Array.isArray(data.records)) return null;
+    // 일부만 조용히 복원하면 누락을 알아차릴 수 없습니다. 잘못된 묶음은 통째로 거부합니다.
+    if (!data.records.every(validLearningRecord)) return null;
+    if (new Set(data.records.map(one => one.id)).size !== data.records.length) return null;
+    return data.records;
   } catch {
     return null;
   }
+};
+
+export const validLearningRecord = (v: unknown): v is 학습기록 => {
+  if (!v || typeof v !== 'object') return false;
+  const r = v as 학습기록;
+  return validAnswer({ ...r, playerId: r.no, playerName: '', lessonTitle: r.lessonTitle })
+    && Number.isInteger(r.no) && r.no > 0 && r.no <= 10000
+    && validSemester(r.semester) && r.grade === Number(r.semester[0])
+    && finiteNumber(r.unitNo) && Number.isInteger(r.unitNo) && finiteNumber(r.lessonNo) && Number.isInteger(r.lessonNo)
+    && typeof r.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && Number.isFinite(Date.parse(r.date)) && new Date(r.date).toISOString().slice(0, 10) === r.date
+    && typeof r.hintUsed === 'boolean' && validSupport(r.support) && validJsonTree(r)
+    && (r.schoolYear === undefined || (Number.isInteger(r.schoolYear) && r.schoolYear >= 2000 && r.schoolYear <= 2200))
+    && (r.classId === undefined || (typeof r.classId === 'string' && r.classId.length > 0 && r.classId.length <= 80))
+    && ((r.schoolYear === undefined) === (r.classId === undefined));
+};
+
+/** 차시 선택과 무관하게 종합 복습 기록도 복원합니다. */
+export const resolveRecordLesson = (record: AnswerRecord, lessons: Map<string, Lesson>) => {
+  if (record.lessonContext && validSemester(record.lessonContext.semester) && record.lessonContext.id === record.lessonId) return record.lessonContext;
+  const known = lessons.get(record.lessonId);
+  if (known) return known;
+  const match = /^([1-6]-[12])-(?:u(\d+)-review|semester-review)$/.exec(record.lessonId);
+  return match ? { id: record.lessonId, semester: match[1] as Semester, unitNo: Number(match[2] ?? 0), unitTitle: record.unitTitle, lessonNo: 0, title: record.lessonTitle } : null;
 };
 
 // 크롬·엣지에서는 선생님이 고른 파일 하나에 기록이 바뀔 때마다 백업을 덮어씁니다.
@@ -388,7 +437,7 @@ export const 백업파일에쓰기 = async (): Promise<void> => {
       await 쓰개.close();
       await 설정쓰기('backupSavedAt', new Date().toISOString());
     } catch {
-      // 파일이 옮겨졌거나 허락이 없어지면 다음 기회에 다시 씁니다. 기록 자체는 브라우저 저장소에 있습니다.
+      reportStorage('자동 백업 파일에 쓰지 못했습니다. 학습 기록장에서 파일 권한을 확인하거나 새 백업을 내려받아 주세요.');
     }
   })();
   await 쓰는중;
