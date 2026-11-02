@@ -3,6 +3,7 @@ import type { G5Family, G5Spec } from '../grade5/build';
 import { 고르개, 사이 } from '../grade11/common';
 import { 수오답 } from '../expand/common';
 import { 사고, 섞기 } from './common';
+import { 이학년시각표 } from './s22time';
 
 // 2학년 문항은 '민준'을 쓰지 않습니다(2학년 생성기의 검사가 막습니다). 이 뭉치의 이름은 여기서 고릅니다.
 const 사람 = ['서연', '도윤', '하은', '지호', '수아', '예준'];
@@ -533,9 +534,13 @@ const 이학년고난도: Record<string, G5Family[]> = {
   '2-2 2-11': [하루먹이, 곱숫자],
 };
 
-/** 2학년 차시의 상에 더하는 고난도 뭉치입니다(다른 수준에는 없습니다). */
-export const 이학년고난도뭉치 = (lesson: Lesson, difficulty: Difficulty): G5Family[] =>
-  difficulty === '상' ? 이학년고난도[`${lesson.semester} ${lesson.unitNo}-${lesson.lessonNo}`] ?? [] : [];
+/** 2학년 차시에 더하는 문제집 뭉치입니다(고난도는 상에만, 2-2 시각과 시간은 하·중·상 모두).*/
+export const 이학년고난도뭉치 = (lesson: Lesson, difficulty: Difficulty): G5Family[] => {
+  const 열쇠 = `${lesson.semester} ${lesson.unitNo}-${lesson.lessonNo}`;
+  // 2-2 시각과 시간은 하·중·상 모두에 문제집 유형이 있습니다(s22time.ts).
+  const 시각 = 이학년시각표[열쇠]?.[difficulty] ?? [];
+  return [...(difficulty === '상' ? 이학년고난도[열쇠] ?? [] : []), ...시각];
+};
 
 /** 고난도 뭉치가 있는 2학년 차시의 열쇠입니다(검사가 씁니다). */
 export const 이학년고난도차시 = Object.keys(이학년고난도);
