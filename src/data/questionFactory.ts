@@ -17893,8 +17893,18 @@ const 차시원문항 = (
   // 풀이 과정 문항(①…, 바른 차례로 놓기)은 상의 몫이 정해져 있으므로(stepCoverage.test.ts) 덜지 않습니다.
   if (!판) {
     const 풀이과정 = (q: Question) => q.prompt.includes('①') || q.prompt.includes('바른 차례로 놓으면');
+    // 자료 해석·조건 함께 보기 문항도 수준마다 최소 몫이 있습니다(questionFactory.test.ts: 중 6, 상 10).
+    // 그 몫을 넘는 만큼만 덜어 냅니다.
+    const 넉넉함 = (q: Question) => /자료 해석|조건 함께 보기/.test(q.strategy);
+    const 남길넉넉 = difficulty === '상' ? 10 : difficulty === '중' ? 6 : 0;
+    let 덜넉넉 = Math.max(0, 기본.filter(넉넉함).length - 남길넉넉);
     const 덜자리 = new Set<number>();
-    for (let at = 기본.length - 1; at >= 0 && 덜자리.size < 더할.length; at -= 1) if (!풀이과정(기본[at])) 덜자리.add(at);
+    for (let at = 기본.length - 1; at >= 0 && 덜자리.size < 더할.length; at -= 1) {
+      const q = 기본[at];
+      if (풀이과정(q)) continue;
+      if (넉넉함(q)) { if (덜넉넉 <= 0) continue; 덜넉넉 -= 1; }
+      덜자리.add(at);
+    }
     return [...기본.filter((_, at) => !덜자리.has(at)), ...더할.slice(0, 덜자리.size)];
   }
   return [...기본, ...더할];
