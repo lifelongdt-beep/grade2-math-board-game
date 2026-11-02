@@ -39,6 +39,7 @@ import {
   g4StudentConcept,
   g4TagLabel,
 } from '../grade4/support';
+import { g2CoreConcept, g2Misconception, g2ReadStrategy, g2SelfCheck, g2StudentConcept, g2TagLabel } from '../grade2/support';
 import { g6CoreConcept, g6Misconception, g6ReadStrategy, g6SelfCheck, g6StudentConcept, g6TagLabel } from '../grade6/support';
 
 // ════════════════════════════════════════════════════════════════════
@@ -253,6 +254,16 @@ const toQuestion = (
           label: { ...g3TagLabel, ...g32Overrides.label },
         }
       : { student: g3StudentConcept, core: g3CoreConcept, read: g3ReadStrategy, mis: g3Misconception, check: g3SelfCheck, label: g3TagLabel }
+    : lesson.semester.startsWith('2')
+      // 2학년은 5학년 표에 2학년 말을 덮어씁니다(grade2/support.ts).
+      ? {
+          student: { ...g5StudentConcept, ...g2StudentConcept },
+          core: { ...g5CoreConcept, ...g2CoreConcept },
+          read: { ...g5ReadStrategy, ...g2ReadStrategy },
+          mis: { ...g5Misconception, ...g2Misconception },
+          check: { ...g5SelfCheck, ...g2SelfCheck },
+          label: { ...tagLabel, ...g2TagLabel },
+        }
     : { student: g5StudentConcept, core: g5CoreConcept, read: g5ReadStrategy, mis: g5Misconception, check: g5SelfCheck, label: tagLabel };
 
   // 시각과 시간 문항은 문제가 묻는 일에 맞춘 풀이를 씁니다(timeHelp.ts). 문항이

@@ -394,6 +394,45 @@ function CubeViewsGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 
   );
 }
 
+// 모눈 위에 그은 꺾은 선입니다. 선의 길이는 '한 칸이 몇 cm인지'와 '선이 지나간
+// 칸의 수'로 구합니다. 그래서 한 칸의 길이를 모눈 위쪽과 왼쪽 첫 칸에 적고(교과서
+// 모눈과 같은 자리), 선은 모눈 줄 위에만 놓이게 굵게 긋습니다. 꺾이는 곳에 점을
+// 찍어 아이가 마디마디 끊어 셀 수 있게 합니다.
+function GridPathGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'grid-path' }> }) {
+  const 칸 = Math.min(40, 300 / visual.cols, 180 / visual.rows);
+  const 왼쪽 = 52;
+  const 위 = 34;
+  const 넓이 = 왼쪽 + visual.cols * 칸 + 20;
+  const 높이 = 위 + visual.rows * 칸 + 16;
+  const 점 = ([c, r]: [number, number]) => [왼쪽 + c * 칸, 위 + r * 칸] as const;
+  const 꺾임 = visual.path.filter((p, k, all) => {
+    if (k === 0 || k === all.length - 1) return true;
+    const [a, b] = [all[k - 1], all[k + 1]];
+    return !((a[0] === p[0] && b[0] === p[0]) || (a[1] === p[1] && b[1] === p[1]));
+  });
+  return (
+    <svg viewBox={`0 0 ${넓이} ${높이}`} role="img" aria-label={visual.label}>
+      <rect x="2" y="2" width={넓이 - 4} height={높이 - 4} rx="12" fill="#f6fcff" stroke="#d7edf2" />
+      {Array.from({ length: visual.cols + 1 }, (_, c) => (
+        <line key={`c${c}`} x1={왼쪽 + c * 칸} y1={위} x2={왼쪽 + c * 칸} y2={위 + visual.rows * 칸} stroke="#8fc9e6" strokeWidth="1.5" />
+      ))}
+      {Array.from({ length: visual.rows + 1 }, (_, r) => (
+        <line key={`r${r}`} x1={왼쪽} y1={위 + r * 칸} x2={왼쪽 + visual.cols * 칸} y2={위 + r * 칸} stroke="#8fc9e6" strokeWidth="1.5" />
+      ))}
+      {/* 한 칸의 길이: 위쪽 첫 칸과 왼쪽 첫 칸에 괄호처럼 둘러 적습니다. */}
+      <path d={`M ${왼쪽} ${위 - 6} Q ${왼쪽 + 칸 / 2} ${위 - 16} ${왼쪽 + 칸} ${위 - 6}`} fill="none" stroke="#56708a" strokeWidth="1.5" />
+      <text x={왼쪽 + 칸 / 2} y={위 - 18} textAnchor="middle" fill="#24364a" fontSize="13" fontWeight="800">{visual.cell}</text>
+      <path d={`M ${왼쪽 - 6} ${위} Q ${왼쪽 - 16} ${위 + 칸 / 2} ${왼쪽 - 6} ${위 + 칸}`} fill="none" stroke="#56708a" strokeWidth="1.5" />
+      <text x={왼쪽 - 20} y={위 + 칸 / 2 + 4} textAnchor="end" fill="#24364a" fontSize="13" fontWeight="800">{visual.cell}</text>
+      <polyline points={visual.path.map((p) => 점(p).join(',')).join(' ')} fill="none" stroke="#e0413b" strokeWidth="4.5" strokeLinejoin="round" strokeLinecap="round" />
+      {꺾임.map((p) => {
+        const [x, y] = 점(p);
+        return <circle key={`${p[0]}-${p[1]}`} cx={x} cy={y} r="4" fill="#e0413b" />;
+      })}
+    </svg>
+  );
+}
+
 function TangramGraphic({ visual }: { visual: Extract<QuestionVisual, { kind: 'tangram' }> }) {
   const pieces = [
     { label: '1', labelX: 134, labelY: 74, points: '18,18 242,18 130,130', fill: '#8f969d' },
@@ -3285,6 +3324,7 @@ export function QuestionVisualGraphic({ visual, className = '' }: QuestionVisual
       {visual.kind === 'bar-graph' && <BarGraphGraphic visual={visual} />}
       {visual.kind === 'line-graph' && <LineGraphGraphic visual={visual} />}
       {visual.kind === 'grid-move' && <GridMoveGraphic visual={visual} />}
+      {visual.kind === 'grid-path' && <GridPathGraphic visual={visual} />}
       {visual.kind === 'protractor' && <ProtractorGraphic visual={visual} />}
       {visual.kind === 'angle-split' && <AngleSplitGraphic visual={visual} />}
       {visual.kind === 'parallel-distance' && <ParallelDistanceGraphic visual={visual} />}

@@ -11,7 +11,38 @@ const 수 = (t: string) => Number(t.replace(/[^\d]/g, ''));
 
 type 풀이 = { 이름: string; 꼴: RegExp; 답: (m: RegExpExecArray, q: Question) => number | string };
 
+// 칠교판 그림(QuestionVisualGraphic의 TangramGraphic)과 같은 꼭짓점으로 조각의 넓이를 셉니다.
+const 칠교꼭짓점: Record<number, number[][]> = {
+  1: [[18, 18], [242, 18], [130, 130]], 2: [[242, 18], [242, 242], [130, 130]], 3: [[18, 18], [18, 130], [74, 74]],
+  4: [[18, 130], [74, 74], [130, 130], [74, 186]], 5: [[74, 186], [130, 130], [186, 186]], 6: [[74, 186], [186, 186], [242, 242], [130, 242]], 7: [[18, 130], [18, 242], [130, 242]],
+};
+const 넓이 = (p: number[][]) => Math.abs(p.reduce((s, [x, y], i) => { const [x2, y2] = p[(i + 1) % p.length]; return s + x * y2 - x2 * y; }, 0)) / 2;
+const 작은몇 = (n: number) => 넓이(칠교꼭짓점[n]) / 넓이(칠교꼭짓점[3]);
+const 높이들 = (q: Question) => { const v = q.visual; if (v?.kind !== 'stack-iso') throw new Error('쌓기 그림 없음'); return v; };
+const 개수 = (h: number[][]) => h.flat().reduce((a, b) => a + b, 0);
+const 층 = (h: number[][], k: number) => h.flat().filter((v) => v >= k).length;
+
 const 풀이들: 풀이[] = [
+  { 이름: '칠교조각', 꼴: /3번 조각 여러 개를 겹치지 않게 이어 붙여 (\d)번 조각(?:과 (\d)번 조각을 이어 붙인 모양)?과 크기가 같은/, 답: (m) => 작은몇(+m[1]) + (m[2] ? 작은몇(+m[2]) : 0) },
+  { 이름: '칠교방법', 꼴: /칠교판의 [12]번 조각과 크기와 모양이 똑같은 삼각형을 다른 조각 3개로/, 답: () => [4, 6, 7].filter((k) => 작은몇(3) + 작은몇(5) + 작은몇(k) === 작은몇(1)).length },
+  { 이름: '쌓기남은', 꼴: /쌓기나무 (\d+)개를 가지고 있습니다\. 그림과 똑같은 모양으로 쌓고 나면/, 답: (m, q) => +m[1] - 개수(높이들(q).heights) },
+  { 이름: '쌓기비교', 꼴: /^가와 나 모양을 그림과 똑같이 쌓으려고/, 답: (_, q) => { const [가, 나] = 높이들(q).items!; return Math.abs(개수(가.heights) - 개수(나.heights)); } },
+  { 이름: '쌓기층', 꼴: /1층에 있는 쌓기나무는 2층에 있는 쌓기나무보다 몇 개 더/, 답: (_, q) => { const h = 높이들(q).heights; return 층(h, 1) - 층(h, 2); } },
+  {
+    이름: '모눈선', 꼴: /한 칸의 길이가 (\d+) cm인 모눈 위에 빨간 선을/, 답: (m, q) => {
+      const v = q.visual;
+      if (v?.kind !== 'grid-path') throw new Error('모눈 그림 없음');
+      expect(v.cell).toBe(`${m[1]} cm`);
+      let 길이 = 0;
+      for (let k = 1; k < v.path.length; k += 1) {
+        const [a, b] = [v.path[k - 1], v.path[k]];
+        expect(a[0] === b[0] || a[1] === b[1], '가로나 세로로만 이어집니다').toBe(true);
+        expect(b.every((t, i) => t >= 0 && t <= (i ? v.rows : v.cols)), '모눈 안에 있습니다').toBe(true);
+        길이 += Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+      }
+      return 길이 * +m[1];
+    },
+  },
   { 이름: '접', 꼴: /'한 접'이라고 합니다\. .+ 10개씩 담긴 곶감 (\d+)접시/, 답: (m) => (+m[1] * 10) / 100 },
   { 이름: '동전', 꼴: /100원짜리 동전 (\d+)개와 10원짜리 동전 (\d+)개를 냈습니다/, 답: (m) => +m[1] * 100 + +m[2] * 10 },
   {

@@ -1303,7 +1303,8 @@ const cleanGrade2Visual = (visual: QuestionVisual | undefined): QuestionVisual |
     visual.kind === 'number-array' ||
     visual.kind === 'body-measure' ||
     visual.kind === 'minute-bar' ||
-    visual.kind === 'symmetry-draw'
+    visual.kind === 'symmetry-draw' ||
+    visual.kind === 'grid-path'
   ) {
     return { ...visual, label: cleanGrade2Text(visual.label) };
   }
@@ -17887,7 +17888,10 @@ const 차시원문항 = (
   const 늘림 = [...(판 ? 늘림뭉치(lesson, difficulty) : []), ...이학년고난도뭉치(lesson, difficulty)];
   if (!늘림.length) return 기본;
   const 있는글 = new Set(기본.map((q) => q.prompt));
-  return [...기본, ...buildGrade5Questions(lesson, difficulty, 늘림, 판, 1).filter((q) => !있는글.has(q.prompt))];
+  const 더할 = buildGrade5Questions(lesson, difficulty, 늘림, 판, 1).filter((q) => !있는글.has(q.prompt));
+  // 처음 판은 서른 문항입니다. 고난도 문항이 들어간 만큼 2학년 생성기의 뒤쪽 문항을 덜어 냅니다.
+  if (!판) return [...기본.slice(0, Math.max(0, 기본.length - 더할.length)), ...더할];
+  return [...기본, ...더할];
 };
 
 export const generateLessonBank = (lesson: Lesson): Record<Difficulty, Question[]> => ({
