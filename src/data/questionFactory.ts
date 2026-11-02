@@ -42,6 +42,7 @@ import { generateGrade5Questions } from './grade5';
 import { buildGrade5Questions } from './grade5/build';
 import { 늘림뭉치 } from './expand';
 import { 이학년고난도뭉치 } from './levels/s2hard';
+import { 한시간범위 } from './levels/s22hour';
 import { generateGrade51Questions } from './grade51';
 import { generateGrade31Questions } from './grade31';
 import { generateGrade11Questions } from './grade11';
@@ -17879,23 +17880,46 @@ const 차시원문항 = (
   }
   // 피할 모양이 없으면 그대로 고르므로, 상에만 있는 문항이 모자란
   // 차시라도 문항 수는 줄지 않습니다.
-  const 기본 = difficulty !== '상'
+  // 2-2 4-5(1시간을 알아볼까요)는 1시간=60분까지만 배웁니다. 80분을 1시간 20분으로 바꾸는
+  // 것은 다음 차시(걸린 시간) 내용이라, 그런 문항은 이 차시에서 걸러 냅니다(levels/s22hour.ts).
+  const 한시간차시 = lesson.semester === '2-2' && lesson.unitTitle === '시각과 시간' && lesson.lessonNo === 5;
+  const 범위안 = (q: Question) => !한시간차시 || 한시간범위([q.prompt, q.answer, ...q.choices].join(' '));
+  const 기본 = (difficulty !== '상'
     ? questionsFor(lesson, difficulty, undefined, 판)
-    : questionsFor(lesson, '상', new Set(questionsFor(lesson, '중', undefined, 판).map((question) => shapeOfPrompt(question.prompt))), 판);
+    : questionsFor(lesson, '상', new Set(questionsFor(lesson, '중', undefined, 판).map((question) => shapeOfPrompt(question.prompt))), 판)
+  ).filter(범위안);
   // 둘째 판부터는 문제집을 늘리는 뭉치(expand/)로 만든 문항을 더합니다.
   // 2학년 생성기는 자리 번호로 수를 정해, 뒤 판에서 새 수가 금방 바닥납니다.
   // 상에는 판마다 2학년 고난도 문항(levels/s2hard.ts)을 더합니다.
   const 늘림 = [...(판 ? 늘림뭉치(lesson, difficulty) : []), ...이학년고난도뭉치(lesson, difficulty)];
   if (!늘림.length) return 기본;
   const 있는글 = new Set(기본.map((q) => q.prompt));
-  const 더할 = buildGrade5Questions(lesson, difficulty, 늘림, 판, 1).filter((q) => !있는글.has(q.prompt));
+  const 더할 = buildGrade5Questions(lesson, difficulty, 늘림, 판, 1).filter((q) => !있는글.has(q.prompt) && 범위안(q));
+  const 풀이과정 = (q: Question) => q.prompt.includes('①') || q.prompt.includes('바른 차례로 놓으면');
+  const 넉넉함 = (q: Question) => /자료 해석|조건 함께 보기/.test(q.strategy);
+  if (한시간차시 && !판) {
+    // 남은 2학년 생성기 문항이 적어 새 문항으로 서른 자리를 채웁니다. 풀이 과정 문항은 수준마다
+    // 정한 몫(stepCoverage.test.ts: 하 3개까지, 중 5개, 상 10~20개)만큼, 자료 해석·조건 함께 보기와
+    // 그림이 있는 문항을 앞에 둡니다.
+    const 본글 = new Set<string>();
+    const 처음것 = (q: Question) => 범위안(q) && !본글.has(q.prompt) && Boolean(본글.add(q.prompt));
+    const 모두 = [...기본, ...더할].filter(처음것);
+    // 같은 글이 겹쳐 서른이 안 되면 씨앗을 바꾸어 한 벌 더 만들어 채웁니다(앞 판을 다시 만들지 않도록 시작판을 같게 줍니다).
+    if (모두.length < 30) 모두.push(...buildGrade5Questions(lesson, difficulty, 늘림, 77, 77).filter(처음것));
+    const 풀이몫 = difficulty === '하' ? 3 : difficulty === '중' ? 5 : 12;
+    const 나머지 = 모두.filter((q) => !풀이과정(q));
+    const 점수 = (q: Question) => (넉넉함(q) ? 2 : 0) + (q.visual ? 1 : 0);
+    const 앞뒤 = 나머지.map((q, at) => ({ q, at })).sort((a, b) => 점수(b.q) - 점수(a.q) || a.at - b.at).map((x) => x.q);
+    const 고른 = [...모두.filter(풀이과정).slice(0, 풀이몫), ...앞뒤].slice(0, 30);
+    const 고른것 = new Set(고른);
+    // 처음 차례를 지켜 섞이게 둡니다.
+    return 모두.filter((q) => 고른것.has(q)).map((q, k) => ({ ...q, id: `${lesson.id}-${difficulty}-h${k + 1}` }));
+  }
   // 처음 판은 서른 문항입니다. 고난도 문항이 들어간 만큼 2학년 생성기의 문항을 뒤에서부터 덜어 냅니다.
   // 풀이 과정 문항(①…, 바른 차례로 놓기)은 상의 몫이 정해져 있으므로(stepCoverage.test.ts) 덜지 않습니다.
   if (!판) {
-    const 풀이과정 = (q: Question) => q.prompt.includes('①') || q.prompt.includes('바른 차례로 놓으면');
     // 자료 해석·조건 함께 보기 문항도 수준마다 최소 몫이 있습니다(questionFactory.test.ts: 중 6, 상 10).
     // 그 몫을 넘는 만큼만 덜어 냅니다.
-    const 넉넉함 = (q: Question) => /자료 해석|조건 함께 보기/.test(q.strategy);
     const 남길넉넉 = difficulty === '상' ? 10 : difficulty === '중' ? 6 : 0;
     let 덜넉넉 = Math.max(0, 기본.filter(넉넉함).length - 남길넉넉);
     const 덜자리 = new Set<number>();
