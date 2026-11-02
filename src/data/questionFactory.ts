@@ -17905,7 +17905,8 @@ const 차시원문항 = (
       if (넉넉함(q)) { if (덜넉넉 <= 0) continue; 덜넉넉 -= 1; }
       덜자리.add(at);
     }
-    return [...기본.filter((_, at) => !덜자리.has(at)), ...더할.slice(0, 덜자리.size)];
+    // 2학년 생성기의 id(…-0, …-1)와 겹치지 않도록 더한 문항에는 b를 붙입니다.
+    return [...기본.filter((_, at) => !덜자리.has(at)), ...더할.slice(0, 덜자리.size).map((q, k) => ({ ...q, id: `${lesson.id}-${difficulty}-b${k + 1}` }))];
   }
   return [...기본, ...더할];
 };
