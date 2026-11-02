@@ -23,7 +23,7 @@ const 모양표: Record<string, string> = Object.fromEntries([
 const 모양 = (x: string) => { expect(모양표[x], x).toBeDefined(); return 모양표[x]; };
 const 받침 =(w: string) => ((w.charCodeAt(w.length - 1) - 0xac00) % 28 !== 0);
 
-type 풀이 = { 이름: string; 수준: 수준; 꼴: RegExp; 답: (m: RegExpExecArray) => string };
+type 풀이 = { 이름: string; 수준: 수준; 꼴: RegExp; 답: (m: RegExpExecArray, q: Question) => string };
 
 const 풀이들: 풀이[] = [
   // ── 1단원 9까지의 수 ──
@@ -112,6 +112,54 @@ const 풀이들: 풀이[] = [
       return `${것.filter((s) => (m[2].startsWith('굴렸을') ? s !== '상자 모양' : s === '둥근기둥 모양')).length}개`;
     },
   },
+  // ── 3단원 덧셈과 뺄셈 ──
+  {
+    이름: '모으고가른', 수준: '중', 꼴: /^㉠은 (\d)[과와] (\d)[을를] 모은 수이고, ㉡은 (\d)[을를] (\d)[과와] 어떤 수로 가를 때의 어떤 수입니다\. ㉠과 ㉡ 중 더 (작은|큰) 수/, 답: (m) => {
+      const 가 = Number(m[1]) + Number(m[2]); const 나 = Number(m[3]) - Number(m[4]);
+      return String(m[5] === '작은' ? Math.min(가, 나) : Math.max(가, 나));
+    },
+  },
+  {
+    이름: '카드세장식', 수준: '상', 꼴: /이 적힌 수 카드가 한 장씩 있습니다\. 이 카드를 한 번씩 써서 덧셈식을 바르게 만든 것은/, 답: (_, q) => {
+      const 맞는 = q.choices.filter((c: string) => { const [l, r] = c.split('='); const [a, b] = l.split('+').map(Number); return a + b === Number(r); });
+      expect(맞는).toHaveLength(1);
+      return 맞는[0];
+    },
+  },
+  {
+    이름: '남은식', 수준: '중', 꼴: /피자 (\d)조각 중에서 (\d)조각을 먹었습니다\. 남은 피자 조각의 수를 구하는 뺄셈식/, 답: (m) => `${m[1]}-${m[2]}=${Number(m[1]) - Number(m[2])}`,
+  },
+  { 이름: '화살표계산', 수준: '중', 꼴: /^(\d)에서 (\d)[을를] 빼고, 그 수에 (\d)[을를] 더하면 얼마일까요/, 답: (m) => String(Number(m[1]) - Number(m[2]) + Number(m[3])) },
+  {
+    이름: '가장작은식', 수준: '중', 꼴: /^계산 결과가 가장 (작은|큰) 것은 어느 것일까요\? (.+)$/, 답: (m) => {
+      const 셈 = (식: string) => (식.includes('+') ? 식.split('+').map(Number).reduce((a, b) => a + b) : 식.split('-').map(Number).reduce((a, b) => a - b));
+      const 식들 = m[2].split(', ').sort((x, y) => (m[1] === '작은' ? 셈(x) - 셈(y) : 셈(y) - 셈(x)));
+      return 식들[0];
+    },
+  },
+  {
+    이름: '영아닌것', 수준: '하', 꼴: /^계산 결과가 0이 아닌 것은 어느 것일까요\? (.+)$/, 답: (m) => {
+      const 셈 = (식: string) => (식.includes('+') ? 식.split('+').map(Number).reduce((a, b) => a + b) : 식.split('-').map(Number).reduce((a, b) => a - b));
+      const 아닌 = m[1].split(', ').filter((x) => 셈(x) !== 0);
+      expect(아닌).toHaveLength(1);
+      return 아닌[0];
+    },
+  },
+  {
+    이름: '합아닌식', 수준: '중', 꼴: /^합이 (\d)인 덧셈식이 아닌 것은 어느 것일까요\? (.+)$/, 답: (m) => {
+      const 아닌 = m[2].split(', ').filter((x) => x.split('+').map(Number).reduce((a, b) => a + b) !== Number(m[1]));
+      expect(아닌).toHaveLength(1);
+      return 아닌[0];
+    },
+  },
+  {
+    이름: '세수식', 수준: '상', 꼴: /두 사람이 식을 만들었습니다\. (\S+): (\S+), (\S+): (\S+) 바르게 만든 사람은/, 답: (m) => {
+      const 맞나 = (식: string) => { const [l, r] = 식.split('='); const v = l.includes('+') ? l.split('+').map(Number).reduce((a, b) => a + b) : l.split('-').map(Number).reduce((a, b) => a - b); return v === Number(r); };
+      const 바른 = [[m[1], m[2]], [m[3], m[4]]].filter(([, 식]) => 맞나(식));
+      expect(바른).toHaveLength(1);
+      return 바른[0][0];
+    },
+  },
 ];
 
 describe('1-1 단원별 문제집 유형(하·중·상)', () => {
@@ -122,7 +170,7 @@ describe('1-1 단원별 문제집 유형(하·중·상)', () => {
     for (const { q } of 문항들) {
       const 풀 = 맞는(q);
       if (!풀) continue;
-      expect(q.answer, `${풀.이름}: ${q.prompt}`).toBe(풀.답(풀.꼴.exec(q.prompt)!));
+      expect(q.answer, `${풀.이름}: ${q.prompt}`).toBe(풀.답(풀.꼴.exec(q.prompt)!, q));
       expect(q.choices.filter((c) => c === q.answer), q.prompt).toHaveLength(1);
       expect(new Set(q.choices).size, q.prompt).toBe(q.choices.length);
       셈.set(풀.이름, (셈.get(풀.이름) ?? 0) + 1);
