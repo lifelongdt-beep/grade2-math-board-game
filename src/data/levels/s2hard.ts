@@ -4,6 +4,7 @@ import { 고르개, 사이 } from '../grade11/common';
 import { 수오답 } from '../expand/common';
 import { 사고, 섞기 } from './common';
 import { 이학년시각표 } from './s22time';
+import { 한시간표 } from './s22hour';
 import { 이학년문제집표 } from './s2book';
 
 // 2학년 문항은 '민준'을 쓰지 않습니다(2학년 생성기의 검사가 막습니다). 이 뭉치의 이름은 여기서 고릅니다.
@@ -540,9 +541,11 @@ export const 이학년고난도뭉치 = (lesson: Lesson, difficulty: Difficulty)
   const 열쇠 = `${lesson.semester} ${lesson.unitNo}-${lesson.lessonNo}`;
   // 2-2 시각과 시간은 하·중·상 모두에 문제집 유형이 있습니다(s22time.ts).
   const 시각 = 이학년시각표[열쇠]?.[difficulty] ?? [];
+  // 2-2 4-5(1시간을 알아볼까요)는 s22hour.ts의 문항으로 채웁니다.
+  const 한시간 = 열쇠 === '2-2 4-5' ? 한시간표[difficulty] ?? [] : [];
   // 단원별 문제집 유형(s2book.ts)도 하·중·상에 붙입니다.
   const 문제집 = 이학년문제집표[열쇠]?.[difficulty] ?? [];
-  return [...(difficulty === '상' ? 이학년고난도[열쇠] ?? [] : []), ...시각, ...문제집];
+  return [...(difficulty === '상' ? 이학년고난도[열쇠] ?? [] : []), ...시각, ...한시간, ...문제집];
 };
 
 /** 고난도 뭉치가 있는 2학년 차시의 열쇠입니다(검사가 씁니다). */
