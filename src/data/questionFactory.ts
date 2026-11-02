@@ -41,6 +41,7 @@ import { 그림추론 } from './autoFigure';
 import { generateGrade5Questions } from './grade5';
 import { buildGrade5Questions } from './grade5/build';
 import { 늘림뭉치 } from './expand';
+import { 이학년고난도뭉치 } from './levels/s2hard';
 import { generateGrade51Questions } from './grade51';
 import { generateGrade31Questions } from './grade31';
 import { generateGrade11Questions } from './grade11';
@@ -17882,7 +17883,8 @@ const 차시원문항 = (
     : questionsFor(lesson, '상', new Set(questionsFor(lesson, '중', undefined, 판).map((question) => shapeOfPrompt(question.prompt))), 판);
   // 둘째 판부터는 문제집을 늘리는 뭉치(expand/)로 만든 문항을 더합니다.
   // 2학년 생성기는 자리 번호로 수를 정해, 뒤 판에서 새 수가 금방 바닥납니다.
-  const 늘림 = 판 ? 늘림뭉치(lesson, difficulty) : [];
+  // 상에는 판마다 2학년 고난도 문항(levels/s2hard.ts)을 더합니다.
+  const 늘림 = [...(판 ? 늘림뭉치(lesson, difficulty) : []), ...이학년고난도뭉치(lesson, difficulty)];
   if (!늘림.length) return 기본;
   const 있는글 = new Set(기본.map((q) => q.prompt));
   return [...기본, ...buildGrade5Questions(lesson, difficulty, 늘림, 판, 1).filter((q) => !있는글.has(q.prompt))];
