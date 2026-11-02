@@ -98,6 +98,10 @@ export type G5Spec = {
   // 보기가 뺄셈식('475-328')인 문항입니다. 이 값이 없으면 '-' 뒤에
   // 숫자가 오는 보기를 음수로 보고 거릅니다.
   minusIsOperator?: boolean;
+  // 시각과 시간 문항(tag 'time')은 문제 글을 보고 timeHelp.ts가 힌트와 풀이를
+  // 새로 씁니다. 그 도우미가 모르는 꼴(빨라지는 시계, 시차 등)을 직접 풀이로
+  // 적은 문항은 이 값을 켜서 적어 둔 힌트와 풀이를 그대로 씁니다.
+  ownTimeSteps?: boolean;
   // 앞 단원·앞 학년 개념을 함께 쓰는 융합 문항입니다(expand/fusion.ts). 화면에서 황금 문제로 냅니다.
   융합?: boolean;
 };
@@ -268,7 +272,7 @@ const toQuestion = (
 
   // 시각과 시간 문항은 문제가 묻는 일에 맞춘 풀이를 씁니다(timeHelp.ts). 문항이
   // 스스로 적은 힌트가 있으므로, 문제 글을 읽어 풀이까지 다시 쓸 수 있을 때만 바꿉니다.
-  const 시간 = spec.tag === 'time' ? 시간도움(spec.prompt, spec.answer, spec.visual) : null;
+  const 시간 = spec.tag === 'time' && !spec.ownTimeSteps ? 시간도움(spec.prompt, spec.answer, spec.visual) : null;
   const 시간풀이 = 시간?.steps && 시간.steps.length >= 2 ? 시간 : null;
   const support: LearningSupport = {
     studentConcept: spec.concept ?? 도움.student[spec.tag] ?? '문제에서 무엇을 구하라고 했는지 먼저 찾으세요.',
