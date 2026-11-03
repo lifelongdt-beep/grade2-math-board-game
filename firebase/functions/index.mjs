@@ -1,4 +1,4 @@
-import { randomBytes, randomInt } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getDatabase } from 'firebase-admin/database';
@@ -29,7 +29,7 @@ export const issueStudentToken = onCall(options, async request => {
   // 교사에게만 개별 학생 토큰을 발급합니다. 공용 QR 소지로 출석번호를 자칭할 수 없습니다.
   const uid = `math-${roomId}-${attendanceNo}`;
   const membership = room.child(`members/${uid}`);
-  const result = await membership.transaction(old => old?.active ? old : { active: true, playerId: randomInt(100000, 2000000000), attendanceNo });
+  const result = await membership.transaction(old => old?.active ? old : { active: true, playerId: 100000 + attendanceNo, attendanceNo });
   const member = result.snapshot.val();
   const token = await getAuth().createCustomToken(uid, { role: 'student', roomId, playerId: member.playerId, attendanceNo });
   return { customToken: token, roomId, playerId: member.playerId, attendanceNo, expiresAt: meta.expiresAt };
