@@ -135,7 +135,7 @@ describe('지도 도움', () => {
 
   it('학생마다 서두름·힌트 의존·심화 같은 습관을 찾습니다', () => {
     const 서두름 = Array.from({ length: 6 }, () => 기록({ no: 3, correct: false, responseMs: 2000, misconception: '' }));
-    expect(학생지도(서두름, 3).some((one) => one.제목.includes('서둘러'))).toBe(true);
+    expect(학생지도(서두름, 3).some((one) => one.제목.includes('짧은 시간'))).toBe(true);
     const 힌트 = Array.from({ length: 8 }, () => 기록({ no: 4, hintUsed: true }));
     expect(학생지도(힌트, 4).some((one) => one.제목.includes('힌트'))).toBe(true);
     const 잘함 = Array.from({ length: 12 }, () => 기록({ no: 5, difficulty: '상' }));
@@ -147,7 +147,7 @@ describe('지도 도움', () => {
     const 모두 = [
       ...Array.from({ length: 5 }, (_, i) => 기록({ no: 1, correct: i < 2 })),
       ...Array.from({ length: 5 }, (_, i) => 기록({ no: 2, correct: i < 4 })),
-      ...Array.from({ length: 5 }, () => 기록({ no: 3 })),
+      ...Array.from({ length: 5 }, () => 기록({ no: 3, difficulty: '중' })),
       기록({ no: 4 }),
     ];
     expect(모둠나누기(모두)).toEqual({ 보충: [1], 연습: [2], 심화: [3], 자료부족: [4] });
@@ -155,7 +155,7 @@ describe('지도 도움', () => {
 
   it('CSV는 BOM과 머리줄로 시작하고 쉼표가 든 칸을 감쌉니다', () => {
     const text = csv만들기([기록({ prompt: '3, 4 중 큰 수' })]);
-    expect(text.startsWith('﻿날짜,')).toBe(true);
+    expect(text.startsWith('﻿학년도,학급,학생 식별자,날짜,')).toBe(true);
     expect(text).toContain('"3, 4 중 큰 수"');
   });
 });
@@ -180,4 +180,14 @@ describe('학습 기록 저장소(메모리 대체)', () => {
     expect(백업풀기('{"kind":"other"}')).toBeNull();
     expect(백업풀기('not json')).toBeNull();
   });
+});
+
+it('기초 문제만 맞히거나 재도전 정답이 많아도 심화로 단정하지 않습니다', () => {
+ const easy = Array.from({ length: 5 }, () => 기록({ no: 1 }));
+ expect(모둠나누기(easy).심화).toEqual([]);
+ expect(모둠나누기(easy).연습).toEqual([1]);
+ const retry = Array.from({ length: 10 }, () => 기록({ no: 2, attempts: 2, difficulty: '상' }));
+ expect(모둠나누기(retry).자료부족).toEqual([2]);
+ const mixed = [기록({ correct: false }), 기록({ attempts: 2, correct: true })];
+ expect(요약(mixed)).toMatchObject({ 정답률: 50, 최초정답률: 0, 다시맞힘률: 100 });
 });

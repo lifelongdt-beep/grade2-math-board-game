@@ -78,7 +78,8 @@ export const 묶기 = (records: 학습기록[], keyOf: (one: 학습기록) => st
   const 모음 = new Map<string, 학습기록[]>();
   for (const one of records) {
     const key = keyOf(one);
-    모음.set(key, [...(모음.get(key) ?? []), one]);
+    const list = 모음.get(key);
+    if (list) list.push(one); else 모음.set(key, [one]);
   }
   return [...모음.entries()].map(([key, list]) => {
     const 정답 = list.filter((one) => one.correct).length;
@@ -146,6 +147,9 @@ export interface 요약값 {
   평균초: number;
   /** 틀린 뒤 다시 나온 문제를 맞힌 비율입니다. 설명을 보고 스스로 고쳤는지 봅니다. */
   다시맞힘률: number | null;
+  최초정답률: number | null;
+  독립정답률: number | null;
+  최초문제수: number;
   첫날?: string;
   끝날?: string;
 }
@@ -163,6 +167,9 @@ export const 요약 = (records: 학습기록[]): 요약값 => {
     차시수: new Set(records.map((one) => one.lessonId)).size,
     힌트율: 퍼센트(records.filter((one) => one.hintUsed).length, records.length),
     평균초: Math.round(평균(records.map((one) => one.responseMs)) / 100) / 10,
+    최초문제수: records.filter(one => one.attempts === 1).length,
+    최초정답률: records.some(one => one.attempts === 1) ? 퍼센트(records.filter(one => one.attempts === 1 && one.correct).length, records.filter(one => one.attempts === 1).length) : null,
+    독립정답률: records.some(one => one.attempts === 1 && !one.hintUsed) ? 퍼센트(records.filter(one => one.attempts === 1 && !one.hintUsed && one.correct).length, records.filter(one => one.attempts === 1 && !one.hintUsed).length) : null,
     다시맞힘률: 다시.length ? 퍼센트(다시.filter((one) => one.correct).length, 다시.length) : null,
     첫날: 날들[0],
     끝날: 날들.at(-1),
@@ -291,12 +298,16 @@ export interface 모둠 {
 /** 정답률로 세 모둠을 나눕니다. 다섯 문제보다 적게 푼 학생은 아직 나누지 않습니다. */
 export const 모둠나누기 = (records: 학습기록[]): 모둠 => {
   const 결과: 모둠 = { 보충: [], 연습: [], 심화: [], 자료부족: [] };
-  for (const 줄 of 학생별(records, String)) {
-    const no = Number(줄.key);
-    if (줄.문제 < 5) 결과.자료부족.push(no);
-    else if (줄.정답률 < 60) 결과.보충.push(no);
-    else if (줄.정답률 < 85) 결과.연습.push(no);
-    else 결과.심화.push(no);
+  for (const no of new Set(records.map(one => one.no))) {
+    const first = records.filter(one => one.no === no && one.attempts === 1);
+    const independent = first.filter(one => !one.hintUsed);
+    const basic = independent.filter(one => one.difficulty === '하');
+    const advanced = independent.filter(one => one.difficulty !== '하');
+    const rate = (list: 학습기록[]) => 퍼센트(list.filter(one => one.correct).length, list.length);
+    if (first.length < 5 || independent.length < 3) 결과.자료부족.push(no);
+    else if (basic.length >= 3 && rate(basic) < 60) 결과.보충.push(no);
+    else if (advanced.length >= 5 && rate(advanced) >= 85) 결과.심화.push(no);
+    else 결과.연습.push(no);
   }
   return 결과;
 };
@@ -377,7 +388,7 @@ export const 반지도 = (records: 학습기록[], 이름: (no: number) => strin
         `보충 모둠(${나눔.보충.map(이름).join(', ') || '없음'}): 교사와 함께 구체물로 다시 해 보기, 하 수준 문제로 성공 경험 쌓기.`,
         `연습 모둠(${나눔.연습.map(이름).join(', ') || '없음'}): 짝과 번갈아 문제 내고 풀기, 틀린 문제 다시 풀기.`,
         `심화 모둠(${나눔.심화.map(이름).join(', ') || '없음'}): 상 수준·도전 카드 문제, 친구에게 풀이 설명하는 도우미 역할.`,
-        '모둠은 차시마다 바뀔 수 있습니다. 한 번 정한 모둠으로 학기 내내 묶지 않습니다.',
+        '최초 응답과 힌트 없이 푼 기록을 기준으로 한 참고 제안입니다. 심화는 중·상 수준 독립 응답 5개 이상이 필요합니다. 모둠은 차시마다 바뀔 수 있습니다. 한 번 정한 모둠으로 학기 내내 묶지 않습니다.',
       ],
     });
   }
@@ -443,7 +454,7 @@ export const 학생지도 = (records: 학습기록[], no: number): 지도항목[
   if (틀린.length >= 4 && 빠른오답.length / 틀린.length >= 0.5) {
     항목.push({
       급함: '이번 주',
-      제목: '문제를 끝까지 읽지 않고 서둘러 답함',
+      제목: '짧은 시간에 고른 오답이 많음 · 풀이 과정 확인',
       근거: `틀린 ${틀린.length}문제 중 ${빠른오답.length}문제를 4초 안에 골랐습니다.`,
       방법: [
         '"읽기 3단계" 약속: ① 끝까지 읽기 ② 구하는 것에 밑줄 ③ 답을 고르기 전에 한 번 더 확인.',
@@ -519,11 +530,14 @@ export const 학생지도 = (records: 학습기록[], no: number): 지도항목[
 /** 기록을 표 파일(CSV)로 씁니다. 엑셀에서 한글이 깨지지 않게 앞에 BOM을 붙입니다. */
 export const csv만들기 = (records: 학습기록[], 이름: (no: number) => string = (no) => `${no}번`) => {
   const 칸 = (value: unknown) => {
-    const text = String(value ?? '');
+    let text = String(value ?? '');
+    // 스프레드시트가 이름·문항을 수식으로 실행하지 않게 합니다.
+    if (/^[\s]*[=+@-]/.test(text)) text = "'" + text;
     return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
   };
-  const 머리 = ['날짜', '시각', '번호', '이름', '학년', '학기', '단원', '차시', '차시 이름', '수준', '갈래', '문제', '고른 답', '정답', '결과', '힌트', '다시 푼 문제', '걸린 시간(초)', '오개념'];
+  const 머리 = ['학년도', '학급', '학생 식별자', '날짜', '시각', '번호', '이름', '학년', '학기', '단원', '차시', '차시 이름', '수준', '갈래', '문제', '고른 답', '정답', '결과', '힌트', '다시 푼 문제', '걸린 시간(초)', '오개념'];
   const 줄들 = records.map((one) => [
+    one.schoolYear ?? '', one.classId ?? '학급 미지정', one.studentId ?? '',
     one.date,
     new Date(one.answeredAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
     one.no,

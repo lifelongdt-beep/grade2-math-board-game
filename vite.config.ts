@@ -12,7 +12,7 @@ export default defineConfig({
       manifest: {
         name: '보조개샘ai클래스 수학 게임',
         short_name: '수학 보드게임',
-        description: '초등 2학년 수학 보드게임 — 교실 전자칠판·태블릿용',
+        description: '초등 1~6학년 수학 보드게임 — 교실 전자칠판·태블릿용',
         start_url: '.',
         scope: './',
         display: 'standalone',

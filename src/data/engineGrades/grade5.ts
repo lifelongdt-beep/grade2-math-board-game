@@ -1,0 +1,9 @@
+import { registerGenerator } from '../questionRegistry';
+import { generateGrade5Questions } from '../grade5';
+import { generateGrade51Questions } from '../grade51';
+import { 수준51 } from '../levels/s51';
+import { 수준52 } from '../levels/s52';
+import { 수준52고난도 } from '../levels/s52hard';
+import { registerLevels } from '../levels/registry';
+registerLevels(수준51, 수준52, 수준52고난도);
+registerGenerator(5, (l, d, o) => generateGrade5Questions(l, d, o?.판) ?? generateGrade51Questions(l, d, o?.판) ?? []);

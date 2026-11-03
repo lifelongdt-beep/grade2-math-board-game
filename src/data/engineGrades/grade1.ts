@@ -1,0 +1,10 @@
+import { registerGenerator } from '../questionRegistry';
+import { generateGrade11Questions } from '../grade11';
+import { generateGrade12Questions } from '../grade12';
+import { 수준1 } from '../levels/s1';
+import { 수준1고난도 } from '../levels/s1hard';
+import { 수준11문제집 } from '../levels/s11book';
+import { 수준12문제집 } from '../levels/s12book';
+import { registerLevels } from '../levels/registry';
+registerLevels(수준1, 수준1고난도, 수준11문제집, 수준12문제집);
+registerGenerator(1, (l, d, o) => generateGrade11Questions(l, d, o?.판) ?? generateGrade12Questions(l, d, o?.판) ?? []);

@@ -1,5 +1,5 @@
 import type { ConceptTag, Difficulty, Lesson, Question } from '../../types';
-import { generateQuestions } from '../questionFactory';
+import { generateQuestions } from '../questionRuntime';
 import { 놀이문항수, 놀이원본 } from './index';
 import { 단순문항, 단순문항있나 } from './quick';
 

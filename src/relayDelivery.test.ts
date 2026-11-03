@@ -1,0 +1,22 @@
+import { expect, it, vi } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
+import { answerFixture } from './reliabilityFixtures';
+vi.mock('./classroomRelay', () => ({ relayJoin: vi.fn(), relayRecord: vi.fn() }));
+it('전송 실패·페이지 새로고침 뒤에도 재시도하고 수신 확인 뒤에만 큐를 비웁니다', async () => {
+  vi.stubGlobal('indexedDB', new IDBFactory());
+  const relay = await import('./classroomRelay');
+  vi.mocked(relay.relayJoin).mockResolvedValue(123456);
+  vi.mocked(relay.relayRecord).mockResolvedValue(false);
+  let delivery = await import('./relayDelivery');
+  const player = { id: 1, name: '1번', attendanceNo: 1, avatar: '🦊', color: '#fff', difficulty: '하' as const };
+  await delivery.enqueueAnswer({ kind: 'local' }, answerFixture(), player);
+  await delivery.enqueueAnswer({ kind: 'local' }, answerFixture({ id: 'answer-2' }), player);
+  const queued = await delivery.pendingAnswers();
+  expect(queued).toHaveLength(2); expect(queued[0].remoteId).toBe(queued[1].remoteId);
+  expect(await delivery.flushAnswers()).toBe(2);
+  vi.resetModules(); delivery = await import('./relayDelivery');
+  expect(await delivery.pendingAnswers()).toHaveLength(2);
+  vi.mocked(relay.relayRecord).mockResolvedValue(true);
+  expect(await delivery.flushAnswers()).toBe(0);
+  expect(await delivery.pendingAnswers()).toEqual([]);
+});

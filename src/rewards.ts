@@ -1,3 +1,4 @@
+import { scopedStorageKey, readScopedStorage } from './data/classContext';
 // ════════════════════════════════════════════════════════════════════
 // 별과 꾸미기, 배지, 불꽃 — 다음 시간에도 이어서 하고 싶게
 // ────────────────────────────────────────────────────────────────────
@@ -169,7 +170,7 @@ const 저장열쇠 = 'mathRewards:v1';
 
 const 읽기 = (): Record<string, 기록장> => {
   try {
-    const raw = window.localStorage.getItem(저장열쇠);
+    const raw = readScopedStorage(저장열쇠);
     const parsed = raw ? JSON.parse(raw) : {};
     return parsed && typeof parsed === 'object' ? parsed : {};
   } catch {
@@ -189,7 +190,7 @@ export const 기록장쓰기 = (attendanceNo: number, 장: 기록장) => {
   try {
     const all = 읽기();
     all[String(attendanceNo)] = 장;
-    window.localStorage.setItem(저장열쇠, JSON.stringify(all));
+    window.localStorage.setItem(scopedStorageKey(저장열쇠), JSON.stringify(all));
   } catch {
     // 저장할 수 없는 환경(사생활 보호 창 등)이면 이번 수업에만 남습니다.
   }
@@ -198,8 +199,8 @@ export const 기록장쓰기 = (attendanceNo: number, 장: 기록장) => {
 /** 선생님이 새 반을 맡거나 학년이 바뀌었을 때 모두 지웁니다. */
 export const 기록장모두지우기 = () => {
   try {
-    window.localStorage.removeItem(저장열쇠);
-    window.localStorage.removeItem(대왕열쇠);
+    window.localStorage.removeItem(scopedStorageKey(저장열쇠));
+    window.localStorage.removeItem(scopedStorageKey(대왕열쇠));
   } catch {
     // 지울 수 없는 환경이면 그대로 둡니다.
   }
@@ -255,7 +256,7 @@ const 대왕열쇠 = 'mathClassBoss:v1';
 
 export const 대왕읽기 = (): 대왕싸움 => {
   try {
-    const raw = JSON.parse(window.localStorage.getItem(대왕열쇠) ?? 'null');
+    const raw = JSON.parse(readScopedStorage(대왕열쇠) ?? 'null');
     const round = Number.isInteger(raw?.round) && raw.round >= 0 ? raw.round : 0;
     const damage = Number.isFinite(raw?.damage) && raw.damage >= 0 ? Math.floor(raw.damage) : 0;
     return { round, damage };
@@ -266,7 +267,7 @@ export const 대왕읽기 = (): 대왕싸움 => {
 
 export const 대왕쓰기 = (싸움: 대왕싸움) => {
   try {
-    window.localStorage.setItem(대왕열쇠, JSON.stringify(싸움));
+    window.localStorage.setItem(scopedStorageKey(대왕열쇠), JSON.stringify(싸움));
   } catch {
     // 저장할 수 없으면 이번 수업 동안만 이어집니다.
   }

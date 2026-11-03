@@ -1219,7 +1219,7 @@ export function ManipulateTask({ m, difficulty = '중', locked, reveal, onSubmit
   const 되돌림 = s.kind === 'grid-draw' && s.segs.length > 0;
   return (
     <div className={`manip-task manip-kind-${m.kind}`} onPointerDown={() => onTap?.()}>
-      {!reveal && (
+      {!reveal && m.kind !== 'clock' && (
         <p className={`manip-mission ${m.friend || (m.kind === 'number-line' && m.targets) || (m.kind === 'cube-net' && m.mode === 'move') ? 'manip-mission-challenge' : ''}`}>
           <span className="manip-mission-badge"><span aria-hidden="true">{임무.emoji}</span>{임무.이름}</span>
           <span>{임무.할일}</span>

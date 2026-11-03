@@ -1,3 +1,5 @@
+import { classKey, readClassContext } from '../data/classContext';
+import { useStorageStatus } from '../data/storageStatus';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PdfFigure, 보기있는문제, 판없는조작문제 } from './PdfFigure';
 import { MathText } from './MathText';
@@ -93,8 +95,11 @@ const 파일받기 = (text: string, name: string, type: string) => {
 const 초글 = (ms: number) => `${(ms / 1000).toFixed(1)}초`;
 
 export function TeacherBook() {
+  const [학급범위, set학급범위] = useState(() => classKey(readClassContext()));
+  const 저장경고 = useStorageStatus();
   const [모두, set모두] = useState<학습기록[]>([]);
   const [읽는중, set읽는중] = useState(true);
+  const 처음읽음 = useRef(false);
   const [쪽, set쪽] = useState<쪽>('overview');
   const [학생, set학생] = useState<number | ''>('');
   const [학년, set학년] = useState<number | ''>('');
@@ -110,14 +115,20 @@ export function TeacherBook() {
   const [오래, set오래] = useState<boolean | null>(null);
   const [백업, set백업] = useState<백업파일상태>(null);
   const 이름표 = useMemo(() => 명단풀기(명단읽기()), []);
-  const 이름 = (no: number) => (이름표[no] ? `${no}번 ${이름표[no]}` : `${no}번`);
+  const 이름 = (no: number) => (학급범위 === classKey(readClassContext()) && 이름표[no] ? `${no}번 ${이름표[no]}` : `${no}번`);
 
   const 새로읽기 = async () => {
+    try {
     const [기록, 휴지통, 파일] = await Promise.all([기록모두읽기(), 휴지통읽기(), 백업파일상태읽기()]);
     set모두(기록);
+    if (!처음읽음.current) {
+      처음읽음.current = true;
+      if (!기록.some(one => classKey(one) === classKey(readClassContext())) && 기록.some(one => classKey(one) === 'legacy')) set학급범위('legacy');
+    }
     set휴지통수(휴지통.length);
     set백업(파일);
-    set읽는중(false);
+    } catch { set알림('기록을 읽지 못했습니다. 새로고침하거나 백업 파일을 확인해 주세요.'); }
+    finally { set읽는중(false); }
   };
 
   useEffect(() => {
@@ -153,9 +164,11 @@ export function TeacherBook() {
       ...기간값,
     };
   }, [학생, 학년, 학기, 단원, 차시, 기간, 시작, 끝]);
-  const 걸린 = useMemo(() => 거르기(모두, 거름값), [모두, 거름값]);
+  const 학급기록 = useMemo(() => 모두.filter(one => classKey(one) === 학급범위), [모두, 학급범위]);
+  const 학급목록 = useMemo(() => [...new Set([classKey(readClassContext()), ...모두.map(classKey)])], [모두]);
+  const 걸린 = useMemo(() => 거르기(학급기록, 거름값), [학급기록, 거름값]);
   // 학생을 빼고 거른 기록입니다. 학생 한 명을 볼 때도 반 평균과 견주려고 씁니다.
-  const 반범위 = useMemo(() => 거르기(모두, { ...거름값, nos: undefined }), [모두, 거름값]);
+  const 반범위 = useMemo(() => 거르기(학급기록, { ...거름값, nos: undefined }), [학급기록, 거름값]);
 
   const 고를학생 = useMemo(() => [...new Set(모두.map((one) => one.no))].sort((a, b) => a - b), [모두]);
   const 고를학년 = useMemo(() => [...new Set(모두.map((one) => one.grade))].sort(), [모두]);
@@ -186,7 +199,11 @@ export function TeacherBook() {
         <a className="tb-button ghost" href={`${window.location.pathname}`}>← 놀이 화면으로</a>
       </header>
 
+      {저장경고 && <p role="status" className="reliability-notice">{저장경고}</p>}
       <section className="tb-filters" aria-label="보고 싶은 범위">
+        <label>학년도·학급<select value={학급범위} onChange={e => { set학급범위(e.target.value); 거름비우기(); set고른학생(null); }}>
+          {학급목록.map(key => <option key={key} value={key}>{key === 'legacy' ? '학급 미지정 · 이전 기록' : key.replace('|', '학년도 ')}</option>)}
+        </select></label>
         <label>학생
           <select value={학생} onChange={(e) => set학생(e.target.value ? Number(e.target.value) : '')}>
             <option value="">모든 학생</option>
@@ -288,7 +305,9 @@ export function TeacherBook() {
 function Tiles({ 합 }: { 합: ReturnType<typeof 요약> }) {
   const 칸 = [
     { 이름: '푼 문제', 값: `${합.문제.toLocaleString()}`, 단위: '문제' },
-    { 이름: '정답률', 값: `${합.정답률}`, 단위: '%' },
+    { 이름: '전체 응답 정답률', 값: `${합.정답률}`, 단위: '%' },
+    { 이름: '최초 응답 정답률', 값: 합.최초정답률 === null ? '–' : String(합.최초정답률), 단위: 합.최초정답률 === null ? '' : '%' },
+    { 이름: '힌트 없는 최초 응답 정답률', 값: 합.독립정답률 === null ? '–' : String(합.독립정답률), 단위: 합.독립정답률 === null ? '' : '%' },
     { 이름: '학생', 값: `${합.학생수}`, 단위: '명' },
     { 이름: '학습한 날', 값: `${합.날수}`, 단위: '일' },
     { 이름: '학습한 차시', 값: `${합.차시수}`, 단위: '차시' },
@@ -336,7 +355,7 @@ function Overview({ 걸린, 합, 이름 }: { 걸린: 학습기록[]; 합: Return
         <section className="tb-card">
           <h2>수준(하·중·상)별 풀이</h2>
           <HBarChart rows={수준} 값={(r) => r.문제} 끝={Math.max(1, ...수준.map((r) => r.문제))} 단위="문제" 부가={(r) => `정답률 ${r.정답률}%`} />
-          <p className="tb-note">하에서 시작해 3문제 연속 맞히면 한 단계 오릅니다. 상 수준 풀이가 많을수록 깊이 이해한 학생이 많습니다.</p>
+          <p className="tb-note">하에서 시작해 3문제 연속 맞히면 한 단계 오릅니다. 수준별 정답률과 최초 응답·힌트 사용을 함께 확인하세요. 출제 수준만으로 이해도를 단정하지 않습니다.</p>
         </section>
         <section className="tb-card">
           <h2>자주 보이는 오개념</h2>
@@ -786,7 +805,7 @@ function Manage({ 모두, 걸린, 거름값, 범위글, 이름, 휴지통수, �
   const 불러오기 = async (file: File) => {
     const 꺼낸 = 백업풀기(await file.text());
     if (!꺼낸) {
-      알리기('학습 기록장 백업 파일이 아닙니다.');
+      알리기('지원하지 않는 버전이거나 기록이 손상된 백업입니다. 기존 기록은 변경하지 않았습니다.');
       return;
     }
     const 있던 = new Set(모두.map((one) => one.id));

@@ -2,5 +2,7 @@ packages:
   - '.'
 
 allowBuilds:
+  '@firebase/util': false
   core-js: true
   esbuild: true
+  protobufjs: false

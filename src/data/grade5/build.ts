@@ -6,7 +6,7 @@ import { rand, resolveParticles } from './util';
 import { deriveWalkthrough } from '../walkthrough';
 import { 늘림뭉치 } from '../expand';
 import { 난도점수, 뭉치선호, 사고단계, 수번거로움, 후보고르기 } from './levelPick';
-import { 수준뭉치 } from '../levels';
+import { 수준뭉치 } from '../levels/registry';
 import {
   g5CoreConcept,
   g5Misconception,

@@ -1481,6 +1481,13 @@ export interface PlayerQuestionState {
 }
 
 export interface AnswerRecord {
+  schoolYear?: number;
+  classId?: string;
+  studentId?: string;
+  attendanceNo?: number;
+  sessionId?: string;
+  lessonContext?: Pick<Lesson, 'id' | 'semester' | 'unitNo' | 'unitTitle' | 'lessonNo' | 'title'>;
+  hintKinds?: ('text' | 'steps' | 'interactive')[];
   id: string;
   playerId: number;
   playerName: string;

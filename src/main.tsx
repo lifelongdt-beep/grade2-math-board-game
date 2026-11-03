@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { RecoveryBoundary } from './components/RecoveryBoundary';
 import './styles.css';
 import { 동시탭켜기 } from './multiTouchTap';
 
@@ -13,6 +14,7 @@ if (!기록장인가) 동시탭켜기();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
+    <RecoveryBoundary>
     {기록장인가 ? (
       <Suspense fallback={<p style={{ padding: 24 }}>학습 기록장을 여는 중입니다…</p>}>
         <TeacherBook />
@@ -20,5 +22,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     ) : (
       <App />
     )}
+    </RecoveryBoundary>
   </React.StrictMode>,
 );
