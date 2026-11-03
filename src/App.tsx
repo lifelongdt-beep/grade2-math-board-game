@@ -686,7 +686,7 @@ function App() {
   // 하에서 시작한 학생이 상에 오르기 전에는 상 문제집을 만들지 않습니다.
   // 문항 엔진입니다. 화면을 먼저 그린 뒤 뒤에서 내려받습니다. 받기 전에는 문제집이 비어 있고,
   // 수업 화면은 '문제를 준비하고 있어요'를 잠깐 보여 줍니다.
-  const { engine, error: engineError, retry: retryEngine } = useQuestionEngine(부품불러오기);
+  const { engine, error: engineError, retry: retryEngine } = useQuestionEngine(scopedLessons);
   const storageWarning = useStorageStatus();
   const [pendingCount, setPendingCount] = useState(0);
   const sessionIdRef = useRef(newRecordId());

@@ -1,0 +1,30 @@
+name: Firebase security preparation
+on:
+  push:
+    paths: ['firebase/**', 'src/secureCloudRelay.ts', 'package.json', 'pnpm-lock.yaml', '.github/workflows/firebase-security.yml']
+  pull_request:
+    paths: ['firebase/**', 'src/secureCloudRelay.ts', 'package.json', 'pnpm-lock.yaml', '.github/workflows/firebase-security.yml']
+permissions:
+  contents: read
+jobs:
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir firebase/functions install --ignore-workspace --frozen-lockfile --ignore-scripts
+      - run: node --input-type=module -e "import('./firebase/functions/index.mjs')"
+      - run: node --check firebase/functions/index.mjs
+      - run: node --test firebase/tests/policy.test.mjs
+      - run: pnpm dlx firebase-tools@15.34.2 emulators:exec --config firebase/firebase.json --project demo-math-board --only database "node --test firebase/tests/rules.test.mjs"

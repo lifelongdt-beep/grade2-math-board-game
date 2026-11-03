@@ -8,6 +8,6 @@
 // 문항 엔진이 뒤에서 내려받아집니다.
 // ════════════════════════════════════════════════════════════════════
 
-export { generateClassQuestions } from './questionFactory';
+export { generateClassQuestions } from './questionRuntime';
 export { 놀이문항 } from './games/questions';
 export { 조작섞기 } from './manipulate';

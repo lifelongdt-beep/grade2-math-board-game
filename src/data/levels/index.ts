@@ -26,11 +26,9 @@ import { 수준62 } from './s62';
 // 문제에 쓴 수에서 계산하고, 따로 다시 풀어 보는 검사를 붙입니다.
 // ════════════════════════════════════════════════════════════════════
 
-export type 수준표 = Record<string, Partial<Record<Difficulty, G5Family[]>>>;
+export type { 수준표 } from './registry';
+export { 수준뭉치 } from './registry';
+import { registerLevels } from './registry';
+const 모든표 = [수준1, 수준1고난도, 수준11문제집, 수준12문제집, 수준3, 수준41, 수준42, 수준51, 수준52, 수준52고난도, 수준61, 수준62];
 
-const 모든표: 수준표[] = [수준1, 수준1고난도, 수준11문제집, 수준12문제집, 수준3, 수준41, 수준42, 수준51, 수준52, 수준52고난도, 수준61, 수준62];
-
-export const 수준뭉치 = (lesson: Lesson, difficulty: Difficulty): G5Family[] => {
-  const 열쇠 = `${lesson.semester} ${lesson.unitNo}-${lesson.lessonNo}`;
-  return 모든표.flatMap((표) => 표[열쇠]?.[difficulty] ?? []);
-};
+registerLevels(...모든표);

@@ -1,0 +1,30 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "secureRooms": { ".indexOn": ["meta/deleteAfter"],
+      "$room": {
+        ".read": "auth != null && auth.token.mathTeacher === true && auth.uid === data.child('meta/ownerUid').val() && data.child('meta/expiresAt').val() > now",
+        "players": {
+          "$player": {
+            ".write": "auth != null && auth.token.role === 'student' && auth.token.roomId === $room && $player === '' + auth.token.playerId && root.child('secureRooms').child($room).child('members').child(auth.uid).child('active').val() === true && root.child('secureRooms').child($room).child('meta/expiresAt').val() > now",
+            ".validate": "newData.hasChildren(['id','attendanceNo','name','difficulty']) && newData.child('id').val() === auth.token.playerId && newData.child('attendanceNo').val() === auth.token.attendanceNo",
+            "id": {".validate":"newData.isNumber()"},
+            "attendanceNo": {".validate":"newData.isNumber() && newData.val() >= 1 && newData.val() <= 999"},
+            "name": {".validate":"newData.isString() && newData.val().length <= 80"},
+            "difficulty": {".validate":"newData.val() === '하' || newData.val() === '중' || newData.val() === '상'"},
+            "$other": {".validate":false}
+          }
+        },
+        "records": {
+          ".indexOn": ["playerId"],
+          ".write": "auth != null && auth.token.mathTeacher === true && auth.uid === root.child('secureRooms').child($room).child('meta/ownerUid').val() && !newData.exists() && root.child('secureRooms').child($room).child('meta/expiresAt').val() > now",
+          "$record": {
+            ".write": "auth != null && auth.token.role === 'student' && auth.token.roomId === $room && root.child('secureRooms').child($room).child('members').child(auth.uid).child('active').val() === true && root.child('secureRooms').child($room).child('members').child(auth.uid).child('playerId').val() === auth.token.playerId && root.child('secureRooms').child($room).child('meta/expiresAt').val() > now && newData.exists() && (!data.exists() || data.child('playerId').val() === auth.token.playerId)",
+            ".validate": "newData.hasChildren(['id','playerId','attendanceNo','lessonId','answeredAt','prompt','answer','choices','correct','elapsedMs','attempt']) && newData.child('playerId').val() === auth.token.playerId && newData.child('attendanceNo').val() === auth.token.attendanceNo && newData.child('id').isString() && newData.child('id').val().length <= 200 && newData.child('lessonId').isString() && newData.child('answeredAt').isString() && newData.child('prompt').isString() && newData.child('answer').isString() && newData.child('correct').isBoolean() && newData.child('elapsedMs').isNumber() && newData.child('elapsedMs').val() >= 0 && newData.child('attempt').isNumber() && newData.child('attempt').val() >= 1"
+          }
+        }
+      }
+    }
+  }
+}
