@@ -127,6 +127,16 @@ describe('여럿이 동시에 누르는 화면', () => {
     expect(멈춤).toBe(1);
   });
 
+  it('다섯 손가락을 동시에 누르고 역순으로 떼어도 각 자리 단추가 한 번씩 눌립니다', () => {
+    const { doc, 단추, 손 } = 만들기();
+    const 끄기 = 동시탭켜기(doc);
+    const 자리들 = Array.from({ length: 5 }, (_, i) => 단추(`${i + 1}번`));
+    자리들.forEach((자리, i) => 손('pointerdown', 자리, i + 1, i === 0));
+    for (let i = 4; i >= 0; i--) 손('pointerup', 자리들[i], i + 1, i === 0);
+    expect(자리들.map(자리 => 자리.눌림)).toEqual([1, 1, 1, 1, 1]);
+    끄기();
+  });
+
   it('떼어 내면 더는 듣지 않습니다', () => {
     const { doc, 단추, 손, 듣기 } = 만들기();
     const 끄기 = 동시탭켜기(doc);
