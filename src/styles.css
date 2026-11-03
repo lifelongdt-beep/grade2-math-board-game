@@ -7524,6 +7524,10 @@ body::before {
   line-height: 1.35;
 }
 
+.manip-kind-clock > .manip-mission {
+  display: none;
+}
+
 .manip-mission-challenge {
   background: rgba(126, 87, 194, 0.24);
   color: #e1d5ff;
