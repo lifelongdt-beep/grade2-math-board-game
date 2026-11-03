@@ -1,12 +1,15 @@
 @echo off
 setlocal
 set "ROOT=%~dp0"
-set "NODE=C:\Users\user\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
-set "PNPM=C:\Users\user\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\pnpm.cmd"
-set "PATH=C:\Users\user\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;%PATH%"
-
-if not exist "%NODE%" (
-  echo Node runtime was not found.
+where node >nul 2>nul
+if errorlevel 1 (
+  echo Install Node.js 20 or later and pnpm 9, then run this file again.
+  pause
+  exit /b 1
+)
+where pnpm >nul 2>nul
+if errorlevel 1 (
+  echo pnpm was not found. Install pnpm 9 before running the game.
   pause
   exit /b 1
 )
@@ -15,7 +18,8 @@ cd /d "%ROOT%"
 
 if not exist "node_modules" (
   echo Installing app dependencies...
-  call "%PNPM%" install
+  call pnpm install --frozen-lockfile
+  if errorlevel 1 exit /b 1
 )
 
 set "LAN_IP=127.0.0.1"
@@ -23,7 +27,7 @@ for /f "usebackq delims=" %%I in (`powershell -NoProfile -Command "$ip=(Get-NetI
 if not exist "%ROOT%public" mkdir "%ROOT%public"
 powershell -NoProfile -Command "[System.IO.File]::WriteAllText((Join-Path $env:ROOT 'public\mobile-origin.json'), ('{""origin"":""http://' + $env:LAN_IP + ':5173""}'), [System.Text.UTF8Encoding]::new($false))"
 
-start "" "%NODE%" "%ROOT%node_modules\vite\bin\vite.js" --host 0.0.0.0 --port 5173
+start "" node "%ROOT%node_modules\vite\bin\vite.js" --host 0.0.0.0 --port 5173
 timeout /t 2 >nul
 echo Classroom URL: http://%LAN_IP%:5173/
 echo Mobile URL: http://%LAN_IP%:5173/?m=1

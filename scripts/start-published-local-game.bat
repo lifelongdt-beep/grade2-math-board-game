@@ -3,6 +3,7 @@ setlocal
 set "ROOT=%~dp0"
 set "SERVER_SCRIPT=%ROOT%published-server.ps1"
 set "PORT=5173"
+for /f "delims=" %%S in ('powershell -NoProfile -Command "[Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N')"') do set "MATH_TEACHER_SECRET=%%S"
 
 cd /d "%ROOT%"
 
@@ -52,7 +53,7 @@ for /l %%I in (1,1,10) do (
 :SERVER_OK
 
 if "%SERVER_READY%"=="1" (
-  start "" "http://127.0.0.1:%PORT%/"
+  start "" "http://127.0.0.1:%PORT%/#teacher=%MATH_TEACHER_SECRET%"
 ) else (
   echo.
   echo The server did not start.

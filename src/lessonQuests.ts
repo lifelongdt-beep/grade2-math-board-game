@@ -1,3 +1,4 @@
+import { scopedStorageKey, readScopedStorage } from './data/classContext';
 // ════════════════════════════════════════════════════════════════════
 // 일반 차시의 게임 요소: 실수 몬스터 · 오늘의 미션 · 나와의 경주
 // ────────────────────────────────────────────────────────────────────
@@ -86,7 +87,7 @@ const 저장열쇠 = 'mathGhost:v1';
 
 const 모두읽기 = (): Record<string, Record<string, 지난기록>> => {
   try {
-    const raw = window.localStorage.getItem(저장열쇠);
+    const raw = readScopedStorage(저장열쇠);
     const parsed = raw ? JSON.parse(raw) : {};
     return parsed && typeof parsed === 'object' ? parsed : {};
   } catch {
@@ -103,7 +104,7 @@ export const 지난나쓰기 = (attendanceNo: number, 단원: string, 기록: �
   try {
     const all = 모두읽기();
     all[String(attendanceNo)] = { ...(all[String(attendanceNo)] ?? {}), [단원]: 기록 };
-    window.localStorage.setItem(저장열쇠, JSON.stringify(all));
+    window.localStorage.setItem(scopedStorageKey(저장열쇠), JSON.stringify(all));
   } catch {
     // 저장할 수 없는 환경(사생활 보호 창 등)이면 다음번에 견줄 기록이 없을 뿐입니다.
   }
@@ -111,7 +112,7 @@ export const 지난나쓰기 = (attendanceNo: number, 단원: string, 기록: �
 
 export const 지난나모두지우기 = () => {
   try {
-    window.localStorage.removeItem(저장열쇠);
+    window.localStorage.removeItem(scopedStorageKey(저장열쇠));
   } catch {
     // 지울 수 없으면 그대로 둡니다.
   }
@@ -147,7 +148,7 @@ const 카드열쇠 = 'mathCards:v1';
 
 const 카드모두읽기 = (): Record<string, Record<string, 카드등급>> => {
   try {
-    const raw = window.localStorage.getItem(카드열쇠);
+    const raw = readScopedStorage(카드열쇠);
     const parsed = raw ? JSON.parse(raw) : {};
     return parsed && typeof parsed === 'object' ? parsed : {};
   } catch {
@@ -174,7 +175,7 @@ export const 카드쓰기 = (attendanceNo: number, 모음: Record<string, 카드
   try {
     const all = 카드모두읽기();
     all[String(attendanceNo)] = 모음;
-    window.localStorage.setItem(카드열쇠, JSON.stringify(all));
+    window.localStorage.setItem(scopedStorageKey(카드열쇠), JSON.stringify(all));
   } catch {
     // 저장할 수 없으면 이번 화면에서만 보입니다.
   }
@@ -182,7 +183,7 @@ export const 카드쓰기 = (attendanceNo: number, 모음: Record<string, 카드
 
 export const 카드모두지우기 = () => {
   try {
-    window.localStorage.removeItem(카드열쇠);
+    window.localStorage.removeItem(scopedStorageKey(카드열쇠));
   } catch {
     // 지울 수 없으면 그대로 둡니다.
   }

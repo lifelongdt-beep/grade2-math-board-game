@@ -1,5 +1,6 @@
-param(
-  [int]$Port = 5173
+﻿param(
+  [int]$Port = 5173,
+  [string]$TeacherSecret = $env:MATH_TEACHER_SECRET
 )
 
 $ErrorActionPreference = 'Stop'
@@ -12,6 +13,9 @@ $MimeTypes = @{
   '.png' = 'image/png'
   '.svg' = 'image/svg+xml'
   '.webp' = 'image/webp'
+  '.webmanifest' = 'application/manifest+json'
+  '.ico' = 'image/x-icon'
+  '.woff2' = 'font/woff2'
 }
 
 # ── 큐알 학생 폰 ↔ 선생님 화면 ──────────────────────────────────────
@@ -25,6 +29,37 @@ $script:RemotePlayers = New-Object 'System.Collections.Generic.Dictionary[int,st
 $script:RemoteRecords = New-Object 'System.Collections.Generic.List[string]'
 $script:NextRemotePlayerId = 1001
 $MaxRemoteRecords = 5000
+$script:TeacherToken = [Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N')
+$generatedSecret = [string]::IsNullOrEmpty($TeacherSecret)
+if ($generatedSecret) { $TeacherSecret = [Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N') }
+if ($TeacherSecret.Length -lt 32 -or $TeacherSecret.Length -gt 256) { throw 'Teacher secret must contain 32-256 characters' }
+function Test-TeacherSecret {
+  param([string]$Supplied)
+  $expected = [System.Text.Encoding]::UTF8.GetBytes($TeacherSecret)
+  $actual = [System.Text.Encoding]::UTF8.GetBytes($Supplied)
+  if ($expected.Length -ne $actual.Length) { return $false }
+  $difference = 0
+  for ($i = 0; $i -lt $expected.Length; $i++) { $difference = $difference -bor ($expected[$i] -bxor $actual[$i]) }
+  return $difference -eq 0
+}
+
+
+$dataDir = if ($env:MATH_RELAY_DATA_DIR) { $env:MATH_RELAY_DATA_DIR } else { Join-Path $env:USERPROFILE '.math-board' }
+[System.IO.Directory]::CreateDirectory($dataDir) | Out-Null
+$sha = [System.Security.Cryptography.SHA256]::Create()
+$rootHash = ([BitConverter]::ToString($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Root)))).Replace('-', '').Substring(0,16).ToLowerInvariant()
+$sha.Dispose()
+$dataFile = Join-Path $dataDir ("relay-" + $rootHash + '.json')
+if (Test-Path -LiteralPath $dataFile) {
+  $saved = Get-Content -LiteralPath $dataFile -Raw -Encoding UTF8 | ConvertFrom-Json
+  foreach ($player in $saved.players) { $script:RemotePlayers[[int]$player.id] = ($player | ConvertTo-Json -Compress -Depth 40) }
+  foreach ($record in $saved.records) { $script:RemoteRecords.Add(($record | ConvertTo-Json -Compress -Depth 40)) }
+}
+function Save-RelayState {
+  $body = '{"players":[' + [string]::Join(',', $script:RemotePlayers.Values) + '],"records":[' + [string]::Join(',', $script:RemoteRecords) + ']}'
+  [System.IO.File]::WriteAllText(($dataFile + '.tmp'), $body, [System.Text.UTF8Encoding]::new($false))
+  if (Test-Path -LiteralPath $dataFile) { [System.IO.File]::Replace(($dataFile + '.tmp'), $dataFile, ($dataFile + '.bak'), $true) } else { [System.IO.File]::Move(($dataFile + '.tmp'), $dataFile) }
+}
 
 function ConvertTo-JsonStringLiteral {
   param([string]$Text)
@@ -50,6 +85,7 @@ function Invoke-ApiRequest {
     $data = $null
     try { $data = $Body | ConvertFrom-Json } catch { $data = $null }
     $id = $script:NextRemotePlayerId
+    if ($data -and $data.id -and [long]$data.id -ge 100000 -and [long]$data.id -le 2100000000) { $id = [int]$data.id }
     $script:NextRemotePlayerId += 1
     $name = if ($data -and $data.name) { [string]$data.name } else { "$id번 학생" }
     $avatar = if ($data -and $data.avatar) { [string]$data.avatar } else { '🦊' }
@@ -63,6 +99,7 @@ function Invoke-ApiRequest {
 
     $playerJson = '{"id":' + $id + ',"attendanceNo":' + $attendanceNo + ',"name":' + (ConvertTo-JsonStringLiteral $name) + ',"color":"#7c6bd6","difficulty":' + (ConvertTo-JsonStringLiteral $difficulty) + ',"avatar":' + (ConvertTo-JsonStringLiteral $avatar) + '}'
     $script:RemotePlayers[$id] = $playerJson
+    Save-RelayState
     return @{ Status = 200; Json = '{"id":' + $id + '}' }
   }
 
@@ -70,10 +107,12 @@ function Invoke-ApiRequest {
     if ([string]::IsNullOrWhiteSpace($Body)) {
       return @{ Status = 400; Json = '{"ok":false}' }
     }
-    $script:RemoteRecords.Add($Body)
-    if ($script:RemoteRecords.Count -gt $MaxRemoteRecords) {
-      $script:RemoteRecords.RemoveRange(0, $script:RemoteRecords.Count - $MaxRemoteRecords)
-    }
+    try { $record = $Body | ConvertFrom-Json } catch { return @{ Status = 400; Json = '{"ok":false}' } }
+    if (!$record.id -or !$record.playerId) { return @{ Status = 400; Json = '{"ok":false}' } }
+    $previous = -1
+    for ($i = 0; $i -lt $script:RemoteRecords.Count; $i++) { if (($script:RemoteRecords[$i] | ConvertFrom-Json).id -eq $record.id) { $previous = $i; break } }
+    if ($previous -ge 0) { $script:RemoteRecords[$previous] = $Body } else { $script:RemoteRecords.Add($Body) }
+    Save-RelayState
     return @{ Status = 200; Json = '{"ok":true}' }
   }
 
@@ -86,6 +125,7 @@ function Invoke-ApiRequest {
   if ($Method -eq 'POST' -and $Path -eq '/api/reset') {
     $script:RemotePlayers.Clear()
     $script:RemoteRecords.Clear()
+    Save-RelayState
     return @{ Status = 200; Json = '{"ok":true}' }
   }
 
@@ -104,11 +144,13 @@ function Get-SafeFilePath {
   $candidate = [System.IO.Path]::GetFullPath((Join-Path $Root $decoded))
   $rootFull = [System.IO.Path]::GetFullPath($Root)
 
-  if (-not $candidate.StartsWith($rootFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+  if (-not $candidate.StartsWith(($rootFull.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar), [System.StringComparison]::OrdinalIgnoreCase)) {
     return (Join-Path $Root 'index.html')
   }
 
   if ([System.IO.File]::Exists($candidate)) {
+    $extension = [System.IO.Path]::GetExtension($candidate).ToLowerInvariant()
+    if (!$MimeTypes.ContainsKey($extension) -or ($extension -eq '.json' -and [System.IO.Path]::GetFileName($candidate) -ne 'mobile-origin.json')) { return $null }
     return $candidate
   }
 
@@ -121,10 +163,11 @@ function Write-HttpResponse {
     [int]$StatusCode,
     [string]$StatusText,
     [string]$ContentType,
-    [byte[]]$Body
+    [byte[]]$Body,
+    [string]$ExtraHeader = ''
   )
 
-  $header = "HTTP/1.1 $StatusCode $StatusText`r`nContent-Type: $ContentType`r`nContent-Length: $($Body.Length)`r`nCache-Control: no-store`r`nConnection: close`r`n`r`n"
+  $header = "HTTP/1.1 $StatusCode $StatusText`r`nContent-Type: $ContentType`r`nContent-Length: $($Body.Length)`r`nCache-Control: no-store`r`n${ExtraHeader}Connection: close`r`n`r`n"
   $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($header)
   $Stream.Write($headerBytes, 0, $headerBytes.Length)
   $Stream.Write($Body, 0, $Body.Length)
@@ -133,6 +176,7 @@ function Write-HttpResponse {
 $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Any, $Port)
 $listener.Start()
 Write-Host "Published game server running at http://localhost:$Port/"
+if ($generatedSecret) { Write-Host ("Teacher screen: http://127.0.0.1:$Port/#teacher=" + [System.Uri]::EscapeDataString($TeacherSecret)) }
 
 try {
   while ($true) {
@@ -140,16 +184,26 @@ try {
 
     try {
       $stream = $client.GetStream()
+      $client.ReceiveTimeout = 15000
       $buffer = New-Object byte[] 16384
-      $read = $stream.Read($buffer, 0, $buffer.Length)
-
-      if ($read -le 0) {
-        $client.Close()
-        continue
-      }
-
-      # UTF-8로 읽어야 학생 이름이나 문제글의 한글이 깨지지 않습니다.
-      $requestText = [System.Text.Encoding]::UTF8.GetString($buffer, 0, $read)
+      $received = New-Object System.IO.MemoryStream
+      $expected = -1
+      do {
+        $read = $stream.Read($buffer, 0, $buffer.Length)
+        if ($read -le 0) { break }
+        $received.Write($buffer, 0, $read)
+        if ($received.Length -gt 2000000) { throw 'Request too large' }
+        $probe = [System.Text.Encoding]::ASCII.GetString($received.ToArray())
+        $headerEnd = $probe.IndexOf("`r`n`r`n")
+        if ($headerEnd -ge 0) {
+          $length = 0
+          if ($probe.Substring(0, $headerEnd) -match '(?im)^Content-Length:\s*(\d+)') { $length = [int]$Matches[1] }
+          $expected = $headerEnd + 4 + $length
+        }
+      } while ($expected -lt 0 -or $received.Length -lt $expected)
+      if ($expected -lt 0 -or $received.Length -lt $expected) { throw 'Incomplete request' }
+      $requestText = [System.Text.Encoding]::UTF8.GetString($received.ToArray())
+      $received.Dispose()
       $requestLine = ($requestText -split "`r?`n")[0]
       $parts = $requestLine -split ' '
       $method = if ($parts.Length -ge 1) { $parts[0] } else { 'GET' }
@@ -158,16 +212,32 @@ try {
 
       if ($pathOnly.StartsWith('/api/')) {
         $apiBody = Get-RequestBody $requestText
-        $result = Invoke-ApiRequest $method $pathOnly $apiBody
+        $peer = $client.Client.RemoteEndPoint.Address.ToString() -replace '^::ffff:', ''
+        $fromProxy = $requestText -match '(?im)^(X-Forwarded-For|CF-Connecting-IP|Forwarded):'
+        $isTeacherComputer = [System.Net.IPAddress]::IsLoopback($client.Client.RemoteEndPoint.Address) -and !$fromProxy
+        $suppliedSecret = ''
+        if ($requestText -match '(?im)^X-Math-Teacher: *([^\r\n]+)') { $suppliedSecret = $Matches[1].Trim() }
+        $hasTeacherSecret = Test-TeacherSecret $suppliedSecret
+        $hasTeacherCookie = $requestText -match ("(?im)^Cookie:.*(?:^|[ ;])mathTeacher=" + [regex]::Escape($script:TeacherToken) + "(?:;|\s|$)")
+        if ($pathOnly -eq '/api/ping') { $result = @{ Status = 200; Json = '{"ok":true}' } }
+        elseif ($pathOnly -eq '/api/session') {
+          if ($isTeacherComputer -and $hasTeacherSecret) { $result = @{ Status = 200; Json = '{"ok":true}'; Header = "Set-Cookie: mathTeacher=$($script:TeacherToken); HttpOnly; SameSite=Strict; Path=/api/`r`n" } }
+          else { $result = @{ Status = 403; Json = '{"ok":false}' } }
+        } elseif (($pathOnly -eq '/api/state' -or $pathOnly -eq '/api/reset') -and (!$isTeacherComputer -or !$hasTeacherCookie)) { $result = @{ Status = 403; Json = '{"ok":false}' } }
+        else { $result = Invoke-ApiRequest $method $pathOnly $apiBody }
         if ($null -eq $result) {
           $notFound = [System.Text.Encoding]::UTF8.GetBytes('{"ok":false}')
           Write-HttpResponse $stream 404 'Not Found' 'application/json; charset=utf-8' $notFound
         } else {
           $jsonBytes = [System.Text.Encoding]::UTF8.GetBytes([string]$result.Json)
-          Write-HttpResponse $stream $result.Status 'OK' 'application/json; charset=utf-8' $jsonBytes
+          Write-HttpResponse $stream $result.Status 'OK' 'application/json; charset=utf-8' $jsonBytes ([string]$result.Header)
         }
       } else {
         $filePath = Get-SafeFilePath $requestPath
+        if (!$filePath) {
+          Write-HttpResponse $stream 404 'Not Found' 'text/plain; charset=utf-8' ([System.Text.Encoding]::UTF8.GetBytes('Not found'))
+          continue
+        }
         $extension = [System.IO.Path]::GetExtension($filePath).ToLowerInvariant()
         $contentType = if ($MimeTypes.ContainsKey($extension)) { $MimeTypes[$extension] } else { 'application/octet-stream' }
         $body = [System.IO.File]::ReadAllBytes($filePath)
@@ -175,6 +245,7 @@ try {
         Write-HttpResponse $stream 200 'OK' $contentType $body
       }
     } catch {
+      Write-Warning ("Server error: " + $_.Exception.Message)
       $message = [System.Text.Encoding]::UTF8.GetBytes('Server error')
       if ($stream) {
         Write-HttpResponse $stream 500 'Internal Server Error' 'text/plain; charset=utf-8' $message

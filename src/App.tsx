@@ -1,3 +1,6 @@
+import { newRecordId } from './recordId';
+import { useSessionClock } from './hooks/useSessionClock';
+import { buildScopedQuestions } from './data/scopedQuestions';
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import {
@@ -23,19 +26,23 @@ import {
   VolumeX,
   XCircle,
 } from 'lucide-react';
+import { useRemoteLearning } from './hooks/useRemoteLearning';
+import { enqueueAnswer, flushAnswers, watchAnswerDelivery } from './relayDelivery';
+import { useStorageStatus, reportStorage } from './data/storageStatus';
+import { readClassContext, studentKey } from './data/classContext';
+import { ClassSettings } from './components/ClassSettings';
+import { useQuestionEngine } from './hooks/useQuestionEngine';
 import { ScratchPad } from './components/ScratchPad';
 import { meaningOfChoice } from './data/choiceMeaning';
 import {
   DEFAULT_DB_URL,
+  authorizeLocalTeacher,
   isRoomCode,
   loadOrCreateRoom,
   loadSavedDbUrl,
   normalizeDbUrl,
-  relayJoin,
   relayPing,
-  relayRecord,
   relayReset,
-  relayState,
   saveDbUrl,
   type RelayTarget,
 } from './classroomRelay';
@@ -340,112 +347,7 @@ const createReviewLesson = (
   };
 };
 
-const hashSeed = (value: string) => {
-  let hash = 2166136261;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-};
 
-const shuffledBySeed = <T,>(items: T[], seedText: string): T[] => {
-  const copy = [...items];
-  let seed = hashSeed(seedText) || 1;
-  const next = () => {
-    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-    return seed / 0x100000000;
-  };
-
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(next() * (index + 1));
-    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
-  }
-
-  return copy;
-};
-
-// 학생에게 같은 문제로 보이는지 가르는 기준입니다. 뒤에 붙은 안내 문구와
-// 숫자는 지웁니다. '100이 3개…'와 '100이 5개…'는 숫자만 다른 같은 문제입니다.
-const sameQuestionKey = (question: Question) =>
-  (question.basePrompt ?? question.prompt).replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
-
-// 섞기만 하면 같은 문제가 잇따라 나오는 자리가 생깁니다. 바로 앞과 같은
-// 문제는 뒤로 미루고 다른 문제를 먼저 냅니다. 미룰 것이 없으면 그대로 둡니다.
-// 여러 명이 함께 풀 때는 한 학생이 사람 수만큼 건너뛰며 받으므로, 그 간격
-// 안에서도 겹치지 않도록 사람 수만큼 앞을 살펴봅니다.
-const spaceOutRepeats = (questions: Question[], gap: number): Question[] => {
-  const remaining = [...questions];
-  const placed: Question[] = [];
-  const recent: string[] = [];
-
-  while (remaining.length > 0) {
-    let pick = remaining.findIndex((question) => !recent.includes(sameQuestionKey(question)));
-    if (pick === -1) pick = 0;
-
-    const [chosen] = remaining.splice(pick, 1);
-    placed.push(chosen);
-    recent.push(sameQuestionKey(chosen));
-    if (recent.length > gap) recent.shift();
-  }
-
-  return placed;
-};
-
-// 문제집에 이어 붙이는 판의 수입니다. 한 판이 차시마다 서른 문항쯤이고 뒤 판은 앞 판에 없던 문항만 내므로, 일곱 판이면 차시마다 백오십 문항쯤 됩니다.
-const 문제판수 = 7;
-
-const buildScopedQuestions = (
-  { generateClassQuestions, 놀이문항, 조작섞기 }: 문항엔진,
-  lessons: Lesson[],
-  difficulty: Difficulty,
-  scope: ReviewScope,
-  bankSeed: number,
-  castleDans: number[],
-): Question[] => {
-  // castleDans는 '구구단, 몬스터를 막아라!'만 읽습니다. 다른 차시는
-  // generateQuestions 안에서 조용히 무시합니다. 단원 도입 차시는 앞 단원
-  // 종합 문제로 바뀝니다(generateClassQuestions).
-  // 차시마다 셋에 하나쯤은 보기를 고르지 않고 손으로 조작하는 문항으로 바꿉니다.
-  // 판을 여러 벌 이어 붙입니다. 판마다 같은 틀에 다른 수가 들어가므로, 한
-  // 판(차시마다 서른 문항쯤)을 다 풀어도 바로 같은 문제가 되풀이되지 않습니다.
-  // 판끼리 우연히 같은 문항은 한 번만 둡니다.
-  // 단원 놀이 차시는 그 단원 차시들에서 놀이에 맞는 문항을 골라 냅니다(data/games).
-  if (lessons.length === 1 && 놀이차시인가(lessons[0])) return 놀이문항(lessons[0], difficulty, bankSeed);
-  const 본 = new Set<string>();
-  // 여러 차시를 함께 고르면 한 판만으로도 문제집이 넉넉하므로, 문제집이
-  // 백오십 문항쯤 되는 데까지만 판을 더합니다(만드는 시간을 아낍니다).
-  const 판수 = Math.max(1, Math.min(문제판수, Math.ceil(문제판수 / Math.max(1, lessons.length))));
-  const questions = Array.from({ length: 판수 }, (_, 판) =>
-    lessons.flatMap((sourceLesson) => {
-      // 처음 판은 검사를 모두 거친 판이라 그대로 씁니다. 뒤 판에서 문항을 만들다
-      // 멈추는 일이 생기면 그 차시의 그 판만 건너뛰고 수업은 이어 갑니다.
-      if (판 === 0) return 조작섞기(sourceLesson, difficulty, generateClassQuestions(sourceLesson, difficulty, { castleDans }), 0);
-      try {
-        return 조작섞기(sourceLesson, difficulty, generateClassQuestions(sourceLesson, difficulty, { castleDans, 판 }), 판);
-      } catch {
-        return [];
-      }
-    }),
-  ).flat().filter((q) => {
-    const 열쇠 = `${q.lessonId}|${q.prompt}|${q.answer}|${JSON.stringify(q.visual ?? null)}|${JSON.stringify(q.manipulate ?? null)}`;
-    if (본.has(열쇠)) return false;
-    본.add(열쇠);
-    return true;
-  });
-
-  // 한 차시를 고른 경우에도 순서를 섞습니다. 섞지 않으면 수업을 다시 해도
-  // 늘 같은 순서로 나와 학생이 순서를 외워 버립니다.
-  // bankSeed는 수업을 시작할 때마다 새로 정해지므로 매번 순서가 달라집니다.
-  const shuffled = shuffledBySeed(
-    questions,
-    `${scope}-${difficulty}-${bankSeed}-${castleDans.join(',')}-${lessons.map((item) => item.id).join('|')}`,
-  );
-
-  // 앞의 두 문제와 겹치지 않게 벌려 둡니다. 두 칸이면 혼자 풀 때도,
-  // 여럿이 나누어 풀 때도 바로 앞 문제와는 달라집니다.
-  return spaceOutRepeats(shuffled, 2);
-};
 
 const writeAscii = (view: DataView, offset: number, value: string) => {
   for (let index = 0; index < value.length; index += 1) {
@@ -738,6 +640,11 @@ function App() {
   const [hintModalOpen, setHintModalOpen] = useState<Record<number, boolean>>({});
   // 이 문제에서 조작형 힌트를 열어 본 적이 있는지입니다. 정답 기록에
   // 실어 두면 교사가 어느 문제에서 도움이 더 필요했는지 볼 수 있습니다.
+  const [hintKinds, setHintKinds] = useState<Record<number, NonNullable<AnswerRecord['hintKinds']>>>({});
+  const markHint = (id: number, kind: NonNullable<AnswerRecord['hintKinds']>[number]) => {
+    setHintUsedThisQuestion(prev => ({ ...prev, [id]: true }));
+    setHintKinds(prev => ({ ...prev, [id]: [...new Set([...(prev[id] ?? []), kind])] }));
+  };
   const [hintUsedThisQuestion, setHintUsedThisQuestion] = useState<Record<number, boolean>>({});
   // 계산판을 펴 두었는지입니다. 힌트와 달리 문제가 바뀌어도 닫지
   // 않습니다 — 손으로 써야 풀리는 아이는 다음 문제에서도 써야 하는데,
@@ -779,18 +686,12 @@ function App() {
   // 하에서 시작한 학생이 상에 오르기 전에는 상 문제집을 만들지 않습니다.
   // 문항 엔진입니다. 화면을 먼저 그린 뒤 뒤에서 내려받습니다. 받기 전에는 문제집이 비어 있고,
   // 수업 화면은 '문제를 준비하고 있어요'를 잠깐 보여 줍니다.
-  const [engine, setEngine] = useState<문항엔진 | null>(null);
-  useEffect(() => {
-    let 살아있음 = true;
-    void import('./data/engine').then((loaded) => {
-      if (살아있음) setEngine(loaded);
-    });
-    // 수업 화면 부품도 이때 미리 받아 둡니다.
-    for (const 받기 of Object.values(부품불러오기)) void 받기();
-    return () => {
-      살아있음 = false;
-    };
-  }, []);
+  const { engine, error: engineError, retry: retryEngine } = useQuestionEngine(부품불러오기);
+  const storageWarning = useStorageStatus();
+  const [pendingCount, setPendingCount] = useState(0);
+  const sessionIdRef = useRef(newRecordId());
+  useEffect(() => { void authorizeLocalTeacher(); }, []);
+  useEffect(() => isMobileEntry ? watchAnswerDelivery(setPendingCount) : undefined, [isMobileEntry]);
   const questionBanks = useMemo<Record<Difficulty, Question[]>>(() => {
     if (!engine) return { 하: [], 중: [], 상: [] };
     const 만든것: Partial<Record<Difficulty, Question[]>> = {};
@@ -801,7 +702,7 @@ function App() {
       get 상() { return 꺼내기('상'); },
     };
   }, [engine, bankSeed, reviewScope, scopedLessons, castleDans]);
-  const [remainingSeconds, setRemainingSeconds] = useState<SessionDuration | number>(sessionDuration);
+  const [remainingSeconds, setRemainingSeconds] = useSessionClock(mode === 'playing', sessionDuration, () => { playFinishSound(); setMode('finished'); });
   const [playerStates, setPlayerStates] = useState<Record<number, PlayerQuestionState>>(() => createQuestionState(players, undefined, checkLevel));
   const [records, setRecords] = useState<AnswerRecord[]>([]);
   // 큐알로 들어온 학생 폰의 결과입니다. 폰은 자기 답을 서버에 올리고,
@@ -809,10 +710,8 @@ function App() {
   // 그냥 비어 있습니다 — 평소처럼 동작합니다).
   const [remotePlayers, setRemotePlayers] = useState<Player[]>([]);
   const [remoteRecords, setRemoteRecords] = useState<AnswerRecord[]>([]);
-  const remotePlayerIdRef = useRef<number | null>(null);
   // 등록(/api/join)이 끝나기 전에 이미 푼 문제가 있을 때 잠깐 담아 두는
   // 자리입니다. 등록이 끝나면 여기 담긴 것부터 마저 올려 보냅니다.
-  const pendingRemoteRecordsRef = useRef<AnswerRecord[]>([]);
   // 몇 번째 판인지입니다. 판을 새로 시작하면 하나 올라가고, 그보다 앞선
   // 판에서 떠난 물음의 대답은 버립니다(지운 기록이 되살아나지 않게).
   const remoteEpochRef = useRef(0);
@@ -986,21 +885,7 @@ function App() {
     }
   }, [mode, remainingSeconds, feverSeconds, feverOn, 놀이곡]);
 
-  useEffect(() => {
-    if (mode !== 'playing') return;
-    const timerId = window.setInterval(() => {
-      setRemainingSeconds((value) => {
-        if (value <= 1) {
-          window.clearInterval(timerId);
-          playFinishSound();
-          setMode('finished');
-          return 0;
-        }
-        return value - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(timerId);
-  }, [mode]);
+
 
   useEffect(() => {
     const syncFullscreenState = () => {
@@ -1070,59 +955,11 @@ function App() {
   // 설정 화면에서도 받아 옵니다. 큐알로만 수업할 때는 선생님이 자기
   // 수업을 시작하지 않고 QR만 띄워 두는데, 그때 아무것도 가져오지 않으면
   // 학생이 아무리 풀어도 선생님 화면에는 영영 나타나지 않습니다.
-  useEffect(() => {
-    if (isMobileEntry) return;
-    if (mode === 'setup' && relayTarget.kind !== 'cloud') return;
-    let active = true;
-
-    const pull = async () => {
-      // 새 판이 시작되면 지난 판 기록을 지웁니다. 그런데 지우기 직전에
-      // 떠난 물음이 지운 뒤에 대답으로 돌아오면, 지운 기록이 되살아납니다.
-      // 몇 번째 판의 물음이었는지를 적어 두었다가, 지난 판 것이면 버립니다.
-      const epoch = remoteEpochRef.current;
-      const data = await relayState(relayTarget);
-      if (!active || !data || epoch !== remoteEpochRef.current) return;
-
-      setRemotePlayers(data.players.map((item) => ({ ...item, remote: true })));
-      // 실시간 저장소에서는 매번 가장 나중 몇 개만 받아 옵니다. 이미 받아
-      // 둔 기록과 합쳐야 앞부분이 사라지지 않습니다(같은 기록은 한 번만).
-      setRemoteRecords((prev) => {
-        const merged = new Map(prev.map((record) => [record.id, record]));
-        for (const record of data.records) merged.set(record.id, record);
-        return merged.size === prev.length ? prev : [...merged.values()];
-      });
-    };
-
-    void pull();
-    const intervalId = window.setInterval(pull, 3000);
-    return () => {
-      active = false;
-      window.clearInterval(intervalId);
-    };
-  }, [isMobileEntry, mode, relayTarget]);
-
-  const sessionRecords = useMemo(() => records.filter((record) => record.lessonId === lesson.id), [records, lesson.id]);
-
-  // 학습 기록장(교사용 컴퓨터)입니다. 처음 한 번, 브라우저가 공간이 모자라도 지우지 않게 부탁합니다.
-  useEffect(() => {
-    if (!isMobileEntry) void 오래남기기();
-  }, [isMobileEntry]);
-  // QR로 들어온 휴대폰의 기록도 받아 오는 대로 학습 기록장에 쌓습니다. 학생(출석번호)을 아직 모르면
-  // 다음에 학생 목록이 오면 다시 봅니다. 같은 기록은 한 번만 쌓습니다.
-  const 쌓은원격 = useRef(new Set<string>());
-  const 차시표 = useMemo(() => new Map(curriculum.flatMap((unit) => unit.lessons).map((one) => [one.id, one])), []);
-  useEffect(() => {
-    if (isMobileEntry || remoteRecords.length === 0) return;
-    const 번호 = new Map(remotePlayers.map((one) => [one.id, one.attendanceNo]));
-    const 새것 = remoteRecords.flatMap((record) => {
-      const no = 번호.get(record.playerId);
-      if (no === undefined || 쌓은원격.current.has(record.id)) return [];
-      쌓은원격.current.add(record.id);
-      const 그차시 = 차시표.get(record.lessonId) ?? (record.lessonId === lesson.id ? lesson : null);
-      return 그차시 ? [기록만들기(record, { no, remote: true }, 그차시)] : [];
-    });
-    if (새것.length) void 기록더하기(새것);
-  }, [isMobileEntry, remoteRecords, remotePlayers, 차시표, lesson]);
+  const 차시표 = useMemo(() => new Map(curriculum.flatMap(unit => unit.lessons).map(one => [one.id, one])), []);
+  const remoteFeed = useRemoteLearning(relayTarget, !isMobileEntry && (mode !== 'setup' || relayTarget.kind === 'cloud'), 차시표, remoteEpochRef.current);
+  useEffect(() => { setRemotePlayers(remoteFeed.players); setRemoteRecords(remoteFeed.records); }, [remoteFeed.players, remoteFeed.records]);
+  const sessionRecords = useMemo(() => records.filter(record => record.lessonId === lesson.id), [records, lesson.id]);
+  useEffect(() => { if (!isMobileEntry) void 오래남기기(); }, [isMobileEntry]);
   const playerResults = useMemo<Record<number, PlayerResult>>(() => {
     const summaries = Object.fromEntries(
       players.map((player) => [player.id, { total: 0, correct: 0, wrong: 0 }]),
@@ -1273,7 +1110,11 @@ function App() {
     const origin = mobileJoinOrigin || (isLoopbackHost() ? '' : window.location.origin);
     if (!origin) return '';
     const url = new URL(window.location.pathname || '/', `${origin}/`);
+    url.hash = '';
     url.searchParams.set('m', '1');
+    const 학급 = readClassContext();
+    url.searchParams.set('cy', String(학급.schoolYear));
+    url.searchParams.set('class', 학급.classId);
     url.searchParams.set('s', semester);
     url.searchParams.set('u', isSemesterReviewSelected ? semesterReviewUnitValue : String(selectedUnit.unitNo));
     url.searchParams.set('l', lesson.id);
@@ -1389,6 +1230,7 @@ function App() {
   const readyPlayerCount = players.filter((player) => studentSetupSteps[player.id] === 'ready').length;
 
   const startGame = () => {
+    if (!engine) return;
     const now = Date.now();
     // 다음에 첫 화면을 열면 이 차시가 골라져 있게 적어 둡니다. 학생 휴대폰은 적지 않습니다.
     if (!isMobileEntry) 마지막차시쓰기({ semester, unit: unitSelection, lessonId: lesson.id, duration: sessionDuration });
@@ -1408,36 +1250,8 @@ function App() {
     setTeacherOpen(false);
     setMode('playing');
 
-    if (mobileSyncEnabled) {
-      // 이 폰의 학생을 서버에 새로 등록합니다. 서버가 없으면(평범한
-      // 배포본) 조용히 실패하고, 이 폰은 원래처럼 혼자 풉니다.
-      const solo = players[0];
-      if (solo) {
-        remotePlayerIdRef.current = null;
-        pendingRemoteRecordsRef.current = [];
-        void relayJoin(relayTarget, {
-          name: solo.name,
-          attendanceNo: solo.attendanceNo,
-          avatar: solo.avatar,
-          difficulty: solo.difficulty,
-        }).then((joinedId) => {
-          if (joinedId === null) return;
-          remotePlayerIdRef.current = joinedId;
-          // 등록이 끝나기 전에 이미 답한 문제가 있으면(빠르게 첫 문제를
-          // 맞힌 경우) 여기서 한꺼번에 올려 보냅니다 — 놓치지 않습니다.
-          const queued = pendingRemoteRecordsRef.current;
-          pendingRemoteRecordsRef.current = [];
-          for (const queuedRecord of queued) {
-            void relayRecord(relayTarget, { ...queuedRecord, playerId: joinedId });
-          }
-        });
-      }
-    } else if (!isMobileEntry) {
-      // 새 판이 시작되었으니, 지난 판에서 큐알로 들어왔던 학생 기록은
-      // 저장소에서도 비웁니다 — 안 그러면 다음 번 받아올 때 지난 판 학생이
-      // 이번 판 분석에 섞여 들어옵니다.
-      clearRemoteResults();
-    }
+    sessionIdRef.current = newRecordId();
+    if (!isMobileEntry) clearRemoteResults();
     // (연동을 끈 큐알 폰은 여기서 할 일이 없습니다 — 서버에 아무것도
     // 보내지 않고, 이 폰 혼자만의 화면으로 풉니다.)
   };
@@ -1452,7 +1266,7 @@ function App() {
     }, 450);
 
     return () => window.clearTimeout(timerId);
-  }, [mode, players, studentSetupSteps]);
+  }, [mode, players, studentSetupSteps, engine]);
 
   const goSetup = () => {
     // 설정으로 돌아가는 것은 다른 아이들, 다른 차시로 간다는 뜻이므로
@@ -1474,8 +1288,6 @@ function App() {
       setRemotePlayers([]);
       setRemoteRecords([]);
     }
-    remotePlayerIdRef.current = null;
-    pendingRemoteRecordsRef.current = [];
   };
 
   const resetSession = () => {
@@ -1578,6 +1390,7 @@ function App() {
     setHintSteps((prev) => ({ ...prev, [playerId]: 0 }));
     setHintModalOpen((prev) => ({ ...prev, [playerId]: false }));
     setHintUsedThisQuestion((prev) => ({ ...prev, [playerId]: false }));
+    setHintKinds(prev => ({ ...prev, [playerId]: [] }));
   };
 
   const nextForPlayer = (player: Player) => {
@@ -1790,7 +1603,12 @@ function App() {
     const golden = 황금문제인가({ questionId: question.id, seed: bankSeed, fusion: question.fusion, retry: state.activeRetry !== null });
     const responseMs = Date.now() - state.questionStartedAt;
     const record: AnswerRecord = {
-      id: `${question.id}-${player.id}-${Date.now()}`,
+      id: newRecordId(),
+      ...readClassContext(),
+      studentId: studentKey(player.attendanceNo),
+      attendanceNo: player.attendanceNo,
+      sessionId: sessionIdRef.current,
+      lessonContext: { id: lesson.id, semester: lesson.semester, unitNo: lesson.unitNo, unitTitle: lesson.unitTitle, lessonNo: lesson.lessonNo, title: lesson.title },
       playerId: player.id,
       playerName: player.name,
       questionId: question.id,
@@ -1815,7 +1633,8 @@ function App() {
       attempts: state.activeRetry === null ? 1 : 2,
       responseMs,
       answeredAt: new Date().toISOString(),
-      hintUsed: hintUsedThisQuestion[player.id] ?? false,
+      hintUsed: Boolean(hintUsedThisQuestion[player.id] || hintTextOpen[player.id]),
+      hintKinds: hintKinds[player.id] ?? [],
       ...(isCorrect
         ? {}
         : manip
@@ -1866,19 +1685,12 @@ function App() {
     setRecords((prev) => [...prev, record]);
     // 교사용 컴퓨터의 학습 기록장에도 바로 쌓습니다. 판을 다시 시작하거나 창을 닫아도 남습니다.
     // 학생 휴대폰에서는 쌓지 않습니다(그 기록은 선생님 화면이 받아 와서 쌓습니다).
-    if (!isMobileEntry) void 기록더하기([기록만들기(record, { no: player.attendanceNo }, lesson)]);
+    if (!isMobileEntry) void 기록더하기([기록만들기(record, { no: player.attendanceNo }, lesson)]).catch(() => reportStorage('학습 기록 저장에 실패했습니다. 기록장에서 백업을 내려받아 주세요.'));
     // 큐알로 들어온 폰은 선생님 화면과 다른 기기입니다. 로컬 상태만으로는
     // 선생님이 볼 수 없으므로 연결된 곳에도 올려 둡니다. 연결할 곳이 없는
     // 보통 배포본에서는 조용히 실패하고 넘어갑니다.
     if (mobileSyncEnabled) {
-      if (remotePlayerIdRef.current !== null) {
-        void relayRecord(relayTarget, { ...record, playerId: remotePlayerIdRef.current });
-      } else {
-        // 등록이 아직 끝나지 않았습니다 — 첫 문제를 아주 빠르게 맞히면
-        // 이 순간이 생길 수 있습니다. 잃어버리지 않도록 담아 두었다가
-        // 등록이 끝나는 대로 마저 올려 보냅니다.
-        pendingRemoteRecordsRef.current.push(record);
-      }
+      void enqueueAnswer(relayTarget, record, player).then(() => flushAnswers()).then(setPendingCount).catch(() => reportStorage('답안 전송을 완료하지 못했습니다. 이 창을 유지해 주세요.'));
     }
     if (isCorrect) {
       // 맞히면 바로 다음 문제로 넘어가므로, 여기서 곧장 힌트 상태를 접습니다.
@@ -1920,6 +1732,7 @@ function App() {
           <h2 id="board-setup-title">오늘 놀이판 차리기</h2>
           <span>선생님이 고르는 곳</span>
         </div>
+        {!isMobileEntry && <ClassSettings />}
         <div className="board-setup-cols">
           <div className="board-setup-col wide">
             <div className="board-field">
@@ -3018,6 +2831,7 @@ function App() {
                             것 — 을 아이가 원할 때 스스로 꺼내 쓰게 합니다.
                             문제 칸 안에 두어, 답 칸(student-answer-dock)의
                             자리를 밀어내지 않고 이 칸 안에서만 스크롤됩니다. */}
+                        {state.feedback !== 'explain' && question.difficulty === '상' && !놀이계산 && <details className="reasoning-check"><summary>생각 설명하기</summary><p>어떤 조건을 먼저 살폈나요? 왜 이 답이 맞는지 친구에게 말해 보세요. 다른 답도 가능한지 확인해 보세요.</p></details>}
                         {state.feedback !== 'explain' && (
                           <div className="hint-controls">
                             {!놀이계산 && <button
@@ -3026,6 +2840,7 @@ function App() {
                               aria-expanded={Boolean(hintTextOpen[player.id])}
                               onClick={() => {
                                 playTapSound();
+                                if (!hintTextOpen[player.id]) markHint(player.id, 'text');
                                 setHintTextOpen((prev) => ({ ...prev, [player.id]: !prev[player.id] }));
                               }}
                             >
@@ -3038,7 +2853,7 @@ function App() {
                                 onClick={() => {
                                   playTapSound();
                                   setHintModalOpen((prev) => ({ ...prev, [player.id]: true }));
-                                  setHintUsedThisQuestion((prev) => ({ ...prev, [player.id]: true }));
+                                  markHint(player.id, 'interactive');
                                 }}
                               >
                                 <Search size={16} /> 자세히 보기
@@ -3085,7 +2900,7 @@ function App() {
                                       onClick={() => {
                                         playTapSound();
                                         setHintSteps((prev) => ({ ...prev, [player.id]: 펼친 + 1 }));
-                                        setHintUsedThisQuestion((prev) => ({ ...prev, [player.id]: true }));
+                                        markHint(player.id, 'steps');
                                       }}
                                     >
                                       👣 {펼친 === 0 ? '풀이 첫 걸음 보기' : '다음 걸음 보기'} ({펼친}/{걸음들.length})
@@ -3190,7 +3005,7 @@ function App() {
                                 onClick={() => {
                                   playTapSound();
                                   setHintModalOpen((prev) => ({ ...prev, [player.id]: true }));
-                                  setHintUsedThisQuestion((prev) => ({ ...prev, [player.id]: true }));
+                                  markHint(player.id, 'interactive');
                                 }}
                               >
                                 <Search size={16} /> {question.visual ? '만져서 다시 보기' : '한 자리씩 다시 보기'}
@@ -3261,6 +3076,9 @@ function App() {
 
   return (
     <main className={`app-shell ${mode} ${isMobileEntry ? 'mobile-entry' : ''} ${fullscreenActive ? 'fullscreen-mode' : ''}`}>
+      {storageWarning && <p role="status" className="reliability-notice">{storageWarning}</p>}
+      {isMobileEntry && pendingCount > 0 && <p role="status" className="reliability-notice">전송 대기 답안 {pendingCount}개 · 연결이 복구되면 다시 전송합니다.</p>}
+      {engineError && <p role="alert" className="reliability-notice">문제를 불러오지 못했습니다. 연결을 확인하고 <button type="button" onClick={retryEngine}>다시 불러오기</button></p>}
       <header className={`app-header ${mode === 'setup' ? '' : 'with-lesson'}`}>
         {/* QR로 들어온 휴대폰·패드에서는 화면이 좁습니다. 이름표와 전체화면 단추는 빼고,
             차시 제목·시계·소리 단추만 한 줄에 둡니다. */}

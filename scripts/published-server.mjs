@@ -1,11 +1,26 @@
 import { createServer } from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
-import { extname, join, normalize } from 'node:path';
+import { readFile, stat, mkdir, writeFile, rename } from 'node:fs/promises';
+import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
+import { homedir } from 'node:os';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const host = '0.0.0.0';
 const port = Number(process.env.PORT ?? 5173);
+const teacherToken = randomBytes(32).toString('hex');
+const teacherSecret = process.env.MATH_TEACHER_SECRET ?? randomBytes(32).toString('hex');
+if (teacherSecret.length < 32 || teacherSecret.length > 256) throw new Error('MATH_TEACHER_SECRET must contain 32–256 characters');
+const hasTeacherSecret = request => {
+  const supplied = Buffer.from(String(request.headers['x-math-teacher'] ?? ''));
+  const expected = Buffer.from(teacherSecret);
+  return supplied.length === expected.length && timingSafeEqual(supplied, expected);
+};
+const isTeacherComputer = request => {
+  const peer = (request.socket.remoteAddress ?? '').replace(/^::ffff:/, '');
+  return (peer === '::1' || peer.startsWith('127.')) && !request.headers['x-forwarded-for'] && !request.headers['cf-connecting-ip'] && !request.headers.forwarded;
+};
+const hasTeacherCookie = (request) => (request.headers.cookie ?? '').split(';').some(cookie => cookie.trim() === `mathTeacher=${teacherToken}`);
 
 const mimeTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
@@ -15,6 +30,7 @@ const mimeTypes = new Map([
   ['.png', 'image/png'],
   ['.svg', 'image/svg+xml'],
   ['.webp', 'image/webp'],
+  ['.webmanifest', 'application/manifest+json'], ['.ico', 'image/x-icon'], ['.woff2', 'font/woff2'],
 ]);
 
 const resolvePath = async (requestUrl) => {
@@ -22,10 +38,15 @@ const resolvePath = async (requestUrl) => {
   const decodedPath = decodeURIComponent(url.pathname);
   const normalizedPath = normalize(decodedPath).replace(/^(\.\.[/\\])+/, '');
   const candidate = join(root, normalizedPath === '/' ? 'index.html' : normalizedPath);
+  if (!resolve(candidate).startsWith(resolve(root) + sep)) return join(root, 'index.html');
 
   try {
     const info = await stat(candidate);
-    if (info.isFile()) return candidate;
+    if (info.isFile()) {
+      const extension = extname(candidate);
+      if (!mimeTypes.has(extension) || (extension === '.json' && normalizedPath.replaceAll('\\', '/').split('/').at(-1) !== 'mobile-origin.json')) return null;
+      return candidate;
+    }
   } catch {
     // Fall through to the SPA fallback.
   }
@@ -41,10 +62,24 @@ const resolvePath = async (requestUrl) => {
 // 프로세스가 켜져 있는 동안만 기억합니다(수업이 끝나 창을 닫으면
 // 비워집니다) — 이 앱은 원래 아무것도 저장하지 않는 앱이었고, 여기서도
 // 그 성격을 그대로 둡니다.
-const MAX_RECORDS = 5000;
 const remoteState = {
   players: new Map(),
   records: [],
+};
+const dataDir = process.env.MATH_RELAY_DATA_DIR ?? join(homedir(), '.math-board');
+const dataFile = join(dataDir, `relay-${createHash('sha256').update(root).digest('hex').slice(0, 16)}.json`);
+await mkdir(dataDir, { recursive: true });
+try {
+  const saved = JSON.parse(await readFile(dataFile, 'utf8'));
+  if (Array.isArray(saved.players)) saved.players.forEach(p => remoteState.players.set(p.id, p));
+  if (Array.isArray(saved.records)) remoteState.records = saved.records;
+} catch (error) { if (error.code !== 'ENOENT') throw error; }
+let saving = Promise.resolve();
+const persistState = () => {
+  const body = JSON.stringify({ players: [...remoteState.players.values()], records: remoteState.records });
+  const next = saving.catch(() => {}).then(async () => { await writeFile(`${dataFile}.tmp`, body); await rename(`${dataFile}.tmp`, dataFile); });
+  saving = next;
+  return next;
 };
 
 const sendJson = (response, statusCode, payload) => {
@@ -63,7 +98,7 @@ const readJsonBody = (request) =>
       raw += chunk;
       // 학생 한 명의 답안 하나는 아주 작습니다. 이보다 커지면 무언가
       // 잘못된 요청이므로 더 읽지 않고 끊습니다.
-      if (raw.length > 200_000) request.destroy();
+      if (raw.length > 2_000_000) request.destroy();
     });
     request.on('end', () => {
       try {
@@ -78,9 +113,16 @@ const readJsonBody = (request) =>
 let nextRemotePlayerId = 1001;
 
 const handleApi = async (request, response, pathname) => {
+  if (pathname === '/api/ping') return sendJson(response, 200, { ok: true });
+  if (pathname === '/api/session' && request.method === 'GET') {
+    if (!isTeacherComputer(request) || !hasTeacherSecret(request)) return sendJson(response, 403, { ok: false });
+    response.setHeader('Set-Cookie', `mathTeacher=${teacherToken}; HttpOnly; SameSite=Strict; Path=/api/`);
+    return sendJson(response, 200, { ok: true });
+  }
+  if ((pathname === '/api/state' || pathname === '/api/reset') && (!isTeacherComputer(request) || !hasTeacherCookie(request))) return sendJson(response, 403, { ok: false });
   if (pathname === '/api/join' && request.method === 'POST') {
     const body = await readJsonBody(request);
-    const id = nextRemotePlayerId;
+    const id = Number.isInteger(body.id) && body.id >= 100000 && body.id <= 2100000000 ? body.id : nextRemotePlayerId;
     nextRemotePlayerId += 1;
     remoteState.players.set(id, {
       id,
@@ -90,6 +132,7 @@ const handleApi = async (request, response, pathname) => {
       difficulty: body.difficulty === '하' || body.difficulty === '상' ? body.difficulty : '중',
       avatar: typeof body.avatar === 'string' ? body.avatar : '🦊',
     });
+    await persistState();
     return sendJson(response, 200, { id });
   }
 
@@ -98,10 +141,10 @@ const handleApi = async (request, response, pathname) => {
     if (typeof record.playerId !== 'number' || typeof record.id !== 'string') {
       return sendJson(response, 400, { ok: false });
     }
-    remoteState.records.push(record);
-    if (remoteState.records.length > MAX_RECORDS) {
-      remoteState.records.splice(0, remoteState.records.length - MAX_RECORDS);
-    }
+    const previous = remoteState.records.findIndex(one => one.id === record.id);
+    if (previous >= 0) remoteState.records[previous] = record;
+    else remoteState.records.push(record);
+    await persistState();
     return sendJson(response, 200, { ok: true });
   }
 
@@ -115,6 +158,7 @@ const handleApi = async (request, response, pathname) => {
   if (pathname === '/api/reset' && request.method === 'POST') {
     remoteState.players.clear();
     remoteState.records = [];
+    await persistState();
     return sendJson(response, 200, { ok: true });
   }
 
@@ -130,6 +174,7 @@ const server = createServer(async (request, response) => {
     }
 
     const filePath = await resolvePath(request.url ?? '/');
+    if (!filePath) { response.writeHead(404); response.end('Not found'); return; }
     const body = await readFile(filePath);
     response.writeHead(200, {
       'Cache-Control': 'no-store',
@@ -138,10 +183,11 @@ const server = createServer(async (request, response) => {
     response.end(body);
   } catch (error) {
     response.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-    response.end(error instanceof Error ? error.message : 'Server error');
+    response.end('Server error');
   }
 });
 
 server.listen(port, host, () => {
   console.log(`Published game server running at http://localhost:${port}/`);
+  if (!process.env.MATH_TEACHER_SECRET) console.log(`Teacher screen: http://127.0.0.1:${port}/#teacher=${encodeURIComponent(teacherSecret)}`);
 });

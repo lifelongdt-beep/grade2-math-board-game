@@ -81,14 +81,14 @@ describe('연동 주소 확인', () => {
 });
 
 describe('실시간 저장소로 오가는 기록', () => {
-  it('무거운 글은 빼고 보낸다', () => {
+  it('교사 오답 자료에 필요한 해설과 도움말을 보존한다', () => {
     // 해설·도움말·그림이 기록 하나 크기의 대부분인데 분석에는 쓰이지
     // 않습니다. 빼야 한 시간 수업에서 오가는 양이 감당됩니다.
     const trimmed = trimRecordForCloud(sampleRecord()) as Partial<AnswerRecord>;
-    expect(trimmed.explanation).toBeUndefined();
-    expect(trimmed.support).toBeUndefined();
+    expect(trimmed.explanation).toBe(sampleRecord().explanation);
+    expect(trimmed.support).toEqual(sampleRecord().support);
     expect(trimmed.visual).toBeUndefined();
-    expect(JSON.stringify(trimmed).length).toBeLessThan(JSON.stringify(sampleRecord()).length / 2);
+    expect(trimmed.choices).toEqual(sampleRecord().choices);
   });
 
   it('분석에 쓰는 값은 그대로 남긴다', () => {
@@ -103,9 +103,9 @@ describe('실시간 저장소로 오가는 기록', () => {
   it('빠진 자리는 모양을 채워 돌려준다', () => {
     // 선생님 화면의 다른 코드가 이 자리를 그대로 읽습니다.
     const restored = rehydrateCloudRecord(trimRecordForCloud(sampleRecord()));
-    expect(restored.explanation).toBe('');
-    expect(restored.support.steps).toEqual([]);
-    expect(restored.support.coreConcept).toBe('');
+    expect(restored.explanation).toBe(sampleRecord().explanation);
+    expect(restored.support.steps).toEqual(sampleRecord().support.steps);
+    expect(restored.support.coreConcept).toBe('핵심');
   });
 
   it('꾸러미로 온 목록을 학생과 기록으로 읽는다', () => {
