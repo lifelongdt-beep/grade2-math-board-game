@@ -1,5 +1,6 @@
 ﻿param(
-  [int]$Port = 5173
+  [int]$Port = 5173,
+  [string]$TeacherSecret = $env:MATH_TEACHER_SECRET
 )
 
 $ErrorActionPreference = 'Stop'
@@ -12,6 +13,9 @@ $MimeTypes = @{
   '.png' = 'image/png'
   '.svg' = 'image/svg+xml'
   '.webp' = 'image/webp'
+  '.webmanifest' = 'application/manifest+json'
+  '.ico' = 'image/x-icon'
+  '.woff2' = 'font/woff2'
 }
 
 # ── 큐알 학생 폰 ↔ 선생님 화면 ──────────────────────────────────────
@@ -26,7 +30,19 @@ $script:RemoteRecords = New-Object 'System.Collections.Generic.List[string]'
 $script:NextRemotePlayerId = 1001
 $MaxRemoteRecords = 5000
 $script:TeacherToken = [Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N')
-$localAddresses = @('127.0.0.1', '::1') + @([System.Net.Dns]::GetHostAddresses([System.Net.Dns]::GetHostName()) | ForEach-Object { $_.ToString() })
+$generatedSecret = [string]::IsNullOrEmpty($TeacherSecret)
+if ($generatedSecret) { $TeacherSecret = [Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N') }
+if ($TeacherSecret.Length -lt 32 -or $TeacherSecret.Length -gt 256) { throw 'Teacher secret must contain 32-256 characters' }
+function Test-TeacherSecret {
+  param([string]$Supplied)
+  $expected = [System.Text.Encoding]::UTF8.GetBytes($TeacherSecret)
+  $actual = [System.Text.Encoding]::UTF8.GetBytes($Supplied)
+  if ($expected.Length -ne $actual.Length) { return $false }
+  $difference = 0
+  for ($i = 0; $i -lt $expected.Length; $i++) { $difference = $difference -bor ($expected[$i] -bxor $actual[$i]) }
+  return $difference -eq 0
+}
+
 
 $dataDir = if ($env:MATH_RELAY_DATA_DIR) { $env:MATH_RELAY_DATA_DIR } else { Join-Path $env:USERPROFILE '.math-board' }
 [System.IO.Directory]::CreateDirectory($dataDir) | Out-Null
@@ -133,6 +149,8 @@ function Get-SafeFilePath {
   }
 
   if ([System.IO.File]::Exists($candidate)) {
+    $extension = [System.IO.Path]::GetExtension($candidate).ToLowerInvariant()
+    if (!$MimeTypes.ContainsKey($extension) -or ($extension -eq '.json' -and [System.IO.Path]::GetFileName($candidate) -ne 'mobile-origin.json')) { return $null }
     return $candidate
   }
 
@@ -158,6 +176,7 @@ function Write-HttpResponse {
 $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Any, $Port)
 $listener.Start()
 Write-Host "Published game server running at http://localhost:$Port/"
+if ($generatedSecret) { Write-Host ("Teacher screen: http://127.0.0.1:$Port/#teacher=" + [System.Uri]::EscapeDataString($TeacherSecret)) }
 
 try {
   while ($true) {
@@ -195,11 +214,14 @@ try {
         $apiBody = Get-RequestBody $requestText
         $peer = $client.Client.RemoteEndPoint.Address.ToString() -replace '^::ffff:', ''
         $fromProxy = $requestText -match '(?im)^(X-Forwarded-For|CF-Connecting-IP|Forwarded):'
-        $isTeacherComputer = ($localAddresses -contains $peer) -and !$fromProxy
+        $isTeacherComputer = [System.Net.IPAddress]::IsLoopback($client.Client.RemoteEndPoint.Address) -and !$fromProxy
+        $suppliedSecret = ''
+        if ($requestText -match '(?im)^X-Math-Teacher: *([^\r\n]+)') { $suppliedSecret = $Matches[1].Trim() }
+        $hasTeacherSecret = Test-TeacherSecret $suppliedSecret
         $hasTeacherCookie = $requestText -match ("(?im)^Cookie:.*(?:^|[ ;])mathTeacher=" + [regex]::Escape($script:TeacherToken) + "(?:;|\s|$)")
         if ($pathOnly -eq '/api/ping') { $result = @{ Status = 200; Json = '{"ok":true}' } }
         elseif ($pathOnly -eq '/api/session') {
-          if ($isTeacherComputer) { $result = @{ Status = 200; Json = '{"ok":true}'; Header = "Set-Cookie: mathTeacher=$($script:TeacherToken); HttpOnly; SameSite=Strict; Path=/api/`r`n" } }
+          if ($isTeacherComputer -and $hasTeacherSecret) { $result = @{ Status = 200; Json = '{"ok":true}'; Header = "Set-Cookie: mathTeacher=$($script:TeacherToken); HttpOnly; SameSite=Strict; Path=/api/`r`n" } }
           else { $result = @{ Status = 403; Json = '{"ok":false}' } }
         } elseif (($pathOnly -eq '/api/state' -or $pathOnly -eq '/api/reset') -and (!$isTeacherComputer -or !$hasTeacherCookie)) { $result = @{ Status = 403; Json = '{"ok":false}' } }
         else { $result = Invoke-ApiRequest $method $pathOnly $apiBody }
@@ -212,6 +234,10 @@ try {
         }
       } else {
         $filePath = Get-SafeFilePath $requestPath
+        if (!$filePath) {
+          Write-HttpResponse $stream 404 'Not Found' 'text/plain; charset=utf-8' ([System.Text.Encoding]::UTF8.GetBytes('Not found'))
+          continue
+        }
         $extension = [System.IO.Path]::GetExtension($filePath).ToLowerInvariant()
         $contentType = if ($MimeTypes.ContainsKey($extension)) { $MimeTypes[$extension] } else { 'application/octet-stream' }
         $body = [System.IO.File]::ReadAllBytes($filePath)

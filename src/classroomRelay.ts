@@ -134,6 +134,20 @@ export const requestRelay = async (url: string, init?: RequestInit): Promise<{ o
   } finally { clearTimeout(timeout); }
 };
 const requestJson = async (url: string, init?: RequestInit) => (await requestRelay(url, init)).data;
+/** 비밀키는 로컬 실행 화면의 fragment에서만 받고 HTTP 주소·QR에는 넣지 않습니다. */
+export const authorizeLocalTeacher = async () => {
+  if (typeof window === 'undefined') return;
+  const host = window.location.hostname;
+  if (host !== 'localhost' && host !== '[::1]' && !/^127\./.test(host)) return;
+  const fragment = new URLSearchParams(window.location.hash.slice(1));
+  const secret = fragment.get('teacher');
+  if (!secret) return;
+  const result = await requestRelay('/api/session', { headers: { 'X-Math-Teacher': secret } });
+  if (result.ok) {
+    fragment.delete('teacher');
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${fragment.size ? `#${fragment}` : ''}`);
+  }
+};
 
 const roomUrl = (target: Extract<RelayTarget, { kind: 'cloud' }>, path: string) =>
   `${target.dbUrl}/rooms/${encodeURIComponent(target.room)}${path}`;
@@ -205,7 +219,7 @@ export const relayState = async (
   after?: string,
 ): Promise<{ players: Player[]; records: AnswerRecord[]; cursor?: string; hasMore?: boolean } | null> => {
   if (target.kind === 'local') {
-    await requestRelay('/api/session');
+    await authorizeLocalTeacher();
     const data = (await requestJson('/api/state')) as
       | { players?: unknown; records?: unknown }
       | null;
@@ -228,7 +242,7 @@ export const relayState = async (
 
 export const relayReset = async (target: RelayTarget): Promise<void> => {
   if (target.kind === 'local') {
-    await requestRelay('/api/session');
+    await authorizeLocalTeacher();
     await requestJson('/api/reset', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

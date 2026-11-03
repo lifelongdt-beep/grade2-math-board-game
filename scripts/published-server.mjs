@@ -2,15 +2,24 @@ import { createServer } from 'node:http';
 import { readFile, stat, mkdir, writeFile, rename } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomBytes, createHash } from 'node:crypto';
-import { networkInterfaces, homedir } from 'node:os';
+import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
+import { homedir } from 'node:os';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const host = '0.0.0.0';
 const port = Number(process.env.PORT ?? 5173);
 const teacherToken = randomBytes(32).toString('hex');
-const localAddresses = new Set(['127.0.0.1', '::1', ...Object.values(networkInterfaces()).flat().filter(Boolean).map(info => info.address)]);
-const isTeacherComputer = (request) => !request.headers['x-forwarded-for'] && !request.headers['cf-connecting-ip'] && !request.headers.forwarded && localAddresses.has((request.socket.remoteAddress ?? '').replace(/^::ffff:/, ''));
+const teacherSecret = process.env.MATH_TEACHER_SECRET ?? randomBytes(32).toString('hex');
+if (teacherSecret.length < 32 || teacherSecret.length > 256) throw new Error('MATH_TEACHER_SECRET must contain 32–256 characters');
+const hasTeacherSecret = request => {
+  const supplied = Buffer.from(String(request.headers['x-math-teacher'] ?? ''));
+  const expected = Buffer.from(teacherSecret);
+  return supplied.length === expected.length && timingSafeEqual(supplied, expected);
+};
+const isTeacherComputer = request => {
+  const peer = (request.socket.remoteAddress ?? '').replace(/^::ffff:/, '');
+  return (peer === '::1' || peer.startsWith('127.')) && !request.headers['x-forwarded-for'] && !request.headers['cf-connecting-ip'] && !request.headers.forwarded;
+};
 const hasTeacherCookie = (request) => (request.headers.cookie ?? '').split(';').some(cookie => cookie.trim() === `mathTeacher=${teacherToken}`);
 
 const mimeTypes = new Map([
@@ -21,6 +30,7 @@ const mimeTypes = new Map([
   ['.png', 'image/png'],
   ['.svg', 'image/svg+xml'],
   ['.webp', 'image/webp'],
+  ['.webmanifest', 'application/manifest+json'], ['.ico', 'image/x-icon'], ['.woff2', 'font/woff2'],
 ]);
 
 const resolvePath = async (requestUrl) => {
@@ -32,7 +42,11 @@ const resolvePath = async (requestUrl) => {
 
   try {
     const info = await stat(candidate);
-    if (info.isFile()) return candidate;
+    if (info.isFile()) {
+      const extension = extname(candidate);
+      if (!mimeTypes.has(extension) || (extension === '.json' && normalizedPath.replaceAll('\\', '/').split('/').at(-1) !== 'mobile-origin.json')) return null;
+      return candidate;
+    }
   } catch {
     // Fall through to the SPA fallback.
   }
@@ -101,7 +115,7 @@ let nextRemotePlayerId = 1001;
 const handleApi = async (request, response, pathname) => {
   if (pathname === '/api/ping') return sendJson(response, 200, { ok: true });
   if (pathname === '/api/session' && request.method === 'GET') {
-    if (!isTeacherComputer(request)) return sendJson(response, 403, { ok: false });
+    if (!isTeacherComputer(request) || !hasTeacherSecret(request)) return sendJson(response, 403, { ok: false });
     response.setHeader('Set-Cookie', `mathTeacher=${teacherToken}; HttpOnly; SameSite=Strict; Path=/api/`);
     return sendJson(response, 200, { ok: true });
   }
@@ -160,6 +174,7 @@ const server = createServer(async (request, response) => {
     }
 
     const filePath = await resolvePath(request.url ?? '/');
+    if (!filePath) { response.writeHead(404); response.end('Not found'); return; }
     const body = await readFile(filePath);
     response.writeHead(200, {
       'Cache-Control': 'no-store',
@@ -174,4 +189,5 @@ const server = createServer(async (request, response) => {
 
 server.listen(port, host, () => {
   console.log(`Published game server running at http://localhost:${port}/`);
+  if (!process.env.MATH_TEACHER_SECRET) console.log(`Teacher screen: http://127.0.0.1:${port}/#teacher=${encodeURIComponent(teacherSecret)}`);
 });

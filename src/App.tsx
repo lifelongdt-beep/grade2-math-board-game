@@ -36,6 +36,7 @@ import { ScratchPad } from './components/ScratchPad';
 import { meaningOfChoice } from './data/choiceMeaning';
 import {
   DEFAULT_DB_URL,
+  authorizeLocalTeacher,
   isRoomCode,
   loadOrCreateRoom,
   loadSavedDbUrl,
@@ -689,6 +690,7 @@ function App() {
   const storageWarning = useStorageStatus();
   const [pendingCount, setPendingCount] = useState(0);
   const sessionIdRef = useRef(newRecordId());
+  useEffect(() => { void authorizeLocalTeacher(); }, []);
   useEffect(() => isMobileEntry ? watchAnswerDelivery(setPendingCount) : undefined, [isMobileEntry]);
   const questionBanks = useMemo<Record<Difficulty, Question[]>>(() => {
     if (!engine) return { 하: [], 중: [], 상: [] };
@@ -1108,6 +1110,7 @@ function App() {
     const origin = mobileJoinOrigin || (isLoopbackHost() ? '' : window.location.origin);
     if (!origin) return '';
     const url = new URL(window.location.pathname || '/', `${origin}/`);
+    url.hash = '';
     url.searchParams.set('m', '1');
     const 학급 = readClassContext();
     url.searchParams.set('cy', String(학급.schoolYear));
