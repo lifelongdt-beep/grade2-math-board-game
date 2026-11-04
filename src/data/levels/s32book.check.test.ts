@@ -17,6 +17,11 @@ const 양 = (t: string) => { const m = /^(?:(\d+) (?:L|kg))? ?(?:(\d+) (?:mL|g))
 const 양글 = (x: number, 큰: string, 작은: string) => (x < 1000 ? `${x} ${작은}` : x % 1000 === 0 ? `${x / 1000} ${큰}` : `${Math.floor(x / 1000)} ${큰} ${x % 1000} ${작은}`);
 const 들이 = (x: number) => 양글(x, 'L', 'mL');
 const 무게 = (x: number) => 양글(x, 'kg', 'g');
+
+/** 그림그래프 그림의 줄 */
+const 줄들 = (q: Question) => (q.visual?.kind === 'picture-graph' ? q.visual.rows.map((r) => r.value) : []);
+const 줄합 = (q: Question) => 줄들(q).reduce((a, b) => a + b, 0);
+const 줄값 = (q: Question, label: string) => { if (q.visual?.kind !== 'picture-graph') throw new Error('그래프 없음'); return q.visual.rows.find((r) => r.label === label)!.value; };
 type 풀이 = { 이름: string; 수준: 수준; 꼴: RegExp; 답: (m: RegExpExecArray, q: Question) => string };
 
 const 풀이들: 풀이[] = [
@@ -176,6 +181,37 @@ const 풀이들: 풀이[] = [
   },
   {
     이름: '가장가까운두사람', 수준: '상', 꼴: /^(.+)만큼 과일을 가지고 있습니다\. .+3 kg에 가장 가깝게/, 답: (m) => { const p = m[1].split(', ').map((t) => { const [n, ...r] = t.split(' '); return { n, v: 양(r.join(' ')) }; }); let best = { s: '', d: 1e9 }; for (let i = 0; i < p.length; i += 1) for (let j = i + 1; j < p.length; j += 1) { const d = Math.abs(p[i].v + p[j].v - 3000); if (d < best.d) best = { s: `${p[i].n}, ${p[j].n}`, d }; } return best.s; },
+  },
+  // ── 6단원 그림그래프 ──
+  {
+    이름: '그래프특징', 수준: '하', 꼴: /^그림그래프에 대한 설명으로 옳지 않은 것은/, 답: (_m, q) => { const 틀 = q.choices.filter((c) => /합계를 정확한|항상 수량도|한 가지 크기로만/.test(c)); expect(틀).toHaveLength(1); return 틀[0]; },
+  },
+  { 이름: '구슬적게', 수준: '중', 꼴: /^그림그래프는 학생별 가지고 있는 구슬 수입니다\. \S+ (\S+?)이?보다 구슬을 (\d)개 더 적게/, 답: (m, q) => `${줄값(q, m[1]) - N(m[2])}개` },
+  { 이름: '공장합', 수준: '중', 꼴: /^그림그래프는 공장별 사탕 생산량입니다\. 네 사탕 공장의/, 답: (_m, q) => `${줄합(q)}상자` },
+  { 이름: '감봉지', 수준: '상', 꼴: /^그림그래프는 나무별 감 생산량입니다\. .+ 한 봉지에 (\d) kg씩/, 답: (m, q) => `${Math.ceil(줄합(q) / N(m[1]))}개` },
+  {
+    이름: '붙임딱지', 수준: '상', 꼴: /^그림그래프는 모둠별로 어제까지 받은 칭찬 붙임딱지 수입니다/, 답: (_m, q) => { const v = 줄들(q).sort((a, b) => b - a); const 후보 = [...Array(100)].map((_, i) => i).filter((x) => !v.includes(x) && v.filter((y) => y > x).length === 2); expect(후보).toHaveLength(1); return `${v[0] + 1 - 후보[0]}장`; },
+  },
+  {
+    이름: '샌드위치', 수준: '상', 꼴: /행복 편의점의 수는 나타내지 않았습니다\. 각 편의점에서 판매한 샌드위치는 (\d+)개보다 적고, .+ 차는 (\d+)개입니다/, 답: (m, q) => { const v = 줄들(q); const 후보 = [Math.max(...v) - N(m[2]), Math.min(...v) + N(m[2])].filter((x) => x > 0 && x < N(m[1]) && Math.max(...v, x) - Math.min(...v, x) === N(m[2])); expect(후보).toHaveLength(1); return `${줄합(q) + 후보[0]}개`; },
+  },
+  {
+    이름: '우산단위', 수준: '상', 꼴: /파란색은 큰 그림 (\d)개와 작은 그림 (\d)개, 노란색은 큰 그림 (\d)개와 작은 그림 (\d)개, 초록색은 큰 그림 (\d)개와 작은 그림 (\d)개입니다\. 하루 동안 팔린 우산이 (\d+)개일 때, 팔린 (\S+) 우산/, 답: (m) => { const 큰 = [N(m[1]), N(m[3]), N(m[5])]; const 작 = [N(m[2]), N(m[4]), N(m[6])]; const u = (N(m[7]) - 작.reduce((a, b) => a + b)) / 큰.reduce((a, b) => a + b); const k = ['파란색', '노란색', '초록색'].indexOf(m[8]); return `${큰[k] * u + 작[k]}개`; },
+  },
+  {
+    이름: '주스단위', 수준: '상', 꼴: /^주스 가게의 .+ 나타냈습니다\. (.+)입니다\. 키위 주스를 (\d+)잔 팔았다면/, 답: (m) => { const r = [...m[1].matchAll(/큰 그림 (\d)개와 작은 그림 (\d)개/g)].map((x) => [N(x[1]), N(x[2])]); const 작 = N(m[2]) / (r[1][0] * 10 + r[1][1]); return `${r.reduce((s, [a, b]) => s + a * 10 * 작 + b * 작, 0)}잔`; },
+  },
+  { 이름: '바를정', 수준: '하', 꼴: /^모둠별로 모은 빈 병의 수를 바를 정\(正\) 자로 세었습니다\. (.+)\. (\S+) 모둠이 모은/, 답: (m) => { const t = m[1].split(', ').find((x) => x.startsWith(`${m[2]} 모둠`))!.split(' ')[2]; return `${[...t].reduce((s, c) => s + ({ 一: 1, 丅: 2, 下: 3, 止: 4, 正: 5 } as Record<string, number>)[c], 0)}병` },
+  },
+  {
+    이름: '세가지그림', 수준: '중', 꼴: /^그림그래프는 ◎ 10마리, ○ 1마리로 나타낸 .+ (\S+) 농장에 그려지는/, 답: (m, q) => { const v = 줄값(q, m[1]); return `${Math.floor(v / 10)}개, ${Math.floor((v % 10) / 5)}개, ${v % 5}개`; },
+  },
+  { 이름: '빈칸그림', 수준: '중', 꼴: /^그림그래프는 반별 안경 쓴 학생 수이고, .+ 3반에서 안경 쓴 학생 수보다 (\d)명 더 적습니다/, 답: (m, q) => { const v = 줄값(q, '3반') - N(m[1]); return `큰 그림 ${Math.floor(v / 10)}개, 작은 그림 ${v % 10}개`; } },
+  {
+    이름: '나무두배', 수준: '상', 꼴: /^그림그래프는 마을별 심은 나무 수.+ 모두 (\d+)그루이고, 나 마을에서 심은 나무 수는 다 마을의 2배/, 답: (m, q) => { const 다 = (N(m[1]) - 줄값(q, '가')) / 3; const 나 = 다 * 2; return `${Math.floor(나 / 10)}, ${나 % 10}, ${Math.floor(다 / 10)}, ${다 % 10}`; },
+  },
+  {
+    이름: '경시대회', 수준: '상', 꼴: /^수학 경시대회에 참가한 학생 (\d+)명.+ 큰 그림\(10명\) (\d)개와 작은 그림\(1명\) (\d)개.+ 6학년 학생은 3학년 학생보다 (\d+)명 더/, 답: (m) => { const 오 = N(m[2]) * 10 + N(m[3]); const 사 = (오 / 5) * 3; const 삼 = (N(m[1]) - 오 - 사 - N(m[4])) / 2; return `${삼}, ${사}, ${삼 + N(m[4])}`; },
   },
 ];
 
