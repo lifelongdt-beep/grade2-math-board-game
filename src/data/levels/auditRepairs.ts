@@ -19,7 +19,7 @@ const verifyDivision = family('division-known-fact', next => {
 });
 const sameCup = family('capacity-same-unit', next => {
   const a=사이(next,2,15), b=a+사이(next,1,6);
-  return 지식({ ...common, tag:'measurement', prompt:`크기가 같은 컵으로 가 물통은 ${a}컵, 나 물통은 ${b}컵의 물이 들어갑니다. 들이가 더 큰 물통은 어느 것일까요?`, answer:'나 물통', wrongs:['가 물통','두 물통의 들이는 같습니다.','컵의 크기가 같으면 비교할 수 없습니다.'], strategy:'같은 단위로 잰 들이 바로 비교하기', hint:'같은 컵으로 쟀으므로 컵 수를 비교해 보세요.', concept:'같은 단위로 재면 단위의 수가 많은 물건의 들이가 더 큽니다.', steps:[`같은 컵으로 ${a}컵과 ${b}컵입니다.`,`${b}이 ${a}보다 크므로 나 물통의 들이가 더 큽니다.`] });
+  return 지식({ ...common, tag:'measurement', prompt:`크기가 같은 컵으로 가 물통은 ${a}컵, 나 물통은 ${b}컵의 물이 들어갑니다. 들이가 더 큰 물통은 어느 것일까요?`, answer:'나 물통', wrongs:['가 물통','두 물통의 들이는 같습니다.','컵의 크기가 같으면 비교할 수 없습니다.'], strategy:'같은 단위로 잰 들이 바로 비교하기', hint:'같은 컵으로 쟀으므로 컵 수를 비교해 보세요.', concept:'같은 단위로 재면 단위의 수가 많은 물건의 들이가 더 큽니다.', steps:[`같은 컵으로 ${a}컵과 ${b}컵입니다.`,`${b}이(가) ${a}보다 크므로 나 물통의 들이가 더 큽니다.`] });
 });
 const overlapLength = family('congruent-overlap', next => {
   const a=사이(next,3,40);
@@ -43,7 +43,7 @@ const fractionError = family('fraction-decimal-error', next => {
 });
 const mixedError = family('mixed-fraction-error', next => {
   const d=사이(next,2,9), w=사이(next,1,4), n=사이(next,1,d-1), total=w*d+n;
-  return 사고({ ...common, tag:'fraction', prompt:`친구는 자연수 ${w}과(와) 진분수 ${n}/${d}로 이루어진 대분수를 가분수로 바꾸면서 자연수를 분자에 바로 더해 ${w+n}/${d}라고 했습니다. 잘못을 바르게 설명한 것은 무엇일까요?`, answer:`자연수 ${w}은(는) 1/${d}이(가) ${w*d}개이므로 모두 ${total}개인 ${total}/${d}입니다.`, wrongs:[`자연수를 분자에 바로 더한 ${w+n}/${d}이(가) 맞습니다.`,`분모에만 자연수를 더한 ${n}/${d+w}이(가) 맞습니다.`,`자연수 부분을 빼고 ${n}/${d}만 쓰면 됩니다.`], strategy:'단위분수의 개수로 잘못된 변환 설명하기', hint:'자연수 1을 단위분수 몇 개로 나타내는지 생각해 보세요.', concept:'자연수를 단위분수의 개수로 바꾸어 남은 진분수 조각과 함께 셉니다.', steps:[`1은 1/${d}이(가) ${d}개이므로 ${w}은(는) ${w*d}개입니다.`,`여기에 ${n}개를 더하면 ${total}개이므로 ${total}/${d}입니다.`] });
+  return 사고({ ...common, tag:'fraction', prompt:`친구는 자연수 ${w}과(와) 진분수 ${n}/${d}(으)로 이루어진 대분수를 가분수로 바꾸면서 자연수를 분자에 바로 더해 ${w+n}/${d}라고 했습니다. 잘못을 바르게 설명한 것은 무엇일까요?`, answer:`자연수 ${w}은(는) 1/${d}이(가) ${w*d}개이므로 모두 ${total}개인 ${total}/${d}입니다.`, wrongs:[`자연수를 분자에 바로 더한 ${w+n}/${d}이(가) 맞습니다.`,`분모에만 자연수를 더한 ${n}/${d+w}이(가) 맞습니다.`,`자연수 부분을 빼고 ${n}/${d}만 쓰면 됩니다.`], strategy:'단위분수의 개수로 잘못된 변환 설명하기', hint:'자연수 1을 단위분수 몇 개로 나타내는지 생각해 보세요.', concept:'자연수를 단위분수의 개수로 바꾸어 남은 진분수 조각과 함께 셉니다.', steps:[`1은 1/${d}이(가) ${d}개이므로 ${w}은(는) ${w*d}개입니다.`,`여기에 ${n}개를 더하면 ${total}개이므로 ${total}/${d}입니다.`] });
 });
 export const auditGrade3: 수준표 = { '3-1 6-2':{상:[equalParts]}, '3-1 6-3':{상:[fractionReason]}, '3-2 4-6':{상:[mixedError]}, '3-2 2-7':{하:[verifyDivision]}, '3-2 5-2':{하:[sameCup]} };
 export const auditGrade5: 수준표 = { '5-1 4-7':{상:[fractionBounds,fractionOrder,fractionError]}, '5-2 3-2':{하:[overlapLength]}, '5-2 6-8':{하:[equalChance]} };
