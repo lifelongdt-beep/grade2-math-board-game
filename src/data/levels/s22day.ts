@@ -2,7 +2,7 @@ import { resolveParticles } from '../grade5/util';
 import type { Difficulty, Lesson, Question } from '../../types';
 
 // 2-2 4단원 7차시: 큰 수나 분 계산 대신 같은 하루 개념에서 사고 단계를 높입니다.
-const people = ['민준', '수아', '지호', '하은', '도윤', '서연'];
+const people = ['시우', '수아', '지호', '하은', '도윤', '서연'];
 interface Item { prompt: string; answer: string; wrongs: string[]; steps: string[]; focus: string; }
 const hours = (n: number) => `${n}시간`;
 const time = (period: string, h: number) => `${period} ${h}시`;
@@ -61,16 +61,17 @@ export function generateDayTimeQuestions(lesson: Lesson, difficulty: Difficulty,
     const offset = (seed + index + ['하','중','상'].indexOf(difficulty)) % 4;
     const ordered = [...choices.slice(offset), ...choices.slice(0, offset)];
     const label = difficulty === '하' ? '기초 확인' : difficulty === '중' ? '자료 해석' : '조건 함께 보기';
+    const strategy = `${difficulty === '하' ? '기초' : difficulty === '중' ? '적용' : '도전'} · ${label} · ${spec.focus}`;
     const misconception = '시계의 숫자만 보지 말고 오전·오후와 날짜를 함께 확인합니다.';
     return {
       id: `${lesson.id}-${difficulty}-${round ? `p${round}-` : ''}day-${index + 1}`,
       lessonId: lesson.id, difficulty, thinkingLevel: difficulty === '하' ? 0 : difficulty === '중' ? 1 : 2,
       prompt: spec.prompt, basePrompt: spec.prompt, choices: ordered, answerIndex: ordered.indexOf(spec.answer), answer: spec.answer,
-      type: 'time', strategy: `${difficulty === '하' ? '기초' : difficulty === '중' ? '적용' : '도전'} · ${label} · ${spec.focus}`, explanation: spec.steps.join(' '), misconception,
+      type: 'time', strategy, explanation: `핵심 개념: 하루는 24시간이며 오전과 오후는 각각 12시간입니다. 학습 목표: ${lesson.objective} 풀이: ${spec.steps.join(' ')}`, misconception,
       support: {
         studentConcept: '하루와 오전·오후', coreConcept: '하루는 오전 12시간과 오후 12시간을 합한 24시간입니다.',
         studentHint: difficulty === '하' ? '낮 12시보다 앞인지 뒤인지, 또는 하루와 반나절 중 무엇을 묻는지 살펴보세요.' : '낮 12시나 밤 12시를 기준으로 나누고, 문제에 적힌 조건을 차례로 확인하세요.',
-        readStrategy: `${label} · ${spec.focus}`, steps: spec.steps, misconceptionTip: misconception,
+        readStrategy: strategy, steps: spec.steps, misconceptionTip: misconception,
         textbookConnection: lesson.textbookFocus, selfCheck: '오전·오후와 오늘·다음 날을 바르게 구별했나요?',
       },
     };
