@@ -1,3 +1,4 @@
+import { generateDayTimeQuestions } from './levels/s22day';
 import { deriveGrade2Walk } from './walkthrough';
 import { 힌트다듬기 } from './hintUpgrade';
 import { 시간도움 } from './timeHelp';
@@ -17791,6 +17792,7 @@ export const 차시원문항 = (
   options?: GenerateQuestionsOptions,
 ): Question[] => {
   const 판 = options?.판 ?? 0;
+  if (lesson.semester === '2-2' && lesson.unitNo === 4 && lesson.lessonNo === 7) return generateDayTimeQuestions(lesson, difficulty, 판);
   if (lesson.title === CASTLE_DIVIDE_TITLE) {
     const divisors = options?.castleDans?.length ? options.castleDans : ALL_CASTLE_DEFENSE_DANS;
     return 판매기기(generateCastleDivisionQuestions(lesson, difficulty, divisors, 판), 판);
