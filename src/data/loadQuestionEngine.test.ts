@@ -1,3 +1,6 @@
+import { curriculum51 } from './curriculum51';
+import { curriculum5 } from './curriculum5';
+import { curriculum31 } from './curriculum31';
 import { expect, it, vi } from 'vitest';
 import { curriculum61 } from './curriculum61';
 import { curriculum11 } from './curriculum11';
@@ -7,7 +10,7 @@ import { 도입복습차시 } from './introReview';
 import type { Difficulty } from '../types';
 
 it('분리 엔진도 기본 문항과 선수 학년 도입 복습을 동일하게 만듭니다', async () => {
-  const targets = [curriculum11[0].lessons[1], curriculum[0].lessons[1], curriculum61[0].lessons[0], curriculum61[0].lessons[1]];
+  const targets = [curriculum51[3].lessons[6], curriculum5[2].lessons[1], curriculum5[5].lessons[7], curriculum31[2].lessons[1], curriculum31[3].lessons[1], curriculum11[0].lessons[1], curriculum[0].lessons[1], curriculum61[0].lessons[0], curriculum61[0].lessons[1]];
   const levels: Difficulty[] = ['하','중','상'];
   const expected = targets.map(lesson => levels.map(level => generateClassQuestions(lesson, level)));
   vi.resetModules();

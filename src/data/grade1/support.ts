@@ -31,6 +31,7 @@ export const g1ReadStrategy: Partial<Record<ConceptTag, string>> = {
   addition: '모두 몇인지 묻는지 먼저 봅니다.',
   subtraction: '남은 것을 묻는지, 몇 개 더 많은지 묻는지 먼저 봅니다.',
   measurement: '무엇을 견주는지(길이, 무게, 넓이, 담는 양) 먼저 봅니다.',
+  time: '짧은바늘과 긴바늘을 구별하고 이 차시에서 배운 시각 읽는 방법을 떠올립니다.',
 };
 
 export const g1Misconception: Partial<Record<ConceptTag, string>> = {

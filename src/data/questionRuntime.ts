@@ -1,3 +1,4 @@
+import { grade2Support } from './grade2/supportScope';
 import type { Difficulty, Lesson, Question } from '../types';
 import { 도입복습차시 } from './introReview';
 import { 힌트다듬기 } from './hintUpgrade';
@@ -47,7 +48,8 @@ const 판에서낸복습 = new Map<string, Set<string>>();
 export const generateQuestions = (lesson: Lesson, difficulty: Difficulty, options?: GenerateQuestionsOptions): Question[] =>
   rawGenerator(lesson)(lesson, difficulty, options).map(q => {
     const studentHint = 힌트다듬기(q.prompt, q.answer, q.support.studentHint);
-    const withHint = studentHint === q.support.studentHint ? q : { ...q, support: { ...q.support, studentHint } };
+    const hinted = studentHint === q.support.studentHint ? q : { ...q, support: { ...q.support, studentHint } };
+    const withHint = grade2Support(hinted, lesson);
     if (withHint.visual || withHint.choiceVisuals) return withHint;
     const visual = 그림추론(withHint.prompt);
     return visual ? { ...withHint, visual } : withHint;

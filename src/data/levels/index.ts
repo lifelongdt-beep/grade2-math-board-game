@@ -1,3 +1,4 @@
+import { auditGrade3, auditGrade5 } from './auditRepairs';
 import type { Difficulty, Lesson } from '../../types';
 import type { G5Family } from '../grade5/build';
 import { 수준1 } from './s1';
@@ -30,6 +31,6 @@ import { 수준62 } from './s62';
 export type { 수준표 } from './registry';
 export { 수준뭉치 } from './registry';
 import { registerLevels } from './registry';
-const 모든표 = [수준1, 수준1고난도, 수준11문제집, 수준12문제집, 수준3, 수준31문제집, 수준41, 수준42, 수준51, 수준52, 수준52고난도, 수준61, 수준62];
+const 모든표 = [수준1, 수준1고난도, 수준11문제집, 수준12문제집, 수준3, 수준31문제집, 수준41, 수준42, 수준51, 수준52, 수준52고난도, 수준61, 수준62, auditGrade3, auditGrade5];
 
 registerLevels(...모든표);

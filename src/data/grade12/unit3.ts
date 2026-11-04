@@ -210,8 +210,8 @@ const 시계읽기 = (half: boolean): G5Family => ({
     const nextH = h === 12 ? 1 : h + 1;
     const answer = half ? `${h}시 30분` : `${h}시`;
     const wrongs = half
-      ? [`${nextH}시 30분`, `${h}시`, `6시 ${h === 6 ? 5 : h}분`]
-      : [`${nextH}시`, `${h}시 30분`, h === 12 ? '1시 12분' : `12시 ${h}분`];
+      ? [`${nextH}시 30분`, `${h}시`, `${nextH}시`]
+      : [`${nextH}시`, `${h === 1 ? 12 : h - 1}시`, `${(h + 1) % 12 + 1}시`];
     return {
       prompt: '시계가 나타내는 시각은 몇 시일까요?'.replace('몇 시일까요', half ? '몇 시 몇 분일까요' : '몇 시일까요'),
       answer,
@@ -228,19 +228,19 @@ const 시계읽기 = (half: boolean): G5Family => ({
   },
 });
 
-const 바늘말로: G5Family = {
+const 바늘말로 = (allowHalf: boolean): G5Family => ({
   id: 'hands-words',
   make: (seed) => {
     const next = 고르개(seed);
     const h = 사이(next, 1, 11);
-    const half = next(2) === 0;
+    const half = allowHalf && next(2) === 0;
     const answer = half ? `${h}시 30분` : `${h}시`;
     return {
       prompt: half
         ? `긴바늘이 6을 가리키고, 짧은바늘이 ${h}과(와) ${h + 1} 사이에 있습니다. 몇 시 몇 분일까요?`
         : `긴바늘이 12를 가리키고, 짧은바늘이 ${h}을(를) 가리킵니다. 몇 시일까요?`,
       answer,
-      wrongs: half ? [`${h + 1}시 30분`, `${h}시`, `6시 ${h}분`] : [`12시 ${h}분`, `${h}시 30분`, `${h + 1}시`],
+      wrongs: half ? [`${h + 1}시 30분`, `${h}시`, `${h + 1}시`] : [`${h === 1 ? 12 : h - 1}시`, `${(h + 1) % 12 + 1}시`, `${h + 1}시`],
       tag: 'time',
       strategy: '바늘의 위치로 시각 말하기',
       hint: '짧은바늘은 몇 시, 긴바늘은 몇 분을 나타내요.',
@@ -248,14 +248,14 @@ const 바늘말로: G5Family = {
       misconceptionTip: '긴바늘과 짧은바늘을 바꾸어 읽지 않아요.',
     };
   },
-};
+});
 
-const 짧은바늘어디: G5Family = {
+const 짧은바늘어디 = (allowHalf: boolean): G5Family => ({
   id: 'short-hand',
   make: (seed) => {
     const next = 고르개(seed);
     const h = 사이(next, 1, 11);
-    const half = next(2) === 0;
+    const half = allowHalf && next(2) === 0;
     return {
       prompt: `${h}시${half ? ' 30분' : ''}일 때 짧은바늘은 어디를 가리킬까요?`,
       answer: half ? `${h}과(와) ${h + 1} 사이` : `${h}`,
@@ -267,7 +267,7 @@ const 짧은바늘어디: G5Family = {
       misconceptionTip: '몇 시 30분에 짧은바늘은 숫자를 딱 가리키지 않아요.',
     };
   },
-};
+});
 
 const 늦은시각: G5Family = {
   id: 'later',
@@ -304,13 +304,13 @@ export const unit3Lesson12 = (lessonNo: number, lv: Difficulty): G5Family[] | nu
       if (lv === '하') return [모양세기(true), 가장많이];
       return [모양세기(true), 가장많이];
     case 5:
-      if (lv === '하') return [시계읽기(false), 바늘말로];
-      if (lv === '중') return [시계읽기(false), 바늘말로, 시각뒤('1-2-3', false)];
-      return [바늘말로, 짧은바늘어디, 시각뒤('1-2-3', false)];
+      if (lv === '하') return [시계읽기(false), 바늘말로(false)];
+      if (lv === '중') return [시계읽기(false), 바늘말로(false), 시각뒤('1-2-3', false)];
+      return [바늘말로(false), 짧은바늘어디(false), 시각뒤('1-2-3', false)];
     case 6:
       if (lv === '하') return [시계읽기(true), 시각뒤('1-2-3', true), 시각순서('1-2-3', true)];
-      if (lv === '중') return [시계읽기(true), 바늘말로, 짧은바늘어디, 시각순서('1-2-3', true)];
-      return [짧은바늘어디, 늦은시각, 시계읽기(true), 시각뒤('1-2-3', true)];
+      if (lv === '중') return [시계읽기(true), 바늘말로(true), 짧은바늘어디(true), 시각순서('1-2-3', true)];
+      return [짧은바늘어디(true), 늦은시각, 시계읽기(true), 시각뒤('1-2-3', true)];
     default:
       return null;
   }

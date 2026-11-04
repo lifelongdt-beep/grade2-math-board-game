@@ -272,12 +272,12 @@ const toQuestion = (
 
   // 시각과 시간 문항은 문제가 묻는 일에 맞춘 풀이를 씁니다(timeHelp.ts). 문항이
   // 스스로 적은 힌트가 있으므로, 문제 글을 읽어 풀이까지 다시 쓸 수 있을 때만 바꿉니다.
-  const 시간 = spec.tag === 'time' && !spec.ownTimeSteps ? 시간도움(spec.prompt, spec.answer, spec.visual) : null;
+  const 시간 = !lesson.semester.startsWith('1') && spec.tag === 'time' && !spec.ownTimeSteps ? 시간도움(spec.prompt, spec.answer, spec.visual) : null;
   const 시간풀이 = 시간?.steps && 시간.steps.length >= 2 ? 시간 : null;
   const support: LearningSupport = {
-    studentConcept: spec.concept ?? 도움.student[spec.tag] ?? '문제에서 무엇을 구하라고 했는지 먼저 찾으세요.',
+    studentConcept: spec.concept ?? (lesson.title === '단원 도입' ? 도움.student[spec.tag] ?? lesson.objective : lesson.textbookFocus || lesson.objective),
     studentHint: 시간풀이?.hint || spec.hint,
-    coreConcept: 도움.core[spec.tag] ?? lesson.objective,
+    coreConcept: spec.concept ?? (lesson.title === '단원 도입' ? 도움.core[spec.tag] ?? lesson.objective : lesson.textbookFocus || lesson.objective),
     readStrategy: `${strategy}: ${도움.read[spec.tag] ?? '문제에 주어진 조건을 하나씩 표시합니다.'}`,
     // 풀이 걸음은 이 문항의 풀이만 둡니다. 예전에는 모든 문항 앞에 '문제에서
     // 무엇을 구하라고 했는지 먼저 찾습니다'를 붙여, 힌트의 첫 걸음이 늘 같은
@@ -419,11 +419,11 @@ export const buildGrade5Questions = (
   // 내지 않습니다. 뭉치에 그 결의 후보밖에 없으면 그 뭉치는 그 수준에서 쉽니다.
   // 자리가 모자라면 넷째·다섯째 바퀴에서 결이 맞는 뭉치에 몫을 더 주고(수만
   // 다른 문항이 늘어납니다 — 수준에 맞지 않는 문항보다 낫습니다), 그래도 비면
-  // 여섯째 바퀴에서만 결을 가리지 않고 채웁니다.
-  const 결맞음 = (단계: 0 | 1 | 2, 바퀴: number) =>
-    바퀴 === 5 || (difficulty === '상' ? 단계 > 0 : difficulty === '하' ? 단계 < 2 : true);
+  // 부족한 자리를 다른 수준의 문항으로 채우지 않습니다.
+  const 결맞음 = (단계: 0 | 1 | 2) =>
+    lesson.title === '단원 도입' || (difficulty === '상' ? 단계 > 0 : difficulty === '하' ? 단계 < 2 : true);
 
-  // 뒤 판은 결을 가리지 않고 채우는 마지막 바퀴를 돌지 않습니다. 수준에 맞는 새 문항이 모자라면 그 판은 조금 작아집니다.
+  // 수준에 맞는 새 문항이 모자라면 판이 작아집니다. 도입은 선수 개념을 확인하는 복습입니다.
   for (let 바퀴 = 0; 바퀴 < (판 ? 5 : 6) && made.length < SLOTS_PER_LESSON; 바퀴 += 1) {
     // 몫을 늘려도 한 모양이 서른 자리를 다 차지하지는 않게 합니다.
     const 모양몫 = 바퀴 >= 3 ? mostPerShape + 5 : mostPerShape;
@@ -453,7 +453,7 @@ export const buildGrade5Questions = (
           if (seenPrompt.has(key) || seenPrompt.has(보이는것) || 후보.some((one) => one.값.key === key || one.값.보이는것 === 보이는것)) continue;
           const shape = shapeOfPrompt(spec.prompt);
           if ((shapeCount.get(shape) ?? 0) >= 모양몫) continue;
-          if (!결맞음(사고단계(spec), 바퀴)) continue;
+          if (!결맞음(사고단계(spec))) continue;
           후보.push({ 단계: 사고단계(spec), 수: 수번거로움(spec), 값: { spec, key, 보이는것, shape } });
         }
         // 점수가 같은 후보끼리는 수준마다 다른 것을 고릅니다. 글만 있는 문항은
