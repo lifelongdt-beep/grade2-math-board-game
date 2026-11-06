@@ -36,7 +36,7 @@ it('전 학년 점검으로 보충한 유형의 답을 문제의 수와 조건�
       const fractions=[...q.answer.matchAll(/(\d+)\/(\d+)/g)];
       const last=fractions.at(-1)!; expect(+last[1]*+m[3]).toBe((+m[1]*+m[3]+ +m[2])*+last[2]);
     } else if(p.startsWith('친구는')) {
-      const m=/친구는 (\d+\/\d+)과(?:\(와\))? (\d+\.\d+)/.exec(p)!;
+      const m=/친구는 (\d+\/\d+)[과와] (\d+\.\d+)/.exec(p)!;
       expect(fraction(m[1])).toBeGreaterThan(+m[2]);
       const equivalent=[...q.answer.matchAll(/\d+\/\d+/g)].map(x=>fraction(x[0])); expect(equivalent).toHaveLength(2); expect(equivalent[0]).toBe(equivalent[1]); expect(q.answer).toContain('분수가 더 큽니다.');
     } else throw new Error(`검산하지 않은 유형: ${p}`);
