@@ -8,6 +8,7 @@ import { StackIsoPicture } from './StackIso';
 import { 앞에서본, 옆에서본, 옆면가로 } from '../data/manipulate/check';
 import { 그림그래프, 규칙채우기, 나누어담기, 눈금, 달력, 순서놓기, 점배열 } from './ManipulateMore';
 import { 임무이름표 } from '../data/manipulate/fun';
+import { moveClockHand } from './clockSnap';
 
 // ════════════════════════════════════════════════════════════════════
 // 손으로 조작해서 답하는 문항
@@ -212,38 +213,35 @@ function 시계({ m, s, set, locked, 바른, 도움 }: { m: Extract<Manipulation
   const ref = useRef<SVGSVGElement>(null);
   const C = 130;
   const R = 104;
-  const 잡은 = useRef<'hour' | 'minute' | null>(null);
+  const 잡은 = useRef<{ hand: 'hour' | 'minute'; pointerId: number } | null>(null);
   const 각 = (x: number, y: number) => ((Math.atan2(x - C, -(y - C)) * 180) / Math.PI + 360) % 360;
   const 끝 = (deg: number, r: number) => [C + r * Math.sin((deg * Math.PI) / 180), C - r * Math.cos((deg * Math.PI) / 180)];
-  const 놓기 = (which: 'hour' | 'minute', x: number, y: number) => {
+  const 놓기 = (which: 'hour' | 'minute', x: number, y: number, dragging = false) => {
     const a = 각(x, y);
-    if (which === 'minute') {
-      const 칸 = m.step * 6;
-      set({ ...s, minuteDeg: (Math.round(a / 칸) * 칸) % 360 });
-    } else {
-      set({ ...s, hourDeg: (Math.round(a / 2.5) * 2.5) % 360 });
-    }
+    set(prev => prev.kind === 'clock' ? moveClockHand(prev, which, a, m.step, dragging) : prev);
   };
   const down = (e: ReactPointerEvent) => {
-    if (locked) return;
+    if (locked || 잡은.current) return;
     붙잡기(e);
     const [x, y] = svg좌표(ref.current, e);
     // 안쪽을 잡으면 짧은바늘, 바깥쪽을 잡으면 긴바늘입니다(두 바늘이 겹쳐도 고를 수 있게).
     const r = Math.hypot(x - C, y - C);
-    잡은.current = r < R * 0.55 ? 'hour' : 'minute';
-    놓기(잡은.current, x, y);
+    const hand = r < R * 0.55 ? 'hour' : 'minute';
+    잡은.current = { hand, pointerId: e.pointerId };
+    놓기(hand, x, y);
   };
   const move = (e: ReactPointerEvent) => {
-    if (!잡은.current) return;
+    if (locked || !잡은.current || e.pointerId !== 잡은.current.pointerId) return;
     const [x, y] = svg좌표(ref.current, e);
-    놓기(잡은.current, x, y);
+    놓기(잡은.current.hand, x, y, true);
   };
+  const 놓음 = (e: ReactPointerEvent) => { if (잡은.current?.pointerId === e.pointerId) 잡은.current = null; };
   const 바늘 = (deg: number, r: number, w: number, color: string) => {
     const [x, y] = 끝(deg, r);
     return <line x1={C} y1={C} x2={x} y2={y} stroke={color} strokeWidth={w} strokeLinecap="round" />;
   };
   return (
-    <svg ref={ref} viewBox="0 0 260 260" className="manip-svg manip-square" onPointerDown={down} onPointerMove={move} onPointerUp={() => { 잡은.current = null; }} onPointerCancel={() => { 잡은.current = null; }}>
+    <svg ref={ref} viewBox="0 0 260 260" className="manip-svg manip-square" onPointerDown={down} onPointerMove={move} onPointerUp={놓음} onPointerCancel={놓음} onLostPointerCapture={놓음}>
       <circle cx={C} cy={C} r={R + 18} fill={바탕} stroke={모눈} />
       <circle cx={C} cy={C} r={R} fill="#fff" stroke={잉크} strokeWidth="3" />
       <circle cx={C} cy={C} r={R * 0.55} fill="rgba(239,108,0,0.05)" stroke="rgba(239,108,0,0.25)" strokeDasharray="3 4" />
