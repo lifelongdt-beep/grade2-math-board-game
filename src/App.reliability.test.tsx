@@ -11,7 +11,7 @@ vi.mock('./data/engine', () => ({
 }));
 vi.mock('./relayDelivery', () => ({ enqueueAnswer: vi.fn(async () => {}), flushAnswers: vi.fn(async () => 0), watchAnswerDelivery: () => () => {} }));
 vi.mock('./classroomRelay', async original => ({ ...await original<typeof import('./classroomRelay')>(), relayPing: vi.fn(async () => false), relayState: vi.fn(async () => null), relayReset: vi.fn(async () => {}), relayJoin: vi.fn(async () => null) }));
-afterEach(() => { cleanup(); localStorage.clear(); });
+afterEach(() => { cleanup(); if (typeof localStorage !== 'undefined') localStorage.clear(); });
 it('일반 힌트를 열었다 접어도 전송 기록에 사용 이력이 남고 QR 학급 정보를 따릅니다', async () => {
   history.replaceState({}, '', '/?m=1&sync=1&s=2-1&u=1&l=2-1-u1-l2&cy=2026&class=2-3');
   const { setMuted } = await import('./sound'); setMuted(true);

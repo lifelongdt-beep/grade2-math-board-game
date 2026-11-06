@@ -10,10 +10,9 @@ const 글한도 = [42, 56, 72];
 const 보기한도 = 14;
 
 const 놀이에맞나 = (q: Question, 한도: number) =>
-  // 손으로 조작하는 문항은 놀이 시계 안에 끝내기 어렵습니다. 그림은 놀이 카드 안에 함께 보여 줍니다.
-  !q.manipulate && q.choices.length === 4 &&
+  // 글이 짧고 선택지가 4개인 문항을 선호하되, 그림이나 도형 시각 자료가 있으면 직관적이므로 적극 허용합니다.
+  q.choices.length === 4 &&
   q.prompt.length <= 한도 && (q.choiceVisuals ? true : q.choices.every((one) => one.length <= 보기한도)) &&
-  // 그림이 없는데 그림을 보라고 하는 문항은 글만으로 풀 수 없습니다.
   (Boolean(q.visual || q.choiceVisuals) || !/그림|표를|표에서|그래프|아래|위의/.test(q.prompt));
 
 const 섞기 = <T,>(items: T[], seed: number): T[] => {
@@ -37,14 +36,17 @@ export const 놀이문항 = (game: Lesson, difficulty: Difficulty, seed: number)
   const sources = 놀이원본(game);
   if (!sources) return [];
   if (단순문항있나(game)) return 단순문항(game, difficulty, seed, 놀이문항수);
-  const 수준들: Difficulty[] = difficulty === '하' ? ['하'] : ['하', '중'];
-  const 모두 = sources.flatMap((one) => 수준들.flatMap((lv) => {
+  // 난이도 구분 없이, 모든 단원 내 문항을 가져오되 '하' 수준 문항을 우선 확보합니다.
+  const 모두 = sources.flatMap((one) => {
     try {
-      return generateQuestions(one, lv);
+      let q = generateQuestions(one, '하');
+      if (q.length === 0) q = generateQuestions(one, '중');
+      if (q.length === 0) q = generateQuestions(one, '상');
+      return q;
     } catch {
       return [];
     }
-  }));
+  });
   const 본 = new Set<string>();
   const 하나씩 = 모두.filter((q) => (본.has(q.prompt) ? false : (본.add(q.prompt), true)));
   // 글이 짧은 것부터 넉넉히 모일 때까지 한도를 늘립니다.
@@ -52,6 +54,14 @@ export const 놀이문항 = (game: Lesson, difficulty: Difficulty, seed: number)
   for (const 한도 of 글한도) {
     고른 = 하나씩.filter((q) => 놀이에맞나(q, 한도));
     if (고른.length >= 24) break;
+  }
+
+  // 만약 필터링 후에 문항이 너무 적으면(8개 미만), 조작/그림 문항이라도 적극 허용합니다.
+  if (고른.length < 8) {
+    for (const 한도 of 글한도) {
+      고른 = 하나씩.filter((q) => q.choices.length === 4 && q.prompt.length <= 한도);
+      if (고른.length >= 8) break;
+    }
   }
   // 핵심 개념(가장 많이 나온 갈래)을 앞세웁니다.
   const 셈 = new Map<ConceptTag, number>();
