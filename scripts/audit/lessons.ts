@@ -1,0 +1,12 @@
+import { lessons as l2 } from '../../src/data/curriculum';
+import { lessons11 } from '../../src/data/curriculum11';
+import { lessons12 } from '../../src/data/curriculum12';
+import { lessons31 } from '../../src/data/curriculum31';
+import { lessons32 } from '../../src/data/curriculum32';
+import { lessons41 } from '../../src/data/curriculum41';
+import { lessons42 } from '../../src/data/curriculum42';
+import { lessons51 } from '../../src/data/curriculum51';
+import { lessons5 } from '../../src/data/curriculum5';
+import { lessons61 } from '../../src/data/curriculum61';
+import { lessons62 } from '../../src/data/curriculum62';
+export const auditLessons = [...lessons11,...lessons12,...l2,...lessons31,...lessons32,...lessons41,...lessons42,...lessons51,...lessons5,...lessons61,...lessons62];
