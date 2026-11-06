@@ -13,7 +13,7 @@ const lessons = [...new Set(banks.map(b => b.lesson))].map(lesson => {
     banks: rows.map(({level,round,path,count,thinking}) => ({level,round,path,count,thinking})) };
 });
 writeFileSync('docs/전학년-검토-coverage.json', JSON.stringify({
-  date: '2026-11-04', scope: 'generated samples, not every possible seed or independently solved answer',
+  date: '2026-11-06', scope: 'generated samples, not every possible seed or independently solved answer',
   ...result, semesters, lessons,
 }, null, 2));
 console.log(JSON.stringify({semesters:semesters.length,lessons:lessons.length,...result}));
